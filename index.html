@@ -51,19 +51,100 @@ function setStatus(msg,cls){
   el.textContent=msg;el.className=cls||'';
 }
 
-async function openPortal(){
-  setStatus('Abrindo o portal...','ok');
-  var res=await sb.storage.from(BUCKET).createSignedUrl(FILE_PATH,3600);
-  if(res.error){ setStatus('Erro ao abrir o portal: '+res.error.message,'err'); return; }
-  var fileRes=await fetch(res.data.signedUrl);
-  if(!fileRes.ok){ setStatus('Erro ao baixar o portal (status '+fileRes.status+')','err'); return; }
-  var html=await fileRes.text();
+var CACHE_DB='portal_cache_v1',CACHE_STORE='files';
+function cacheOpen(){
+  return new Promise(function(resolve,reject){
+    var req=indexedDB.open(CACHE_DB,1);
+    req.onupgradeneeded=function(){ req.result.createObjectStore(CACHE_STORE); };
+    req.onsuccess=function(){ resolve(req.result); };
+    req.onerror=function(){ reject(req.error); };
+  });
+}
+function cacheGet(key){
+  return cacheOpen().then(function(db){
+    return new Promise(function(resolve){
+      try{
+        var tx=db.transaction(CACHE_STORE,'readonly');
+        var rq=tx.objectStore(CACHE_STORE).get(key);
+        rq.onsuccess=function(){ resolve(rq.result||null); };
+        rq.onerror=function(){ resolve(null); };
+      }catch(e){ resolve(null); }
+    });
+  }).catch(function(){ return null; });
+}
+function cacheSet(key,val){
+  return cacheOpen().then(function(db){
+    return new Promise(function(resolve){
+      try{
+        var tx=db.transaction(CACHE_STORE,'readwrite');
+        tx.objectStore(CACHE_STORE).put(val,key);
+        tx.oncomplete=function(){ resolve(true); };
+        tx.onerror=function(){ resolve(false); };
+      }catch(e){ resolve(false); }
+    });
+  }).catch(function(){ return false; });
+}
+
+function showPortalHtml(html){
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
   ifr.src=blobUrl;
   ifr.style.display='block';
   document.body.classList.add('portal-on');
+}
+
+async function downloadFreshPortal(){
+  var res=await sb.storage.from(BUCKET).createSignedUrl(FILE_PATH,3600);
+  if(res.error)throw new Error(res.error.message);
+  var fileRes=await fetch(res.data.signedUrl);
+  if(!fileRes.ok)throw new Error('status '+fileRes.status);
+  return await fileRes.text();
+}
+
+async function openPortal(){
+  var cached=await cacheGet(FILE_PATH);
+
+  if(cached){
+    // Mostra o cache local na hora — sem esperar rede nenhuma.
+    showPortalHtml(cached.html);
+    setStatus('Portal aberto (cache local). Verificando atualização...','ok');
+    // Checagem leve de versão (poucos bytes, não baixa o arquivo inteiro) via list().
+    try{
+      var listRes=await sb.storage.from(BUCKET).list('',{search:FILE_PATH,limit:1});
+      var etag=(!listRes.error && listRes.data && listRes.data[0] && listRes.data[0].metadata) ? listRes.data[0].metadata.eTag : null;
+      if(etag && etag===cached.etag){
+        setStatus('Portal aberto (atualizado).','ok');
+        return;
+      }
+    }catch(e){}
+    // Versão diferente (ou não deu pra checar) — baixa em segundo plano e avisa,
+    // sem tirar o que já está na tela (não perde o que o usuário já está vendo/fazendo).
+    try{
+      var freshHtml=await downloadFreshPortal();
+      cacheSet(FILE_PATH,{html:freshHtml,etag:etag||null,savedAt:new Date().toISOString()});
+      setStatus('Nova versão do portal disponível — atualize a página (F5) pra carregar.','ok');
+    }catch(e){
+      setStatus('Portal aberto (cache local).','ok');
+    }
+    return;
+  }
+
+  // Sem cache (primeiro acesso neste navegador) — precisa baixar antes de mostrar algo.
+  setStatus('Abrindo o portal...','ok');
+  try{
+    var html=await downloadFreshPortal();
+    showPortalHtml(html);
+    setStatus('Portal aberto.','ok');
+    var etag2=null;
+    try{
+      var listRes2=await sb.storage.from(BUCKET).list('',{search:FILE_PATH,limit:1});
+      if(!listRes2.error && listRes2.data && listRes2.data[0] && listRes2.data[0].metadata)etag2=listRes2.data[0].metadata.eTag;
+    }catch(e){}
+    cacheSet(FILE_PATH,{html:html,etag:etag2,savedAt:new Date().toISOString()});
+  }catch(e){
+    setStatus('Erro ao abrir o portal: '+e.message,'err');
+  }
 }
 
 async function tryAutoLogin(){
