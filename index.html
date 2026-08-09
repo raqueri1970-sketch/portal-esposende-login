@@ -3,55 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Portal Esposende - Entrar</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Portal Esposende</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{background:#02060d;color:#fff;font-family:Inter,Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
-.card{width:100%;max-width:340px;background:#080f1c;border:1px solid rgba(148,163,184,.12);border-radius:14px;padding:28px 24px}
-.ttl{font-size:18px;font-weight:800;margin-bottom:4px}
-.sub{font-size:12.5px;color:#6b88a8;margin-bottom:22px}
-label{display:block;font-size:11.5px;color:#a8bdd8;margin-bottom:6px;font-weight:600}
-input{width:100%;background:#0b1423;border:1px solid rgba(148,163,184,.24);color:#fff;border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:16px}
-input:focus{outline:none;border-color:#3b82f6}
-button{width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer}
-button:disabled{opacity:.6;cursor:default}
-#status{margin-top:14px;font-size:12.5px;color:#f59e0b;min-height:16px}
+#status{font-size:13px;color:#6b88a8}
 #status.err{color:#ff3355}
-#status.ok{color:#10b981}
 #portalFrame{display:none;position:fixed;inset:0;width:100vw;height:100vh;border:none;z-index:9999;background:#02060d}
 body.portal-on{display:block;padding:0}
-body.portal-on .card{display:none}
+body.portal-on #status{display:none}
 </style>
 </head>
 <body>
-<div class="card">
-<div class="ttl">Portal Esposende</div>
-<div class="sub">Central de Auditoria &amp; Controle</div>
-<form id="loginForm">
-<label for="email">E-mail</label>
-<input id="email" type="email" autocomplete="username" required>
-<label for="password">Senha</label>
-<input id="password" type="password" autocomplete="current-password" required>
-<button id="btn" type="submit">Entrar</button>
-</form>
-<div id="status"></div>
-</div>
+<div id="status">Abrindo o portal...</div>
 <iframe id="portalFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups allow-top-navigation-by-user-activation allow-popups-to-escape-sandbox"></iframe>
 <script>
-var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
-var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
-var sb=supabase.createClient(SB_URL,SB_KEY);
-var BUCKET='portal-file';
-var FILE_PATH='PORTAL_ESPOSENDE_V4.html';
+// Sem tela de login por decisão do Ricardo (2026-08-09) — acesso direto pelo link.
+// URL assinada de longa duração (10 anos) pro arquivo no bucket privado do Supabase Storage;
+// não precisa de sessão/autenticação pra abrir.
+var FILE_URL='https://rdztzurfesnobfkazgpm.supabase.co/storage/v1/object/sign/portal-file/PORTAL_ESPOSENDE_V4.html?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iZjhkMGUwYy00NmIzLTRiODAtOWMzZC1jN2FkNzY4N2U2YzAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwb3J0YWwtZmlsZS9QT1JUQUxfRVNQT1NFTkRFX1Y0Lmh0bWwiLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg2Mjc0NDUwLCJleHAiOjIxMDE2MzQ0NTB9.j1q3TuyJGNDV-Mno-dwcnZwtnvJUtV1U_H4lV7NzCTc';
 
 function setStatus(msg,cls){
   var el=document.getElementById('status');
-  el.textContent=msg;el.className=cls||'';
+  if(el){ el.textContent=msg; el.className=cls||''; }
 }
 
-var CACHE_DB='portal_cache_v1',CACHE_STORE='files';
+var CACHE_DB='portal_cache_v1',CACHE_STORE='files',CACHE_KEY='portal';
 function cacheOpen(){
   return new Promise(function(resolve,reject){
     var req=indexedDB.open(CACHE_DB,1);
@@ -95,77 +73,56 @@ function showPortalHtml(html){
 }
 
 async function downloadFreshPortal(){
-  var res=await sb.storage.from(BUCKET).createSignedUrl(FILE_PATH,3600);
-  if(res.error)throw new Error(res.error.message);
-  var fileRes=await fetch(res.data.signedUrl);
-  if(!fileRes.ok)throw new Error('status '+fileRes.status);
-  return await fileRes.text();
+  var res=await fetch(FILE_URL,{cache:'no-store'});
+  if(!res.ok)throw new Error('status '+res.status);
+  return await res.text();
+}
+
+async function checkEtag(){
+  try{
+    var res=await fetch(FILE_URL,{method:'HEAD',cache:'no-store'});
+    return res.headers.get('ETag');
+  }catch(e){ return null; }
 }
 
 async function openPortal(){
-  var cached=await cacheGet(FILE_PATH);
+  var cached=await cacheGet(CACHE_KEY);
 
   if(cached){
     // Mostra o cache local na hora — sem esperar rede nenhuma.
     showPortalHtml(cached.html);
-    setStatus('Portal aberto (cache local). Verificando atualização...','ok');
-    // Checagem leve de versão (poucos bytes, não baixa o arquivo inteiro) via list().
-    try{
-      var listRes=await sb.storage.from(BUCKET).list('',{search:FILE_PATH,limit:1});
-      var etag=(!listRes.error && listRes.data && listRes.data[0] && listRes.data[0].metadata) ? listRes.data[0].metadata.eTag : null;
-      if(etag && etag===cached.etag){
-        setStatus('Portal aberto (atualizado).','ok');
-        return;
-      }
-    }catch(e){}
+    setStatus('Portal aberto (cache local). Verificando atualização...','');
+    var etag=await checkEtag();
+    if(etag && etag===cached.etag){
+      setStatus('Portal aberto (atualizado).','');
+      return;
+    }
     // Versão diferente (ou não deu pra checar) — baixa em segundo plano e avisa,
     // sem tirar o que já está na tela (não perde o que o usuário já está vendo/fazendo).
     try{
       var freshHtml=await downloadFreshPortal();
-      cacheSet(FILE_PATH,{html:freshHtml,etag:etag||null,savedAt:new Date().toISOString()});
-      setStatus('Nova versão do portal disponível — atualize a página (F5) pra carregar.','ok');
+      cacheSet(CACHE_KEY,{html:freshHtml,etag:etag||null,savedAt:new Date().toISOString()});
+      setStatus('Nova versão do portal disponível — atualize a página (F5) pra carregar.','');
     }catch(e){
-      setStatus('Portal aberto (cache local).','ok');
+      setStatus('Portal aberto (cache local).','');
     }
     return;
   }
 
   // Sem cache (primeiro acesso neste navegador) — precisa baixar antes de mostrar algo.
-  setStatus('Abrindo o portal...','ok');
+  setStatus('Abrindo o portal...','');
   try{
     var html=await downloadFreshPortal();
     showPortalHtml(html);
-    setStatus('Portal aberto.','ok');
-    var etag2=null;
-    try{
-      var listRes2=await sb.storage.from(BUCKET).list('',{search:FILE_PATH,limit:1});
-      if(!listRes2.error && listRes2.data && listRes2.data[0] && listRes2.data[0].metadata)etag2=listRes2.data[0].metadata.eTag;
-    }catch(e){}
-    cacheSet(FILE_PATH,{html:html,etag:etag2,savedAt:new Date().toISOString()});
+    setStatus('Portal aberto.','');
+    var etag2=await checkEtag();
+    cacheSet(CACHE_KEY,{html:html,etag:etag2,savedAt:new Date().toISOString()});
   }catch(e){
     setStatus('Erro ao abrir o portal: '+e.message,'err');
   }
 }
 
-async function tryAutoLogin(){
-  var res=await sb.auth.getSession();
-  if(res.data&&res.data.session){ openPortal(); return true; }
-  return false;
-}
-
-document.getElementById('loginForm').addEventListener('submit',async function(e){
-  e.preventDefault();
-  var email=document.getElementById('email').value;
-  var password=document.getElementById('password').value;
-  var btn=document.getElementById('btn');
-  btn.disabled=true;
-  setStatus('Entrando...','');
-  var res=await sb.auth.signInWithPassword({email:email,password:password});
-  if(res.error){ setStatus('Login invalido: '+res.error.message,'err'); btn.disabled=false; return; }
-  await openPortal();
-});
-
-tryAutoLogin();
+openPortal();
 </script>
 </body>
 </html>
