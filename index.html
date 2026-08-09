@@ -29,6 +29,13 @@ function setStatus(msg,cls){
   if(el){ el.textContent=msg; el.className=cls||''; }
 }
 
+// Marca que o usuário já começou a mexer (clique/tecla) — usado só pra não
+// recarregar sozinho embaixo de alguém no meio de um upload/formulário.
+window.__portalUserActive = false;
+['pointerdown','keydown'].forEach(function(ev){
+  window.addEventListener(ev, function(){ window.__portalUserActive = true; }, {capture:true, passive:true});
+});
+
 var CACHE_DB='portal_cache_v1',CACHE_STORE='files',CACHE_KEY='portal';
 function cacheOpen(){
   return new Promise(function(resolve,reject){
@@ -100,12 +107,20 @@ async function openPortal(){
       setStatus('Portal aberto (atualizado).','');
       return;
     }
-    // Versão diferente (ou não deu pra checar) — baixa em segundo plano e avisa,
-    // sem tirar o que já está na tela (não perde o que o usuário já está vendo/fazendo).
+    // Versão diferente (ou não deu pra checar) — baixa em segundo plano e recarrega
+    // sozinho. Antes pedia pra apertar F5 manualmente — a maioria não via o aviso e
+    // ficava com a versão antiga (foi o que aconteceu com o RH quebrado 09/08/2026).
+    // Só recarrega se o usuário ainda não mexeu em nada (sem cliques/digitação) nos
+    // primeiros segundos — evita interromper alguém já preenchendo um upload.
     try{
       var freshHtml=await downloadFreshPortal();
       cacheSet(CACHE_KEY,{html:freshHtml,ver:ver||null,savedAt:new Date().toISOString()});
-      setStatus('Nova versão do portal disponível — atualize a página (F5) pra carregar.','');
+      if(!window.__portalUserActive){
+        setStatus('Nova versão encontrada — atualizando...','');
+        setTimeout(function(){ location.reload(); },600);
+      }else{
+        setStatus('Nova versão do portal disponível — atualize a página (F5) pra carregar.','');
+      }
     }catch(e){
       setStatus('Portal aberto (cache local).','');
     }
