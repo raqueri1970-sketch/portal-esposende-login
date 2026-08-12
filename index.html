@@ -22,7 +22,13 @@ body.portal-on #status{display:none}
 // Sem tela de login por decisão do Ricardo (2026-08-09) — acesso direto pelo link.
 // URL assinada de longa duração (10 anos) pro arquivo no bucket privado do Supabase Storage;
 // não precisa de sessão/autenticação pra abrir.
-var FILE_URL='https://rdztzurfesnobfkazgpm.supabase.co/storage/v1/object/sign/portal-file/PORTAL_ESPOSENDE_V4.html?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iZjhkMGUwYy00NmIzLTRiODAtOWMzZC1jN2FkNzY4N2U2YzAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwb3J0YWwtZmlsZS9QT1JUQUxfRVNQT1NFTkRFX1Y0Lmh0bWwiLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg2Mjc0NDUwLCJleHAiOjIxMDE2MzQ0NTB9.j1q3TuyJGNDV-Mno-dwcnZwtnvJUtV1U_H4lV7NzCTc';
+// Aponta pra um NOME DE ARQUIVO NOVO a cada deploy — não reaproveitar "PORTAL_ESPOSENDE_V4.html".
+// O storage-api do Supabase manda "Expires" igual ao "exp" do token assinado, então uma URL
+// de vida longa (10 anos) fica cacheada por CDN pelo mesmo prazo — sobrescrever o objeto NÃO
+// invalida esse cache. Único jeito confiável de publicar uma atualização é subir com um nome
+// de objeto diferente (o path faz parte da chave de cache) e trocar essa URL aqui. Ver
+// C:\Users\controladoria\.claude\skills\sistema-de-inventario\SKILL.md pra mais contexto.
+var FILE_URL='https://rdztzurfesnobfkazgpm.supabase.co/storage/v1/object/sign/portal-file/PORTAL_ESPOSENDE_V4_20260812.html?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iZjhkMGUwYy00NmIzLTRiODAtOWMzZC1jN2FkNzY4N2U2YzAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwb3J0YWwtZmlsZS9QT1JUQUxfRVNQT1NFTkRFX1Y0XzIwMjYwODEyLmh0bWwiLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg2NTQ3MTQ3LCJleHAiOjIxMDE5MDcxNDd9.fiVrEQQ6JAz5YKLE7t2IEZYp_h2wpT8bijGAUWoEvrs';
 
 function setStatus(msg,cls){
   var el=document.getElementById('status');
