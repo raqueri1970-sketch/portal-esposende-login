@@ -51,6 +51,17 @@ function mostrarBannerAtualizacao(){
   var el=document.getElementById('update-banner');
   if(el) el.classList.add('on');
 }
+function mostrarBannerFalhaDownload(){
+  // Achou que tem versão nova mas NÃO conseguiu baixar o arquivo grande (~2MB) — sinal fraco
+  // no celular derruba isso no meio do caminho. Antes esse caso ficava mudo, sem aviso nenhum
+  // (só "Portal aberto (cache local)"), fazendo parecer que a correção nunca chegou.
+  var el=document.getElementById('update-banner');
+  if(!el)return;
+  if(el.childNodes[0]) el.childNodes[0].textContent='⚠️ Tem versão nova, mas não consegui baixar agora (sinal fraco?). ';
+  var btn=el.querySelector('button');
+  if(btn){ btn.textContent='Tentar de novo'; btn.onclick=function(){ location.reload(); }; }
+  el.classList.add('on');
+}
 
 // Marca que o usuário já começou a mexer (clique/tecla) — usado só pra não
 // recarregar sozinho embaixo de alguém no meio de um upload/formulário.
@@ -103,9 +114,15 @@ function showPortalHtml(html){
 }
 
 async function downloadFreshPortal(){
-  var res=await fetch(FILE_URL,{cache:'no-store'});
-  if(!res.ok)throw new Error('status '+res.status);
-  return await res.text();
+  // Timeout explícito — sem isso, numa conexão de celular ruim o fetch pode ficar pendurado
+  // por muito tempo sem nunca cair no catch, deixando a tela "carregando" sem fim.
+  var ctrl=new AbortController();
+  var timer=setTimeout(function(){ ctrl.abort(); }, 25000);
+  try{
+    var res=await fetch(FILE_URL,{cache:'no-store',signal:ctrl.signal});
+    if(!res.ok)throw new Error('status '+res.status);
+    return await res.text();
+  } finally { clearTimeout(timer); }
 }
 
 async function checkVersion(){
@@ -146,7 +163,10 @@ async function openPortal(){
         mostrarBannerAtualizacao();
       }
     }catch(e){
+      // Achou versão nova mas não conseguiu baixar (rede caiu no meio) — antes ficava mudo
+      // aqui, agora avisa com um botão pra tentar de novo.
       setStatus('Portal aberto (cache local).','');
+      mostrarBannerFalhaDownload();
     }
     return;
   }
