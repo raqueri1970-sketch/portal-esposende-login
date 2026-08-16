@@ -135,12 +135,26 @@ async function checkVersion(){
   }catch(e){ return null; }
 }
 
-async function openPortal(){
-  var cached=await cacheGet(CACHE_KEY);
+// No celular o padrão de uso é diferente do desktop: em vez de fechar/reabrir a aba
+// ou dar F5, o usuário troca de app (WhatsApp, câmera...) e volta. Nesse caso o Safari/
+// Chrome mobile costuma RESTAURAR a aba da memória (bfcache) em vez de recarregar do
+// zero — o script não roda de novo, então a checagem de versão (que só acontecia uma
+// vez, no carregamento inicial) nunca disparava e o portal parecia "nunca atualizar"
+// no celular, mesmo já existindo a lógica de auto-atualização abaixo. Por isso a
+// checagem foi extraída pra checkForUpdates() e é chamada de novo sempre que a aba
+// volta a ficar visível (visibilitychange) ou é restaurada do cache (pageshow
+// persisted) — não só no load inicial.
+var __checkingUpdate=false, __lastCheckAt=0;
+async function checkForUpdates(){
+  if(__checkingUpdate) return;
+  var now=Date.now();
+  if(now-__lastCheckAt<15000) return; // evita checagens repetidas em rajada
+  __lastCheckAt=now;
+  __checkingUpdate=true;
+  try{
+    var cached=await cacheGet(CACHE_KEY);
+    if(!cached) return; // ainda não terminou o carregamento inicial
 
-  if(cached){
-    // Mostra o cache local na hora — sem esperar rede nenhuma.
-    showPortalHtml(cached.html);
     setStatus('Portal aberto (cache local). Verificando atualização...','');
     var ver=await checkVersion();
     if(ver && ver===cached.ver){
@@ -168,6 +182,19 @@ async function openPortal(){
       setStatus('Portal aberto (cache local).','');
       mostrarBannerFalhaDownload();
     }
+  }finally{
+    __checkingUpdate=false;
+  }
+}
+
+async function openPortal(){
+  var cached=await cacheGet(CACHE_KEY);
+
+  if(cached){
+    // Mostra o cache local na hora — sem esperar rede nenhuma.
+    showPortalHtml(cached.html);
+    __lastCheckAt=0; // força a 1a checagem do openPortal a não ser bloqueada pelo throttle
+    await checkForUpdates();
     return;
   }
 
@@ -179,12 +206,20 @@ async function openPortal(){
     setStatus('Portal aberto.','');
     var ver2=await checkVersion();
     cacheSet(CACHE_KEY,{html:html,ver:ver2,savedAt:new Date().toISOString()});
+    __lastCheckAt=Date.now();
   }catch(e){
     setStatus('Erro ao abrir o portal: '+e.message,'err');
   }
 }
 
 openPortal();
+
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState==='visible') checkForUpdates();
+});
+window.addEventListener('pageshow', function(e){
+  if(e.persisted) checkForUpdates();
+});
 </script>
 </body>
 </html>
