@@ -3,108 +3,72 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Portal Esposende</title>
+<title>Portal Esposende — Entrar</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{background:#02060d;color:#fff;font-family:Inter,Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
-#status{font-size:13px;color:#6b88a8}
+.card{width:100%;max-width:340px;background:#080f1c;border:1px solid rgba(148,163,184,.12);border-radius:14px;padding:28px 24px}
+.ttl{font-size:18px;font-weight:800;margin-bottom:4px}
+.sub{font-size:12.5px;color:#6b88a8;margin-bottom:22px}
+label{display:block;font-size:11.5px;color:#a8bdd8;margin-bottom:6px;font-weight:600}
+input{width:100%;background:#0b1423;border:1px solid rgba(148,163,184,.24);color:#fff;border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:16px}
+input:focus{outline:none;border-color:#3b82f6}
+button{width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.6;cursor:default}
+#status{margin-top:14px;font-size:12.5px;color:#f59e0b;min-height:16px}
 #status.err{color:#ff3355}
+#status.ok{color:#10b981}
 #portalFrame{display:none;position:fixed;inset:0;width:100vw;height:100vh;border:none;z-index:9999;background:#02060d}
 body.portal-on{display:block;padding:0}
-body.portal-on #status{display:none}
-#update-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:#1d4ed8;color:#fff;padding:10px 14px;font-size:13px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.4);align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
-#update-banner.on{display:flex}
-#update-banner button{background:#fff;color:#1d4ed8;border:none;border-radius:6px;padding:6px 14px;font-weight:700;font-size:13px;cursor:pointer}
-#update-banner .dispensar{background:transparent;color:#dbeafe;text-decoration:underline;padding:6px 4px}
+body.portal-on .card{display:none}
+#btnSair{position:fixed;top:10px;right:10px;z-index:10000;display:none;background:rgba(15,23,42,.88);color:#94a3b8;border:1px solid rgba(148,163,184,.24);border-radius:8px;padding:6px 12px;font-size:11.5px;cursor:pointer}
+body.portal-on #btnSair{display:block}
 </style>
 </head>
 <body>
-<div id="status">Abrindo o portal...</div>
-<!-- Banner de "nova versão" — FORA do #status de propósito: o #status fica escondido (CSS
-     acima) assim que o portal abre com sucesso (é quase instantâneo, vem do cache local), então
-     um aviso escrito só no #status NUNCA chegava a ser visto de verdade. Esse banner fica por
-     cima do iframe do portal e não depende do estado portal-on pra aparecer. -->
-<div id="update-banner">
-  🔄 Nova versão do Portal disponível.
-  <button onclick="location.reload()">Atualizar agora</button>
-  <span class="dispensar" onclick="document.getElementById('update-banner').classList.remove('on')">Agora não</span>
+<div class="card">
+  <div class="ttl">🏢 Portal Esposende</div>
+  <div class="sub">Central de Auditoria &amp; Controle</div>
+  <form id="loginForm">
+    <label for="email">E-mail</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="password">Senha</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <button id="btn" type="submit">Entrar</button>
+  </form>
+  <div id="status"></div>
 </div>
-<iframe id="portalFrame" allow="microphone *" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups allow-top-navigation-by-user-activation allow-popups-to-escape-sandbox"></iframe>
+<button id="btnSair" type="button">Sair</button>
+<iframe id="portalFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups allow-top-navigation-by-user-activation allow-popups-to-escape-sandbox"></iframe>
 <script>
-// Sem tela de login por decisão do Ricardo (2026-08-09) — acesso direto pelo link.
-// URL assinada de longa duração (10 anos) pro arquivo no bucket privado do Supabase Storage;
-// não precisa de sessão/autenticação pra abrir.
-// Aponta pra um NOME DE ARQUIVO NOVO a cada deploy — não reaproveitar "PORTAL_ESPOSENDE_V4.html".
-// O storage-api do Supabase manda "Expires" igual ao "exp" do token assinado, então uma URL
-// de vida longa (10 anos) fica cacheada por CDN pelo mesmo prazo — sobrescrever o objeto NÃO
-// invalida esse cache. Único jeito confiável de publicar uma atualização é subir com um nome
-// de objeto diferente (o path faz parte da chave de cache) e trocar essa URL aqui. Ver
-// C:\Users\controladoria\.claude\skills\sistema-de-inventario\SKILL.md pra mais contexto.
-var FILE_URL='https://rdztzurfesnobfkazgpm.supabase.co/storage/v1/object/sign/portal-file/PORTAL_ESPOSENDE_V4.html?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iZjhkMGUwYy00NmIzLTRiODAtOWMzZC1jN2FkNzY4N2U2YzAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwb3J0YWwtZmlsZS9QT1JUQUxfRVNQT1NFTkRFX1Y0Lmh0bWwiLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg2NjUwOTM5LCJleHAiOjIxMDIwMTA5Mzl9.vc3kc3Cs6R9QzO4Oet0bP12mi2TIFcz1868JIGSu7sA';
+var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
+var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
+var sb=supabase.createClient(SB_URL,SB_KEY);
+var BUCKET='portal-file';
+// Caminho novo (2026-08-19): o antigo 'PORTAL_ESPOSENDE_V4.html' tinha uma URL assinada de
+// 10 anos publica no historico do repo GitHub Pages, que continuaria funcionando pra sempre
+// mesmo com o login de volta. Trocado de caminho (e o objeto antigo removido do Storage) pra
+// invalidar aquele acesso — URLs assinadas antigas ficam presas ao caminho, nao ao conteudo.
+var FILE_PATH='PORTAL_ESPOSENDE_V4_AUTH.html';
 
 function setStatus(msg,cls){
   var el=document.getElementById('status');
-  if(el){ el.textContent=msg; el.className=cls||''; }
-}
-function mostrarBannerAtualizacao(){
-  var el=document.getElementById('update-banner');
-  if(el) el.classList.add('on');
-}
-function mostrarBannerFalhaDownload(){
-  // Achou que tem versão nova mas NÃO conseguiu baixar o arquivo grande (~2MB) — sinal fraco
-  // no celular derruba isso no meio do caminho. Antes esse caso ficava mudo, sem aviso nenhum
-  // (só "Portal aberto (cache local)"), fazendo parecer que a correção nunca chegou.
-  var el=document.getElementById('update-banner');
-  if(!el)return;
-  if(el.childNodes[0]) el.childNodes[0].textContent='⚠️ Tem versão nova, mas não consegui baixar agora (sinal fraco?). ';
-  var btn=el.querySelector('button');
-  if(btn){ btn.textContent='Tentar de novo'; btn.onclick=function(){ location.reload(); }; }
-  el.classList.add('on');
+  el.textContent=msg;el.className=cls||'';
 }
 
-// Marca que o usuário já começou a mexer (clique/tecla) — usado só pra não
-// recarregar sozinho embaixo de alguém no meio de um upload/formulário.
-window.__portalUserActive = false;
-['pointerdown','keydown'].forEach(function(ev){
-  window.addEventListener(ev, function(){ window.__portalUserActive = true; }, {capture:true, passive:true});
-});
-
-var CACHE_DB='portal_cache_v1',CACHE_STORE='files',CACHE_KEY='portal';
-function cacheOpen(){
-  return new Promise(function(resolve,reject){
-    var req=indexedDB.open(CACHE_DB,1);
-    req.onupgradeneeded=function(){ req.result.createObjectStore(CACHE_STORE); };
-    req.onsuccess=function(){ resolve(req.result); };
-    req.onerror=function(){ reject(req.error); };
-  });
-}
-function cacheGet(key){
-  return cacheOpen().then(function(db){
-    return new Promise(function(resolve){
-      try{
-        var tx=db.transaction(CACHE_STORE,'readonly');
-        var rq=tx.objectStore(CACHE_STORE).get(key);
-        rq.onsuccess=function(){ resolve(rq.result||null); };
-        rq.onerror=function(){ resolve(null); };
-      }catch(e){ resolve(null); }
-    });
-  }).catch(function(){ return null; });
-}
-function cacheSet(key,val){
-  return cacheOpen().then(function(db){
-    return new Promise(function(resolve){
-      try{
-        var tx=db.transaction(CACHE_STORE,'readwrite');
-        tx.objectStore(CACHE_STORE).put(val,key);
-        tx.oncomplete=function(){ resolve(true); };
-        tx.onerror=function(){ resolve(false); };
-      }catch(e){ resolve(false); }
-    });
-  }).catch(function(){ return false; });
-}
-
-function showPortalHtml(html){
+// O Supabase Storage força Content-Type text/plain + CSP sandbox em qualquer
+// arquivo (proteção deles contra hospedar HTML executável direto). Por isso
+// buscamos o conteúdo via fetch() autenticado e montamos um Blob local — o
+// mesmo truque que o próprio portal já usa pros módulos (getBlobUrl/execMod).
+async function openPortal(){
+  setStatus('Abrindo o portal...','ok');
+  var res=await sb.storage.from(BUCKET).createSignedUrl(FILE_PATH,3600);
+  if(res.error){ setStatus('Erro ao abrir o portal: '+res.error.message,'err'); return; }
+  var fileRes=await fetch(res.data.signedUrl);
+  if(!fileRes.ok){ setStatus('Erro ao baixar o portal (status '+fileRes.status+')','err'); return; }
+  var html=await fileRes.text();
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
@@ -113,113 +77,37 @@ function showPortalHtml(html){
   document.body.classList.add('portal-on');
 }
 
-async function downloadFreshPortal(){
-  // Timeout explícito — sem isso, numa conexão de celular ruim o fetch pode ficar pendurado
-  // por muito tempo sem nunca cair no catch, deixando a tela "carregando" sem fim.
-  var ctrl=new AbortController();
-  var timer=setTimeout(function(){ ctrl.abort(); }, 25000);
-  try{
-    var res=await fetch(FILE_URL,{cache:'no-store',signal:ctrl.signal});
-    if(!res.ok)throw new Error('status '+res.status);
-    return await res.text();
-  } finally { clearTimeout(timer); }
+async function tryAutoLogin(){
+  var res=await sb.auth.getSession();
+  if(res.data&&res.data.session){ openPortal(); return true; }
+  return false;
 }
 
-async function checkVersion(){
-  // ETag não é lido por fetch() cross-origin (servidor não manda
-  // Access-Control-Expose-Headers pra ele) — usa Last-Modified, que é um dos
-  // poucos headers liberados por padrão pelo CORS mesmo sem essa config.
-  try{
-    var res=await fetch(FILE_URL,{method:'HEAD',cache:'no-store'});
-    return res.headers.get('Last-Modified');
-  }catch(e){ return null; }
-}
-
-// No celular o padrão de uso é diferente do desktop: em vez de fechar/reabrir a aba
-// ou dar F5, o usuário troca de app (WhatsApp, câmera...) e volta. Nesse caso o Safari/
-// Chrome mobile costuma RESTAURAR a aba da memória (bfcache) em vez de recarregar do
-// zero — o script não roda de novo, então a checagem de versão (que só acontecia uma
-// vez, no carregamento inicial) nunca disparava e o portal parecia "nunca atualizar"
-// no celular, mesmo já existindo a lógica de auto-atualização abaixo. Por isso a
-// checagem foi extraída pra checkForUpdates() e é chamada de novo sempre que a aba
-// volta a ficar visível (visibilitychange) ou é restaurada do cache (pageshow
-// persisted) — não só no load inicial.
-var __checkingUpdate=false, __lastCheckAt=0;
-async function checkForUpdates(){
-  if(__checkingUpdate) return;
-  var now=Date.now();
-  if(now-__lastCheckAt<15000) return; // evita checagens repetidas em rajada
-  __lastCheckAt=now;
-  __checkingUpdate=true;
-  try{
-    var cached=await cacheGet(CACHE_KEY);
-    if(!cached) return; // ainda não terminou o carregamento inicial
-
-    setStatus('Portal aberto (cache local). Verificando atualização...','');
-    var ver=await checkVersion();
-    if(ver && ver===cached.ver){
-      setStatus('Portal aberto (atualizado).','');
-      return;
-    }
-    // Versão diferente (ou não deu pra checar) — baixa em segundo plano e recarrega
-    // sozinho. Antes pedia pra apertar F5 manualmente — a maioria não via o aviso e
-    // ficava com a versão antiga (foi o que aconteceu com o RH quebrado 09/08/2026).
-    // Só recarrega se o usuário ainda não mexeu em nada (sem cliques/digitação) nos
-    // primeiros segundos — evita interromper alguém já preenchendo um upload.
-    try{
-      var freshHtml=await downloadFreshPortal();
-      cacheSet(CACHE_KEY,{html:freshHtml,ver:ver||null,savedAt:new Date().toISOString()});
-      if(!window.__portalUserActive){
-        setStatus('Nova versão encontrada — atualizando...','');
-        setTimeout(function(){ location.reload(); },600);
-      }else{
-        setStatus('Nova versão do portal disponível — atualize a página (F5) pra carregar.','');
-        mostrarBannerAtualizacao();
-      }
-    }catch(e){
-      // Achou versão nova mas não conseguiu baixar (rede caiu no meio) — antes ficava mudo
-      // aqui, agora avisa com um botão pra tentar de novo.
-      setStatus('Portal aberto (cache local).','');
-      mostrarBannerFalhaDownload();
-    }
-  }finally{
-    __checkingUpdate=false;
-  }
-}
-
-async function openPortal(){
-  var cached=await cacheGet(CACHE_KEY);
-
-  if(cached){
-    // Mostra o cache local na hora — sem esperar rede nenhuma.
-    showPortalHtml(cached.html);
-    __lastCheckAt=0; // força a 1a checagem do openPortal a não ser bloqueada pelo throttle
-    await checkForUpdates();
-    return;
-  }
-
-  // Sem cache (primeiro acesso neste navegador) — precisa baixar antes de mostrar algo.
-  setStatus('Abrindo o portal...','');
-  try{
-    var html=await downloadFreshPortal();
-    showPortalHtml(html);
-    setStatus('Portal aberto.','');
-    var ver2=await checkVersion();
-    cacheSet(CACHE_KEY,{html:html,ver:ver2,savedAt:new Date().toISOString()});
-    __lastCheckAt=Date.now();
-  }catch(e){
-    setStatus('Erro ao abrir o portal: '+e.message,'err');
-  }
-}
-
-openPortal();
-
-document.addEventListener('visibilitychange', function(){
-  if(document.visibilityState==='visible') checkForUpdates();
+document.getElementById('loginForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  var email=document.getElementById('email').value;
+  var password=document.getElementById('password').value;
+  var btn=document.getElementById('btn');
+  btn.disabled=true;
+  setStatus('Entrando...','');
+  var res=await sb.auth.signInWithPassword({email:email,password:password});
+  if(res.error){ setStatus('Login inválido: '+res.error.message,'err'); btn.disabled=false; return; }
+  await openPortal();
 });
-window.addEventListener('pageshow', function(e){
-  if(e.persisted) checkForUpdates();
+
+document.getElementById('btnSair').addEventListener('click',async function(){
+  await sb.auth.signOut();
+  document.body.classList.remove('portal-on');
+  var ifr=document.getElementById('portalFrame');
+  ifr.style.display='none';
+  ifr.src='';
+  document.getElementById('email').value='';
+  document.getElementById('password').value='';
+  setStatus('');
+  document.getElementById('btn').disabled=false;
 });
+
+tryAutoLogin();
 </script>
 </body>
 </html>
