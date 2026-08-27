@@ -63,6 +63,62 @@ var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 var sb=supabase.createClient(SB_URL,SB_KEY);
 var BUCKET='portal-file';
+var ALMOX_MINIMO_PATCH=`<script id="patch-almox-minimo-seguranca-20260827">
+(function(){
+  var VERSAO='2026-08-27.1';
+  function instalarNoModulo(ifr){
+    try{
+      var w=ifr&&ifr.contentWindow;
+      if(!w||w.__almoxMinimoSegurancaVersao===VERSAO)return;
+      if(typeof w.atualizarPainelEstoque!=='function')return;
+
+      // O estoque mínimo exibido precisa representar toda a meta de segurança,
+      // e não apenas uma média mensal. Ex.: média 1.366,7 x 3 meses = 4.100.
+      var fonte=w.atualizarPainelEstoque.toString();
+      var corrigida=fonte.replace(
+        /const\\s+minimoPadrao\\s*=\\s*Math\\.ceil\\(media\\s*\\);/,
+        'const minimoPadrao = Math.ceil(media * METdaCOBERTURA);'
+      );
+      if(corrigida===fonte&&!/Math\\.ceil\\(media\\s*\\*\\s*METdaCOBERTURA\\)/.test(fonte)){
+        console.warn('[Almoxarifado] Regra de estoque mínimo não localizada; correção não aplicada.');
+        return;
+      }
+      if(corrigida!==fonte)w.eval('atualizarPainelEstoque = '+corrigida);
+
+      // Os mínimos gravados anteriormente foram calculados pela regra antiga e
+      // prevaleciam sobre a nova meta. A migração os remove uma única vez.
+      w.eval("estoqueMinOverrides = {}; try{localStorage.removeItem('almoxarifado_minimos_migrados_20260827');}catch(e){}");
+
+      // Ao mudar os meses de segurança, mínimos editados de uma meta anterior
+      // não podem continuar congelando a coluna EST. MÍNIMO.
+      if(typeof w.alterarMetaCobertura==='function'){
+        var original=w.alterarMetaCobertura;
+        w.alterarMetaCobertura=function(valor){
+          try{w.eval('estoqueMinOverrides = {}')}catch(e){}
+          return original.call(w,valor);
+        };
+      }
+
+      w.__almoxMinimoSegurancaVersao=VERSAO;
+      w.atualizarPainelEstoque();
+      if(typeof w.salvarCacheAlm==='function')w.salvarCacheAlm();
+      console.info('[Almoxarifado] Estoque mínimo sincronizado com os meses de segurança.');
+    }catch(e){console.error('[Almoxarifado] Falha ao aplicar correção do estoque mínimo:',e);}
+  }
+  function acompanhar(){
+    var ifr=document.getElementById('ifr-alm');
+    if(!ifr)return;
+    instalarNoModulo(ifr);
+    if(!ifr.__almoxPatchLoad){
+      ifr.__almoxPatchLoad=true;
+      ifr.addEventListener('load',function(){setTimeout(function(){instalarNoModulo(ifr)},150)});
+    }
+  }
+  new MutationObserver(acompanhar).observe(document.documentElement,{childList:true,subtree:true});
+  setInterval(acompanhar,1000);
+  acompanhar();
+})();
+<\/script>`;
 // Caminho novo (2026-08-19): o antigo 'PORTAL_ESPOSENDE_V4.html' tinha uma URL assinada de
 // 10 anos publica no historico do repo GitHub Pages, que continuaria funcionando pra sempre
 // mesmo com o login de volta. Trocado de caminho (e o objeto antigo removido do Storage) pra
@@ -85,6 +141,8 @@ async function openPortal(){
   var fileRes=await fetch(res.data.signedUrl);
   if(!fileRes.ok){ setStatus('Erro ao baixar o portal (status '+fileRes.status+')','err'); return; }
   var html=await fileRes.text();
+  // Correção isolada da regra do Almoxarifado. Não altera HTML, cards ou gráficos.
+  html=html.replace(/<\/body>/i,ALMOX_MINIMO_PATCH+'</body>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
