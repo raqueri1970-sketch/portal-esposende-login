@@ -125,7 +125,8 @@ var ALMOX_MINIMO_PATCH=`<script id="patch-almox-minimo-seguranca-20260827">
       var p=els[i];
       for(var n=0;n<5&&p;n++,p=p.parentElement){
         var candidatos=Array.from(p.querySelectorAll('*')).filter(function(x){
-          return x.children.length===0&&/R\$\s*[\d.]+,\d{2}/.test(String(x.textContent||''));
+          var t=String(x.textContent||'').trim();
+          return x.children.length===0&&(/R\$\s*[\d.]+,\d{2}/.test(t)||/^[\d.]+,\d{2}$/.test(t));
         });
         if(candidatos.length)return {box:p,value:candidatos[candidatos.length-1]};
       }
@@ -149,6 +150,8 @@ var ALMOX_MINIMO_PATCH=`<script id="patch-almox-minimo-seguranca-20260827">
       var selGer=selects.find(function(s){return /TODOS OS GERENTES/i.test(s.textContent||'')});
       var selIns=selects.find(function(s){return /TODOS OS INSUMOS/i.test(s.textContent||'')});
       var lojasAtivas=null,lojaEscolhida='';
+      var cbsLoja=Array.from(doc.querySelectorAll('.cb-loja-item'));
+      var lojasMarcadas=cbsLoja.length?new Set(cbsLoja.filter(function(cb){return cb.checked}).map(function(cb){return codigoLoja(cb.value)})):null;
       if(selLoja){
         lojaEscolhida=String(selLoja.options[selLoja.selectedIndex]?.text||'');
         if(/TODAS AS LOJAS ATIVAS/i.test(lojaEscolhida)){
@@ -164,6 +167,7 @@ var ALMOX_MINIMO_PATCH=`<script id="patch-almox-minimo-seguranca-20260827">
         var d=r['Data Solicitação']?new Date(r['Data Solicitação']):null;
         if(!d||isNaN(d.getTime())||(ini&&d<ini)||(fim&&d>fim))return;
         var loja=String(r['Empresa Solicitante']||'').trim(),cod=codigoLoja(loja);
+        if(lojasMarcadas&&!lojasMarcadas.has(cod))return;
         if(selLoja){
           if(lojasAtivas&&!lojasAtivas.has(cod))return;
           if(!/TODAS AS LOJAS ATIVAS/i.test(lojaEscolhida)&&codigoLoja(lojaEscolhida)!==cod)return;
