@@ -105,10 +105,104 @@ var ALMOX_MINIMO_PATCH=`<script id="patch-almox-minimo-seguranca-20260827">
       console.info('[Almoxarifado] Estoque mínimo sincronizado com os meses de segurança.');
     }catch(e){console.error('[Almoxarifado] Falha ao aplicar correção do estoque mínimo:',e);}
   }
+  function numeroPtBr(txt){
+    var m=String(txt||'').match(/[\d.]+(?:,\d{1,2})?/);
+    return m?Number(m[0].replace(/\./g,'').replace(',','.'))||0:0;
+  }
+  function dinheiroPtBr(n){
+    return 'R$ '+Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  function codigoLoja(txt){
+    var m=String(txt||'').trim().match(/^(\d+)/);
+    return m?String(parseInt(m[1],10)):String(txt||'').trim().toUpperCase();
+  }
+  function acharCard(doc,rotulo){
+    var alvo=rotulo.toUpperCase();
+    var els=Array.from(doc.querySelectorAll('*')).filter(function(el){
+      return el.children.length===0&&String(el.textContent||'').trim().toUpperCase()===alvo;
+    });
+    for(var i=0;i<els.length;i++){
+      var p=els[i];
+      for(var n=0;n<5&&p;n++,p=p.parentElement){
+        var candidatos=Array.from(p.querySelectorAll('*')).filter(function(x){
+          return x.children.length===0&&/R\$\s*[\d.]+,\d{2}/.test(String(x.textContent||''));
+        });
+        if(candidatos.length)return {box:p,value:candidatos[candidatos.length-1]};
+      }
+    }
+    return null;
+  }
+  function corrigirResumoFinanceiro(ifr){
+    try{
+      var w=ifr&&ifr.contentWindow,doc=w&&w.document;
+      if(!w||!doc||typeof w.eval!=='function')return;
+      var rows=w.eval("typeof dbConsumoRaw!=='undefined'?dbConsumoRaw:[]");
+      if(!rows||!rows.length)return;
+      var datas=Array.from(doc.querySelectorAll('input[type=date]'));
+      if(datas.length<2)return;
+      var ini=datas[0].value?new Date(datas[0].value+'T00:00:00'):null;
+      var fim=datas[1].value?new Date(datas[1].value+'T23:59:59.999'):null;
+      if(!ini&&!fim)return;
+
+      var selects=Array.from(doc.querySelectorAll('select'));
+      var selLoja=selects.find(function(s){return /TODAS AS LOJAS ATIVAS/i.test(s.textContent||'')});
+      var selGer=selects.find(function(s){return /TODOS OS GERENTES/i.test(s.textContent||'')});
+      var selIns=selects.find(function(s){return /TODOS OS INSUMOS/i.test(s.textContent||'')});
+      var lojasAtivas=null,lojaEscolhida='';
+      if(selLoja){
+        lojaEscolhida=String(selLoja.options[selLoja.selectedIndex]?.text||'');
+        if(/TODAS AS LOJAS ATIVAS/i.test(lojaEscolhida)){
+          lojasAtivas=new Set(Array.from(selLoja.options).slice(1).map(function(o){return codigoLoja(o.text||o.value)}).filter(Boolean));
+          if(!lojasAtivas.size)lojasAtivas=null;
+        }
+      }
+      var gerente=selGer?String(selGer.options[selGer.selectedIndex]?.text||''):'';
+      var insumo=selIns?String(selIns.options[selIns.selectedIndex]?.text||''):'';
+      var regMap=w.eval("typeof dbRegionaisMap!=='undefined'?dbRegionaisMap:{}");
+      var total=0;
+      rows.forEach(function(r){
+        var d=r['Data Solicitação']?new Date(r['Data Solicitação']):null;
+        if(!d||isNaN(d.getTime())||(ini&&d<ini)||(fim&&d>fim))return;
+        var loja=String(r['Empresa Solicitante']||'').trim(),cod=codigoLoja(loja);
+        if(selLoja){
+          if(lojasAtivas&&!lojasAtivas.has(cod))return;
+          if(!/TODAS AS LOJAS ATIVAS/i.test(lojaEscolhida)&&codigoLoja(lojaEscolhida)!==cod)return;
+        }
+        if(selGer&&!/TODOS OS GERENTES/i.test(gerente)&&String(regMap[cod]||'NÃO MAPEADO').toUpperCase()!==gerente.toUpperCase())return;
+        if(selIns&&!/TODOS OS INSUMOS/i.test(insumo)&&String(r['Insumo']||'').trim().toUpperCase()!==insumo.trim().toUpperCase())return;
+        var v=Number(r['Custo Atendido']);
+        if(Number.isFinite(v))total+=v;
+      });
+
+      var cardAlm=acharCard(doc,'ALMOXARIFADO');
+      var cardTi=acharCard(doc,'TI'),cardFort=acharCard(doc,'FORTPEL');
+      var cardGeral=acharCard(doc,'TOTAL GERAL');
+      if(!cardAlm||!cardGeral)return;
+      var antigo=numeroPtBr(cardAlm.value.textContent);
+      var totalGeral=total+(cardTi?numeroPtBr(cardTi.value.textContent):0)+(cardFort?numeroPtBr(cardFort.value.textContent):0);
+      cardAlm.value.textContent=dinheiroPtBr(total);
+      cardGeral.value.textContent=dinheiroPtBr(totalGeral);
+
+      // Atualiza os números textuais do gráfico existente sem mudar sua estrutura visual.
+      var secoes=Array.from(doc.querySelectorAll('*')).filter(function(el){return el.children.length===0&&/PARTICIPAÇÃO POR ESTOQUE/i.test(el.textContent||'')});
+      if(secoes.length){
+        var box=secoes[0];for(var j=0;j<4&&box.parentElement;j++)box=box.parentElement;
+        Array.from(box.querySelectorAll('*')).forEach(function(el){
+          if(el.children.length)return;
+          var t=String(el.textContent||'');
+          if(Math.abs(numeroPtBr(t)-antigo)<0.02||Math.abs(numeroPtBr(t)-Math.round(antigo))<0.02){
+            el.textContent=/,\d{2}/.test(t)?total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):Math.round(total).toLocaleString('pt-BR');
+          }
+        });
+      }
+      w.__almoxResumoPeriodo={inicio:datas[0].value,fim:datas[1].value,total:total};
+    }catch(e){console.error('[Almoxarifado] Falha ao corrigir total por período:',e);}
+  }
   function acompanhar(){
     var ifr=document.getElementById('ifr-alm');
     if(!ifr)return;
     instalarNoModulo(ifr);
+    corrigirResumoFinanceiro(ifr);
     if(!ifr.__almoxPatchLoad){
       ifr.__almoxPatchLoad=true;
       ifr.addEventListener('load',function(){setTimeout(function(){instalarNoModulo(ifr)},150)});
