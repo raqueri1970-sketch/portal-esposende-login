@@ -239,6 +239,19 @@ async function openPortal(){
   var fileRes=await fetch(res.data.signedUrl);
   if(!fileRes.ok){ setStatus('Erro ao baixar o portal (status '+fileRes.status+')','err'); return; }
   var html=await fileRes.text();
+  // Identidade do usuário logado para os módulos (ex.: Orçamento & Compras — só o
+  // Administrador altera a verba). Injeta a sessão Auth ANTES de qualquer script do
+  // shell rodar. Nenhum dado sai daqui; fica só no iframe do portal, mesma origem.
+  try{
+    var _s=(await sb.auth.getSession()).data.session;
+    if(_s&&_s.access_token){
+      var _inj='<scr'+'ipt>window.__PORTAL_SESSION='+JSON.stringify({
+        access_token:_s.access_token, refresh_token:_s.refresh_token||'',
+        email:(_s.user&&_s.user.email)||null, uid:(_s.user&&_s.user.id)||null
+      })+';</scr'+'ipt>';
+      html=html.replace(/<\/head>/i,_inj+'</head>');
+    }
+  }catch(e){ console.warn('injeção da sessão falhou',e); }
   // Correção isolada da regra do Almoxarifado. Não altera HTML, cards ou gráficos.
   html=html.replace(/<\/body>/i,ALMOX_MINIMO_PATCH+'</body>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
