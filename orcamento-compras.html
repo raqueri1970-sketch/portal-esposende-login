@@ -35,7 +35,8 @@ let S={session:null,profile:null,deps:[],budgets:[],requests:[],items:[],quotes:
 const depName=id=>S.deps.find(d=>d.id===id)?.nome||'Departamento não identificado',supplierName=id=>S.suppliers.find(f=>f.id===id)?.nome||'Fornecedor',reqItems=id=>S.items.filter(i=>i.solicitacao_id===id).sort((a,b)=>a.linha-b.linha),reqQuotes=id=>S.quotes.filter(q=>q.solicitacao_id===id);
 function busy(on,msg=''){document.getElementById('app').classList.toggle('loading',on);document.getElementById('status').textContent=msg}function error(e){document.getElementById('notice').innerHTML='<div class="notice">'+esc(e.message||e)+'</div>'}
 async function session(){
- const inherited=window.__PORTAL_SESSION||(window.parent!==window&&window.parent.__PORTAL_SESSION);
+ let inherited=window.__PORTAL_SESSION;
+ try{if(!inherited&&window.parent!==window)inherited=window.parent.__PORTAL_SESSION}catch(e){}
  if(inherited?.access_token){const r=await sb.auth.setSession({access_token:inherited.access_token,refresh_token:inherited.refresh_token||''});if(!r.error)S.session=r.data.session}
  if(!S.session)S.session=(await sb.auth.getSession()).data.session;if(!S.session)throw Error('Sua sessão expirou. Entre novamente no Portal Esposende.');
  const p=await sb.from('orc_perfis').select('*').eq('user_id',S.session.user.id).eq('ativo',true).maybeSingle();if(p.error)throw p.error;S.profile=p.data||{perfil:'gerente',departamento_id:null};
