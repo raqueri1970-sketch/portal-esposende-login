@@ -238,15 +238,26 @@ const ORC_UNIFIED_PATCH=`
     box.querySelector('#orc-central-voltar').onclick=function(){box.style.display='none'};
   }
   window.abrirCentralCompras=abrirCentralCompras;
+  function moduloAntigoVisivel(){
+    var botoes=[].slice.call(document.querySelectorAll('button,[role="button"],a'));
+    function tem(txt){return botoes.some(function(b){return (b.textContent||'').replace(/\s+/g,' ').trim().toLowerCase()===txt})}
+    return tem('painel')&&tem('por departamento')&&tem('solicitações')&&tem('cotações')&&tem('conta-corrente');
+  }
+  function acompanharModulo(){
+    if(moduloAntigoVisivel()&&!document.getElementById('orc-central-unica'))abrirCentralCompras();
+  }
   document.addEventListener('click',function(ev){
     var alvo=ev.target&&ev.target.closest&&ev.target.closest('button,a,[onclick]');
     if(!alvo)return;
     var texto=(alvo.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
-    if(texto.indexOf('orçamento & compras')>=0||texto.indexOf('orcamento & compras')>=0){
+    if(texto.indexOf('orçamento & com')>=0||texto.indexOf('orcamento & com')>=0){
       ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
       abrirCentralCompras();
     }
   },true);
+  new MutationObserver(acompanharModulo).observe(document.documentElement,{childList:true,subtree:true});
+  setInterval(acompanharModulo,700);
+  acompanharModulo();
 })();
 <\/script>`;
 // Caminho novo (2026-08-19): o antigo 'PORTAL_ESPOSENDE_V4.html' tinha uma URL assinada de
