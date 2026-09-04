@@ -268,6 +268,49 @@ const ORC_UNIFIED_PATCH=`
 // invalidar aquele acesso — URLs assinadas antigas ficam presas ao caminho, nao ao conteudo.
 var FILE_PATH='PORTAL_ESPOSENDE_V4_AUTH.html';
 
+// Ponte externa: controla a Central pelo documento de login, acima do shell antigo.
+// Assim o módulo legado nunca precisa terminar de carregar para abrir a tela unificada.
+function abrirCentralUnicaExterna(){
+  var old=document.getElementById('orc-central-externa');
+  if(old){old.style.display='flex';return}
+  var box=document.createElement('div');
+  box.id='orc-central-externa';
+  box.style.cssText='position:fixed;inset:0;z-index:2147483646;background:#07111f;display:flex;flex-direction:column';
+  box.innerHTML='<div style="height:52px;flex:0 0 52px;background:#081421;border-bottom:1px solid #20334b;display:flex;align-items:center;padding:0 14px;gap:10px;font-family:Arial,sans-serif">'
+    +'<button id="orc-central-externa-voltar" style="width:auto;background:#132a43;color:#fff;border:1px solid #315170;border-radius:8px;padding:8px 13px;font-weight:700;cursor:pointer">← Voltar ao Portal</button>'
+    +'<strong style="color:#edf4fb">Central de Compras</strong><span style="color:#8ca4bf;font-size:12px">Solicitação e cotação em uma tela</span></div>'
+    +'<iframe id="orc-central-externa-frame" title="Central de Compras" style="width:100%;height:calc(100vh - 52px);border:0;background:#07111f"></iframe>';
+  document.body.appendChild(box);
+  var frame=box.querySelector('#orc-central-externa-frame');
+  if(window.__ORC_PAGE_HTML)frame.srcdoc=window.__ORC_PAGE_HTML;
+  else frame.src='orcamento-compras.html?v=central-unica-3';
+  box.querySelector('#orc-central-externa-voltar').onclick=function(){box.style.display='none'};
+}
+
+function instalarPonteCentral(ifr){
+  function doc(){try{return ifr.contentDocument}catch(e){return null}}
+  function texto(el){return (el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase()}
+  function moduloAntigoAberto(){
+    var d=doc();if(!d)return false;
+    var ts=[].slice.call(d.querySelectorAll('button,[role="button"],a')).map(texto);
+    return ts.includes('painel')&&ts.includes('por departamento')&&ts.includes('solicitações')&&ts.includes('cotações')&&ts.includes('conta-corrente');
+  }
+  function observar(){if(moduloAntigoAberto()&&!document.getElementById('orc-central-externa'))abrirCentralUnicaExterna()}
+  function ligar(){
+    var d=doc();if(!d||d.__orcCentralLigada)return;
+    d.__orcCentralLigada=true;
+    d.addEventListener('click',function(ev){
+      var el=ev.target&&ev.target.closest&&ev.target.closest('button,a,[onclick]');if(!el)return;
+      var t=texto(el);
+      if(t.indexOf('orçamento & com')>=0||t.indexOf('orcamento & com')>=0){
+        ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();abrirCentralUnicaExterna();
+      }
+    },true);
+  }
+  ifr.addEventListener('load',function(){setTimeout(function(){ligar();observar()},100)});
+  setInterval(function(){ligar();observar()},500);
+}
+
 function setStatus(msg,cls){
   var el=document.getElementById('status');
   el.textContent=msg;el.className=cls||'';
@@ -309,6 +352,7 @@ async function openPortal(){
       var _orcSession='<scr'+'ipt>window.__PORTAL_SESSION='+JSON.stringify(_sessionPayload)+';</scr'+'ipt>';
       _orcHtml=_orcHtml.replace(/<\/head>/i,_orcSession+'</head>');
     }
+    window.__ORC_PAGE_HTML=_orcHtml;
     var _orcJson=JSON.stringify(_orcHtml).replace(/<\/script/gi,'<\\/script');
     var _orcInj='<scr'+'ipt>window.__ORC_UNIFIED_HTML='+_orcJson+';</scr'+'ipt>';
     html=html.replace(/<\/head>/i,_orcInj+'</head>');
@@ -321,6 +365,7 @@ async function openPortal(){
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
   ifr.src=blobUrl;
+  instalarPonteCentral(ifr);
   ifr.style.display='block';
   document.body.classList.add('portal-on');
 }
