@@ -222,7 +222,7 @@ var ALMOX_MINIMO_PATCH=`<script id="patch-almox-minimo-seguranca-20260827">
 const ORC_UNIFIED_PATCH=`
 <script>
 (function(){
-  var ORC_URL='/portal-esposende-login/orcamento-compras.html?v=6d118001';
+  var ORC_URL='/portal-esposende-login/orcamento-compras.html?v=central-unica-2';
   function abrirCentralCompras(){
     var antigo=document.getElementById('orc-central-unica');
     if(antigo){antigo.style.display='flex';return}
@@ -233,8 +233,10 @@ const ORC_UNIFIED_PATCH=`
       +'<button id="orc-central-voltar" style="background:#132a43;color:#fff;border:1px solid #315170;border-radius:8px;padding:8px 13px;font-weight:700;cursor:pointer">← Voltar ao Portal</button>'
       +'<strong style="color:#edf4fb">Central de Compras</strong>'
       +'<span style="color:#8ca4bf;font-size:12px">Solicitação e cotação em uma tela</span></div>'
-      +'<iframe id="orc-central-frame" title="Central de Compras" src="'+ORC_URL+'" style="width:100%;height:calc(100vh - 52px);border:0;background:#07111f"></iframe>';
+      +'<iframe id="orc-central-frame" title="Central de Compras" style="width:100%;height:calc(100vh - 52px);border:0;background:#07111f"></iframe>';
     document.body.appendChild(box);
+    var frame=box.querySelector('#orc-central-frame');
+    if(window.__ORC_UNIFIED_HTML){frame.srcdoc=window.__ORC_UNIFIED_HTML}else{frame.src=ORC_URL}
     box.querySelector('#orc-central-voltar').onclick=function(){box.style.display='none'};
   }
   window.abrirCentralCompras=abrirCentralCompras;
@@ -285,16 +287,32 @@ async function openPortal(){
   // Identidade do usuário logado para os módulos (ex.: Orçamento & Compras — só o
   // Administrador altera a verba). Injeta a sessão Auth ANTES de qualquer script do
   // shell rodar. Nenhum dado sai daqui; fica só no iframe do portal, mesma origem.
+  var _sessionPayload=null;
   try{
     var _s=(await sb.auth.getSession()).data.session;
     if(_s&&_s.access_token){
-      var _inj='<scr'+'ipt>window.__PORTAL_SESSION='+JSON.stringify({
+      _sessionPayload={
         access_token:_s.access_token, refresh_token:_s.refresh_token||'',
         email:(_s.user&&_s.user.email)||null, uid:(_s.user&&_s.user.id)||null
-      })+';</scr'+'ipt>';
+      };
+      var _inj='<scr'+'ipt>window.__PORTAL_SESSION='+JSON.stringify(_sessionPayload)+';</scr'+'ipt>';
       html=html.replace(/<\/head>/i,_inj+'</head>');
     }
   }catch(e){ console.warn('injeção da sessão falhou',e); }
+  // Pré-carrega a Central no mesmo documento do Portal. Isso evita que navegadores
+  // bloqueiem o iframe interno e garante que a sessão chegue antes do primeiro script.
+  try{
+    var _orcRes=await fetch('orcamento-compras.html?v=central-unica-2',{cache:'no-store'});
+    if(!_orcRes.ok)throw new Error('status '+_orcRes.status);
+    var _orcHtml=await _orcRes.text();
+    if(_sessionPayload){
+      var _orcSession='<scr'+'ipt>window.__PORTAL_SESSION='+JSON.stringify(_sessionPayload)+';</scr'+'ipt>';
+      _orcHtml=_orcHtml.replace(/<\/head>/i,_orcSession+'</head>');
+    }
+    var _orcJson=JSON.stringify(_orcHtml).replace(/<\/script/gi,'<\\/script');
+    var _orcInj='<scr'+'ipt>window.__ORC_UNIFIED_HTML='+_orcJson+';</scr'+'ipt>';
+    html=html.replace(/<\/head>/i,_orcInj+'</head>');
+  }catch(e){ console.warn('pré-carga da Central falhou',e); }
   // Ao clicar no módulo Orçamento & Compras, abre a interface unificada no próprio Portal.
   html=html.replace(/<\/body>/i,ORC_UNIFIED_PATCH+'</body>');
   // Correção isolada da regra do Almoxarifado. Não altera HTML, cards ou gráficos.
