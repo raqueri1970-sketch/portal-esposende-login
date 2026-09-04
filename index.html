@@ -217,6 +217,38 @@ var ALMOX_MINIMO_PATCH=`<script id="patch-almox-minimo-seguranca-20260827">
   acompanhar();
 })();
 <\/script>`;
+// Substitui a navegação do módulo antigo pela Central de Compras em tela única.
+// O shell continua no Storage; a interface do módulo fica versionada no GitHub Pages.
+const ORC_UNIFIED_PATCH=`
+<script>
+(function(){
+  var ORC_URL='/portal-esposende-login/orcamento-compras.html?v=6d118001';
+  function abrirCentralCompras(){
+    var antigo=document.getElementById('orc-central-unica');
+    if(antigo){antigo.style.display='flex';return}
+    var box=document.createElement('div');
+    box.id='orc-central-unica';
+    box.style.cssText='position:fixed;inset:0;z-index:2147483000;background:#07111f;display:flex;flex-direction:column';
+    box.innerHTML='<div style="height:52px;flex:0 0 52px;background:#081421;border-bottom:1px solid #20334b;display:flex;align-items:center;padding:0 14px;gap:10px;font-family:Arial,sans-serif">'
+      +'<button id="orc-central-voltar" style="background:#132a43;color:#fff;border:1px solid #315170;border-radius:8px;padding:8px 13px;font-weight:700;cursor:pointer">← Voltar ao Portal</button>'
+      +'<strong style="color:#edf4fb">Central de Compras</strong>'
+      +'<span style="color:#8ca4bf;font-size:12px">Solicitação e cotação em uma tela</span></div>'
+      +'<iframe id="orc-central-frame" title="Central de Compras" src="'+ORC_URL+'" style="width:100%;height:calc(100vh - 52px);border:0;background:#07111f"></iframe>';
+    document.body.appendChild(box);
+    box.querySelector('#orc-central-voltar').onclick=function(){box.style.display='none'};
+  }
+  window.abrirCentralCompras=abrirCentralCompras;
+  document.addEventListener('click',function(ev){
+    var alvo=ev.target&&ev.target.closest&&ev.target.closest('button,a,[onclick]');
+    if(!alvo)return;
+    var texto=(alvo.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+    if(texto.indexOf('orçamento & compras')>=0||texto.indexOf('orcamento & compras')>=0){
+      ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+      abrirCentralCompras();
+    }
+  },true);
+})();
+<\/script>`;
 // Caminho novo (2026-08-19): o antigo 'PORTAL_ESPOSENDE_V4.html' tinha uma URL assinada de
 // 10 anos publica no historico do repo GitHub Pages, que continuaria funcionando pra sempre
 // mesmo com o login de volta. Trocado de caminho (e o objeto antigo removido do Storage) pra
@@ -252,6 +284,8 @@ async function openPortal(){
       html=html.replace(/<\/head>/i,_inj+'</head>');
     }
   }catch(e){ console.warn('injeção da sessão falhou',e); }
+  // Ao clicar no módulo Orçamento & Compras, abre a interface unificada no próprio Portal.
+  html=html.replace(/<\/body>/i,ORC_UNIFIED_PATCH+'</body>');
   // Correção isolada da regra do Almoxarifado. Não altera HTML, cards ou gráficos.
   html=html.replace(/<\/body>/i,ALMOX_MINIMO_PATCH+'</body>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
