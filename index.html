@@ -222,7 +222,7 @@ var ALMOX_MINIMO_PATCH=`<script id="patch-almox-minimo-seguranca-20260827">
 const ORC_UNIFIED_PATCH=`
 <script>
 (function(){
-  var ORC_URL='/portal-esposende-login/orcamento-compras.html?v=central-unica-5';
+  var ORC_URL='/portal-esposende-login/orcamento-compras.html?v=central-unica-6';
   function abrirCentralCompras(){
     var antigo=document.getElementById('orc-central-unica');
     if(antigo){antigo.style.display='flex';return}
@@ -283,7 +283,7 @@ function abrirCentralUnicaExterna(){
   document.body.appendChild(box);
   var frame=box.querySelector('#orc-central-externa-frame');
   if(window.__ORC_PAGE_HTML)frame.srcdoc=window.__ORC_PAGE_HTML;
-  else frame.src='orcamento-compras.html?v=central-unica-5';
+  else frame.src='orcamento-compras.html?v=central-unica-6';
   box.querySelector('#orc-central-externa-voltar').onclick=function(){box.style.display='none'};
 }
 
@@ -345,7 +345,7 @@ async function openPortal(){
   // Pré-carrega a Central no mesmo documento do Portal. Isso evita que navegadores
   // bloqueiem o iframe interno e garante que a sessão chegue antes do primeiro script.
   try{
-    var _orcRes=await fetch('orcamento-compras.html?v=central-unica-5',{cache:'no-store'});
+    var _orcRes=await fetch('orcamento-compras.html?v=central-unica-6',{cache:'no-store'});
     if(!_orcRes.ok)throw new Error('status '+_orcRes.status);
     var _orcHtml=await _orcRes.text();
     if(_sessionPayload){
