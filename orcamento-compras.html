@@ -5,83 +5,641 @@
 <title>Central de Compras — Esposende</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#07111f;--panel:#0d1b2c;--line:#20334b;--soft:#10243a;--text:#edf4fb;--muted:#8ca4bf;--blue:#3b82f6;--green:#22c55e;--amber:#f59e0b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,Arial,sans-serif}button,input,select{font:inherit}.top{position:sticky;top:0;z-index:5;background:#081421f5;border-bottom:1px solid var(--line);padding:16px 22px}.topline,.toolbar,.between,.actions{display:flex;align-items:center;gap:9px}.between{justify-content:space-between}.top h1{font-size:20px;margin:0}.top small,.muted{color:var(--muted)}.mail{color:#93c5fd;font-weight:800}.wrap{max-width:1600px;margin:auto;padding:18px}.toolbar{margin-bottom:14px;flex-wrap:wrap}.spacer{flex:1}
-.btn{cursor:pointer;border:1px solid #315170;background:#132a43;color:#e8f2ff;border-radius:9px;padding:9px 13px;font-weight:750}.btn.primary{background:#2563eb}.btn.green{background:#15803d}.btn.amber{background:#92400e}.btn.sm{padding:6px 9px;font-size:11px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.metric,.panel,.request{background:var(--panel);border:1px solid var(--line);border-radius:14px}.metric{padding:15px}.k{font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.7px}.v{font-size:24px;font-weight:850;margin-top:5px}.good .v{color:#86efac}.warn .v{color:#fde68a}.panel{padding:15px;margin-bottom:14px}.panel h2{font-size:15px;margin:0}
-.filters{display:grid;grid-template-columns:1fr 190px 160px;gap:8px;margin:14px 0}.field{width:100%;border:1px solid #2b405a;background:#0a1727;color:var(--text);border-radius:8px;padding:8px 9px}.request{margin-bottom:14px;overflow:hidden}.request-head{padding:14px 16px;background:#0f2034;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px}.title{font-size:16px;font-weight:800}.meta{font-size:11px;color:var(--muted);margin-top:5px;display:flex;gap:12px;flex-wrap:wrap}.badge{display:inline-flex;padding:4px 8px;border-radius:99px;background:#18304a;color:#bfdbfe;font-size:10px;font-weight:800;text-transform:uppercase}
-.request-grid{display:grid;grid-template-columns:minmax(420px,1fr) minmax(560px,1.3fr)}.side{padding:14px 16px;min-width:0}.side+.side{border-left:1px solid var(--line)}.side-title{font-size:11px;color:#a9bdd2;font-weight:850;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px}.table-wrap{overflow:auto;border:1px solid #1c3047;border-radius:10px}table{width:100%;border-collapse:collapse;font-size:12px;min-width:620px}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid #1a2c40}th{background:#102238;color:#8fa8c3;font-size:10px;text-transform:uppercase}.num{text-align:right}.item{font-weight:700}.sub{font-size:10px;color:var(--muted);margin-top:2px}
-.supplier{border:1px solid #23405d;border-radius:10px;overflow:hidden;margin-bottom:8px}.supplier.win{border-color:var(--green)}.supplier-head{padding:8px;background:#10283f;display:flex;align-items:center;gap:7px}.supplier-head input{flex:1}.supplier-info{padding:0 9px 8px;background:#10283f;color:#9fc1e5;font-size:11px;line-height:1.45}.supplier-row{display:grid;grid-template-columns:minmax(145px,1fr) 95px 110px;gap:7px;align-items:center;padding:7px 9px;border-top:1px solid #173047}.supplier-total{padding:8px 9px;background:#0a1727;text-align:right;font-weight:800}.money-input{text-align:right}.request-actions{padding:12px 16px;border-top:1px solid var(--line);background:#0a1727;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.empty{padding:32px;text-align:center;color:var(--muted)}.hidden{display:none!important}.notice{padding:10px 12px;border-radius:9px;background:#2b1d0b;color:#fde68a;border:1px solid #713f12;margin-bottom:14px}.loading{opacity:.55;pointer-events:none}.manager-only .ops-only{display:none!important}
-.notice.ok{background:#082b1b;color:#bbf7d0;border-color:#166534}dialog{width:min(620px,calc(100% - 30px));border:1px solid #315170;border-radius:14px;background:#0d1b2c;color:var(--text);padding:0;box-shadow:0 24px 80px #000b}dialog::backdrop{background:#02060dcc}.modal-head{padding:16px 18px;border-bottom:1px solid var(--line);font-size:17px;font-weight:800}.modal-body{padding:18px}.modal-grid{display:grid;grid-template-columns:150px 1fr;gap:10px;margin:14px 0}.modal-grid div:nth-child(odd){color:var(--muted)}.modal-actions{padding:14px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
-@media(max-width:1050px){.request-grid{grid-template-columns:1fr}.side+.side{border-left:0;border-top:1px solid var(--line)}}@media(max-width:700px){.wrap{padding:10px}.top{padding:13px}.cards{grid-template-columns:1fr 1fr}.v{font-size:19px}.filters{grid-template-columns:1fr}.request-head{display:block}.request-head .actions{margin-top:8px}.supplier-row{grid-template-columns:1fr 85px}.row-total{grid-column:1/-1;text-align:right}.mail{display:block}}
+:root{--bg:#07111f;--panel:#0d1b2c;--line:#20334b;--soft:#10243a;--text:#edf4fb;--muted:#8ca4bf;--blue:#3b82f6;--green:#22c55e;--amber:#f59e0b;--red:#ef4444}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,Arial,sans-serif}button,input,select,textarea{font:inherit}
+.top{position:sticky;top:0;z-index:5;background:#081421f5;border-bottom:1px solid var(--line);padding:16px 22px}
+.topline,.toolbar,.between,.actions{display:flex;align-items:center;gap:9px}.between{justify-content:space-between}
+.top h1{font-size:20px;margin:0}.top small,.muted{color:var(--muted)}.mail{color:#93c5fd;font-weight:800}
+.wrap{max-width:1600px;margin:auto;padding:18px}.toolbar{margin-bottom:14px;flex-wrap:wrap}.spacer{flex:1}
+.btn{cursor:pointer;border:1px solid #315170;background:#132a43;color:#e8f2ff;border-radius:9px;padding:9px 13px;font-weight:750}
+.btn.primary{background:#2563eb}.btn.green{background:#15803d}.btn.amber{background:#92400e}.btn.red{background:#7f1d1d}.btn.sm{padding:6px 9px;font-size:11px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tab{cursor:pointer;border:1px solid #2b405a;background:#0d1b2c;color:var(--muted);border-radius:9px;padding:9px 14px;font-weight:750}
+.tab.on{background:#16324f;color:#e8f2ff;border-color:#3b6795}
+.tab .count{display:inline-block;margin-left:6px;background:#1f3f5f;color:#bfdbfe;border-radius:99px;padding:1px 7px;font-size:10px;font-weight:800}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.metric,.panel,.request{background:var(--panel);border:1px solid var(--line);border-radius:14px}
+.metric{padding:15px}.k{font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.7px}.v{font-size:23px;font-weight:850;margin-top:5px}
+.good .v{color:#86efac}.warn .v{color:#fde68a}.bad .v{color:#fca5a5}
+.panel{padding:15px;margin-bottom:14px}.panel h2{font-size:15px;margin:0}
+.filters{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}
+.field{border:1px solid #2b405a;background:#0a1727;color:var(--text);border-radius:8px;padding:8px 9px}
+.field.grow{flex:1;min-width:180px}
+.table-wrap{overflow:auto;border:1px solid #1c3047;border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:640px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid #1a2c40}
+th{background:#102238;color:#8fa8c3;font-size:10px;text-transform:uppercase}
+.num{text-align:right;font-variant-numeric:tabular-nums}.item{font-weight:700}.sub{font-size:10px;color:var(--muted);margin-top:2px}
+.request{margin-bottom:14px;overflow:hidden}
+.request-head{padding:14px 16px;background:#0f2034;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.title{font-size:15px;font-weight:800}.meta{font-size:11px;color:var(--muted);margin-top:5px;display:flex;gap:12px;flex-wrap:wrap}
+.badge{display:inline-flex;padding:4px 8px;border-radius:99px;background:#18304a;color:#bfdbfe;font-size:10px;font-weight:800;text-transform:uppercase}
+.badge.wait{background:#3a2a0b;color:#fde68a}.badge.ok{background:#0c3222;color:#bbf7d0}.badge.done{background:#0c2f4a;color:#bfdbfe}.badge.no{background:#3a1414;color:#fecaca}
+.body-pad{padding:14px 16px}
+.supplier{border:1px solid #23405d;border-radius:10px;overflow:hidden;margin:8px 0}
+.supplier.win{border-color:var(--green)}
+.supplier-head{padding:8px 10px;background:#10283f;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.supplier-head input{flex:1;min-width:150px}
+.srow{display:grid;grid-template-columns:minmax(150px,1fr) 92px 92px 110px;gap:7px;align-items:center;padding:7px 10px;border-top:1px solid #173047}
+.srow .lbl{font-size:11px;color:var(--muted)}
+.supplier-total{padding:8px 10px;background:#0a1727;text-align:right;font-weight:800}
+.money-input{text-align:right}
+.request-actions{padding:12px 16px;border-top:1px solid var(--line);background:#0a1727;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.hidden{display:none!important}
+.notice{padding:10px 12px;border-radius:9px;background:#2b1d0b;color:#fde68a;border:1px solid #713f12;margin-bottom:14px}
+.notice.ok{background:#082b1b;color:#bbf7d0;border-color:#166534}
+.loading{opacity:.55;pointer-events:none}
+.hint{font-size:11px;color:var(--muted);margin-top:4px}
+.step{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.step button{cursor:pointer;border:1px solid #2b405a;background:#0d1b2c;color:var(--muted);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:750}
+.step button.on{background:#0c3222;color:#bbf7d0;border-color:#166534}
+dialog{width:min(640px,calc(100% - 30px));border:1px solid #315170;border-radius:14px;background:#0d1b2c;color:var(--text);padding:0}
+dialog::backdrop{background:#02060dcc}
+.modal-head{padding:16px 18px;border-bottom:1px solid var(--line);font-size:17px;font-weight:800}
+.modal-body{padding:18px}.modal-actions{padding:14px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.print-only{display:none}
+@media(max-width:900px){.cards{grid-template-columns:1fr 1fr}.srow{grid-template-columns:1fr 80px 80px}.srow .row-total{grid-column:1/-1;text-align:right}}
+@media print{
+ @page{margin:14mm}
+ body{background:#fff!important;color:#000!important;font-size:11px}
+ .top,.toolbar,.tabs,.filters,.request-actions,.step,.btn,#notice,.no-print{display:none!important}
+ .wrap{max-width:none;padding:0}
+ .panel,.metric,.request,.table-wrap{background:#fff!important;border:1px solid #999!important;color:#000!important}
+ th{background:#eee!important;color:#000!important;border:1px solid #999!important}
+ td{border:1px solid #bbb!important;color:#000!important}
+ td,th{text-align:center!important}td:first-child,th:first-child{text-align:left!important}
+ .k,.muted,.sub,.hint{color:#333!important}.v{color:#000!important}
+ .print-only{display:block!important;margin-bottom:12px}
+ .print-brand{font-size:18px;font-weight:800;letter-spacing:1px}
+ .print-sub{font-size:12px;color:#333}
+ section[data-tab]:not(.on){display:none!important}
+}
 </style>
 </head>
 <body>
-<header class="top"><div class="topline"><div><h1 id="page-title">Central de Compras</h1><small>Solicitação e cotação no mesmo lugar · e-mail oficial: <span class="mail">cotacaodecompras@lojasesposende.com.br</span></small></div><span class="spacer"></span><span id="profile" class="badge">Identificando...</span></div></header>
+<header class="top"><div class="topline">
+ <div><h1 id="page-title">Central de Compras</h1>
+ <small>Orçamento, aprovação e cotação no mesmo lugar · e-mail oficial: <span class="mail">cotacaodecompras@lojasesposende.com.br</span></small></div>
+ <span class="spacer"></span><span id="profile" class="badge">Identificando…</span>
+</div></header>
+
 <main class="wrap" id="app">
 <datalist id="supplier-options"></datalist>
-<div id="notice"></div><div class="toolbar"><button class="btn" onclick="loadAll()">↻ Atualizar</button><span id="status" class="muted">Conectando...</span><span class="spacer"></span><span id="department-label" class="muted"></span></div>
-<section class="cards">
-<div class="metric"><div class="k">ORÇAMENTO APROVADO</div><div class="v" id="budget">R$ 0,00</div></div>
-<div class="metric warn"><div class="k">COMPROMETIDO</div><div class="v" id="committed">R$ 0,00</div></div>
-<div class="metric"><div class="k">GASTO / REALIZADO</div><div class="v" id="realized">R$ 0,00</div></div>
-<div class="metric good"><div class="k">SALDO DISPONÍVEL</div><div class="v" id="available">R$ 0,00</div></div>
+<div id="notice"></div>
+
+<div class="print-only">
+ <div class="print-brand">ESPOSENDE CALÇADOS</div>
+ <div class="print-sub">Central de Compras — Orçamento por área · <span id="print-period"></span> · emitido em <span id="print-date"></span></div>
+</div>
+
+<div class="toolbar no-print">
+ <button class="btn" onclick="loadAll()">↻ Atualizar</button>
+ <span id="status" class="muted">Conectando…</span>
+ <span class="spacer"></span>
+ <button class="btn sm" onclick="window.print()">🖨️ Imprimir / PDF</button>
+ <button class="btn primary sm" type="button" onclick="openNewRequest()">+ Nova solicitação</button>
+</div>
+
+<div class="tabs no-print" id="tabs"></div>
+
+<!-- ORÇAMENTO POR ÁREA -->
+<section data-tab="orcamento">
+ <div class="cards">
+  <div class="metric"><div class="k">ORÇAMENTO APROVADO (ACUM. PERÍODO)</div><div class="v" id="m-budget">R$ 0,00</div></div>
+  <div class="metric warn"><div class="k">EM COTAÇÃO</div><div class="v" id="m-cot">R$ 0,00</div></div>
+  <div class="metric"><div class="k">REALIZADO / PAGO (PERÍODO)</div><div class="v" id="m-real">R$ 0,00</div></div>
+  <div class="metric good"><div class="k">SALDO</div><div class="v" id="m-saldo">R$ 0,00</div></div>
+ </div>
+ <div class="panel">
+  <div class="between"><h2>Orçamento por área</h2><span class="muted" id="orc-period-label"></span></div>
+  <div class="filters no-print">
+   <label class="muted" style="font-size:11px">Mês de referência
+    <input type="month" id="f-mes" class="field" onchange="renderOrcamento()"></label>
+   <label class="muted" style="font-size:11px">Período — de
+    <input type="month" id="f-de" class="field" onchange="renderOrcamento()"></label>
+   <label class="muted" style="font-size:11px">até
+    <input type="month" id="f-ate" class="field" onchange="renderOrcamento()"></label>
+  </div>
+  <div class="table-wrap" style="margin-top:12px"><table><thead><tr>
+   <th>Área</th>
+   <th class="num">Aprovado no mês</th>
+   <th class="num">Aprovado acum. (período)</th>
+   <th class="num">Em cotação</th>
+   <th class="num">Realizado (período)</th>
+   <th class="num">Saldo</th>
+  </tr></thead><tbody id="orc-body"></tbody>
+  <tfoot id="orc-foot"></tfoot></table></div>
+  <div class="hint">A verba anual sem rateio mensal é distribuída em 12 avos iguais; meses cadastrados individualmente (tipo “mensal”) têm prioridade e não somam à verba anual.</div>
+ </div>
 </section>
-<section id="manager-view" class="panel hidden"><div><h2>Minha conta corrente</h2><div class="muted">Somente as despesas do seu departamento, com o que foi comprado e com quem.</div></div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Data</th><th>Solicitação</th><th>O que foi comprado</th><th>Qtd.</th><th>Fornecedor</th><th class="num">Preço unit.</th><th class="num">Total gasto</th></tr></thead><tbody id="manager-expenses"></tbody></table></div></section>
-<section id="operations" class="ops-only"><div class="panel"><div class="between"><div><h2>Solicitações e cotações</h2><div class="muted">Uma solicitação por quadro, todos os itens juntos e a cotação ao lado.</div></div><span id="request-count" class="badge">0</span><button class="btn primary sm" type="button" onclick="openNewRequest()">+ Nova solicitacao</button></div><div class="filters"><input id="search" class="field" placeholder="Buscar solicitação, item ou solicitante" oninput="renderRequests()"><select id="filter-dept" class="field" onchange="renderRequests()"><option value="">Todos os departamentos</option></select><select id="filter-status" class="field" onchange="renderRequests()"><option value="">Todos os status</option><option value="nova">Nova</option><option value="revisao_necessaria">Revisão</option><option value="em_cotacao">Em cotação</option><option value="aguardando_aprovacao">Em aprovação</option><option value="aprovada">Aprovada</option><option value="comprada">Comprada</option></select></div><div id="requests"><div class="empty">Carregando...</div></div></div></section>
-<section class="panel ops-only"><h2>Conta corrente por departamento</h2><div class="muted">Orçamento, comprometido, gasto e saldo em uma única visão.</div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Departamento</th><th class="num">Orçamento</th><th class="num">Comprometido</th><th class="num">Gasto</th><th class="num">Saldo</th></tr></thead><tbody id="ledger"></tbody></table></div></section>
+
+<!-- FILA DE APROVAÇÃO DA ÁREA -->
+<section data-tab="aprovacao" class="hidden">
+ <div class="panel"><div class="between"><div><h2>Fila de aprovação da área</h2>
+  <div class="muted">Todo pedido de compra — inclusive os que chegam por e-mail — entra aqui aguardando a área liberar o orçamento. Sem esta aprovação não há cotação.</div></div>
+  <span id="cnt-aprovacao" class="badge">0</span></div>
+  <div id="fila-aprovacao"><div class="empty">Carregando…</div></div>
+ </div>
+</section>
+
+<!-- COTAÇÕES -->
+<section data-tab="cotacao" class="hidden">
+ <div class="panel"><div class="between"><div><h2>Cotações</h2>
+  <div class="muted">Cotação liberada só após a área aprovar o orçamento. A cotação já vem pré-preenchida com os itens do pedido.</div></div>
+  <span id="cnt-cotacao" class="badge">0</span></div>
+  <div id="lista-cotacao"><div class="empty">Carregando…</div></div>
+ </div>
+</section>
+
+<!-- REALIZADO / ACOMPANHAMENTO -->
+<section data-tab="realizado" class="hidden">
+ <div class="panel"><div class="between"><div><h2>Realizado / Pago &amp; acompanhamento do pedido</h2>
+  <div class="muted">Quando a cotação é aprovada, o valor já entra como Realizado/Pago na Auditoria de Compras e baixa o orçamento da área — uma única vez. O funil abaixo serve apenas para acompanhar a emissão e a entrega.</div></div>
+  <span id="cnt-realizado" class="badge">0</span></div>
+  <div id="lista-realizado"><div class="empty">Carregando…</div></div>
+ </div>
+</section>
+
+<!-- CONTA CORRENTE DO GESTOR -->
+<section data-tab="minha" class="hidden">
+ <div class="panel"><h2>Minha conta corrente</h2>
+  <div class="muted">Despesas do seu departamento: o que foi comprado, com quem e por quanto.</div>
+  <div class="table-wrap" style="margin-top:12px"><table><thead><tr>
+   <th>Data</th><th>Pedido</th><th>O que foi comprado</th><th class="num">Qtd.</th><th>Fornecedor</th><th class="num">Preço unit.</th><th class="num">Total</th>
+  </tr></thead><tbody id="minha-body"></tbody></table></div>
+ </div>
+</section>
+
+<!-- HISTÓRICO -->
+<section data-tab="historico" class="hidden">
+ <div class="panel"><div class="between"><h2>Bloqueados e rejeitados</h2><span id="cnt-historico" class="badge">0</span></div>
+  <div class="muted">E-mails automáticos da Microsoft (redefinição de senha, código de segurança) são barrados automaticamente e nunca viram pedido.</div>
+  <div class="table-wrap" style="margin-top:12px"><table><thead><tr>
+   <th>#</th><th>Assunto</th><th>Solicitante</th><th>Situação</th><th>Motivo</th>
+  </tr></thead><tbody id="historico-body"></tbody></table></div>
+ </div>
+</section>
+
 </main>
-<dialog id="approval-modal"><div class="modal-head">Enviar solicitação para aprovação</div><div class="modal-body"><div id="approval-text"></div></div><div class="modal-actions"><button class="btn" onclick="document.getElementById('approval-modal').close()">Fechar</button><button id="approval-confirm" class="btn amber" onclick="confirmApproval()">Confirmar envio</button></div></dialog><dialog id="new-request-modal"><div class="modal-head">Nova solicitacao</div><div class="modal-body"><div class="muted" style="margin-bottom:10px">Cole o pedido (lista, tabela ou texto). O sistema identifica o departamento pelo e-mail do solicitante e separa os itens automaticamente - o mesmo processamento que vai rodar quando o e-mail estiver conectado.</div><label class="muted" style="font-size:11px">Solicitante (e-mail ou nome)</label><input id="nr-remetente" class="field" placeholder="nome.sobrenome@lojasesposende.com.br" style="margin-bottom:10px"><label class="muted" style="font-size:11px">Departamento (opcional - se souber, ja direciona)</label><select id="nr-departamento" class="field" style="margin-bottom:10px"><option value="">Detectar pelo remetente</option></select><label class="muted" style="font-size:11px">Assunto</label><input id="nr-assunto" class="field" placeholder="Assunto do pedido" style="margin-bottom:10px"><label class="muted" style="font-size:11px">Itens</label><textarea id="nr-corpo" class="field" style="min-height:140px" placeholder="Ex.:
+
+<dialog id="new-request-modal"><div class="modal-head">Nova solicitação de compra</div><div class="modal-body">
+ <div class="muted" style="margin-bottom:10px">Cole o pedido (lista, tabela ou texto). O sistema identifica a área pelo e-mail do solicitante e separa os itens — o mesmo processamento do robô de e-mail. O pedido entra na fila de aprovação da área.</div>
+ <label class="hint">Solicitante (e-mail ou nome)</label>
+ <input id="nr-remetente" class="field grow" style="width:100%;margin:4px 0 10px" placeholder="nome.sobrenome@lojasesposende.com.br">
+ <label class="hint">Área (opcional — se souber, já direciona)</label>
+ <select id="nr-departamento" class="field" style="width:100%;margin:4px 0 10px"><option value="">Detectar pelo remetente</option></select>
+ <label class="hint">Assunto</label>
+ <input id="nr-assunto" class="field" style="width:100%;margin:4px 0 10px" placeholder="Assunto do pedido">
+ <label class="hint">Itens</label>
+ <textarea id="nr-corpo" class="field" style="width:100%;min-height:130px;margin-top:4px" placeholder="Ex.:
 25 chapas de MDF 15mm
 10 caixas de papel A4
-ou cole a tabela do Excel/e-mail"></textarea><div id="nr-result"></div></div><div class="modal-actions"><button class="btn" type="button" onclick="document.getElementById('new-request-modal').close()">Fechar</button><button id="nr-submit" class="btn primary" type="button" onclick="submitNewRequest()">Criar solicitacao</button></div></dialog>
+ou cole a tabela do Excel/e-mail"></textarea>
+ <div id="nr-result"></div>
+</div><div class="modal-actions">
+ <button class="btn" type="button" onclick="document.getElementById('new-request-modal').close()">Fechar</button>
+ <button id="nr-submit" class="btn primary" type="button" onclick="submitNewRequest()">Criar solicitação</button>
+</div></dialog>
+
+<dialog id="revisar-modal"><div class="modal-head">Revisar área e quantidades</div><div class="modal-body">
+ <label class="hint">Área responsável</label>
+ <select id="rv-departamento" class="field" style="width:100%;margin:4px 0 12px"></select>
+ <div id="rv-itens"></div>
+ <div id="rv-result"></div>
+</div><div class="modal-actions">
+ <button class="btn" type="button" onclick="document.getElementById('revisar-modal').close()">Fechar</button>
+ <button id="rv-submit" class="btn primary" type="button" onclick="submitRevisao()">Salvar e enviar para aprovação</button>
+</div></dialog>
+
+<dialog id="rejeitar-modal"><div class="modal-head">Rejeitar solicitação</div><div class="modal-body">
+ <p id="rj-text" class="muted"></p>
+ <label class="hint">Motivo (obrigatório)</label>
+ <textarea id="rj-motivo" class="field" style="width:100%;min-height:80px;margin-top:4px"></textarea>
+ <div id="rj-result"></div>
+</div><div class="modal-actions">
+ <button class="btn" type="button" onclick="document.getElementById('rejeitar-modal').close()">Fechar</button>
+ <button id="rj-submit" class="btn red" type="button" onclick="submitRejeicao()">Confirmar rejeição</button>
+</div></dialog>
+
 <script>
-const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co',SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h',sb=supabase.createClient(SB_URL,SB_KEY);
-const money=n=>(Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),date=v=>v?new Date(v).toLocaleDateString('pt-BR'):'—',num=v=>Number(String(v??0).replace(',','.'))||0,esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-let S={session:null,profile:null,deps:[],budgets:[],requests:[],items:[],quotes:[],purchases:[],suppliers:[]};
-const depName=id=>S.deps.find(d=>d.id===id)?.nome||'Departamento não identificado',supplierName=id=>S.suppliers.find(f=>f.id===id)?.nome||'Fornecedor',reqItems=id=>S.items.filter(i=>i.solicitacao_id===id).sort((a,b)=>a.linha-b.linha),reqQuotes=id=>S.quotes.filter(q=>q.solicitacao_id===id);
-function busy(on,msg=''){document.getElementById('app').classList.toggle('loading',on);document.getElementById('status').textContent=msg}
-function aviso(msg){document.getElementById('notice').innerHTML='<div class="notice ok">'+esc(msg)+'</div>';document.getElementById('notice').scrollIntoView({behavior:'smooth',block:'center'})}
-function mensagemEmPortugues(e){const m=String(e?.message||e||'');if(/violates check constraint|check constraint/i.test(m))return 'Não foi possível alterar a situação da solicitação. Atualize a página e tente novamente.';if(/row-level security|permission denied|not authorized|unauthorized|forbidden/i.test(m))return 'Você não tem permissão para realizar esta operação.';if(/failed to fetch|network|load failed/i.test(m))return 'Falha de conexão. Verifique a internet e tente novamente.';if(/duplicate key|already exists/i.test(m))return 'Este registro já existe.';if(/invalid.*input|invalid input/i.test(m))return 'Um dos dados informados é inválido.';return m||'Ocorreu um erro. Tente novamente.'}
-function error(e){document.getElementById('notice').innerHTML='<div class="notice">'+esc(mensagemEmPortugues(e))+'</div>'}
+const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co',
+      SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h',
+      sb=supabase.createClient(SB_URL,SB_KEY);
+
+const money=n=>(Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const date=v=>v?new Date(v).toLocaleDateString('pt-BR'):'—';
+const num=v=>Number(String(v??0).replace(/\./g,'').replace(',','.'))||0;
+const numDot=v=>Number(String(v??0).replace(',','.'))||0;
+const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const ym=d=>{const x=new Date(d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')};
+const monthsBetween=(a,b)=>{const out=[];let[y,m]=a.split('-').map(Number);const[ey,em]=b.split('-').map(Number);
+ while(y<ey||(y===ey&&m<=em)){out.push(y+'-'+String(m).padStart(2,'0'));m++;if(m>12){m=1;y++}if(out.length>120)break}return out};
+
+let S={session:null,profile:null,deps:[],budgets:[],requests:[],items:[],quotes:[],purchases:[],movs:[],suppliers:[]};
+let TAB='orcamento';
+
+const depName=id=>S.deps.find(d=>d.id===id)?.nome||'Área não identificada';
+const supplierName=id=>S.suppliers.find(f=>f.id===id)?.nome||'Fornecedor';
+const reqItems=id=>S.items.filter(i=>i.solicitacao_id===id).sort((a,b)=>a.linha-b.linha);
+const reqQuotes=id=>S.quotes.filter(q=>q.solicitacao_id===id);
+
+function busy(on,msg=''){document.getElementById('app').classList.toggle('loading',on);if(msg)document.getElementById('status').textContent=msg}
+function aviso(msg){const n=document.getElementById('notice');n.innerHTML='<div class="notice ok">'+esc(msg)+'</div>';n.scrollIntoView({behavior:'smooth',block:'center'})}
+function ptbr(e){const m=String(e?.message||e?.error_description||e||'');
+ if(/E-mail autom[aá]tico Microsoft/i.test(m))return 'E-mail automático da Microsoft bloqueado — não é um pedido de compra.';
+ if(/or[çc]amento precisa ser aprovado|[aá]rea precisa aprovar/i.test(m))return 'A área precisa aprovar o orçamento antes da cotação.';
+ if(/cota[çc][aã]o.*aprovada antes|deve ser aprovada antes do lan[çc]amento/i.test(m))return 'É preciso aprovar a cotação antes de registrar o realizado.';
+ if(/lan[çc]amento realizado [eé] definitivo|j[aá] realizada|realizado_pago/i.test(m))return 'Este pedido já foi realizado/pago — o funil permite apenas acompanhamento.';
+ if(/row-level security|permission denied|not authorized|sem permiss[aã]o/i.test(m))return 'Você não tem permissão para esta ação.';
+ if(/failed to fetch|network|load failed/i.test(m))return 'Falha de conexão. Verifique a internet e tente novamente.';
+ if(/Sess[aã]o necess[aá]ria|sess[aã]o expirou/i.test(m))return 'Sua sessão expirou. Entre novamente no Portal Esposende.';
+ return m||'Ocorreu um erro. Tente novamente.'}
+function error(e){document.getElementById('notice').innerHTML='<div class="notice">'+esc(ptbr(e))+'</div>'}
+
+const OPS=['administrador','controladoria','diretoria','comprador','gestor_compras'];
+const APPROVE_AREA=['administrador','controladoria','diretoria'];
+const APPROVE_COT=['administrador','controladoria','diretoria','gestor_compras'];
+
 async function session(){
  let inherited=window.__PORTAL_SESSION;
  try{if(!inherited&&window.parent!==window)inherited=window.parent.__PORTAL_SESSION}catch(e){}
  if(inherited?.access_token){const r=await sb.auth.setSession({access_token:inherited.access_token,refresh_token:inherited.refresh_token||''});if(!r.error)S.session=r.data.session}
- if(!S.session)S.session=(await sb.auth.getSession()).data.session;if(!S.session)throw Error('Sua sessão expirou. Entre novamente no Portal Esposende.');
- const p=await sb.from('orc_perfis').select('*').eq('user_id',S.session.user.id).eq('ativo',true).maybeSingle();if(p.error)throw p.error;S.profile=p.data||{perfil:'gerente',departamento_id:null};
- const manager=S.isManager=!['administrador','comprador'].includes(S.profile.perfil);document.body.classList.toggle('manager-only',manager);document.getElementById('manager-view').classList.toggle('hidden',!manager);document.getElementById('profile').textContent=manager?'Gestor de departamento · conta corrente':S.profile.perfil;document.getElementById('page-title').textContent=manager?'Minha Conta Corrente':'Central de Compras';
+ if(!S.session)S.session=(await sb.auth.getSession()).data.session;
+ if(!S.session)throw Error('Sua sessão expirou. Entre novamente no Portal Esposende.');
+ const p=await sb.from('orc_perfis').select('*').eq('user_id',S.session.user.id).eq('ativo',true).maybeSingle();
+ if(p.error)throw p.error;
+ S.profile=p.data||{perfil:'gestor_departamento',departamento_id:null};
+ S.isOps=OPS.includes(S.profile.perfil);
+ S.canApproveArea=APPROVE_AREA.includes(S.profile.perfil)||S.profile.perfil==='gestor_departamento';
+ S.canApproveCot=APPROVE_COT.includes(S.profile.perfil);
+ S.canQuote=['administrador','controladoria','diretoria','comprador','gestor_compras'].includes(S.profile.perfil);
+ S.myDep=S.profile.departamento_id;
+ document.getElementById('profile').textContent=({administrador:'Administrador',controladoria:'Controladoria',diretoria:'Diretoria',comprador:'Compras / Cotação',gestor_compras:'Gestor de Compras',gestor_departamento:'Gestor de área'}[S.profile.perfil]||S.profile.perfil);
+ document.getElementById('page-title').textContent=S.isOps?'Central de Compras':'Minha Conta Corrente';
 }
+
+function scoped(rows,field){return (S.isOps&&!S.myDep)?rows:rows.filter(r=>r[field||'departamento_id']===S.myDep)}
+
 async function loadAll(){
- busy(true,'Atualizando...');document.getElementById('notice').innerHTML='';
- try{if(!S.session)await session();const manager=S.isManager,dep=S.profile.departamento_id;let qb=sb.from('orc_budgets').select('*'),qs=sb.from('orc_solicitacoes').select('*').order('created_at',{ascending:false}).limit(100),qp=sb.from('orc_compras').select('*').order('realizado_em',{ascending:false}).limit(500);if(manager&&dep){qb=qb.eq('departamento_id',dep);qs=qs.eq('departamento_id',dep);qp=qp.eq('departamento_id',dep)}
- const [d,b,s,i,c,p,f]=await Promise.all([sb.from('orc_departamentos').select('*').eq('ativo',true).order('nome'),qb,qs,sb.from('orc_solicitacao_itens').select('*').order('linha'),sb.from('orc_cotacoes').select('*').order('created_at'),qp,sb.from('orc_fornecedores').select('*').eq('ativo',true).order('nome')]);const bad=[d,b,s,i,c,p,f].find(x=>x.error);if(bad)throw bad.error;Object.assign(S,{deps:d.data||[],budgets:b.data||[],requests:s.data||[],items:i.data||[],quotes:c.data||[],purchases:p.data||[],suppliers:f.data||[]});filters();metrics();renderRequests();ledger();managerExpenses();busy(false,'Dados atualizados')}catch(e){busy(false);error(e)}
+ busy(true,'Atualizando…');document.getElementById('notice').innerHTML='';
+ try{
+  if(!S.session)await session();
+  const [d,b,s,i,c,p,mv,f]=await Promise.all([
+   sb.from('orc_departamentos').select('*').eq('ativo',true).order('nome'),
+   sb.from('orc_budgets').select('*'),
+   sb.from('orc_solicitacoes').select('*').order('created_at',{ascending:false}).limit(400),
+   sb.from('orc_solicitacao_itens').select('*').order('linha'),
+   sb.from('orc_cotacoes').select('*').order('created_at'),
+   sb.from('orc_compras').select('*').order('realizado_em',{ascending:false}).limit(1000),
+   sb.from('orc_movimentacoes').select('*').order('created_at',{ascending:false}).limit(1000),
+   sb.from('orc_fornecedores').select('*').eq('ativo',true).order('nome')
+  ]);
+  const bad=[d,b,s,i,c,p,mv,f].find(x=>x.error);if(bad)throw bad.error;
+  Object.assign(S,{deps:d.data||[],budgets:b.data||[],requests:s.data||[],items:i.data||[],quotes:c.data||[],purchases:p.data||[],movs:mv.data||[],suppliers:f.data||[]});
+  fillSelects();buildTabs();renderAll();
+  busy(false,'Dados atualizados '+new Date().toLocaleTimeString('pt-BR'));
+ }catch(e){busy(false,'');error(e)}
 }
-function filters(){const el=document.getElementById('filter-dept'),old=el.value;el.innerHTML='<option value="">Todos os departamentos</option>'+S.deps.map(d=>'<option value="'+d.id+'">'+esc(d.nome)+'</option>').join('');el.value=old;document.getElementById('supplier-options').innerHTML=S.suppliers.map(f=>'<option value="'+esc(f.nome)+'">'+esc([f.area_atuacao,f.vendedor,f.telefone].filter(Boolean).join(' · '))+'</option>').join('');document.getElementById('department-label').textContent=S.profile.departamento_id?'Departamento: '+depName(S.profile.departamento_id):'Todos os departamentos';const nrd=document.getElementById('nr-departamento');if(nrd){const oldv=nrd.value;nrd.innerHTML='<option value="">Detectar pelo remetente</option>'+S.deps.map(d=>'<option value="'+d.id+'">'+esc(d.nome)+'</option>').join('');nrd.value=oldv}}
-function openNewRequest(){document.getElementById('nr-remetente').value='';document.getElementById('nr-assunto').value='';document.getElementById('nr-corpo').value='';document.getElementById('nr-departamento').value='';document.getElementById('nr-result').innerHTML='';document.getElementById('new-request-modal').showModal()}
-async function submitNewRequest(){const remetente=document.getElementById('nr-remetente').value.trim(),assunto=document.getElementById('nr-assunto').value.trim(),corpo=document.getElementById('nr-corpo').value.trim(),departamento_id=document.getElementById('nr-departamento').value||null,out=document.getElementById('nr-result');if(!corpo&&!assunto){out.innerHTML='<div class="notice">Preencha ao menos o assunto ou os itens.</div>';return}const btn=document.getElementById('nr-submit');btn.disabled=true;btn.textContent='Criando...';try{const{data,error:err}=await sb.functions.invoke('orc-ingest-email',{body:{remetente,assunto,corpo,departamento_id,message_id:'manual-'+Date.now()}});if(err||(data&&data.error))throw new Error((data&&data.error)||err.message);out.innerHTML='<div class="notice ok">Solicitação #'+esc(data.numero)+' criada · '+esc(data.total_itens)+' item(ns) · '+(data.setor?('setor '+esc(data.setor)):'sem setor identificado (revisão)')+'</div>';await loadAll();setTimeout(()=>{document.getElementById('new-request-modal').close()},1400)}catch(e){out.innerHTML='<div class="notice">'+esc(mensagemEmPortugues(e))+'</div>'}btn.disabled=false;btn.textContent='Criar solicitacao'}
-function sums(dep){const budget=S.budgets.filter(x=>!dep||x.departamento_id===dep).reduce((a,x)=>a+num(x.valor),0),committed=S.requests.filter(x=>(!dep||x.departamento_id===dep)&&!['comprada','cancelada','rejeitada'].includes(x.status)).reduce((a,x)=>a+num(x.valor_comprometido),0),realized=S.purchases.filter(x=>!dep||x.departamento_id===dep).reduce((a,x)=>a+num(x.valor_total_realizado),0);return{budget,committed,realized,available:budget-committed-realized}}
-function metrics(){const v=sums(S.isManager?S.profile.departamento_id:null);['budget','committed','realized','available'].forEach(k=>document.getElementById(k).textContent=money(v[k]))}
-const statusLabel=s=>({nova:'Nova',revisao_necessaria:'Revisão necessária',cotacao_a_fazer:'Cotação a fazer',em_cotacao:'Em cotação',aguardando_informacao:'Aguardando informação',aguardando_fornecedor:'Aguardando fornecedor',aguardando_aprovacao:'Em aprovação',aprovada:'Aprovada',comprometida:'Comprometida',compra_a_realizar:'Compra a realizar',comprada:'Compra concluída',realizada:'Realizada',finalizada:'Finalizada',cancelada:'Cancelada',rejeitada:'Rejeitada'}[s]||'Situação não identificada');
-function renderRequests(){if(S.isManager)return;const term=document.getElementById('search').value.toLowerCase(),dep=document.getElementById('filter-dept').value,st=document.getElementById('filter-status').value,rows=S.requests.filter(r=>{const hay=[r.numero,r.assunto,r.solicitante_nome,r.solicitante_email,depName(r.departamento_id),...reqItems(r.id).map(i=>i.produto)].join(' ').toLowerCase();return(!term||hay.includes(term))&&(!dep||r.departamento_id===dep)&&(!st||r.status===st)});document.getElementById('request-count').textContent=rows.length+' solicitações';document.getElementById('requests').innerHTML=rows.map(requestCard).join('')||'<div class="empty">Nenhuma solicitação encontrada.</div>'}
-function requestCard(r){const items=reqItems(r.id),quotes=reqQuotes(r.id),groups={};quotes.forEach(q=>(groups[q.fornecedor_id]??=[]).push(q));const fids=Object.keys(groups),editable=!['comprada','cancelada','rejeitada'].includes(r.status),itemRows=items.map(i=>'<tr><td>'+i.linha+'</td><td><div class="item">'+esc(i.produto)+'</div><div class="sub">'+esc(i.especificacao||'')+(i.local_entrega?' · Entrega: '+esc(i.local_entrega):'')+'</div></td><td>'+esc(i.quantidade??'—')+'</td><td>'+esc(i.unidade||'un.')+'</td><td><span class="badge">'+esc(i.status||'aberto')+'</span></td></tr>').join(''),saved=fids.map(fid=>supplierBox(r,items,fid,groups[fid],editable)).join(''),quoteHtml=editable?saved+'<div id="new-suppliers-'+r.id+'">'+newSupplier(r,items,'inicial')+'</div><button class="btn sm" type="button" onclick="addSupplierCard(\''+r.id+'\')">+ Novo fornecedor</button>':(saved||'<div class="empty">Nenhuma cotação.</div>'),total=S.purchases.filter(p=>p.solicitacao_id===r.id).reduce((a,p)=>a+num(p.valor_total_realizado),0)||num(r.valor_realizado)||num(r.valor_comprometido);
-return '<article class="request"><div class="request-head"><div><div class="title">#'+esc(r.numero)+' · '+esc(r.assunto||r.resumo||'Solicitação de compra')+'</div><div class="meta"><span>🏢 '+esc(depName(r.departamento_id))+'</span><span>👤 '+esc(r.solicitante_nome||r.solicitante_email||'Não informado')+'</span><span>📅 '+date(r.email_recebido_em||r.created_at)+'</span><span>📦 '+items.length+' item(ns)</span></div></div><div class="actions"><span class="badge">'+esc(statusLabel(r.status))+'</span></div></div><div class="request-grid"><div class="side"><div class="side-title">Solicitação completa</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Item / especificação / destino</th><th>Qtd.</th><th>Un.</th><th>Status</th></tr></thead><tbody>'+itemRows+'</tbody></table></div></div><div class="side"><div class="between"><div class="side-title">Cotação ao lado</div><div class="muted" style="font-size:10px">Preço unitário por item</div></div>'+quoteHtml+'</div></div><div class="request-actions"><strong>Total: '+money(total)+'</strong><span class="spacer"></span>'+buttons(r,editable,fids)+'</div></article>'}
-function supplierBox(r,items,fid,quotes,editable){const win=quotes.some(q=>q.vencedora),rows=items.map(i=>{const q=quotes.find(x=>x.item_id===i.id)||{},price=num(q.preco_negociado||q.preco_inicial);return '<div class="supplier-row"><span>'+esc(i.produto)+'</span><input '+(editable?'':'disabled')+' class="field money-input" data-price="'+r.id+'|'+fid+'|'+i.id+'" value="'+(price||'')+'" placeholder="R$ unit."><span class="row-total num">'+money(price*num(i.quantidade))+'</span></div>'}).join(''),total=quotes.reduce((a,q)=>a+num(q.valor_total),0);return '<div class="supplier '+(win?'win':'')+'"><div class="supplier-head"><strong class="spacer">'+esc(supplierName(fid))+'</strong>'+(win?'<span class="badge">✓ vencedora</span>':'')+'</div>'+rows+'<div class="supplier-total">Total: '+money(total)+'</div></div>'}
-function newSupplier(r,items,n){return '<div class="supplier"><div class="supplier-head"><input class="field" list="supplier-options" autocomplete="off" data-new-supplier="'+r.id+'|'+n+'" oninput="showSupplierData(this)" placeholder="Buscar fornecedor cadastrado"></div><div class="supplier-info">Digite parte do nome e clique no fornecedor. Se não existir, informe o novo nome.</div>'+items.map(i=>'<div class="supplier-row"><span>'+esc(i.produto)+'</span><input class="field money-input" data-new-price="'+r.id+'|'+n+'|'+i.id+'" placeholder="R$ unit."><span class="row-total num">R$ 0,00</span></div>').join('')+'<div class="supplier-total">Total: R$ 0,00</div></div>'}
-function showSupplierData(input){const f=S.suppliers.find(x=>x.nome.toLowerCase()===input.value.trim().toLowerCase()),box=input.closest('.supplier').querySelector('.supplier-info');box.textContent=f?[f.area_atuacao,f.endereco,f.vendedor&&'Vendedor: '+f.vendedor,f.telefone&&'Contato: '+f.telefone,f.pagamento&&'Pagamento: '+f.pagamento].filter(Boolean).join(' · '):'Fornecedor novo: ao salvar a cotação, ele será cadastrado automaticamente.'}
-function addSupplierCard(id){const r=S.requests.find(x=>x.id===id),box=document.getElementById('new-suppliers-'+id);if(!r||!box)return;box.insertAdjacentHTML('beforeend',newSupplier(r,reqItems(id),Date.now()))}
-function buttons(r,editable,fids){if(!editable)return '<button class="btn sm" onclick="loadAll()">Atualizar</button>';let x='<button class="btn sm" onclick="saveQuotes(\''+r.id+'\')">Salvar cotação</button>';if(['nova','revisao_necessaria','cotacao_a_fazer'].includes(r.status))x+='<button class="btn primary sm" onclick="setStatus(\''+r.id+'\',\'em_cotacao\')">Iniciar cotação</button>';if(fids.length)x+='<button class="btn amber sm" onclick="openApproval(\''+r.id+'\')">'+(r.status==='aguardando_aprovacao'?'Ver aprovação':'Enviar para aprovação')+'</button>'+fids.map(fid=>'<button class="btn green sm" onclick="finish(\''+r.id+'\',\''+fid+'\')">Fechar com '+esc(supplierName(fid))+'</button>').join('');return x}
-let approvalRequestId=null;
-function approvalSummary(id){const r=S.requests.find(x=>x.id===id),q=reqQuotes(id),totals={};q.forEach(x=>totals[x.fornecedor_id]=(totals[x.fornecedor_id]||0)+num(x.valor_total));const offers=Object.entries(totals).sort((a,b)=>a[1]-b[1]),best=offers[0];return{r,offers,best}}
-function openApproval(id){approvalRequestId=id;const {r,offers,best}=approvalSummary(id),sent=r.status==='aguardando_aprovacao',destination=r.aprovacao_destino||'Administrador da Central de Compras';document.getElementById('approval-text').innerHTML='<p>Esta solicitação será encaminhada para a <strong>fila de aprovação da Central de Compras</strong>.</p><div class="modal-grid"><div>Solicitação</div><strong>#'+esc(r.numero)+' · '+esc(r.assunto||'Compra')+'</strong><div>Responsável</div><strong>'+esc(destination)+'</strong><div>Departamento</div><strong>'+esc(depName(r.departamento_id))+'</strong><div>Menor cotação</div><strong>'+(best?esc(supplierName(best[0]))+' · '+money(best[1]):'Nenhuma cotação')+'</strong><div>Fornecedores</div><strong>'+esc(offers.map(x=>supplierName(x[0])).join(', '))+'</strong><div>Situação</div><strong>'+(sent?'Já enviada para aprovação':'Pronta para enviar')+'</strong></div><p class="muted">O envio fica registrado na própria solicitação. O administrador verá o pedido como “Em aprovação”.</p>';document.getElementById('approval-confirm').classList.toggle('hidden',sent);document.getElementById('approval-modal').showModal()}
-async function confirmApproval(){if(!approvalRequestId)return;const id=approvalRequestId;busy(true,'Enviando para aprovação...');try{const q=reqQuotes(id),by={};q.forEach(x=>by[x.fornecedor_id]=(by[x.fornecedor_id]||0)+num(x.valor_total));const vals=Object.values(by),value=vals.length?Math.min(...vals):0;const z=await sb.from('orc_solicitacoes').update({status:'aguardando_aprovacao',aprovacao_destino:'Administrador da Central de Compras',enviado_aprovacao_em:new Date().toISOString(),enviado_aprovacao_por:S.session.user.id,valor_comprometido:value||null,updated_at:new Date().toISOString()}).eq('id',id);if(z.error)throw z.error;document.getElementById('approval-modal').close();await loadAll();aviso('Solicitação enviada para a fila de aprovação do Administrador da Central de Compras.')}catch(e){busy(false);error(e)}}
-async function ensureSupplier(name){const old=S.suppliers.find(f=>f.nome.toLowerCase()===name.toLowerCase());if(old)return old.id;const r=await sb.from('orc_fornecedores').insert({nome}).select('id').single();if(r.error)throw r.error;return r.data.id}
-async function saveQuotes(id){busy(true,'Salvando cotação...');try{const items=reqItems(id),existing=reqQuotes(id),payload=[];for(const el of document.querySelectorAll('[data-new-supplier^="'+id+'|"]')){const name=el.value.trim();if(!name)continue;const n=el.dataset.newSupplier.split('|')[1],fid=await ensureSupplier(name);for(const item of items){const price=num(document.querySelector('[data-new-price="'+id+'|'+n+'|'+item.id+'"]')?.value);if(price)payload.push({solicitacao_id:id,fornecedor_id:fid,item_id:item.id,quantidade:item.quantidade,preco_inicial:price,preco_negociado:price,valor_total:price*num(item.quantidade),created_by:S.session.user.id})}}
-for(const el of document.querySelectorAll('[data-price^="'+id+'|"]')){const [,fid,itemId]=el.dataset.price.split('|'),price=num(el.value),item=items.find(i=>i.id===itemId),old=existing.find(q=>q.fornecedor_id===fid&&q.item_id===itemId);if(old&&price!==num(old.preco_negociado||old.preco_inicial)){const u=await sb.from('orc_cotacoes').update({preco_negociado:price,valor_total:price*num(item.quantidade)}).eq('id',old.id);if(u.error)throw u.error}}if(payload.length){const z=await sb.from('orc_cotacoes').insert(payload);if(z.error)throw z.error}await setStatus(id,'em_cotacao',false);await loadAll();aviso('Cotação salva com sucesso.')}catch(e){busy(false);error(e)}}
-async function setStatus(id,status,reload=true){try{const q=reqQuotes(id),by={};q.forEach(x=>by[x.fornecedor_id]=(by[x.fornecedor_id]||0)+num(x.valor_total));const vals=Object.values(by),value=vals.length?Math.min(...vals):0,r=await sb.from('orc_solicitacoes').update({status,valor_comprometido:value||null,updated_at:new Date().toISOString()}).eq('id',id);if(r.error)throw r.error;if(reload){await loadAll();aviso('Situação atualizada: '+statusLabel(status)+'.')}}catch(e){busy(false);error(e)}}
-async function finish(id,fid){if(!confirm('Confirmar '+supplierName(fid)+' como vencedor e concluir toda a solicitação?'))return;busy(true,'Concluindo compra...');try{if(S.purchases.some(p=>p.solicitacao_id===id))throw Error('Esta solicitação já possui compra realizada.');const items=reqItems(id),quotes=reqQuotes(id).filter(q=>q.fornecedor_id===fid),req=S.requests.find(r=>r.id===id),rows=[];for(const item of items){const q=quotes.find(x=>x.item_id===item.id);if(!q)throw Error('Falta preço para: '+item.produto);const unit=num(q.preco_negociado||q.preco_inicial);rows.push({solicitacao_id:id,cotacao_id:q.id,item_id:item.id,item_mestre_id:item.item_mestre_id||null,fornecedor_id:fid,departamento_id:req.departamento_id,quantidade:num(item.quantidade),preco_unitario_realizado:unit,valor_total_realizado:unit*num(item.quantidade),comprador_id:S.session.user.id})}const total=rows.reduce((a,x)=>a+x.valor_total_realizado,0);let z=await sb.from('orc_cotacoes').update({vencedora:true}).eq('solicitacao_id',id).eq('fornecedor_id',fid);if(z.error)throw z.error;z=await sb.from('orc_compras').insert(rows);if(z.error)throw z.error;z=await sb.from('orc_solicitacao_itens').update({status:'comprado'}).eq('solicitacao_id',id);if(z.error)throw z.error;z=await sb.from('orc_solicitacoes').update({status:'comprada',valor_realizado:total,valor_comprometido:0,updated_at:new Date().toISOString()}).eq('id',id);if(z.error)throw z.error;await sb.from('orc_movimentacoes').insert({departamento_id:req.departamento_id,solicitacao_id:id,tipo:'realizado',valor:total,descricao:'Compra concluída com '+supplierName(fid),created_by:S.session.user.id});await loadAll();aviso('Compra concluída com '+supplierName(fid)+' no valor de '+money(total)+'.')}catch(e){busy(false);error(e)}}
-function ledger(){document.getElementById('ledger').innerHTML=S.deps.map(d=>{const v=sums(d.id);return '<tr><td><strong>'+esc(d.nome)+'</strong></td><td class="num">'+money(v.budget)+'</td><td class="num">'+money(v.committed)+'</td><td class="num">'+money(v.realized)+'</td><td class="num"><strong>'+money(v.available)+'</strong></td></tr>'}).join('')}
-function managerExpenses(){if(!S.isManager)return;document.getElementById('manager-expenses').innerHTML=S.purchases.map(p=>{const item=S.items.find(i=>i.id===p.item_id),req=S.requests.find(r=>r.id===p.solicitacao_id);return '<tr><td>'+date(p.realizado_em)+'</td><td>#'+esc(req?.numero||'—')+'</td><td><strong>'+esc(item?.produto||'Item comprado')+'</strong><div class="sub">'+esc(item?.especificacao||'')+'</div></td><td>'+esc(p.quantidade)+' '+esc(item?.unidade||'un.')+'</td><td>'+esc(supplierName(p.fornecedor_id))+'</td><td class="num">'+money(p.preco_unitario_realizado)+'</td><td class="num"><strong>'+money(p.valor_total_realizado)+'</strong></td></tr>'}).join('')||'<tr><td colspan="7" class="empty">Nenhum gasto realizado neste departamento.</td></tr>'}
-document.addEventListener('input',e=>{if(!e.target.matches('[data-new-price],[data-price]'))return;const key=e.target.dataset.newPrice||e.target.dataset.price,item=S.items.find(i=>i.id===key.split('|')[2]),row=e.target.closest('.supplier-row');row.querySelector('.row-total').textContent=money(num(e.target.value)*num(item?.quantidade));const box=e.target.closest('.supplier');let total=0;box.querySelectorAll('.money-input').forEach(inp=>{const k=inp.dataset.newPrice||inp.dataset.price,it=S.items.find(i=>i.id===k.split('|')[2]);total+=num(inp.value)*num(it?.quantidade)});box.querySelector('.supplier-total').textContent='Total: '+money(total)});
+
+function fillSelects(){
+ const opts='<option value="">Detectar pelo remetente</option>'+S.deps.map(d=>'<option value="'+d.id+'">'+esc(d.nome)+'</option>').join('');
+ document.getElementById('nr-departamento').innerHTML=opts;
+ document.getElementById('rv-departamento').innerHTML=S.deps.map(d=>'<option value="'+d.id+'">'+esc(d.nome)+'</option>').join('');
+ document.getElementById('supplier-options').innerHTML=S.suppliers.map(f=>'<option value="'+esc(f.nome)+'">'+esc([f.area_atuacao,f.vendedor,f.telefone].filter(Boolean).join(' · '))+'</option>').join('');
+ if(!document.getElementById('f-mes').value){
+  const now=ym(new Date());
+  document.getElementById('f-mes').value=now;
+  document.getElementById('f-de').value=now.slice(0,4)+'-01';
+  document.getElementById('f-ate').value=now;
+ }
+}
+
+/* ---------- TABS ---------- */
+const TABDEFS=[
+ {id:'orcamento',label:'Orçamento por área'},
+ {id:'aprovacao',label:'Fila de aprovação',ops:1},
+ {id:'cotacao',label:'Cotações',ops:1},
+ {id:'realizado',label:'Realizado / Pago',ops:1},
+ {id:'minha',label:'Minha conta corrente'},
+ {id:'historico',label:'Bloqueados / rejeitados',ops:1}
+];
+function buildTabs(){
+ const wrap=document.getElementById('tabs');
+ const list=TABDEFS.filter(t=>!t.ops||S.isOps);
+ if(!list.find(t=>t.id===TAB))TAB=S.isOps?'orcamento':'minha';
+ wrap.innerHTML=list.map(t=>'<button class="tab'+(t.id===TAB?' on':'')+'" data-go="'+t.id+'">'+esc(t.label)+
+   (t.count?'<span class="count" id="cnt-tab-'+t.id+'"></span>':'')+'</button>').join('');
+ wrap.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{TAB=b.dataset.go;buildTabs();showTab()});
+ showTab();
+}
+function showTab(){document.querySelectorAll('section[data-tab]').forEach(s=>{const on=s.dataset.tab===TAB;s.classList.toggle('hidden',!on);s.classList.toggle('on',on)})}
+
+function renderAll(){renderOrcamento();renderFila();renderCotacao();renderRealizado();renderMinha();renderHistorico()}
+
+/* ---------- ORÇAMENTO POR ÁREA ---------- */
+function budgetMonth(depId,mes){
+ const year=mes.slice(0,4);
+ const mensal=S.budgets.find(b=>b.departamento_id===depId&&b.tipo==='mensal'&&ym(b.competencia)===mes);
+ if(mensal)return {valor:num(mensal.valor),fonte:'mensal'};
+ const anual=S.budgets.find(b=>b.departamento_id===depId&&b.tipo==='anual'&&String(b.competencia).slice(0,4)===year);
+ if(anual)return {valor:num(anual.valor)/12,fonte:'anual'};
+ return {valor:0,fonte:null};
+}
+function realizadoPeriodo(depId,meses){
+ return S.purchases.filter(p=>p.departamento_id===depId&&meses.includes(ym(p.realizado_em)))
+   .reduce((a,p)=>a+num(p.valor_total_realizado),0);
+}
+function emCotacao(depId){
+ return S.requests.filter(r=>r.departamento_id===depId&&r.financeiro_status!=='realizado_pago'&&!['cancelada','rejeitada'].includes(r.status))
+   .reduce((a,r)=>a+num(r.valor_em_cotacao),0);
+}
+function renderOrcamento(){
+ const mes=document.getElementById('f-mes').value||ym(new Date());
+ let de=document.getElementById('f-de').value||mes, ate=document.getElementById('f-ate').value||mes;
+ if(de>ate){const t=de;de=ate;ate=t}
+ const meses=monthsBetween(de,ate);
+ const fmtM=s=>{const[y,m]=s.split('-');return m+'/'+y};
+ document.getElementById('orc-period-label').textContent='Período: '+fmtM(de)+' a '+fmtM(ate)+' · mês de referência '+fmtM(mes);
+ document.getElementById('print-period').textContent='Período '+fmtM(de)+' a '+fmtM(ate);
+ document.getElementById('print-date').textContent=new Date().toLocaleString('pt-BR');
+
+ let deps=S.deps.slice().sort((a,b)=>a.nome.localeCompare(b.nome));
+ if(!(S.isOps&&!S.myDep))deps=deps.filter(d=>d.id===S.myDep);
+ let T={mes:0,acum:0,cot:0,real:0,saldo:0};
+ const rows=deps.map(d=>{
+  const bm=budgetMonth(d.id,mes);
+  const acum=meses.reduce((a,m)=>a+budgetMonth(d.id,m).valor,0);
+  const cot=emCotacao(d.id), real=realizadoPeriodo(d.id,meses), saldo=acum-real-cot;
+  T.mes+=bm.valor;T.acum+=acum;T.cot+=cot;T.real+=real;T.saldo+=saldo;
+  const tag=bm.fonte==='anual'?' <span class="badge">12 avos</span>':bm.fonte==='mensal'?' <span class="badge ok">mensal</span>':'';
+  return '<tr><td class="item">'+esc(d.nome)+tag+'</td>'+
+   '<td class="num">'+money(bm.valor)+'</td>'+
+   '<td class="num">'+money(acum)+'</td>'+
+   '<td class="num">'+money(cot)+'</td>'+
+   '<td class="num">'+money(real)+'</td>'+
+   '<td class="num" style="font-weight:800;color:'+(saldo<0?'#fca5a5':'#86efac')+'">'+money(saldo)+'</td></tr>';
+ }).join('');
+ document.getElementById('orc-body').innerHTML=rows||'<tr><td colspan="6" class="empty">Nenhuma área.</td></tr>';
+ document.getElementById('orc-foot').innerHTML='<tr><th>Total</th><th class="num">'+money(T.mes)+'</th><th class="num">'+money(T.acum)+
+  '</th><th class="num">'+money(T.cot)+'</th><th class="num">'+money(T.real)+'</th><th class="num">'+money(T.saldo)+'</th></tr>';
+ document.getElementById('m-budget').textContent=money(T.acum);
+ document.getElementById('m-cot').textContent=money(T.cot);
+ document.getElementById('m-real').textContent=money(T.real);
+ document.getElementById('m-saldo').textContent=money(T.saldo);
+ document.querySelector('#m-saldo').parentElement.className='metric '+(T.saldo<0?'bad':'good');
+}
+
+/* ---------- FILA DE APROVAÇÃO ---------- */
+const FILA_ST=['revisao_necessaria','aguardando_aprovacao_orcamento'];
+function itemTable(items){
+ return '<div class="table-wrap"><table><thead><tr><th>#</th><th>Item / especificação</th><th class="num">Qtd.</th><th>Un.</th></tr></thead><tbody>'+
+  items.map(i=>'<tr><td>'+i.linha+'</td><td><div class="item">'+esc(i.produto)+'</div><div class="sub">'+esc(i.especificacao||'')+(i.local_entrega?' · Entrega: '+esc(i.local_entrega):'')+'</div></td>'+
+  '<td class="num">'+esc(i.quantidade??'—')+'</td><td>'+esc(i.unidade||'un.')+'</td></tr>').join('')+
+  '</tbody></table></div>';
+}
+function reqHead(r,badge){
+ return '<div class="request-head"><div><div class="title">#'+esc(r.numero)+' · '+esc(r.assunto||r.resumo||'Solicitação de compra')+'</div>'+
+  '<div class="meta"><span>🏢 '+esc(depName(r.departamento_id))+'</span><span>👤 '+esc(r.solicitante_nome||r.solicitante_email||'Não informado')+'</span>'+
+  '<span>📅 '+date(r.email_recebido_em||r.created_at)+'</span><span>📦 '+reqItems(r.id).length+' item(ns)</span></div></div>'+
+  '<div class="actions">'+badge+'</div></div>';
+}
+function renderFila(){
+ const box=document.getElementById('fila-aprovacao');if(!box)return;
+ let rows=scoped(S.requests).filter(r=>FILA_ST.includes(r.status)&&!r.email_bloqueado);
+ document.getElementById('cnt-aprovacao').textContent=rows.length;
+ const t=document.querySelector('[data-go="aprovacao"] .count');if(t)t.textContent=rows.length;
+ box.innerHTML=rows.map(r=>{
+  const items=reqItems(r.id);
+  const semArea=r.departamento_id==null||r.status==='revisao_necessaria';
+  const badge='<span class="badge wait">'+(semArea?'Definir área':'Aguardando aprovação')+'</span>';
+  let acts='';
+  if(S.canApproveArea){
+   if(!semArea)acts+='<button class="btn green sm" onclick="aprovarArea(\''+r.id+'\')">✓ Aprovar orçamento da área</button>';
+   acts+='<button class="btn amber sm" onclick="openRevisar(\''+r.id+'\')">Revisar área / quantidades</button>';
+   acts+='<button class="btn red sm" onclick="openRejeitar(\''+r.id+'\')">Rejeitar</button>';
+  }else acts='<span class="muted">Somente a área ou a Controladoria aprova.</span>';
+  return '<article class="request">'+reqHead(r,badge)+'<div class="body-pad">'+itemTable(items)+
+   (semArea?'<div class="hint">Sem área identificada — use “Revisar” para definir antes de aprovar.</div>':'')+
+   '</div><div class="request-actions">'+acts+'</div></article>';
+ }).join('')||'<div class="empty">Nada aguardando aprovação.</div>';
+}
+async function aprovarArea(id){
+ if(!confirm('Aprovar o orçamento da área para o pedido #'+(S.requests.find(r=>r.id===id)?.numero)+'? A cotação será liberada e pré-preenchida.'))return;
+ busy(true,'Aprovando…');
+ try{const{error:e}=await sb.rpc('orc_aprovar_solicitacao',{p_solicitacao_id:id});if(e)throw e;
+  await loadAll();TAB='cotacao';buildTabs();aviso('Orçamento aprovado. Cotação liberada e pré-preenchida.');
+ }catch(e){busy(false,'');error(e)}
+}
+
+let revisarId=null;
+function openRevisar(id){revisarId=id;const r=S.requests.find(x=>x.id===id),items=reqItems(id);
+ document.getElementById('rv-departamento').value=r.departamento_id||'';
+ document.getElementById('rv-itens').innerHTML='<label class="hint">Quantidades</label>'+items.map(i=>
+  '<div class="srow"><span>'+esc(i.produto)+'</span><input class="field money-input" data-rv="'+i.id+'" value="'+esc(i.quantidade??'')+'" placeholder="qtd"><span></span><span></span></div>').join('');
+ document.getElementById('rv-result').innerHTML='';
+ document.getElementById('revisar-modal').showModal();
+}
+async function submitRevisao(){
+ const dep=document.getElementById('rv-departamento').value;
+ if(!dep){document.getElementById('rv-result').innerHTML='<div class="notice">Selecione a área.</div>';return}
+ const itens=[...document.querySelectorAll('[data-rv]')].map(el=>({id:el.dataset.rv,quantidade:numDot(el.value)}));
+ if(itens.some(i=>!(i.quantidade>0))){document.getElementById('rv-result').innerHTML='<div class="notice">Informe uma quantidade positiva para todos os itens.</div>';return}
+ const btn=document.getElementById('rv-submit');btn.disabled=true;btn.textContent='Salvando…';
+ try{const{error:e}=await sb.rpc('orc_revisar_solicitacao',{p_id:revisarId,p_departamento:dep,p_itens:itens});if(e)throw e;
+  document.getElementById('revisar-modal').close();await loadAll();aviso('Solicitação revisada e enviada para aprovação da área.');
+ }catch(e){document.getElementById('rv-result').innerHTML='<div class="notice">'+esc(ptbr(e))+'</div>'}
+ btn.disabled=false;btn.textContent='Salvar e enviar para aprovação';
+}
+
+let rejeitarId=null;
+function openRejeitar(id){rejeitarId=id;const r=S.requests.find(x=>x.id===id);
+ document.getElementById('rj-text').textContent='Pedido #'+r.numero+' · '+(r.assunto||'Compra');
+ document.getElementById('rj-motivo').value='';document.getElementById('rj-result').innerHTML='';
+ document.getElementById('rejeitar-modal').showModal();
+}
+async function submitRejeicao(){
+ const motivo=document.getElementById('rj-motivo').value.trim();
+ if(!motivo){document.getElementById('rj-result').innerHTML='<div class="notice">Informe o motivo.</div>';return}
+ const btn=document.getElementById('rj-submit');btn.disabled=true;btn.textContent='Rejeitando…';
+ try{const{error:e}=await sb.rpc('orc_rejeitar_solicitacao',{p_solicitacao_id:rejeitarId,p_motivo:motivo});if(e)throw e;
+  document.getElementById('rejeitar-modal').close();await loadAll();aviso('Solicitação rejeitada.');
+ }catch(e){document.getElementById('rj-result').innerHTML='<div class="notice">'+esc(ptbr(e))+'</div>'}
+ btn.disabled=false;btn.textContent='Confirmar rejeição';
+}
+
+/* ---------- COTAÇÕES ---------- */
+const COT_ST=['cotacao_a_fazer','em_cotacao','aguardando_informacao','aguardando_fornecedor','aguardando_aprovacao','aprovada'];
+function renderCotacao(){
+ const box=document.getElementById('lista-cotacao');if(!box)return;
+ let rows=scoped(S.requests).filter(r=>r.aprovado_em&&r.financeiro_status!=='realizado_pago'&&COT_ST.includes(r.status));
+ document.getElementById('cnt-cotacao').textContent=rows.length;
+ box.innerHTML=rows.map(cotacaoCard).join('')||'<div class="empty">Nenhuma solicitação aguardando cotação.</div>';
+}
+function cotacaoCard(r){
+ const items=reqItems(r.id);
+ const qs=reqQuotes(r.id).filter(q=>q.fornecedor_id&&q.status==='valida');
+ const groups={};qs.forEach(q=>(groups[q.fornecedor_id]??=[]).push(q));
+ const fids=Object.keys(groups);
+ const badge='<span class="badge ok">Orçamento aprovado</span> <span class="badge">'+esc(({cotacao_a_fazer:'Cotação a fazer',em_cotacao:'Em cotação',aprovada:'Cotação aprovada'}[r.status]||r.status))+'</span>';
+ const saved=fids.map(fid=>{
+  const g=groups[fid],tot=g.reduce((a,q)=>a+num(q.valor_total),0);
+  const rowsH=items.map(it=>{const q=g.find(x=>x.item_id===it.id)||{};
+    return '<div class="srow"><span>'+esc(it.produto)+'</span><span class="num">'+money(num(q.preco_negociado||q.preco_inicial))+'</span><span class="num lbl">frete '+money(num(q.valor_frete))+'</span><span class="num">'+money(num(q.valor_total))+'</span></div>'}).join('');
+  let btn='';
+  if(S.canApproveCot)btn='<button class="btn green sm" onclick="aprovarCotacao(\''+r.id+'\',\''+fid+'\')">✓ Aprovar e realizar com '+esc(supplierName(fid))+'</button>';
+  return '<div class="supplier"><div class="supplier-head"><strong class="spacer">'+esc(supplierName(fid))+'</strong>'+btn+'</div>'+rowsH+
+   '<div class="supplier-total">Total: '+money(tot)+'</div></div>';
+ }).join('');
+ let form='';
+ if(S.canQuote){
+  form='<div id="np-'+r.id+'">'+newSupplierBlock(r,items,'a')+'</div>'+
+   '<div class="request-actions"><button class="btn sm" type="button" onclick="addSupplier(\''+r.id+'\')">+ Outro fornecedor</button>'+
+   '<button class="btn primary sm" type="button" onclick="saveOfertas(\''+r.id+'\')">Salvar cotação</button>'+
+   (fids.length&&!S.canApproveCot?'<span class="muted">Aprovação da cotação é feita pela Controladoria / Gestor de Compras.</span>':'')+'</div>';
+ }
+ return '<article class="request">'+reqHead(r,badge)+'<div class="body-pad">'+itemTable(items)+
+  (saved?'<div class="hint" style="margin-top:10px">Cotações salvas</div>'+saved:'')+
+  (form?'<div class="hint" style="margin-top:10px">Nova cotação</div>'+form:'')+
+  '</div></article>';
+}
+function newSupplierBlock(r,items,n){
+ return '<div class="supplier"><div class="supplier-head"><input class="field" list="supplier-options" autocomplete="off" data-sup="'+r.id+'|'+n+'" placeholder="Nome do fornecedor (novo ou cadastrado)"></div>'+
+  '<div class="srow lbl"><span>Item</span><span class="num">Preço unit.</span><span class="num">Frete</span><span class="num">Total</span></div>'+
+  items.map(i=>'<div class="srow"><span>'+esc(i.produto)+' <span class="lbl">('+esc(i.quantidade??'?')+' '+esc(i.unidade||'un.')+')</span></span>'+
+   '<input class="field money-input" data-price="'+r.id+'|'+n+'|'+i.id+'" placeholder="0,00">'+
+   '<input class="field money-input" data-freight="'+r.id+'|'+n+'|'+i.id+'" placeholder="0,00">'+
+   '<span class="num row-total">R$ 0,00</span></div>').join('')+
+  '<div class="supplier-total">Total: <span class="blk-total">R$ 0,00</span></div></div>';
+}
+function addSupplier(id){const r=S.requests.find(x=>x.id===id);document.getElementById('np-'+id).insertAdjacentHTML('beforeend',newSupplierBlock(r,reqItems(id),'n'+Date.now()))}
+async function saveOfertas(id){
+ const items=reqItems(id);
+ const blocks={};
+ document.querySelectorAll('[data-sup^="'+id+'|"]').forEach(el=>{const n=el.dataset.sup.split('|')[1],nome=el.value.trim();if(nome)blocks[n]={nome,itens:[]}});
+ for(const n of Object.keys(blocks)){
+  for(const it of items){
+   const price=numDot(document.querySelector('[data-price="'+id+'|'+n+'|'+it.id+'"]')?.value);
+   const freight=numDot(document.querySelector('[data-freight="'+id+'|'+n+'|'+it.id+'"]')?.value);
+   if(!(price>0)){error('Preço obrigatório para “'+it.produto+'” no fornecedor '+blocks[n].nome+'.');return}
+   blocks[n].itens.push({item_id:it.id,preco:price,frete:freight});
+  }
+ }
+ const ofertas=Object.values(blocks);
+ if(!ofertas.length){error('Informe ao menos um fornecedor com preços.');return}
+ busy(true,'Salvando cotação…');
+ try{const{error:e}=await sb.rpc('orc_salvar_ofertas',{p_solicitacao_id:id,p_ofertas:ofertas});if(e)throw e;
+  await loadAll();aviso('Cotação salva. Agora a Controladoria / Gestor de Compras aprova para virar Realizado/Pago.');
+ }catch(e){busy(false,'');error(e)}
+}
+async function aprovarCotacao(id,fid){
+ const r=S.requests.find(x=>x.id===id),items=reqItems(id);
+ const q=reqQuotes(id).filter(x=>x.fornecedor_id===fid&&x.status==='valida');
+ const ids=items.map(it=>q.find(x=>x.item_id===it.id)?.id).filter(Boolean);
+ if(ids.length!==items.length){error('Este fornecedor não tem preço válido para todos os itens. Salve a cotação completa antes de aprovar.');return}
+ const tot=q.reduce((a,x)=>a+num(x.valor_total),0);
+ if(!confirm('Aprovar a cotação de '+supplierName(fid)+' ('+money(tot)+') para o pedido #'+r.numero+'?\n\nO valor entra IMEDIATAMENTE como Realizado/Pago na Auditoria de Compras e baixa o orçamento da área. Esta ação é definitiva.'))return;
+ busy(true,'Registrando Realizado/Pago…');
+ try{const{error:e}=await sb.rpc('orc_aprovar_cotacoes',{p_solicitacao_id:id,p_cotacao_ids:ids});if(e)throw e;
+  await loadAll();TAB='realizado';buildTabs();aviso('Cotação aprovada. Pedido #'+r.numero+' registrado como Realizado/Pago ('+money(tot)+') na Auditoria de Compras.');
+ }catch(e){busy(false,'');error(e)}
+}
+
+/* ---------- REALIZADO / ACOMPANHAMENTO ---------- */
+const FUNIL=[['a_emitir','A emitir'],['pedido_emitido','Pedido emitido'],['em_entrega','Em entrega'],['recebido','Recebido']];
+function renderRealizado(){
+ const box=document.getElementById('lista-realizado');if(!box)return;
+ let rows=scoped(S.requests).filter(r=>r.financeiro_status==='realizado_pago'||['comprada','realizada','finalizada'].includes(r.status));
+ rows.sort((a,b)=>new Date(b.cotacao_aprovada_em||b.updated_at)-new Date(a.cotacao_aprovada_em||a.updated_at));
+ document.getElementById('cnt-realizado').textContent=rows.length;
+ box.innerHTML=rows.map(realizadoCard).join('')||'<div class="empty">Nenhum pedido realizado ainda.</div>';
+}
+function realizadoCard(r){
+ const items=reqItems(r.id);
+ const compras=S.purchases.filter(p=>p.solicitacao_id===r.id);
+ const tot=compras.reduce((a,p)=>a+num(p.valor_total_realizado),0)||num(r.valor_realizado);
+ const forn=[...new Set(compras.map(p=>supplierName(p.fornecedor_id)))].join(', ')||'—';
+ const badge='<span class="badge done">Realizado / Pago</span>';
+ const linhas=compras.map(p=>{const it=S.items.find(i=>i.id===p.item_id);
+  return '<tr><td class="item">'+esc(it?.produto||'Item')+'</td><td class="num">'+esc(p.quantidade)+'</td><td>'+esc(supplierName(p.fornecedor_id))+'</td><td class="num">'+money(p.preco_unitario_realizado)+'</td><td class="num">'+money(p.valor_total_realizado)+'</td></tr>'}).join('');
+ const canFunil=S.isOps;
+ const step='<div class="step">'+FUNIL.map(([k,l])=>'<button class="'+(r.acompanhamento_status===k?'on':'')+'"'+(canFunil?' onclick="setFunil(\''+r.id+'\',\''+k+'\')"':' disabled')+'>'+l+'</button>').join('')+'</div>';
+ return '<article class="request">'+reqHead(r,badge)+'<div class="body-pad">'+
+  '<div class="meta" style="margin-bottom:8px"><span>💰 Total realizado: <strong>'+money(tot)+'</strong></span><span>🏭 '+esc(forn)+'</span><span>📅 Aprovado em '+date(r.cotacao_aprovada_em)+'</span></div>'+
+  (linhas?'<div class="table-wrap"><table><thead><tr><th>Item</th><th class="num">Qtd.</th><th>Fornecedor</th><th class="num">Unit.</th><th class="num">Total</th></tr></thead><tbody>'+linhas+'</tbody></table></div>':itemTable(items))+
+  '<div class="hint" style="margin-top:10px">Acompanhamento do pedido (não afeta o financeiro)</div>'+step+
+  '</div></article>';
+}
+async function setFunil(id,st){
+ busy(true,'Atualizando acompanhamento…');
+ try{const{error:e}=await sb.from('orc_solicitacoes').update({acompanhamento_status:st}).eq('id',id);if(e)throw e;
+  const r=S.requests.find(x=>x.id===id);if(r)r.acompanhamento_status=st;
+  busy(false,'');renderRealizado();
+ }catch(e){busy(false,'');error(e)}
+}
+
+/* ---------- MINHA CONTA CORRENTE ---------- */
+function renderMinha(){
+ const tb=document.getElementById('minha-body');if(!tb)return;
+ let ps=S.purchases;
+ if(!(S.isOps&&!S.myDep))ps=ps.filter(p=>p.departamento_id===S.myDep);
+ tb.innerHTML=ps.map(p=>{const it=S.items.find(i=>i.id===p.item_id),r=S.requests.find(x=>x.id===p.solicitacao_id);
+  return '<tr><td>'+date(p.realizado_em)+'</td><td>#'+esc(r?.numero||'—')+'</td><td class="item">'+esc(it?.produto||'Item comprado')+'<div class="sub">'+esc(it?.especificacao||'')+'</div></td>'+
+   '<td class="num">'+esc(p.quantidade)+' '+esc(it?.unidade||'un.')+'</td><td>'+esc(supplierName(p.fornecedor_id))+'</td>'+
+   '<td class="num">'+money(p.preco_unitario_realizado)+'</td><td class="num" style="font-weight:800">'+money(p.valor_total_realizado)+'</td></tr>'}).join('')
+  ||'<tr><td colspan="7" class="empty">Nenhum gasto realizado.</td></tr>';
+}
+
+/* ---------- HISTÓRICO ---------- */
+function renderHistorico(){
+ const tb=document.getElementById('historico-body');if(!tb)return;
+ let rows=S.requests.filter(r=>r.email_bloqueado||['cancelada','rejeitada'].includes(r.status));
+ document.getElementById('cnt-historico').textContent=rows.length;
+ tb.innerHTML=rows.map(r=>'<tr><td>#'+esc(r.numero)+'</td><td>'+esc(r.assunto||'—')+'</td><td>'+esc(r.solicitante_email||'—')+'</td>'+
+  '<td><span class="badge no">'+esc(r.email_bloqueado?'E-mail bloqueado':r.status)+'</span></td><td class="sub">'+esc(r.motivo_rejeicao||'—')+'</td></tr>').join('')
+  ||'<tr><td colspan="5" class="empty">Nada bloqueado ou rejeitado.</td></tr>';
+}
+
+/* ---------- NOVA SOLICITAÇÃO ---------- */
+function openNewRequest(){['nr-remetente','nr-assunto','nr-corpo','nr-departamento'].forEach(k=>document.getElementById(k).value='');document.getElementById('nr-result').innerHTML='';document.getElementById('new-request-modal').showModal()}
+async function submitNewRequest(){
+ const remetente=document.getElementById('nr-remetente').value.trim(),
+  assunto=document.getElementById('nr-assunto').value.trim(),
+  corpo=document.getElementById('nr-corpo').value.trim(),
+  departamento_id=document.getElementById('nr-departamento').value||null,
+  out=document.getElementById('nr-result');
+ if(!corpo&&!assunto){out.innerHTML='<div class="notice">Preencha ao menos o assunto ou os itens.</div>';return}
+ const btn=document.getElementById('nr-submit');btn.disabled=true;btn.textContent='Criando…';
+ try{
+  const{data,error:err}=await sb.functions.invoke('orc-ingest-email',{body:{remetente,assunto,corpo,departamento_id,message_id:'manual-'+Date.now()}});
+  if(err||(data&&data.error))throw new Error((data&&data.error)||err.message);
+  out.innerHTML='<div class="notice ok">Solicitação #'+esc(data.numero)+' criada · '+esc(data.total_itens)+' item(ns) · '+
+   (data.setor?('área '+esc(data.setor)):'sem área identificada — vai para revisão')+'. Está na fila de aprovação da área.</div>';
+  await loadAll();TAB='aprovacao';buildTabs();
+  setTimeout(()=>document.getElementById('new-request-modal').close(),1600);
+ }catch(e){out.innerHTML='<div class="notice">'+esc(ptbr(e))+'</div>'}
+ btn.disabled=false;btn.textContent='Criar solicitação';
+}
+
+/* ---------- live totals on quote inputs ---------- */
+document.addEventListener('input',e=>{
+ const el=e.target;if(!el.matches('[data-price],[data-freight]'))return;
+ const key=(el.dataset.price||el.dataset.freight).split('|');
+ const it=S.items.find(i=>i.id===key[2]);
+ const block=el.closest('.supplier');
+ let blkTot=0;
+ block.querySelectorAll('.srow').forEach(row=>{
+  const pIn=row.querySelector('[data-price]'),fIn=row.querySelector('[data-freight]');
+  if(!pIn)return;
+  const iid=pIn.dataset.price.split('|')[2],item=S.items.find(i=>i.id===iid);
+  const line=numDot(pIn.value)*num(item?.quantidade)+numDot(fIn?.value);
+  const rt=row.querySelector('.row-total');if(rt)rt.textContent=money(line);
+  blkTot+=line;
+ });
+ const bt=block.querySelector('.blk-total');if(bt)bt.textContent=money(blkTot);
+});
+
 loadAll();
 </script>
 </body></html>
