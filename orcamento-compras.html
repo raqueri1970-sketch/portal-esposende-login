@@ -7,10 +7,12 @@
 <style>
 :root{--bg:#07111f;--panel:#0d1b2c;--line:#20334b;--soft:#10243a;--text:#edf4fb;--muted:#8ca4bf;--blue:#3b82f6;--green:#22c55e;--amber:#f59e0b;--red:#ef4444}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,Arial,sans-serif}button,input,select,textarea{font:inherit}
-.top{position:sticky;top:0;z-index:5;background:#081421f5;border-bottom:1px solid var(--line);padding:16px 22px}
-.topline,.toolbar,.between,.actions{display:flex;align-items:center;gap:9px}.between{justify-content:space-between}
-.top h1{font-size:20px;margin:0}.top small,.muted{color:var(--muted)}.mail{color:#93c5fd;font-weight:800}
-.wrap{max-width:1600px;margin:auto;padding:18px}.toolbar{margin-bottom:14px;flex-wrap:wrap}.spacer{flex:1}
+.top{position:sticky;top:0;z-index:5;background:#081421f5;border-bottom:1px solid var(--line);padding:11px 18px}
+.topline,.toolbar,.between,.actions,.tabbar{display:flex;align-items:center;gap:9px}.between{justify-content:space-between}
+.top h1{font-size:17px;margin:0}.top small,.muted{color:var(--muted)}.mail{color:#93c5fd;font-weight:800}
+.wrap{max-width:1600px;margin:auto;padding:16px}.toolbar{margin-bottom:14px;flex-wrap:wrap}.spacer{flex:1}
+.tabbar{margin-bottom:14px;flex-wrap:wrap}
+#tab-select{display:none;flex:1;min-width:180px;font-weight:750}
 .btn{cursor:pointer;border:1px solid #315170;background:#132a43;color:#e8f2ff;border-radius:9px;padding:9px 13px;font-weight:750}
 .btn.primary{background:#2563eb}.btn.green{background:#15803d}.btn.amber{background:#92400e}.btn.red{background:#7f1d1d}.btn.sm{padding:6px 9px;font-size:11px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
@@ -68,11 +70,18 @@ dialog::backdrop{background:#02060dcc}
 .modal-head{padding:16px 18px;border-bottom:1px solid var(--line);font-size:17px;font-weight:800}
 .modal-body{padding:18px}.modal-actions{padding:14px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .print-only{display:none}
+.metric.link{cursor:pointer}.metric.link:hover{border-color:#3b6795}
 @media(max-width:900px){.cards{grid-template-columns:1fr 1fr}.srow{grid-template-columns:1fr 80px 80px}.srow .row-total{grid-column:1/-1;text-align:right}}
+@media(max-width:760px){
+ #tabs{display:none}#tab-select{display:block}
+ .cards{grid-template-columns:1fr 1fr;gap:8px}.metric{padding:12px}.v{font-size:19px}
+ .wrap{padding:10px}.request-head{flex-direction:column;align-items:flex-start}
+ .filters label{font-size:10px}
+}
 @media print{
  @page{margin:14mm}
  body{background:#fff!important;color:#000!important;font-size:11px}
- .top,.toolbar,.tabs,.filters,.request-actions,.step,.btn,#notice,.no-print{display:none!important}
+ .top,.toolbar,.tabbar,.tabs,.filters,.request-actions,.step,.btn,#notice,.no-print{display:none!important}
  .wrap{max-width:none;padding:0}
  .panel,.metric,.request,.table-wrap{background:#fff!important;border:1px solid #999!important;color:#000!important}
  th{background:#eee!important;color:#000!important;border:1px solid #999!important}
@@ -88,9 +97,10 @@ dialog::backdrop{background:#02060dcc}
 </head>
 <body>
 <header class="top"><div class="topline">
- <div><h1 id="page-title">Central de Compras</h1>
- <small>Orçamento, aprovação e cotação no mesmo lugar · e-mail oficial: <span class="mail">cotacaodecompras@lojasesposende.com.br</span></small></div>
- <span class="spacer"></span><span id="profile" class="badge">Identificando…</span>
+ <h1 id="page-title">Central de Compras</h1>
+ <span class="spacer"></span>
+ <span id="profile" class="badge">—</span>
+ <button id="btn-refresh" class="btn green sm no-print" onclick="loadAll()" title="Atualizar">↻</button>
 </div></header>
 
 <main class="wrap" id="app">
@@ -102,15 +112,14 @@ dialog::backdrop{background:#02060dcc}
  <div class="print-sub">Central de Compras — Orçamento por área · <span id="print-period"></span> · emitido em <span id="print-date"></span></div>
 </div>
 
-<div class="toolbar no-print">
- <button class="btn" onclick="loadAll()">↻ Atualizar</button>
- <span id="status" class="muted">Conectando…</span>
+<div class="tabbar no-print">
+ <select id="tab-select" class="field" onchange="setTab(this.value)"></select>
+ <div class="tabs" id="tabs"></div>
  <span class="spacer"></span>
- <button class="btn sm" onclick="window.print()">🖨️ Imprimir / PDF</button>
- <button class="btn primary sm" type="button" onclick="openNewRequest()">+ Nova solicitação</button>
+ <button class="btn sm" onclick="window.print()">🖨️ PDF</button>
+ <button class="btn primary sm" type="button" onclick="openNewRequest()">+ Solicitação</button>
 </div>
-
-<div class="tabs no-print" id="tabs"></div>
+<span id="status" class="hidden"></span>
 
 <!-- ORÇAMENTO POR ÁREA — "conta bancária": só acompanha o planejado vs. realizado -->
 <section data-tab="orcamento">
@@ -290,7 +299,8 @@ async function session(){
  S.canBudget=APPROVE_AREA.includes(S.profile.perfil);
  S.myDep=S.profile.departamento_id;
  S.seeAll=S.isOps&&(!S.myDep||APPROVE_AREA.includes(S.profile.perfil)||S.profile.perfil==='comprador');
- document.getElementById('profile').textContent=({administrador:'Administrador',controladoria:'Controladoria',diretoria:'Diretoria',comprador:'Compras / Cotação',gestor_compras:'Gestor de Compras',gestor_departamento:'Gestor de área'}[S.profile.perfil]||S.profile.perfil);
+ S.isAdmin=APPROVE_AREA.includes(S.profile.perfil);
+ document.getElementById('profile').textContent=({administrador:'Administrador',controladoria:'Controladoria',diretoria:'Diretoria',comprador:'Compras',gestor_compras:'Gestor de Compras',gestor_departamento:'Gestor de área'}[S.profile.perfil]||S.profile.perfil);
  document.getElementById('page-title').textContent=S.isOps?'Central de Compras':'Minha Conta Corrente';
 }
 
@@ -299,6 +309,7 @@ function visibleDeps(){let d=S.deps.slice().sort((a,b)=>a.nome.localeCompare(b.n
 
 async function loadAll(){
  busy(true,'Atualizando…');document.getElementById('notice').innerHTML='';
+ const rb=document.getElementById('btn-refresh');if(rb)rb.disabled=true;
  try{
   if(!S.session)await session();
   const [d,b,s,i,c,p,mv,f]=await Promise.all([
@@ -314,9 +325,10 @@ async function loadAll(){
   const bad=[d,b,s,i,c,p,mv,f].find(x=>x.error);if(bad)throw bad.error;
   Object.assign(S,{deps:d.data||[],budgets:b.data||[],requests:s.data||[],items:i.data||[],quotes:c.data||[],purchases:p.data||[],movs:mv.data||[],suppliers:f.data||[]});
   fillSelects();buildTabs();renderAll();
-  busy(false,'Dados atualizados '+new Date().toLocaleTimeString('pt-BR'));
+  busy(false,'');
   syncCmp(false);
  }catch(e){busy(false,'');error(e)}
+ if(rb)rb.disabled=false;
 }
 
 /* ---------- PONTE COTAÇÃO E PEDIDOS (cmp) ---------- */
@@ -324,9 +336,10 @@ let cmpSyncing=false;
 async function syncCmp(manual){
  const ids=[...new Set(S.items.map(i=>i.cmp_id).filter(Boolean))];
  const st=document.getElementById('cmp-sync-status');
- if(!ids.length){if(st)st.textContent='Nenhum pedido enviado ao módulo de cotação ainda.';return}
+ if(st)st.textContent='';
+ if(!ids.length){return}
  if(cmpSyncing)return; cmpSyncing=true;
- if(st)st.textContent='Sincronizando…';
+ if(st)st.textContent='sincronizando…';
  try{
   const {data:sols,error:e1}=await cmpSb.from('solicitacoes').select('id,status,menor_valor,menor_fornecedor,pc_num,pc_status').in('id',ids);
   if(e1)throw e1;
@@ -335,7 +348,7 @@ async function syncCmp(manual){
    item_id:i.id,cmp_id:i.cmp_id,cmp_status:c.status,
    menor_valor:c.menor_valor,menor_fornecedor:c.menor_fornecedor,
    pc_num:c.pc_num,pc_status:c.pc_status,pc_valor:c.menor_valor,emitido_em:null}});
-  if(!entradas.length){if(st)st.textContent='Sem novidades.';cmpSyncing=false;return}
+  if(!entradas.length){if(st)st.textContent='';cmpSyncing=false;return}
   const {data,error:e2}=await sb.rpc('orc_sync_cmp',{p_entradas:entradas});
   if(e2)throw e2;
   const [s2,i2,p2,mv2]=await Promise.all([
@@ -348,9 +361,9 @@ async function syncCmp(manual){
   if(!p2.error)S.purchases=p2.data||S.purchases;
   if(!mv2.error)S.movs=mv2.data||S.movs;
   renderAll();
-  if(st)st.textContent='Sincronizado '+new Date().toLocaleTimeString('pt-BR')+' · '+(data?.realizados_criados||0)+' novo(s) realizado(s).';
-  if(manual)aviso('Sincronização concluída com o módulo Cotação e Pedidos.');
- }catch(e){if(st)st.textContent='Falha ao sincronizar: '+ptbr(e); if(manual)error(e)}
+  if(st)st.textContent='';
+  if(manual)aviso('Sincronizado com o módulo Cotação e Pedidos'+((data?.realizados_criados||0)?' · '+data.realizados_criados+' novo(s) realizado(s)':'')+'.');
+ }catch(e){if(st)st.textContent=''; if(manual)error(e)}
  cmpSyncing=false;
 }
 function cmpNovoId(){const L='ABCDEFGHJKLMNPQRSTUVWXYZ';return 'SOL-'+Math.floor(100000+Math.random()*899999)+'-'+L[Math.random()*L.length|0]+L[Math.random()*L.length|0]}
@@ -401,19 +414,30 @@ function onAnoChange(){
 const TABDEFS=[
  {id:'orcamento',label:'Orçamento por área'},
  {id:'aprovacao',label:'Fila de aprovação',ops:1},
- {id:'acompanhamento',label:'Acompanhamento (Cotação e Pedidos)',ops:1},
+ {id:'acompanhamento',label:'Acompanhamento',ops:1},
  {id:'minha',label:'Minha conta corrente'},
- {id:'historico',label:'Bloqueados / rejeitados',ops:1}
+ {id:'historico',label:'Bloqueados',ops:1}
 ];
+function tabList(){return TABDEFS.filter(t=>!t.ops||S.isOps)}
 function buildTabs(){
- const wrap=document.getElementById('tabs');
- const list=TABDEFS.filter(t=>!t.ops||S.isOps);
+ const list=tabList();
  if(!list.find(t=>t.id===TAB))TAB=S.isOps?'orcamento':'minha';
- wrap.innerHTML=list.map(t=>'<button class="tab'+(t.id===TAB?' on':'')+'" data-go="'+t.id+'">'+esc(t.label)+
-   (t.count?'<span class="count" id="cnt-tab-'+t.id+'"></span>':'')+'</button>').join('');
- wrap.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{TAB=b.dataset.go;buildTabs();showTab()});
+ const wrap=document.getElementById('tabs');
+ wrap.innerHTML=list.map(t=>{
+  const c=tabCount(t.id);
+  return '<button class="tab'+(t.id===TAB?' on':'')+'" data-go="'+t.id+'">'+esc(t.label)+(c?'<span class="count">'+c+'</span>':'')+'</button>';
+ }).join('');
+ wrap.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.go));
+ const sel=document.getElementById('tab-select');
+ sel.innerHTML=list.map(t=>{const c=tabCount(t.id);return '<option value="'+t.id+'"'+(t.id===TAB?' selected':'')+'>'+esc(t.label)+(c?' ('+c+')':'')+'</option>'}).join('');
  showTab();
 }
+function tabCount(id){
+ if(id==='aprovacao')return scoped(S.requests).filter(r=>['revisao_necessaria','aguardando_aprovacao_orcamento'].includes(r.status)&&!r.email_bloqueado).length;
+ if(id==='acompanhamento')return scoped(S.requests).filter(r=>r.aprovado_em&&r.financeiro_status!=='realizado_pago'&&!['cancelada','rejeitada'].includes(r.status)).length;
+ return 0;
+}
+function setTab(id){TAB=id;buildTabs()}
 function showTab(){document.querySelectorAll('section[data-tab]').forEach(s=>{const on=s.dataset.tab===TAB;s.classList.toggle('hidden',!on);s.classList.toggle('on',on)})}
 
 function renderAll(){renderOrcamento();renderFila();renderAcompanhamento();renderMinha();renderHistorico()}
@@ -508,6 +532,15 @@ function setCards(bud,cot,real,saldo){
  document.getElementById('m-real').textContent=money(real);
  document.getElementById('m-saldo').textContent=money(saldo);
  document.getElementById('m-saldo').parentElement.className='metric '+(saldo<0?'bad':'good');
+ // cards clicáveis: Em cotação / Realizado abrem o Acompanhamento
+ if(S.isOps){
+  const cCot=document.getElementById('m-cot').parentElement, cReal=document.getElementById('m-real').parentElement;
+  cCot.classList.add('link');cReal.classList.add('link');
+  cCot.onclick=()=>setTab('acompanhamento');
+  cReal.onclick=()=>setTab('acompanhamento');
+  cCot.title='Ver no Acompanhamento (Cotação e Pedidos)';
+  cReal.title='Ver no Acompanhamento (Cotação e Pedidos)';
+ }
 }
 function verbaEditor(d){
  const ano=+document.getElementById('f-ano').value;
@@ -577,9 +610,9 @@ function itemTable(items){
   '</tbody></table></div>';
 }
 function reqHead(r,badge){
- return '<div class="request-head"><div><div class="title">#'+esc(r.numero)+' · '+esc(r.assunto||r.resumo||'Solicitação de compra')+'</div>'+
-  '<div class="meta"><span>🏢 '+esc(depName(r.departamento_id))+'</span><span>👤 '+esc(r.solicitante_nome||r.solicitante_email||'Não informado')+'</span>'+
-  '<span>📅 '+date(r.email_recebido_em||r.created_at)+'</span><span>📦 '+reqItems(r.id).length+' item(ns)</span></div></div>'+
+ const items=reqItems(r.id);
+ return '<div class="request-head"><div><div class="title">'+esc(depName(r.departamento_id))+' · #'+esc(r.numero)+'</div>'+
+  '<div class="meta"><span>'+items.length+' item(ns): '+esc(items.map(i=>i.produto).join(', ').slice(0,90))+(items.map(i=>i.produto).join(', ').length>90?'…':'')+'</span></div></div>'+
   '<div class="actions">'+badge+'</div></div>';
 }
 function renderFila(){
@@ -590,27 +623,55 @@ function renderFila(){
  box.innerHTML=rows.map(r=>{
   const items=reqItems(r.id);
   const semArea=r.departamento_id==null||r.status==='revisao_necessaria';
-  const badge='<span class="badge wait">'+(semArea?'Definir área':'Aguardando aprovação')+'</span>';
+  const saldo=semArea?null:saldoAreaAno(r.departamento_id);
+  const estourada=saldo!=null&&saldo<0;
+  const badge=semArea?'<span class="badge wait">Definir área</span>'
+    :estourada?'<span class="badge no">Verba estourada '+money(saldo)+'</span>'
+    :'<span class="badge wait">Aguardando aprovação</span>';
   let acts='';
   if(S.canApproveArea){
-   if(!semArea)acts+='<button class="btn green sm" onclick="aprovarArea(\''+r.id+'\')">✓ Aprovar orçamento da área</button>';
-   acts+='<button class="btn amber sm" onclick="openRevisar(\''+r.id+'\')">Revisar área / quantidades</button>';
+   if(!semArea&&!estourada)acts+='<button class="btn green sm" onclick="aprovarArea(\''+r.id+'\')">✓ Aprovar e enviar p/ cotação</button>';
+   if(!semArea&&estourada){
+    acts+= S.isAdmin
+      ? '<button class="btn amber sm" onclick="aprovarArea(\''+r.id+'\',true)">⚠ Aprovar estouro de verba e liberar</button>'
+      : '<span class="muted">Verba da área estourada — só a Controladoria libera (estouro de verba).</span>';
+   }
+   acts+='<button class="btn sm" onclick="openRevisar(\''+r.id+'\')">Revisar área / qtd</button>';
    acts+='<button class="btn red sm" onclick="openRejeitar(\''+r.id+'\')">Rejeitar</button>';
   }else acts='<span class="muted">Somente a área ou a Controladoria aprova.</span>';
   return '<article class="request">'+reqHead(r,badge)+'<div class="body-pad">'+itemTable(items)+
    (semArea?'<div class="hint">Sem área identificada — use “Revisar” para definir antes de aprovar.</div>':'')+
+   (estourada?'<div class="notice">A verba de '+esc(depName(r.departamento_id))+' está estourada em '+money(-saldo)+' (verba do ano − realizado − em cotação). Este pedido só entra na cotação após a Controladoria aprovar o estouro.</div>':'')+
    '</div><div class="request-actions">'+acts+'</div></article>';
  }).join('')||'<div class="empty">Nada aguardando aprovação.</div>';
 }
-async function aprovarArea(id){
+function saldoAreaAno(depId){
+ const ano=+(document.getElementById('f-ano').value)||new Date().getFullYear();
+ let verba=0;for(let m=1;m<=12;m++)verba+=budgetMonth(depId,ano+'-'+String(m).padStart(2,'0')).valor;
+ const real=S.purchases.filter(p=>p.departamento_id===depId&&String(ym(p.realizado_em)).slice(0,4)===String(ano)).reduce((a,p)=>a+num(p.valor_total_realizado),0);
+ const cot=emCotacao(depId);
+ return verba-real-cot;
+}
+async function aprovarArea(id,permitirEstouro){
  const r=S.requests.find(x=>x.id===id);
- if(!confirm('Aprovar o orçamento da área para o pedido #'+r?.numero+'?\n\nOs itens vão para o módulo Cotação e Pedidos, onde o comprador faz a cotação real (preço, prazo, fornecedor).'))return;
- busy(true,'Aprovando e enviando ao módulo de cotação…');
+ const msg=permitirEstouro
+  ? 'A verba da área está ESTOURADA. Aprovar mesmo assim (registra estouro de verba) e liberar a cotação do pedido #'+r?.numero+'?'
+  : 'Aprovar o orçamento da área e enviar o pedido #'+r?.numero+' ao módulo Cotação e Pedidos?';
+ if(!confirm(msg))return;
+ busy(true,'Aprovando…');
  try{
-  const{error:e}=await sb.rpc('orc_aprovar_solicitacao',{p_solicitacao_id:id});if(e)throw e;
+  const{error:e}=await sb.rpc('orc_aprovar_solicitacao',{p_solicitacao_id:id,p_permitir_estouro:!!permitirEstouro});
+  if(e){
+   if(/ESTOURO_VERBA/i.test(e.message||'')){
+    busy(false,'');
+    if(S.isAdmin&&!permitirEstouro){ if(confirm('A verba desta área está estourada. Como Controladoria, você pode aprovar o estouro e liberar a cotação. Continuar?')) return aprovarArea(id,true); return; }
+    return error('A verba da área está estourada. Peça à Controladoria aprovar o estouro de verba para este pedido.');
+   }
+   throw e;
+  }
   await enviarItensAoCmp(r);
   await loadAll();TAB='acompanhamento';buildTabs();
-  aviso('Pedido #'+r.numero+' aprovado e enviado ao módulo Cotação e Pedidos. O comprador vai completar a cotação lá.');
+  aviso('Pedido #'+r.numero+(permitirEstouro?' aprovado COM estouro de verba':' aprovado')+' e enviado ao módulo Cotação e Pedidos.');
  }catch(e){busy(false,'');error(e)}
 }
 
@@ -680,13 +741,22 @@ function acompCard(r){
    '<td>'+(c?esc(supplierName(c.fornecedor_id)):'—')+'</td>'+
    '<td class="num">'+(c?money(c.valor_total_realizado):'—')+'</td>'+
    '<td>'+est+corr+'</td></tr>'}).join('');
+ const naoEnviados=items.filter(it=>!it.cmp_id).length;
+ let acts='';
+ if(!realizado&&naoEnviados&&S.canApproveArea)
+  acts='<div class="request-actions"><button class="btn primary sm" onclick="reenviarCmp(\''+r.id+'\')">Enviar '+naoEnviados+' item(ns) ao módulo Cotação e Pedidos</button></div>';
  return '<article class="request">'+reqHead(r,badge)+'<div class="body-pad">'+
-  '<div class="meta" style="margin-bottom:8px"><span>🏢 '+esc(depName(r.departamento_id))+'</span>'+
-  '<span>📅 Aprovado pela área em '+date(r.aprovado_em)+'</span>'+
-  (realizado?'<span>✅ Realizado em '+date(r.cotacao_aprovada_em)+'</span>':'')+'</div>'+
+  '<div class="meta" style="margin-bottom:8px"><span>Aprovado pela área em '+date(r.aprovado_em)+'</span>'+
+  (realizado?'<span>Realizado em '+date(r.cotacao_aprovada_em)+'</span>':'')+'</div>'+
   '<div class="table-wrap"><table><thead><tr><th>Item</th><th class="num">Qtd.</th><th>Fornecedor</th><th class="num">Valor</th><th>Situação (Cotação e Pedidos)</th></tr></thead><tbody>'+linhas+'</tbody></table></div>'+
-  (realizado?'':'<div class="hint" style="margin-top:8px">Abra o módulo <strong>Cotação e Pedidos</strong> para lançar preços/prazo e emitir o Pedido de Compra. Quando o pedido for emitido, o valor entra como Realizado/Pago aqui e na Auditoria de Compras (clique em “Sincronizar” acima).</div>')+
-  '</div></article>';
+  (realizado?'':'<div class="hint" style="margin-top:8px">A cotação e a emissão do Pedido de Compra são feitas no módulo <strong>Cotação e Pedidos</strong>. Quando o pedido for emitido lá, o valor entra como Realizado/Pago aqui e na Auditoria de Compras.</div>')+
+  '</div>'+acts+'</article>';
+}
+async function reenviarCmp(id){
+ const r=S.requests.find(x=>x.id===id);
+ busy(true,'Enviando ao módulo Cotação e Pedidos…');
+ try{await enviarItensAoCmp(r);await loadAll();aviso('Itens do pedido #'+r.numero+' enviados ao módulo Cotação e Pedidos.');}
+ catch(e){busy(false,'');error(e)}
 }
 let corrigirId=null;
 function openCorrigir(compraId){
