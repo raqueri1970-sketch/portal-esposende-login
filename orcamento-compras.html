@@ -371,18 +371,17 @@ async function enviarItensAoCmp(r){
  if(r.cmp_id)return;
  const items=reqItems(r.id),area=DEP_CMP_AREA[S.deps.find(d=>d.id===r.departamento_id)?.codigo]||depName(r.departamento_id);
  const id=cmpNovoId();
- const lista=items.map((it,n)=>(n+1)+') '+[it.quantidade&&it.quantidade+' '+(it.unidade||'un'),it.produto,it.especificacao].filter(Boolean).join(' — ')).join('\n');
+ const lista=items.map((it,n)=>(n+1)+') '+[it.quantidade&&it.quantidade+' '+(it.unidade||'un'),it.produto,it.especificacao,it.local_entrega&&('→ '+it.local_entrega)].filter(Boolean).join(' — ')).join('\n');
  const destinos=[...new Set(items.map(it=>it.local_entrega).filter(Boolean))];
  const email=(r.email_original||'').trim();
  const {error:e1}=await cmpSb.from('solicitacoes').insert({
   id,
-  descricao:'PEDIDO DE ORÇAMENTO — '+depName(r.departamento_id)+' (#'+r.numero+') · '+items.length+' item(ns)\n'+lista,
+  descricao:depName(r.departamento_id)+' · Pedido de Orçamento #'+r.numero+' ('+items.length+' item(ns))\n'+lista,
   area,categoria:'Pedido de Orçamento',
   destino:destinos.join(' / ')||r.local_entrega||'Não informado',
-  justificativa:(r.assunto||'Pedido de compra')+' — Orçamento & Compras #'+r.numero+
-    (email?'\n\n--- E-MAIL ORIGINAL (pedido de orçamento) ---\n'+email.slice(0,3000):''),
+  justificativa:email||(r.assunto||('Pedido de compra #'+r.numero)),
   solicitante:r.solicitante_nome||r.solicitante_email||'Central de Compras',
-  observacao:'Gerado pelo módulo Orçamento. Área solicitante: '+depName(r.departamento_id)+'. Registro do e-mail preservado no Orçamento.',
+  observacao:'Área solicitante: '+depName(r.departamento_id)+' · Orçamento & Compras #'+r.numero+'. E-mail original preservado no módulo Orçamento.',
   status:'orcamento'});
  if(e1)throw e1;
  const {error:e2}=await sb.from('orc_solicitacoes').update({cmp_id:id,cmp_status:'pendente',cmp_enviado_em:new Date().toISOString()}).eq('id',r.id);
