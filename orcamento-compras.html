@@ -18,6 +18,14 @@
 .tab{cursor:pointer;border:1px solid #2b405a;background:#0d1b2c;color:var(--muted);border-radius:9px;padding:9px 14px;font-weight:750}
 .tab.on{background:#16324f;color:#e8f2ff;border-color:#3b6795}
 .tab .count{display:inline-block;margin-left:6px;background:#1f3f5f;color:#bfdbfe;border-radius:99px;padding:1px 7px;font-size:10px;font-weight:800}
+.orc-subtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.orc-subtabs button{cursor:pointer;border:1px solid #24384f;background:#0b1929;color:var(--muted);border-radius:8px;padding:6px 11px;font-size:12px;font-weight:700}
+.orc-subtabs button.on{background:#14304c;color:#e8f2ff;border-color:#3b6795}
+.vgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0}
+.vgrid label{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase}
+.vgrid input{width:100%;text-align:right;border:1px solid #2b405a;background:#0a1727;color:var(--text);border-radius:7px;padding:6px 7px;margin-top:3px}
+@media(max-width:900px){.vgrid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.vgrid{grid-template-columns:repeat(2,1fr)}}
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
 .metric,.panel,.request{background:var(--panel);border:1px solid var(--line);border-radius:14px}
 .metric{padding:15px}.k{font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.7px}.v{font-size:23px;font-weight:850;margin-top:5px}
@@ -104,35 +112,26 @@ dialog::backdrop{background:#02060dcc}
 
 <div class="tabs no-print" id="tabs"></div>
 
-<!-- ORÇAMENTO POR ÁREA -->
+<!-- ORÇAMENTO POR ÁREA — "conta bancária": só acompanha o planejado vs. realizado -->
 <section data-tab="orcamento">
- <div class="cards">
-  <div class="metric"><div class="k">ORÇAMENTO APROVADO (ACUM. PERÍODO)</div><div class="v" id="m-budget">R$ 0,00</div></div>
+ <div class="filters no-print">
+  <label class="muted" style="font-size:11px">Ano do orçamento
+   <select id="f-ano" class="field" onchange="onAnoChange()"></select></label>
+  <label class="muted" style="font-size:11px">Mês de referência
+   <input type="month" id="f-mes" class="field" onchange="renderOrcamento()"></label>
+  <label class="muted" style="font-size:11px">Período — de
+   <input type="month" id="f-de" class="field" onchange="renderOrcamento()"></label>
+  <label class="muted" style="font-size:11px">até
+   <input type="month" id="f-ate" class="field" onchange="renderOrcamento()"></label>
+ </div>
+ <div class="orc-subtabs no-print" id="orc-subtabs"></div>
+ <div class="cards" id="orc-cards">
+  <div class="metric"><div class="k" id="k-budget">ORÇAMENTO APROVADO (ACUM. PERÍODO)</div><div class="v" id="m-budget">R$ 0,00</div></div>
   <div class="metric warn"><div class="k">EM COTAÇÃO</div><div class="v" id="m-cot">R$ 0,00</div></div>
   <div class="metric"><div class="k">REALIZADO / PAGO (PERÍODO)</div><div class="v" id="m-real">R$ 0,00</div></div>
   <div class="metric good"><div class="k">SALDO</div><div class="v" id="m-saldo">R$ 0,00</div></div>
  </div>
- <div class="panel">
-  <div class="between"><h2>Orçamento por área</h2><span class="muted" id="orc-period-label"></span></div>
-  <div class="filters no-print">
-   <label class="muted" style="font-size:11px">Mês de referência
-    <input type="month" id="f-mes" class="field" onchange="renderOrcamento()"></label>
-   <label class="muted" style="font-size:11px">Período — de
-    <input type="month" id="f-de" class="field" onchange="renderOrcamento()"></label>
-   <label class="muted" style="font-size:11px">até
-    <input type="month" id="f-ate" class="field" onchange="renderOrcamento()"></label>
-  </div>
-  <div class="table-wrap" style="margin-top:12px"><table><thead><tr>
-   <th>Área</th>
-   <th class="num">Aprovado no mês</th>
-   <th class="num">Aprovado acum. (período)</th>
-   <th class="num">Em cotação</th>
-   <th class="num">Realizado (período)</th>
-   <th class="num">Saldo</th>
-  </tr></thead><tbody id="orc-body"></tbody>
-  <tfoot id="orc-foot"></tfoot></table></div>
-  <div class="hint">A verba anual sem rateio mensal é distribuída em 12 avos iguais; meses cadastrados individualmente (tipo “mensal”) têm prioridade e não somam à verba anual.</div>
- </div>
+ <div id="orc-view"></div>
 </section>
 
 <!-- FILA DE APROVAÇÃO DA ÁREA -->
@@ -233,7 +232,10 @@ const date=v=>v?new Date(v).toLocaleDateString('pt-BR'):'—';
 const num=v=>Number(String(v??0).replace(/\./g,'').replace(',','.'))||0;
 const numDot=v=>Number(String(v??0).replace(',','.'))||0;
 const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-const ym=d=>{const x=new Date(d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')};
+const ym=v=>{const s=String(v??'');
+ if(/^\d{4}-\d{2}(-\d{2})?$/.test(s))return s.slice(0,7); // 'YYYY-MM' ou 'YYYY-MM-DD' (competência) — sem fuso
+ try{return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit'}).format(new Date(v))}
+ catch(e){const x=new Date(v);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')}};
 const monthsBetween=(a,b)=>{const out=[];let[y,m]=a.split('-').map(Number);const[ey,em]=b.split('-').map(Number);
  while(y<ey||(y===ey&&m<=em)){out.push(y+'-'+String(m).padStart(2,'0'));m++;if(m>12){m=1;y++}if(out.length>120)break}return out};
 
@@ -275,12 +277,15 @@ async function session(){
  S.canApproveArea=APPROVE_AREA.includes(S.profile.perfil)||S.profile.perfil==='gestor_departamento';
  S.canApproveCot=APPROVE_COT.includes(S.profile.perfil);
  S.canQuote=['administrador','controladoria','diretoria','comprador','gestor_compras'].includes(S.profile.perfil);
+ S.canBudget=APPROVE_AREA.includes(S.profile.perfil);
  S.myDep=S.profile.departamento_id;
+ S.seeAll=S.isOps&&(!S.myDep||APPROVE_AREA.includes(S.profile.perfil)||S.profile.perfil==='comprador');
  document.getElementById('profile').textContent=({administrador:'Administrador',controladoria:'Controladoria',diretoria:'Diretoria',comprador:'Compras / Cotação',gestor_compras:'Gestor de Compras',gestor_departamento:'Gestor de área'}[S.profile.perfil]||S.profile.perfil);
  document.getElementById('page-title').textContent=S.isOps?'Central de Compras':'Minha Conta Corrente';
 }
 
-function scoped(rows,field){return (S.isOps&&!S.myDep)?rows:rows.filter(r=>r[field||'departamento_id']===S.myDep)}
+function scoped(rows,field){return S.seeAll?rows:rows.filter(r=>r[field||'departamento_id']===S.myDep)}
+function visibleDeps(){let d=S.deps.slice().sort((a,b)=>a.nome.localeCompare(b.nome));return S.seeAll?d:d.filter(x=>x.id===S.myDep)}
 
 async function loadAll(){
  busy(true,'Atualizando…');document.getElementById('notice').innerHTML='';
@@ -314,6 +319,19 @@ function fillSelects(){
   document.getElementById('f-de').value=now.slice(0,4)+'-01';
   document.getElementById('f-ate').value=now;
  }
+ const anoAtual=new Date().getFullYear();
+ const anos=new Set([anoAtual-1,anoAtual,anoAtual+1]);
+ S.budgets.forEach(b=>anos.add(new Date(b.competencia).getFullYear()));
+ const selA=document.getElementById('f-ano');const prev=selA.value;
+ selA.innerHTML=[...anos].sort().map(a=>'<option value="'+a+'">'+a+'</option>').join('');
+ selA.value=prev||String(anoAtual);
+}
+function onAnoChange(){
+ const ano=document.getElementById('f-ano').value;
+ document.getElementById('f-de').value=ano+'-01';
+ document.getElementById('f-ate').value=ano+'-12';
+ if(document.getElementById('f-mes').value.slice(0,4)!==ano)document.getElementById('f-mes').value=ano+'-01';
+ renderOrcamento();
 }
 
 /* ---------- TABS ---------- */
@@ -338,7 +356,11 @@ function showTab(){document.querySelectorAll('section[data-tab]').forEach(s=>{co
 
 function renderAll(){renderOrcamento();renderFila();renderCotacao();renderRealizado();renderMinha();renderHistorico()}
 
-/* ---------- ORÇAMENTO POR ÁREA ---------- */
+/* ---------- ORÇAMENTO POR ÁREA — conta bancária ---------- */
+let ORCTAB='all';
+const MESNOME=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const fmtM=s=>{const[y,m]=s.split('-');return m+'/'+y};
+
 function budgetMonth(depId,mes){
  const year=mes.slice(0,4);
  const mensal=S.budgets.find(b=>b.departamento_id===depId&&b.tipo==='mensal'&&ym(b.competencia)===mes);
@@ -347,6 +369,14 @@ function budgetMonth(depId,mes){
  if(anual)return {valor:num(anual.valor)/12,fonte:'anual'};
  return {valor:0,fonte:null};
 }
+function budgetMes(depId,ano,m){ // valor efetivo do mês (mensal gravado, ou 12-avos da verba anual); '' se nada
+ const comp=ano+'-'+String(m).padStart(2,'0');
+ const row=S.budgets.find(b=>b.departamento_id===depId&&b.tipo==='mensal'&&ym(b.competencia)===comp);
+ if(row)return num(row.valor);
+ const bm=budgetMonth(depId,comp);
+ return bm.fonte==='anual'?Math.round(bm.valor*100)/100:'';
+}
+function temVerba(depId){return S.budgets.some(b=>b.departamento_id===depId)}
 function realizadoPeriodo(depId,meses){
  return S.purchases.filter(p=>p.departamento_id===depId&&meses.includes(ym(p.realizado_em)))
    .reduce((a,p)=>a+num(p.valor_total_realizado),0);
@@ -355,40 +385,125 @@ function emCotacao(depId){
  return S.requests.filter(r=>r.departamento_id===depId&&r.financeiro_status!=='realizado_pago'&&!['cancelada','rejeitada'].includes(r.status))
    .reduce((a,r)=>a+num(r.valor_em_cotacao),0);
 }
+function aggArea(d,mes,meses){
+ const bm=budgetMonth(d.id,mes);
+ const acum=meses.reduce((a,m)=>a+budgetMonth(d.id,m).valor,0);
+ const cot=emCotacao(d.id), real=realizadoPeriodo(d.id,meses);
+ return {bm,acum,cot,real,saldo:acum-real-cot};
+}
+
+function renderOrcSubtabs(){
+ const deps=visibleDeps();
+ const btns=[{id:'all',nome:'▦ Todas as áreas'}].concat(deps.map(d=>({id:d.id,nome:d.nome})));
+ if(!btns.find(b=>b.id===ORCTAB))ORCTAB='all';
+ document.getElementById('orc-subtabs').innerHTML=btns.map(b=>
+  '<button class="'+(b.id===ORCTAB?'on':'')+'" data-orc="'+b.id+'">'+esc(b.nome)+'</button>').join('');
+ document.querySelectorAll('#orc-subtabs [data-orc]').forEach(b=>b.onclick=()=>{ORCTAB=b.dataset.orc;renderOrcamento()});
+}
+
 function renderOrcamento(){
  const mes=document.getElementById('f-mes').value||ym(new Date());
  let de=document.getElementById('f-de').value||mes, ate=document.getElementById('f-ate').value||mes;
  if(de>ate){const t=de;de=ate;ate=t}
  const meses=monthsBetween(de,ate);
- const fmtM=s=>{const[y,m]=s.split('-');return m+'/'+y};
- document.getElementById('orc-period-label').textContent='Período: '+fmtM(de)+' a '+fmtM(ate)+' · mês de referência '+fmtM(mes);
  document.getElementById('print-period').textContent='Período '+fmtM(de)+' a '+fmtM(ate);
  document.getElementById('print-date').textContent=new Date().toLocaleString('pt-BR');
+ renderOrcSubtabs();
+ const deps=visibleDeps();
 
- let deps=S.deps.slice().sort((a,b)=>a.nome.localeCompare(b.nome));
- if(!(S.isOps&&!S.myDep))deps=deps.filter(d=>d.id===S.myDep);
- let T={mes:0,acum:0,cot:0,real:0,saldo:0};
- const rows=deps.map(d=>{
-  const bm=budgetMonth(d.id,mes);
-  const acum=meses.reduce((a,m)=>a+budgetMonth(d.id,m).valor,0);
-  const cot=emCotacao(d.id), real=realizadoPeriodo(d.id,meses), saldo=acum-real-cot;
-  T.mes+=bm.valor;T.acum+=acum;T.cot+=cot;T.real+=real;T.saldo+=saldo;
-  const tag=bm.fonte==='anual'?' <span class="badge">12 avos</span>':bm.fonte==='mensal'?' <span class="badge ok">mensal</span>':'';
-  return '<tr><td class="item">'+esc(d.nome)+tag+'</td>'+
-   '<td class="num">'+money(bm.valor)+'</td>'+
-   '<td class="num">'+money(acum)+'</td>'+
-   '<td class="num">'+money(cot)+'</td>'+
-   '<td class="num">'+money(real)+'</td>'+
-   '<td class="num" style="font-weight:800;color:'+(saldo<0?'#fca5a5':'#86efac')+'">'+money(saldo)+'</td></tr>';
- }).join('');
- document.getElementById('orc-body').innerHTML=rows||'<tr><td colspan="6" class="empty">Nenhuma área.</td></tr>';
- document.getElementById('orc-foot').innerHTML='<tr><th>Total</th><th class="num">'+money(T.mes)+'</th><th class="num">'+money(T.acum)+
-  '</th><th class="num">'+money(T.cot)+'</th><th class="num">'+money(T.real)+'</th><th class="num">'+money(T.saldo)+'</th></tr>';
- document.getElementById('m-budget').textContent=money(T.acum);
- document.getElementById('m-cot').textContent=money(T.cot);
- document.getElementById('m-real').textContent=money(T.real);
- document.getElementById('m-saldo').textContent=money(T.saldo);
- document.querySelector('#m-saldo').parentElement.className='metric '+(T.saldo<0?'bad':'good');
+ if(ORCTAB==='all'){
+  document.getElementById('k-budget').textContent='ORÇAMENTO APROVADO (ACUM. PERÍODO)';
+  let T={mes:0,acum:0,cot:0,real:0,saldo:0};
+  const rows=deps.map(d=>{
+   const a=aggArea(d,mes,meses);
+   T.mes+=a.bm.valor;T.acum+=a.acum;T.cot+=a.cot;T.real+=a.real;T.saldo+=a.saldo;
+   const tag=!temVerba(d.id)?' <span class="badge no">sem verba</span>':a.bm.fonte==='anual'?' <span class="badge">12 avos</span>':'';
+   return '<tr><td class="item"><a href="#" onclick="ORCTAB=\''+d.id+'\';renderOrcamento();return false" style="color:#93c5fd">'+esc(d.nome)+'</a>'+tag+'</td>'+
+    '<td class="num">'+money(a.bm.valor)+'</td><td class="num">'+money(a.acum)+'</td>'+
+    '<td class="num">'+money(a.cot)+'</td><td class="num">'+money(a.real)+'</td>'+
+    '<td class="num" style="font-weight:800;color:'+(a.saldo<0?'#fca5a5':'#86efac')+'">'+money(a.saldo)+'</td></tr>';
+  }).join('');
+  setCards(T.acum,T.cot,T.real,T.saldo);
+  document.getElementById('orc-view').innerHTML=
+   '<div class="panel"><div class="between"><h2>Todas as áreas</h2><span class="muted">Período '+fmtM(de)+' a '+fmtM(ate)+' · mês ref. '+fmtM(mes)+'</span></div>'+
+   '<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Área</th><th class="num">Aprovado no mês</th><th class="num">Aprovado acum. (período)</th><th class="num">Em cotação</th><th class="num">Realizado</th><th class="num">Saldo</th></tr></thead>'+
+   '<tbody>'+(rows||'<tr><td colspan="6" class="empty">Nenhuma área visível.</td></tr>')+'</tbody>'+
+   '<tfoot><tr><th>Total geral</th><th class="num">'+money(T.mes)+'</th><th class="num">'+money(T.acum)+'</th><th class="num">'+money(T.cot)+'</th><th class="num">'+money(T.real)+'</th><th class="num">'+money(T.saldo)+'</th></tr></tfoot></table></div>'+
+   '<div class="hint">Clique numa área para abrir a conta dela (cards + extrato de gastos). O orçamento aqui é só acompanhamento — cotação e pedido são feitos no fluxo de compras.</div></div>';
+  return;
+ }
+
+ const d=deps.find(x=>x.id===ORCTAB);
+ if(!d){ORCTAB='all';return renderOrcamento()}
+ const a=aggArea(d,mes,meses);
+ document.getElementById('k-budget').textContent='VERBA APROVADA — '+d.nome.toUpperCase()+' (ACUM. PERÍODO)';
+ setCards(a.acum,a.cot,a.real,a.saldo);
+ document.getElementById('orc-view').innerHTML=verbaEditor(d)+extratoArea(d,mes,meses,de,ate);
+}
+function setCards(bud,cot,real,saldo){
+ document.getElementById('m-budget').textContent=money(bud);
+ document.getElementById('m-cot').textContent=money(cot);
+ document.getElementById('m-real').textContent=money(real);
+ document.getElementById('m-saldo').textContent=money(saldo);
+ document.getElementById('m-saldo').parentElement.className='metric '+(saldo<0?'bad':'good');
+}
+function verbaEditor(d){
+ const ano=+document.getElementById('f-ano').value;
+ const vals=Array.from({length:12},(_,i)=>budgetMes(d.id,ano,i+1));
+ const totalAno=vals.reduce((s,v)=>s+(Number(v)||0),0);
+ const definido=vals.some(v=>v!=='');
+ const legado=definido&&!S.budgets.some(b=>b.departamento_id===d.id&&b.tipo==='mensal'&&String(b.competencia).slice(0,4)===String(ano))
+   &&S.budgets.some(b=>b.departamento_id===d.id&&b.tipo==='anual'&&String(b.competencia).slice(0,4)===String(ano));
+ if(!S.canBudget){
+  const cells=vals.map((v,i)=>'<div><label>'+MESNOME[i]+'</label><div style="padding:6px 0;font-weight:700">'+(v===''?'—':money(v))+'</div></div>').join('');
+  return '<div class="panel"><h2>Verba de '+esc(d.nome)+' · '+ano+'</h2>'+
+   (definido?'<div class="vgrid">'+cells+'</div><div class="hint">Total do ano: <strong>'+money(totalAno)+'</strong></div>':'<div class="empty">Verba ainda não definida para esta área em '+ano+'.</div>')+'</div>';
+ }
+ const cells=vals.map((v,i)=>'<div><label>'+MESNOME[i]+'</label><input id="vb-'+i+'" value="'+(v===''?'':String(v).replace('.',','))+'" placeholder="0,00"></div>').join('');
+ return '<div class="panel"><div class="between"><h2>Verba de '+esc(d.nome)+' · '+ano+'</h2>'+
+  (definido?'<span class="badge ok">verba vigente</span>':'<span class="badge wait">a definir</span>')+'</div>'+
+  '<div class="muted" style="margin:6px 0">Preencha os 12 meses (jan a dez). Depois de salvo, passa a valer na conta da área. Para revisar/aumentar, altere o mês e salve de novo — a mudança fica registrada.</div>'+
+  (legado?'<div class="notice">Esta área ainda usa uma <strong>verba anual antiga</strong> dividida em 12 avos. Os valores abaixo são só uma sugestão — confira e clique em “Salvar orçamento do ano” para fixar mês a mês.</div>':'')+
+  '<div class="vgrid">'+cells+'</div>'+
+  '<div class="filters" style="margin:6px 0">'+
+   '<input id="vb-todos" class="field" placeholder="aplicar o mesmo valor a todos os meses" style="min-width:240px">'+
+   '<button class="btn sm" type="button" onclick="aplicarTodos()">Aplicar a todos</button>'+
+   '<button class="btn sm" type="button" onclick="distribuirAnual()">Distribuir um valor anual ÷ 12</button>'+
+   '<span class="spacer"></span>'+
+   '<strong style="align-self:center">Total do ano: <span id="vb-total">'+money(totalAno)+'</span></strong>'+
+   '<button class="btn primary" type="button" onclick="saveVerbaAno(\''+d.id+'\')">Salvar orçamento do ano</button>'+
+  '</div>'+
+  '<div class="hint">Deixe um mês em branco para marcá-lo como sem verba. Ano fechado por mês substitui qualquer verba anual antiga da área.</div></div>';
+}
+function vbInputs(){return Array.from({length:12},(_,i)=>document.getElementById('vb-'+i))}
+function vbRecalc(){const t=vbInputs().reduce((s,el)=>s+(numDot(el.value)||0),0);const o=document.getElementById('vb-total');if(o)o.textContent=money(t)}
+function aplicarTodos(){const v=document.getElementById('vb-todos').value.trim();if(v==='')return;vbInputs().forEach(el=>el.value=v);vbRecalc()}
+function distribuirAnual(){const v=numDot(document.getElementById('vb-todos').value);if(!(v>0))return error('Digite o valor anual no campo ao lado antes de distribuir.');const m=Math.round(v/12*100)/100;vbInputs().forEach((el,i)=>el.value=String(i===11?Math.round((v-m*11)*100)/100:m).replace('.',','));vbRecalc()}
+async function saveVerbaAno(depId){
+ const ano=+document.getElementById('f-ano').value;
+ const vals=vbInputs().map(el=>{const s=el.value.trim();return s===''?null:numDot(s)});
+ if(vals.some(v=>v!==null&&v<0))return error('Nenhum mês pode ser negativo.');
+ busy(true,'Salvando orçamento…');
+ try{const{error:e}=await sb.rpc('orc_definir_verba_ano',{p_departamento_id:depId,p_ano:ano,p_valores:vals});if(e)throw e;
+  await loadAll();aviso('Orçamento de '+ano+' salvo. Já está valendo na conta da área.');
+ }catch(e){busy(false,'');error(e)}
+}
+function extratoArea(d,mes,meses,de,ate){
+ const saldoIni=meses.reduce((a,m)=>a+budgetMonth(d.id,m).valor,0);
+ const ps=S.purchases.filter(p=>p.departamento_id===d.id&&meses.includes(ym(p.realizado_em)))
+   .slice().sort((a,b)=>new Date(a.realizado_em)-new Date(b.realizado_em));
+ let saldo=saldoIni;
+ const linhas=ps.map(p=>{const it=S.items.find(i=>i.id===p.item_id),r=S.requests.find(x=>x.id===p.solicitacao_id);
+  saldo-=num(p.valor_total_realizado);
+  return '<tr><td>'+date(p.realizado_em)+'</td><td>#'+esc(r?.numero||'—')+'</td><td class="item">'+esc(it?.produto||'Item')+'</td>'+
+   '<td>'+esc(supplierName(p.fornecedor_id))+'</td><td class="num">'+esc(p.quantidade)+'</td><td class="num">'+money(p.preco_unitario_realizado)+'</td>'+
+   '<td class="num">'+money(p.valor_total_realizado)+'</td><td class="num" style="color:'+(saldo<0?'#fca5a5':'#86efac')+'">'+money(saldo)+'</td></tr>'}).join('');
+ const cot=emCotacao(d.id);
+ return '<div class="panel"><div class="between"><h2>Extrato de gastos — '+esc(d.nome)+'</h2><span class="muted">'+fmtM(de)+' a '+fmtM(ate)+'</span></div>'+
+  '<div class="meta" style="margin:8px 0"><span>Verba do período: <strong>'+money(saldoIni)+'</strong></span><span>Realizado: <strong>'+money(saldoIni-saldo)+'</strong></span><span>Em cotação: <strong>'+money(cot)+'</strong></span><span>Saldo: <strong style="color:'+((saldo-cot)<0?'#fca5a5':'#86efac')+'">'+money(saldo-cot)+'</strong></span></div>'+
+  '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Pedido</th><th>Item</th><th>Fornecedor</th><th class="num">Qtd.</th><th class="num">Unit.</th><th class="num">Valor</th><th class="num">Saldo após</th></tr></thead>'+
+  '<tbody>'+(linhas||'<tr><td colspan="8" class="empty">Nenhum gasto no período.</td></tr>')+'</tbody></table></div>'+
+  '<div class="hint">Esta é a “conta bancária” da área: verba do período menos cada gasto realizado. Cotações em aberto aparecem como reserva (Em cotação).</div></div>';
 }
 
 /* ---------- FILA DE APROVAÇÃO ---------- */
@@ -624,6 +739,7 @@ async function submitNewRequest(){
 
 /* ---------- live totals on quote inputs ---------- */
 document.addEventListener('input',e=>{
+ if(e.target.id&&/^vb-\d+$/.test(e.target.id)){vbRecalc();return}
  const el=e.target;if(!el.matches('[data-price],[data-freight]'))return;
  const key=(el.dataset.price||el.dataset.freight).split('|');
  const it=S.items.find(i=>i.id===key[2]);
