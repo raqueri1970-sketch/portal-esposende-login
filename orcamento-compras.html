@@ -331,21 +331,22 @@ async function loadAll(){
  if(rb)rb.disabled=false;
 }
 
-/* ---------- PONTE COTAÇÃO E PEDIDOS (cmp) ---------- */
+/* ---------- PONTE COTAÇÃO E PEDIDOS (cmp) — 1 registro por PEDIDO ---------- */
 let cmpSyncing=false;
 async function syncCmp(manual){
- const ids=[...new Set(S.items.map(i=>i.cmp_id).filter(Boolean))];
+ const reqs=scoped(S.requests).filter(r=>r.cmp_id&&r.financeiro_status!=='realizado_pago');
+ const ids=[...new Set(reqs.map(r=>r.cmp_id))];
  const st=document.getElementById('cmp-sync-status');
  if(st)st.textContent='';
- if(!ids.length){return}
+ if(!ids.length)return;
  if(cmpSyncing)return; cmpSyncing=true;
  if(st)st.textContent='sincronizando…';
  try{
   const {data:sols,error:e1}=await cmpSb.from('solicitacoes').select('id,status,menor_valor,menor_fornecedor,pc_num,pc_status').in('id',ids);
   if(e1)throw e1;
   const byId={};(sols||[]).forEach(x=>byId[x.id]=x);
-  const entradas=S.items.filter(i=>i.cmp_id&&byId[i.cmp_id]).map(i=>{const c=byId[i.cmp_id];return {
-   item_id:i.id,cmp_id:i.cmp_id,cmp_status:c.status,
+  const entradas=reqs.filter(r=>byId[r.cmp_id]).map(r=>{const c=byId[r.cmp_id];return {
+   solicitacao_id:r.id,cmp_id:r.cmp_id,cmp_status:c.status,
    menor_valor:c.menor_valor,menor_fornecedor:c.menor_fornecedor,
    pc_num:c.pc_num,pc_status:c.pc_status,pc_valor:c.menor_valor,emitido_em:null}});
   if(!entradas.length){if(st)st.textContent='';cmpSyncing=false;return}
@@ -361,27 +362,31 @@ async function syncCmp(manual){
   if(!p2.error)S.purchases=p2.data||S.purchases;
   if(!mv2.error)S.movs=mv2.data||S.movs;
   renderAll();
-  if(st)st.textContent='';
   if(manual)aviso('Sincronizado com o módulo Cotação e Pedidos'+((data?.realizados_criados||0)?' · '+data.realizados_criados+' novo(s) realizado(s)':'')+'.');
- }catch(e){if(st)st.textContent=''; if(manual)error(e)}
- cmpSyncing=false;
+ }catch(e){if(manual)error(e)}
+ if(st)st.textContent=''; cmpSyncing=false;
 }
 function cmpNovoId(){const L='ABCDEFGHJKLMNPQRSTUVWXYZ';return 'SOL-'+Math.floor(100000+Math.random()*899999)+'-'+L[Math.random()*L.length|0]+L[Math.random()*L.length|0]}
 async function enviarItensAoCmp(r){
+ if(r.cmp_id)return;
  const items=reqItems(r.id),area=DEP_CMP_AREA[S.deps.find(d=>d.id===r.departamento_id)?.codigo]||depName(r.departamento_id);
- for(const it of items){
-  if(it.cmp_id)continue;
-  const id=cmpNovoId();
-  const desc=[it.quantidade,it.produto,it.especificacao].filter(Boolean).join(' · ');
-  const {error:e1}=await cmpSb.from('solicitacoes').insert({
-   id,descricao:desc,area,categoria:'Orçamento & Compras',
-   destino:it.local_entrega||r.local_entrega||'Não informado',
-   justificativa:(r.assunto||'Compra')+' — Orçamento & Compras #'+r.numero,
-   solicitante:r.solicitante_nome||r.solicitante_email||'Central de Compras',status:'pendente'});
-  if(e1)throw e1;
-  const {error:e2}=await sb.from('orc_solicitacao_itens').update({cmp_id:id,cmp_status:'pendente',cmp_enviado_em:new Date().toISOString()}).eq('id',it.id);
-  if(e2)throw e2;
- }
+ const id=cmpNovoId();
+ const lista=items.map((it,n)=>(n+1)+') '+[it.quantidade&&it.quantidade+' '+(it.unidade||'un'),it.produto,it.especificacao].filter(Boolean).join(' — ')).join('\n');
+ const destinos=[...new Set(items.map(it=>it.local_entrega).filter(Boolean))];
+ const email=(r.email_original||'').trim();
+ const {error:e1}=await cmpSb.from('solicitacoes').insert({
+  id,
+  descricao:'PEDIDO DE ORÇAMENTO — '+depName(r.departamento_id)+' (#'+r.numero+') · '+items.length+' item(ns)\n'+lista,
+  area,categoria:'Pedido de Orçamento',
+  destino:destinos.join(' / ')||r.local_entrega||'Não informado',
+  justificativa:(r.assunto||'Pedido de compra')+' — Orçamento & Compras #'+r.numero+
+    (email?'\n\n--- E-MAIL ORIGINAL (pedido de orçamento) ---\n'+email.slice(0,3000):''),
+  solicitante:r.solicitante_nome||r.solicitante_email||'Central de Compras',
+  observacao:'Gerado pelo módulo Orçamento. Área solicitante: '+depName(r.departamento_id)+'. Registro do e-mail preservado no Orçamento.',
+  status:'pendente'});
+ if(e1)throw e1;
+ const {error:e2}=await sb.from('orc_solicitacoes').update({cmp_id:id,cmp_status:'pendente',cmp_enviado_em:new Date().toISOString()}).eq('id',r.id);
+ if(e2)throw e2;
 }
 
 function fillSelects(){
@@ -588,10 +593,10 @@ function extratoArea(d,mes,meses,de,ate){
  const ps=S.purchases.filter(p=>p.departamento_id===d.id&&meses.includes(ym(p.realizado_em)))
    .slice().sort((a,b)=>new Date(a.realizado_em)-new Date(b.realizado_em));
  let saldo=saldoIni;
- const linhas=ps.map(p=>{const it=S.items.find(i=>i.id===p.item_id),r=S.requests.find(x=>x.id===p.solicitacao_id);
+ const linhas=ps.map(p=>{const r=S.requests.find(x=>x.id===p.solicitacao_id);
   saldo-=num(p.valor_total_realizado);
-  return '<tr><td>'+date(p.realizado_em)+'</td><td>#'+esc(r?.numero||'—')+'</td><td class="item">'+esc(it?.produto||'Item')+'</td>'+
-   '<td>'+esc(supplierName(p.fornecedor_id))+'</td><td class="num">'+esc(p.quantidade)+'</td><td class="num">'+money(p.preco_unitario_realizado)+'</td>'+
+  return '<tr><td>'+date(p.realizado_em)+'</td><td>#'+esc(r?.numero||'—')+'</td><td class="item">'+esc(compraDesc(p,r))+'</td>'+
+   '<td>'+esc(supplierName(p.fornecedor_id))+'</td><td class="num">'+esc(p.item_id?p.quantidade:'—')+'</td><td class="num">'+(p.item_id?money(p.preco_unitario_realizado):'—')+'</td>'+
    '<td class="num">'+money(p.valor_total_realizado)+'</td><td class="num" style="color:'+(saldo<0?'#fca5a5':'#86efac')+'">'+money(saldo)+'</td></tr>'}).join('');
  const cot=emCotacao(d.id);
  return '<div class="panel"><div class="between"><h2>Extrato de gastos — '+esc(d.nome)+'</h2><span class="muted">'+fmtM(de)+' a '+fmtM(ate)+'</span></div>'+
@@ -639,11 +644,18 @@ function renderFila(){
    acts+='<button class="btn sm" onclick="openRevisar(\''+r.id+'\')">Revisar área / qtd</button>';
    acts+='<button class="btn red sm" onclick="openRejeitar(\''+r.id+'\')">Rejeitar</button>';
   }else acts='<span class="muted">Somente a área ou a Controladoria aprova.</span>';
-  return '<article class="request">'+reqHead(r,badge)+'<div class="body-pad">'+itemTable(items)+
+  return '<article class="request">'+reqHead(r,badge)+'<div class="body-pad">'+itemTable(items)+emailBox(r)+
    (semArea?'<div class="hint">Sem área identificada — use “Revisar” para definir antes de aprovar.</div>':'')+
    (estourada?'<div class="notice">A verba de '+esc(depName(r.departamento_id))+' está estourada em '+money(-saldo)+' (verba do ano − realizado − em cotação). Este pedido só entra na cotação após a Controladoria aprovar o estouro.</div>':'')+
    '</div><div class="request-actions">'+acts+'</div></article>';
  }).join('')||'<div class="empty">Nada aguardando aprovação.</div>';
+}
+function emailBox(r){
+ const e=(r.email_original||'').trim();
+ const cab=[r.solicitante_email&&('De: '+r.solicitante_email),r.assunto&&('Assunto: '+r.assunto),r.email_recebido_em&&('Recebido: '+date(r.email_recebido_em))].filter(Boolean).join(' · ');
+ if(!e&&!cab)return '';
+ return '<details style="margin-top:8px"><summary class="hint" style="cursor:pointer">📧 E-mail do pedido de orçamento'+(cab?' — '+esc(cab):'')+'</summary>'+
+  (e?'<pre style="white-space:pre-wrap;font:12px/1.5 inherit;background:#0a1727;border:1px solid #1c3047;border-radius:8px;padding:10px;margin-top:6px;max-height:280px;overflow:auto">'+esc(e)+'</pre>':'<div class="hint">Sem corpo de e-mail (pedido criado manualmente).</div>')+'</details>';
 }
 function saldoAreaAno(depId){
  const ano=+(document.getElementById('f-ano').value)||new Date().getFullYear();
@@ -654,9 +666,10 @@ function saldoAreaAno(depId){
 }
 async function aprovarArea(id,permitirEstouro){
  const r=S.requests.find(x=>x.id===id);
+ const n=reqItems(id).length;
  const msg=permitirEstouro
   ? 'A verba da área está ESTOURADA. Aprovar mesmo assim (registra estouro de verba) e liberar a cotação do pedido #'+r?.numero+'?'
-  : 'Aprovar o orçamento da área e enviar o pedido #'+r?.numero+' ao módulo Cotação e Pedidos?';
+  : 'Aprovar o orçamento da área e enviar o pedido #'+r?.numero+' ('+n+' item(ns) em 1 orçamento) ao módulo Cotação e Pedidos?';
  if(!confirm(msg))return;
  busy(true,'Aprovando…');
  try{
@@ -671,7 +684,7 @@ async function aprovarArea(id,permitirEstouro){
   }
   await enviarItensAoCmp(r);
   await loadAll();TAB='acompanhamento';buildTabs();
-  aviso('Pedido #'+r.numero+(permitirEstouro?' aprovado COM estouro de verba':' aprovado')+' e enviado ao módulo Cotação e Pedidos.');
+  aviso('Pedido #'+r.numero+(permitirEstouro?' aprovado COM estouro de verba':' aprovado')+' — 1 orçamento com '+n+' item(ns) criado no módulo Cotação e Pedidos.');
  }catch(e){busy(false,'');error(e)}
 }
 
@@ -720,42 +733,38 @@ function renderAcompanhamento(){
  document.getElementById('cnt-acompanhamento').textContent=rows.length;
  box.innerHTML=rows.map(acompCard).join('')||'<div class="empty">Nenhum pedido liberado para cotação ainda.</div>';
 }
+const CMP_ST2={pendente:'Aguardando o comprador cotar',aprovado:'Cotação aprovada','auto-aprovado':'Cotação aprovada',cancelado:'Cancelada no cmp'};
 function acompCard(r){
  const items=reqItems(r.id);
- const compras=S.purchases.filter(p=>p.solicitacao_id===r.id);
+ const compra=S.purchases.find(p=>p.solicitacao_id===r.id);
  const realizado=r.financeiro_status==='realizado_pago';
- const totReal=compras.reduce((a,p)=>a+num(p.valor_total_realizado),0)||num(r.valor_realizado);
+ const totReal=num(compra?.valor_total_realizado)||num(r.valor_realizado);
  const badge=realizado
    ? '<span class="badge done">Realizado / Pago · '+money(totReal)+'</span>'
+   : !r.cmp_id ? '<span class="badge no">Não enviado</span>'
    : num(r.valor_em_cotacao)>0
      ? '<span class="badge wait">Em cotação · reserva '+money(r.valor_em_cotacao)+'</span>'
-     : '<span class="badge ok">Liberado para cotar</span>';
- const linhas=items.map(it=>{
-  const c=compras.find(p=>p.item_id===it.id);
-  const est=c?'<span class="badge done">Pedido '+esc(it.cmp_pc_num||'emitido')+'</span>'
-    :it.cmp_id?'<span class="badge">'+esc(CMP_ST_LABEL[it.cmp_status]||it.cmp_status||'no módulo cmp')+'</span>'
-    :'<span class="badge no">não enviado</span>';
-  const corr=(c&&S.canApproveCot)?' <button class="btn sm" onclick="openCorrigir(\''+c.id+'\')">corrigir</button>':'';
-  return '<tr><td class="item">'+esc(it.produto)+'<div class="sub">'+esc(it.cmp_id||'')+'</div></td>'+
-   '<td class="num">'+esc(it.quantidade??'—')+'</td>'+
-   '<td>'+(c?esc(supplierName(c.fornecedor_id)):'—')+'</td>'+
-   '<td class="num">'+(c?money(c.valor_total_realizado):'—')+'</td>'+
-   '<td>'+est+corr+'</td></tr>'}).join('');
- const naoEnviados=items.filter(it=>!it.cmp_id).length;
+     : '<span class="badge ok">'+esc(CMP_ST2[r.cmp_status]||'No módulo Cotação e Pedidos')+'</span>';
+ const linhas=items.map(it=>'<tr><td class="item">'+esc(it.produto)+'</td><td class="num">'+esc(it.quantidade??'—')+'</td><td>'+esc(it.unidade||'un.')+'</td><td class="sub">'+esc(it.especificacao||'')+'</td></tr>').join('');
  let acts='';
- if(!realizado&&naoEnviados&&S.canApproveArea)
-  acts='<div class="request-actions"><button class="btn primary sm" onclick="reenviarCmp(\''+r.id+'\')">Enviar '+naoEnviados+' item(ns) ao módulo Cotação e Pedidos</button></div>';
+ if(!realizado&&!r.cmp_id&&S.canApproveArea)
+  acts+='<button class="btn primary sm" onclick="reenviarCmp(\''+r.id+'\')">Enviar pedido ao módulo Cotação e Pedidos</button>';
+ if(realizado&&compra&&S.canApproveCot)
+  acts+='<button class="btn sm" onclick="openCorrigir(\''+compra.id+'\')">Corrigir valor do lançamento</button>';
  return '<article class="request">'+reqHead(r,badge)+'<div class="body-pad">'+
   '<div class="meta" style="margin-bottom:8px"><span>Aprovado pela área em '+date(r.aprovado_em)+'</span>'+
+  (r.cmp_id?'<span>Nº no Cotação e Pedidos: <strong>'+esc(r.cmp_id)+'</strong></span>':'')+
+  (r.cmp_pc_num?'<span>Pedido de Compra: <strong>'+esc(r.cmp_pc_num)+'</strong></span>':'')+
   (realizado?'<span>Realizado em '+date(r.cotacao_aprovada_em)+'</span>':'')+'</div>'+
-  '<div class="table-wrap"><table><thead><tr><th>Item</th><th class="num">Qtd.</th><th>Fornecedor</th><th class="num">Valor</th><th>Situação (Cotação e Pedidos)</th></tr></thead><tbody>'+linhas+'</tbody></table></div>'+
-  (realizado?'':'<div class="hint" style="margin-top:8px">A cotação e a emissão do Pedido de Compra são feitas no módulo <strong>Cotação e Pedidos</strong>. Quando o pedido for emitido lá, o valor entra como Realizado/Pago aqui e na Auditoria de Compras.</div>')+
-  '</div>'+acts+'</article>';
+  '<div class="table-wrap"><table><thead><tr><th>Item</th><th class="num">Qtd.</th><th>Un.</th><th>Especificação</th></tr></thead><tbody>'+linhas+'</tbody></table></div>'+
+  emailBox(r)+
+  (realizado?'':'<div class="hint" style="margin-top:8px">A cotação (preço, prazo, fornecedor) e a emissão do Pedido de Compra são feitas no módulo <strong>Cotação e Pedidos</strong>. Quando o pedido for emitido lá, o valor entra como Realizado/Pago aqui e na Auditoria de Compras.</div>')+
+  '</div>'+(acts?'<div class="request-actions">'+acts+'</div>':'')+'</article>';
 }
 async function reenviarCmp(id){
  const r=S.requests.find(x=>x.id===id);
  busy(true,'Enviando ao módulo Cotação e Pedidos…');
- try{await enviarItensAoCmp(r);await loadAll();aviso('Itens do pedido #'+r.numero+' enviados ao módulo Cotação e Pedidos.');}
+ try{await enviarItensAoCmp(r);await loadAll();aviso('Pedido #'+r.numero+' (1 orçamento, '+reqItems(id).length+' itens) enviado ao módulo Cotação e Pedidos.');}
  catch(e){busy(false,'');error(e)}
 }
 let corrigirId=null;
@@ -782,11 +791,16 @@ function renderMinha(){
  const tb=document.getElementById('minha-body');if(!tb)return;
  let ps=S.purchases;
  if(!S.seeAll)ps=ps.filter(p=>p.departamento_id===S.myDep);
- tb.innerHTML=ps.map(p=>{const it=S.items.find(i=>i.id===p.item_id),r=S.requests.find(x=>x.id===p.solicitacao_id);
-  return '<tr><td>'+date(p.realizado_em)+'</td><td>#'+esc(r?.numero||'—')+'</td><td class="item">'+esc(it?.produto||'Item comprado')+'<div class="sub">'+esc(it?.especificacao||'')+'</div></td>'+
-   '<td class="num">'+esc(p.quantidade)+' '+esc(it?.unidade||'un.')+'</td><td>'+esc(supplierName(p.fornecedor_id))+'</td>'+
-   '<td class="num">'+money(p.preco_unitario_realizado)+'</td><td class="num" style="font-weight:800">'+money(p.valor_total_realizado)+'</td></tr>'}).join('')
+ tb.innerHTML=ps.map(p=>{const it=p.item_id&&S.items.find(i=>i.id===p.item_id),r=S.requests.find(x=>x.id===p.solicitacao_id);
+  return '<tr><td>'+date(p.realizado_em)+'</td><td>#'+esc(r?.numero||'—')+'</td><td class="item">'+esc(compraDesc(p,r))+(it?.especificacao?'<div class="sub">'+esc(it.especificacao)+'</div>':'')+'</td>'+
+   '<td class="num">'+(p.item_id?esc(p.quantidade)+' '+esc(it?.unidade||'un.'):'—')+'</td><td>'+esc(supplierName(p.fornecedor_id))+'</td>'+
+   '<td class="num">'+(p.item_id?money(p.preco_unitario_realizado):'—')+'</td><td class="num" style="font-weight:800">'+money(p.valor_total_realizado)+'</td></tr>'}).join('')
   ||'<tr><td colspan="7" class="empty">Nenhum gasto realizado.</td></tr>';
+}
+function compraDesc(p,r){
+ if(p.item_id){const it=S.items.find(i=>i.id===p.item_id);return it?.produto||'Item comprado'}
+ const its=r?reqItems(r.id):[];
+ return its.length?('Pedido completo · '+its.length+' item(ns): '+its.map(i=>i.produto).join(', ').slice(0,80)):(r?.assunto||r?.resumo||'Pedido de compra');
 }
 
 /* ---------- HISTÓRICO ---------- */
