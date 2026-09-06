@@ -137,27 +137,19 @@ dialog::backdrop{background:#02060dcc}
 <!-- FILA DE APROVAÇÃO DA ÁREA -->
 <section data-tab="aprovacao" class="hidden">
  <div class="panel"><div class="between"><div><h2>Fila de aprovação da área</h2>
-  <div class="muted">Todo pedido de compra — inclusive os que chegam por e-mail — entra aqui aguardando a área liberar o orçamento. Sem esta aprovação não há cotação.</div></div>
+  <div class="muted">Todo pedido de compra — inclusive os que chegam por e-mail — entra aqui aguardando a área liberar o orçamento. Ao aprovar, o pedido é enviado ao módulo <strong>Cotação e Pedidos</strong> para o comprador cotar de verdade.</div></div>
   <span id="cnt-aprovacao" class="badge">0</span></div>
   <div id="fila-aprovacao"><div class="empty">Carregando…</div></div>
  </div>
 </section>
 
-<!-- COTAÇÕES -->
-<section data-tab="cotacao" class="hidden">
- <div class="panel"><div class="between"><div><h2>Cotações</h2>
-  <div class="muted">Cotação liberada só após a área aprovar o orçamento. A cotação já vem pré-preenchida com os itens do pedido.</div></div>
-  <span id="cnt-cotacao" class="badge">0</span></div>
-  <div id="lista-cotacao"><div class="empty">Carregando…</div></div>
- </div>
-</section>
-
-<!-- REALIZADO / ACOMPANHAMENTO -->
-<section data-tab="realizado" class="hidden">
- <div class="panel"><div class="between"><div><h2>Realizado / Pago &amp; acompanhamento do pedido</h2>
-  <div class="muted">Quando a cotação é aprovada, o valor já entra como Realizado/Pago na Auditoria de Compras e baixa o orçamento da área — uma única vez. O funil abaixo serve apenas para acompanhar a emissão e a entrega.</div></div>
-  <span id="cnt-realizado" class="badge">0</span></div>
-  <div id="lista-realizado"><div class="empty">Carregando…</div></div>
+<!-- ACOMPANHAMENTO (Cotação e Pedidos) -->
+<section data-tab="acompanhamento" class="hidden">
+ <div class="panel"><div class="between"><div><h2>Acompanhamento — Cotação e Pedidos</h2>
+  <div class="muted">Pedidos já liberados pela área. A cotação e a emissão do Pedido de Compra são feitas no módulo Cotação e Pedidos. Aqui você só acompanha: em cotação (reserva a verba) → Pedido emitido (vira Realizado/Pago e entra na Auditoria de Compras).</div></div>
+  <span id="cnt-acompanhamento" class="badge">0</span></div>
+  <div class="toolbar no-print" style="margin:8px 0 0"><button class="btn sm" onclick="syncCmp(true)">↻ Sincronizar com Cotação e Pedidos</button><span id="cmp-sync-status" class="muted"></span></div>
+  <div id="lista-acompanhamento"><div class="empty">Carregando…</div></div>
  </div>
 </section>
 
@@ -212,6 +204,19 @@ ou cole a tabela do Excel/e-mail"></textarea>
  <button id="rv-submit" class="btn primary" type="button" onclick="submitRevisao()">Salvar e enviar para aprovação</button>
 </div></dialog>
 
+<dialog id="corrigir-modal"><div class="modal-head">Corrigir lançamento realizado</div><div class="modal-body">
+ <p id="cr-text" class="muted"></p>
+ <label class="hint">Novo valor total do item (R$)</label>
+ <input id="cr-valor" class="field" style="width:100%;margin:4px 0 10px" placeholder="0,00">
+ <label class="hint">Motivo da correção (obrigatório)</label>
+ <textarea id="cr-motivo" class="field" style="width:100%;min-height:70px;margin-top:4px"></textarea>
+ <div id="cr-result"></div>
+ <div class="hint">A diferença fica registrada como estorno na conta da área e na trilha de auditoria. Corrija também no módulo Cotação e Pedidos se o erro estiver lá.</div>
+</div><div class="modal-actions">
+ <button class="btn" type="button" onclick="document.getElementById('corrigir-modal').close()">Fechar</button>
+ <button id="cr-submit" class="btn primary" type="button" onclick="submitCorrigir()">Salvar correção</button>
+</div></dialog>
+
 <dialog id="rejeitar-modal"><div class="modal-head">Rejeitar solicitação</div><div class="modal-body">
  <p id="rj-text" class="muted"></p>
  <label class="hint">Motivo (obrigatório)</label>
@@ -226,6 +231,11 @@ ou cole a tabela do Excel/e-mail"></textarea>
 const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co',
       SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h',
       sb=supabase.createClient(SB_URL,SB_KEY);
+// Módulo Cotação e Pedidos (projeto separado) — onde a cotação real acontece.
+const CMP_URL='https://lknrrohrtgljwrbxftnv.supabase.co',
+      CMP_KEY='sb_publishable_crvqFOEkX4Zoo8vKeFHwsg_RuJ8KUvC',
+      cmpSb=supabase.createClient(CMP_URL,CMP_KEY,{auth:{persistSession:false}});
+const DEP_CMP_AREA={FACILITIES:'03 - Facilities',COMERCIAL:'02 - Comercial',TI:'06 - T.I.C',LOGISTICA:'07 - Logística',OBRA:'10 - Obras',CONTROLADORIA:'01 - Diretoria Executiva'};
 
 const money=n=>(Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const date=v=>v?new Date(v).toLocaleDateString('pt-BR'):'—';
@@ -305,7 +315,60 @@ async function loadAll(){
   Object.assign(S,{deps:d.data||[],budgets:b.data||[],requests:s.data||[],items:i.data||[],quotes:c.data||[],purchases:p.data||[],movs:mv.data||[],suppliers:f.data||[]});
   fillSelects();buildTabs();renderAll();
   busy(false,'Dados atualizados '+new Date().toLocaleTimeString('pt-BR'));
+  syncCmp(false);
  }catch(e){busy(false,'');error(e)}
+}
+
+/* ---------- PONTE COTAÇÃO E PEDIDOS (cmp) ---------- */
+let cmpSyncing=false;
+async function syncCmp(manual){
+ const ids=[...new Set(S.items.map(i=>i.cmp_id).filter(Boolean))];
+ const st=document.getElementById('cmp-sync-status');
+ if(!ids.length){if(st)st.textContent='Nenhum pedido enviado ao módulo de cotação ainda.';return}
+ if(cmpSyncing)return; cmpSyncing=true;
+ if(st)st.textContent='Sincronizando…';
+ try{
+  const {data:sols,error:e1}=await cmpSb.from('solicitacoes').select('id,status,menor_valor,menor_fornecedor,pc_num,pc_status').in('id',ids);
+  if(e1)throw e1;
+  const byId={};(sols||[]).forEach(x=>byId[x.id]=x);
+  const entradas=S.items.filter(i=>i.cmp_id&&byId[i.cmp_id]).map(i=>{const c=byId[i.cmp_id];return {
+   item_id:i.id,cmp_id:i.cmp_id,cmp_status:c.status,
+   menor_valor:c.menor_valor,menor_fornecedor:c.menor_fornecedor,
+   pc_num:c.pc_num,pc_status:c.pc_status,pc_valor:c.menor_valor,emitido_em:null}});
+  if(!entradas.length){if(st)st.textContent='Sem novidades.';cmpSyncing=false;return}
+  const {data,error:e2}=await sb.rpc('orc_sync_cmp',{p_entradas:entradas});
+  if(e2)throw e2;
+  const [s2,i2,p2,mv2]=await Promise.all([
+   sb.from('orc_solicitacoes').select('*').order('created_at',{ascending:false}).limit(400),
+   sb.from('orc_solicitacao_itens').select('*').order('linha'),
+   sb.from('orc_compras').select('*').order('realizado_em',{ascending:false}).limit(1000),
+   sb.from('orc_movimentacoes').select('*').order('created_at',{ascending:false}).limit(1000)]);
+  if(!s2.error)S.requests=s2.data||S.requests;
+  if(!i2.error)S.items=i2.data||S.items;
+  if(!p2.error)S.purchases=p2.data||S.purchases;
+  if(!mv2.error)S.movs=mv2.data||S.movs;
+  renderAll();
+  if(st)st.textContent='Sincronizado '+new Date().toLocaleTimeString('pt-BR')+' · '+(data?.realizados_criados||0)+' novo(s) realizado(s).';
+  if(manual)aviso('Sincronização concluída com o módulo Cotação e Pedidos.');
+ }catch(e){if(st)st.textContent='Falha ao sincronizar: '+ptbr(e); if(manual)error(e)}
+ cmpSyncing=false;
+}
+function cmpNovoId(){const L='ABCDEFGHJKLMNPQRSTUVWXYZ';return 'SOL-'+Math.floor(100000+Math.random()*899999)+'-'+L[Math.random()*L.length|0]+L[Math.random()*L.length|0]}
+async function enviarItensAoCmp(r){
+ const items=reqItems(r.id),area=DEP_CMP_AREA[S.deps.find(d=>d.id===r.departamento_id)?.codigo]||depName(r.departamento_id);
+ for(const it of items){
+  if(it.cmp_id)continue;
+  const id=cmpNovoId();
+  const desc=[it.quantidade,it.produto,it.especificacao].filter(Boolean).join(' · ');
+  const {error:e1}=await cmpSb.from('solicitacoes').insert({
+   id,descricao:desc,area,categoria:'Orçamento & Compras',
+   destino:it.local_entrega||r.local_entrega||'Não informado',
+   justificativa:(r.assunto||'Compra')+' — Orçamento & Compras #'+r.numero,
+   solicitante:r.solicitante_nome||r.solicitante_email||'Central de Compras',status:'pendente'});
+  if(e1)throw e1;
+  const {error:e2}=await sb.from('orc_solicitacao_itens').update({cmp_id:id,cmp_status:'pendente',cmp_enviado_em:new Date().toISOString()}).eq('id',it.id);
+  if(e2)throw e2;
+ }
 }
 
 function fillSelects(){
@@ -338,8 +401,7 @@ function onAnoChange(){
 const TABDEFS=[
  {id:'orcamento',label:'Orçamento por área'},
  {id:'aprovacao',label:'Fila de aprovação',ops:1},
- {id:'cotacao',label:'Cotações',ops:1},
- {id:'realizado',label:'Realizado / Pago',ops:1},
+ {id:'acompanhamento',label:'Acompanhamento (Cotação e Pedidos)',ops:1},
  {id:'minha',label:'Minha conta corrente'},
  {id:'historico',label:'Bloqueados / rejeitados',ops:1}
 ];
@@ -354,7 +416,7 @@ function buildTabs(){
 }
 function showTab(){document.querySelectorAll('section[data-tab]').forEach(s=>{const on=s.dataset.tab===TAB;s.classList.toggle('hidden',!on);s.classList.toggle('on',on)})}
 
-function renderAll(){renderOrcamento();renderFila();renderCotacao();renderRealizado();renderMinha();renderHistorico()}
+function renderAll(){renderOrcamento();renderFila();renderAcompanhamento();renderMinha();renderHistorico()}
 
 /* ---------- ORÇAMENTO POR ÁREA — conta bancária ---------- */
 let ORCTAB='all';
@@ -541,10 +603,14 @@ function renderFila(){
  }).join('')||'<div class="empty">Nada aguardando aprovação.</div>';
 }
 async function aprovarArea(id){
- if(!confirm('Aprovar o orçamento da área para o pedido #'+(S.requests.find(r=>r.id===id)?.numero)+'? A cotação será liberada e pré-preenchida.'))return;
- busy(true,'Aprovando…');
- try{const{error:e}=await sb.rpc('orc_aprovar_solicitacao',{p_solicitacao_id:id});if(e)throw e;
-  await loadAll();TAB='cotacao';buildTabs();aviso('Orçamento aprovado. Cotação liberada e pré-preenchida.');
+ const r=S.requests.find(x=>x.id===id);
+ if(!confirm('Aprovar o orçamento da área para o pedido #'+r?.numero+'?\n\nOs itens vão para o módulo Cotação e Pedidos, onde o comprador faz a cotação real (preço, prazo, fornecedor).'))return;
+ busy(true,'Aprovando e enviando ao módulo de cotação…');
+ try{
+  const{error:e}=await sb.rpc('orc_aprovar_solicitacao',{p_solicitacao_id:id});if(e)throw e;
+  await enviarItensAoCmp(r);
+  await loadAll();TAB='acompanhamento';buildTabs();
+  aviso('Pedido #'+r.numero+' aprovado e enviado ao módulo Cotação e Pedidos. O comprador vai completar a cotação lá.');
  }catch(e){busy(false,'');error(e)}
 }
 
@@ -584,121 +650,68 @@ async function submitRejeicao(){
  btn.disabled=false;btn.textContent='Confirmar rejeição';
 }
 
-/* ---------- COTAÇÕES ---------- */
-const COT_ST=['cotacao_a_fazer','em_cotacao','aguardando_informacao','aguardando_fornecedor','aguardando_aprovacao','aprovada'];
-function renderCotacao(){
- const box=document.getElementById('lista-cotacao');if(!box)return;
- let rows=scoped(S.requests).filter(r=>r.aprovado_em&&r.financeiro_status!=='realizado_pago'&&COT_ST.includes(r.status));
- document.getElementById('cnt-cotacao').textContent=rows.length;
- box.innerHTML=rows.map(cotacaoCard).join('')||'<div class="empty">Nenhuma solicitação aguardando cotação.</div>';
+/* ---------- ACOMPANHAMENTO (Cotação e Pedidos) ---------- */
+const CMP_ST_LABEL={pendente:'Aguardando cotação no cmp',aprovado:'Cotação aprovada no cmp','auto-aprovado':'Cotação aprovada no cmp',cancelado:'Cancelada no cmp'};
+function renderAcompanhamento(){
+ const box=document.getElementById('lista-acompanhamento');if(!box)return;
+ let rows=scoped(S.requests).filter(r=>r.aprovado_em&&!['cancelada','rejeitada'].includes(r.status));
+ rows.sort((a,b)=>new Date(b.aprovado_em)-new Date(a.aprovado_em));
+ document.getElementById('cnt-acompanhamento').textContent=rows.length;
+ box.innerHTML=rows.map(acompCard).join('')||'<div class="empty">Nenhum pedido liberado para cotação ainda.</div>';
 }
-function cotacaoCard(r){
- const items=reqItems(r.id);
- const qs=reqQuotes(r.id).filter(q=>q.fornecedor_id&&q.status==='valida');
- const groups={};qs.forEach(q=>(groups[q.fornecedor_id]??=[]).push(q));
- const fids=Object.keys(groups);
- const badge='<span class="badge ok">Orçamento aprovado</span> <span class="badge">'+esc(({cotacao_a_fazer:'Cotação a fazer',em_cotacao:'Em cotação',aprovada:'Cotação aprovada'}[r.status]||r.status))+'</span>';
- const saved=fids.map(fid=>{
-  const g=groups[fid],tot=g.reduce((a,q)=>a+num(q.valor_total),0);
-  const rowsH=items.map(it=>{const q=g.find(x=>x.item_id===it.id)||{};
-    return '<div class="srow"><span>'+esc(it.produto)+'</span><span class="num">'+money(num(q.preco_negociado||q.preco_inicial))+'</span><span class="num lbl">frete '+money(num(q.valor_frete))+'</span><span class="num">'+money(num(q.valor_total))+'</span></div>'}).join('');
-  let btn='';
-  if(S.canApproveCot)btn='<button class="btn green sm" onclick="aprovarCotacao(\''+r.id+'\',\''+fid+'\')">✓ Aprovar e realizar com '+esc(supplierName(fid))+'</button>';
-  return '<div class="supplier"><div class="supplier-head"><strong class="spacer">'+esc(supplierName(fid))+'</strong>'+btn+'</div>'+rowsH+
-   '<div class="supplier-total">Total: '+money(tot)+'</div></div>';
- }).join('');
- let form='';
- if(S.canQuote){
-  form='<div id="np-'+r.id+'">'+newSupplierBlock(r,items,'a')+'</div>'+
-   '<div class="request-actions"><button class="btn sm" type="button" onclick="addSupplier(\''+r.id+'\')">+ Outro fornecedor</button>'+
-   '<button class="btn primary sm" type="button" onclick="saveOfertas(\''+r.id+'\')">Salvar cotação</button>'+
-   (fids.length&&!S.canApproveCot?'<span class="muted">Aprovação da cotação é feita pela Controladoria / Gestor de Compras.</span>':'')+'</div>';
- }
- return '<article class="request">'+reqHead(r,badge)+'<div class="body-pad">'+itemTable(items)+
-  (saved?'<div class="hint" style="margin-top:10px">Cotações salvas</div>'+saved:'')+
-  (form?'<div class="hint" style="margin-top:10px">Nova cotação</div>'+form:'')+
-  '</div></article>';
-}
-function newSupplierBlock(r,items,n){
- return '<div class="supplier"><div class="supplier-head"><input class="field" list="supplier-options" autocomplete="off" data-sup="'+r.id+'|'+n+'" placeholder="Nome do fornecedor (novo ou cadastrado)"></div>'+
-  '<div class="srow lbl"><span>Item</span><span class="num">Preço unit.</span><span class="num">Frete</span><span class="num">Total</span></div>'+
-  items.map(i=>'<div class="srow"><span>'+esc(i.produto)+' <span class="lbl">('+esc(i.quantidade??'?')+' '+esc(i.unidade||'un.')+')</span></span>'+
-   '<input class="field money-input" data-price="'+r.id+'|'+n+'|'+i.id+'" placeholder="0,00">'+
-   '<input class="field money-input" data-freight="'+r.id+'|'+n+'|'+i.id+'" placeholder="0,00">'+
-   '<span class="num row-total">R$ 0,00</span></div>').join('')+
-  '<div class="supplier-total">Total: <span class="blk-total">R$ 0,00</span></div></div>';
-}
-function addSupplier(id){const r=S.requests.find(x=>x.id===id);document.getElementById('np-'+id).insertAdjacentHTML('beforeend',newSupplierBlock(r,reqItems(id),'n'+Date.now()))}
-async function saveOfertas(id){
- const items=reqItems(id);
- const blocks={};
- document.querySelectorAll('[data-sup^="'+id+'|"]').forEach(el=>{const n=el.dataset.sup.split('|')[1],nome=el.value.trim();if(nome)blocks[n]={nome,itens:[]}});
- for(const n of Object.keys(blocks)){
-  for(const it of items){
-   const price=numDot(document.querySelector('[data-price="'+id+'|'+n+'|'+it.id+'"]')?.value);
-   const freight=numDot(document.querySelector('[data-freight="'+id+'|'+n+'|'+it.id+'"]')?.value);
-   if(!(price>0)){error('Preço obrigatório para “'+it.produto+'” no fornecedor '+blocks[n].nome+'.');return}
-   blocks[n].itens.push({item_id:it.id,preco:price,frete:freight});
-  }
- }
- const ofertas=Object.values(blocks);
- if(!ofertas.length){error('Informe ao menos um fornecedor com preços.');return}
- busy(true,'Salvando cotação…');
- try{const{error:e}=await sb.rpc('orc_salvar_ofertas',{p_solicitacao_id:id,p_ofertas:ofertas});if(e)throw e;
-  await loadAll();aviso('Cotação salva. Agora a Controladoria / Gestor de Compras aprova para virar Realizado/Pago.');
- }catch(e){busy(false,'');error(e)}
-}
-async function aprovarCotacao(id,fid){
- const r=S.requests.find(x=>x.id===id),items=reqItems(id);
- const q=reqQuotes(id).filter(x=>x.fornecedor_id===fid&&x.status==='valida');
- const ids=items.map(it=>q.find(x=>x.item_id===it.id)?.id).filter(Boolean);
- if(ids.length!==items.length){error('Este fornecedor não tem preço válido para todos os itens. Salve a cotação completa antes de aprovar.');return}
- const tot=q.reduce((a,x)=>a+num(x.valor_total),0);
- if(!confirm('Aprovar a cotação de '+supplierName(fid)+' ('+money(tot)+') para o pedido #'+r.numero+'?\n\nO valor entra IMEDIATAMENTE como Realizado/Pago na Auditoria de Compras e baixa o orçamento da área. Esta ação é definitiva.'))return;
- busy(true,'Registrando Realizado/Pago…');
- try{const{error:e}=await sb.rpc('orc_aprovar_cotacoes',{p_solicitacao_id:id,p_cotacao_ids:ids});if(e)throw e;
-  await loadAll();TAB='realizado';buildTabs();aviso('Cotação aprovada. Pedido #'+r.numero+' registrado como Realizado/Pago ('+money(tot)+') na Auditoria de Compras.');
- }catch(e){busy(false,'');error(e)}
-}
-
-/* ---------- REALIZADO / ACOMPANHAMENTO ---------- */
-const FUNIL=[['a_emitir','A emitir'],['pedido_emitido','Pedido emitido'],['em_entrega','Em entrega'],['recebido','Recebido']];
-function renderRealizado(){
- const box=document.getElementById('lista-realizado');if(!box)return;
- let rows=scoped(S.requests).filter(r=>r.financeiro_status==='realizado_pago'||['comprada','realizada','finalizada'].includes(r.status));
- rows.sort((a,b)=>new Date(b.cotacao_aprovada_em||b.updated_at)-new Date(a.cotacao_aprovada_em||a.updated_at));
- document.getElementById('cnt-realizado').textContent=rows.length;
- box.innerHTML=rows.map(realizadoCard).join('')||'<div class="empty">Nenhum pedido realizado ainda.</div>';
-}
-function realizadoCard(r){
+function acompCard(r){
  const items=reqItems(r.id);
  const compras=S.purchases.filter(p=>p.solicitacao_id===r.id);
- const tot=compras.reduce((a,p)=>a+num(p.valor_total_realizado),0)||num(r.valor_realizado);
- const forn=[...new Set(compras.map(p=>supplierName(p.fornecedor_id)))].join(', ')||'—';
- const badge='<span class="badge done">Realizado / Pago</span>';
- const linhas=compras.map(p=>{const it=S.items.find(i=>i.id===p.item_id);
-  return '<tr><td class="item">'+esc(it?.produto||'Item')+'</td><td class="num">'+esc(p.quantidade)+'</td><td>'+esc(supplierName(p.fornecedor_id))+'</td><td class="num">'+money(p.preco_unitario_realizado)+'</td><td class="num">'+money(p.valor_total_realizado)+'</td></tr>'}).join('');
- const canFunil=S.isOps;
- const step='<div class="step">'+FUNIL.map(([k,l])=>'<button class="'+(r.acompanhamento_status===k?'on':'')+'"'+(canFunil?' onclick="setFunil(\''+r.id+'\',\''+k+'\')"':' disabled')+'>'+l+'</button>').join('')+'</div>';
+ const realizado=r.financeiro_status==='realizado_pago';
+ const totReal=compras.reduce((a,p)=>a+num(p.valor_total_realizado),0)||num(r.valor_realizado);
+ const badge=realizado
+   ? '<span class="badge done">Realizado / Pago · '+money(totReal)+'</span>'
+   : num(r.valor_em_cotacao)>0
+     ? '<span class="badge wait">Em cotação · reserva '+money(r.valor_em_cotacao)+'</span>'
+     : '<span class="badge ok">Liberado para cotar</span>';
+ const linhas=items.map(it=>{
+  const c=compras.find(p=>p.item_id===it.id);
+  const est=c?'<span class="badge done">Pedido '+esc(it.cmp_pc_num||'emitido')+'</span>'
+    :it.cmp_id?'<span class="badge">'+esc(CMP_ST_LABEL[it.cmp_status]||it.cmp_status||'no módulo cmp')+'</span>'
+    :'<span class="badge no">não enviado</span>';
+  const corr=(c&&S.canApproveCot)?' <button class="btn sm" onclick="openCorrigir(\''+c.id+'\')">corrigir</button>':'';
+  return '<tr><td class="item">'+esc(it.produto)+'<div class="sub">'+esc(it.cmp_id||'')+'</div></td>'+
+   '<td class="num">'+esc(it.quantidade??'—')+'</td>'+
+   '<td>'+(c?esc(supplierName(c.fornecedor_id)):'—')+'</td>'+
+   '<td class="num">'+(c?money(c.valor_total_realizado):'—')+'</td>'+
+   '<td>'+est+corr+'</td></tr>'}).join('');
  return '<article class="request">'+reqHead(r,badge)+'<div class="body-pad">'+
-  '<div class="meta" style="margin-bottom:8px"><span>💰 Total realizado: <strong>'+money(tot)+'</strong></span><span>🏭 '+esc(forn)+'</span><span>📅 Aprovado em '+date(r.cotacao_aprovada_em)+'</span></div>'+
-  (linhas?'<div class="table-wrap"><table><thead><tr><th>Item</th><th class="num">Qtd.</th><th>Fornecedor</th><th class="num">Unit.</th><th class="num">Total</th></tr></thead><tbody>'+linhas+'</tbody></table></div>':itemTable(items))+
-  '<div class="hint" style="margin-top:10px">Acompanhamento do pedido (não afeta o financeiro)</div>'+step+
+  '<div class="meta" style="margin-bottom:8px"><span>🏢 '+esc(depName(r.departamento_id))+'</span>'+
+  '<span>📅 Aprovado pela área em '+date(r.aprovado_em)+'</span>'+
+  (realizado?'<span>✅ Realizado em '+date(r.cotacao_aprovada_em)+'</span>':'')+'</div>'+
+  '<div class="table-wrap"><table><thead><tr><th>Item</th><th class="num">Qtd.</th><th>Fornecedor</th><th class="num">Valor</th><th>Situação (Cotação e Pedidos)</th></tr></thead><tbody>'+linhas+'</tbody></table></div>'+
+  (realizado?'':'<div class="hint" style="margin-top:8px">Abra o módulo <strong>Cotação e Pedidos</strong> para lançar preços/prazo e emitir o Pedido de Compra. Quando o pedido for emitido, o valor entra como Realizado/Pago aqui e na Auditoria de Compras (clique em “Sincronizar” acima).</div>')+
   '</div></article>';
 }
-async function setFunil(id,st){
- busy(true,'Atualizando acompanhamento…');
- try{const{error:e}=await sb.from('orc_solicitacoes').update({acompanhamento_status:st}).eq('id',id);if(e)throw e;
-  const r=S.requests.find(x=>x.id===id);if(r)r.acompanhamento_status=st;
-  busy(false,'');renderRealizado();
- }catch(e){busy(false,'');error(e)}
+let corrigirId=null;
+function openCorrigir(compraId){
+ corrigirId=compraId;const c=S.purchases.find(p=>p.id===compraId);
+ document.getElementById('cr-text').textContent='Lançamento atual: '+money(c?.valor_total_realizado)+' ('+(S.items.find(i=>i.id===c?.item_id)?.produto||'item')+')';
+ document.getElementById('cr-valor').value=String(num(c?.valor_total_realizado)).replace('.',',');
+ document.getElementById('cr-motivo').value='';document.getElementById('cr-result').innerHTML='';
+ document.getElementById('corrigir-modal').showModal();
+}
+async function submitCorrigir(){
+ const valor=numDot(document.getElementById('cr-valor').value),motivo=document.getElementById('cr-motivo').value.trim();
+ if(!(valor>0)){document.getElementById('cr-result').innerHTML='<div class="notice">Valor inválido.</div>';return}
+ if(!motivo){document.getElementById('cr-result').innerHTML='<div class="notice">Informe o motivo.</div>';return}
+ const btn=document.getElementById('cr-submit');btn.disabled=true;btn.textContent='Salvando…';
+ try{const{error:e}=await sb.rpc('orc_corrigir_realizado',{p_compra_id:corrigirId,p_valor_total:valor,p_motivo:motivo});if(e)throw e;
+  document.getElementById('corrigir-modal').close();await loadAll();aviso('Lançamento corrigido para '+money(valor)+'.');
+ }catch(e){document.getElementById('cr-result').innerHTML='<div class="notice">'+esc(ptbr(e))+'</div>'}
+ btn.disabled=false;btn.textContent='Salvar correção';
 }
 
 /* ---------- MINHA CONTA CORRENTE ---------- */
 function renderMinha(){
  const tb=document.getElementById('minha-body');if(!tb)return;
  let ps=S.purchases;
- if(!(S.isOps&&!S.myDep))ps=ps.filter(p=>p.departamento_id===S.myDep);
+ if(!S.seeAll)ps=ps.filter(p=>p.departamento_id===S.myDep);
  tb.innerHTML=ps.map(p=>{const it=S.items.find(i=>i.id===p.item_id),r=S.requests.find(x=>x.id===p.solicitacao_id);
   return '<tr><td>'+date(p.realizado_em)+'</td><td>#'+esc(r?.numero||'—')+'</td><td class="item">'+esc(it?.produto||'Item comprado')+'<div class="sub">'+esc(it?.especificacao||'')+'</div></td>'+
    '<td class="num">'+esc(p.quantidade)+' '+esc(it?.unidade||'un.')+'</td><td>'+esc(supplierName(p.fornecedor_id))+'</td>'+
