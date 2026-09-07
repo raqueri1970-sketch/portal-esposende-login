@@ -222,7 +222,7 @@ var ALMOX_MINIMO_PATCH=`<script id="patch-almox-minimo-seguranca-20260827">
 const ORC_UNIFIED_PATCH=`
 <script>
 (function(){
-  var ORC_URL='/portal-esposende-login/orcamento-compras.html?v=central-unica-14';
+  var ORC_URL='/portal-esposende-login/orcamento-compras.html?v=central-cerebro-15';
   function abrirCentralCompras(){
     var antigo=document.getElementById('orc-central-unica');
     if(antigo){antigo.style.display='flex';return}
@@ -283,8 +283,52 @@ function abrirCentralUnicaExterna(){
   document.body.appendChild(box);
   var frame=box.querySelector('#orc-central-externa-frame');
   if(window.__ORC_PAGE_HTML)frame.srcdoc=window.__ORC_PAGE_HTML;
-  else frame.src='orcamento-compras.html?v=central-unica-14';
+  else frame.src='orcamento-compras.html?v=central-cerebro-15';
   box.querySelector('#orc-central-externa-voltar').onclick=function(){box.style.display='none'};
+}
+
+
+/* Encaminha as perguntas do novo Orçamento ao módulo versionado no GitHub. */
+function instalarCerebroCentral(ifr){
+ function ligar(){
+  var d;try{d=ifr.contentDocument}catch(e){return}
+  if(!d||d.__cerebroCentral15)return;
+  d.__cerebroCentral15=true;
+  function encaminhar(ev){
+   var input=d.getElementById('brain-quick-input'),ask=d.getElementById('brain-quick-ask');
+   if(!input||!ask)return;
+   if(ev.type==='click'&&!ask.contains(ev.target))return;
+   if(ev.type==='keydown'&&(ev.target!==input||ev.key!=='Enter'||ev.isComposing))return;
+   var pergunta=input.value.trim();
+   var q=pergunta.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+   if(!/\borcamento\b|\bbudget\b|central de compras|(?:saldo|verba|realizado|gasto|numeros).*(?:compras)|(?:compras).*(?:saldo|verba|realizado|gasto|numeros)/.test(q))return;
+   ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+   abrirCentralUnicaExterna();
+   var frame=document.getElementById('orc-central-externa-frame'),tentativas=0;
+   var voice=d.getElementById('bq-voz-toggle');
+   function abrir(){
+    try{
+     var api=frame.contentWindow.OrcCerebro;
+     if(api){api.ask(pergunta,{reset:true,speak:voice?voice.checked:true});return true}
+    }catch(e){}
+    return false;
+   }
+   if(abrir())return;
+   var timer=setInterval(function(){
+    if(abrir()){clearInterval(timer);return}
+    if(++tentativas>=200){
+     clearInterval(timer);
+     var answer=d.getElementById('brain-quick-answer');
+     if(answer){answer.textContent='Não foi possível carregar o Cérebro da Central. Atualize o portal e tente novamente.';answer.classList.add('on')}
+     var box=document.getElementById('orc-central-externa');if(box)box.style.display='none';
+    }
+   },100);
+  }
+  d.addEventListener('click',encaminhar,true);
+  d.addEventListener('keydown',encaminhar,true);
+ }
+ ifr.addEventListener('load',ligar);
+ ligar();
 }
 
 function instalarPonteCentral(ifr){
@@ -345,7 +389,7 @@ async function openPortal(){
   // Pré-carrega a Central no mesmo documento do Portal. Isso evita que navegadores
   // bloqueiem o iframe interno e garante que a sessão chegue antes do primeiro script.
   try{
-    var _orcRes=await fetch('orcamento-compras.html?v=central-unica-14',{cache:'no-store'});
+    var _orcRes=await fetch('orcamento-compras.html?v=central-cerebro-15',{cache:'no-store'});
     if(!_orcRes.ok)throw new Error('status '+_orcRes.status);
     var _orcHtml=await _orcRes.text();
     if(_sessionPayload){
@@ -366,6 +410,7 @@ async function openPortal(){
   var ifr=document.getElementById('portalFrame');
   ifr.src=blobUrl;
   instalarPonteCentral(ifr);
+  instalarCerebroCentral(ifr);
   ifr.style.display='block';
   document.body.classList.add('portal-on');
 }
