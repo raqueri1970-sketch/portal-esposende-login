@@ -160,6 +160,7 @@ dialog::backdrop{background:#02060dcc}
  <h1 id="page-title">Central de Compras</h1>
  <span class="spacer"></span>
  <span id="profile" class="badge">—</span>
+ <button class="btn sm no-print" onclick="brainOpen()" aria-label="Abrir Cérebro da Central">🧠 Cérebro</button>
  <button id="btn-refresh" class="btn green sm no-print" onclick="loadAll()" title="Atualizar">↻</button>
 </div></header>
 
@@ -298,6 +299,31 @@ ou cole a tabela do Excel/e-mail"></textarea>
  <button id="rj-submit" class="btn red" type="button" onclick="submitRejeicao()">Confirmar rejeição</button>
 </div></dialog>
 
+
+<dialog id="orc-brain-dialog" aria-labelledby="orc-brain-title" class="no-print">
+ <div class="modal-head between"><span id="orc-brain-title">🧠 Cérebro — Central de Compras</span><button type="button" class="btn sm" onclick="brainClose()" aria-label="Fechar Cérebro">×</button></div>
+ <div class="modal-body">
+  <p class="muted" style="margin-top:0">Converse sobre orçamento, saldo, gastos e áreas. Sem indicar um período, uso os filtros da tela; nas próximas perguntas, mantenho o contexto da conversa.</p>
+  <form onsubmit="event.preventDefault();brainAsk()" style="display:flex;gap:8px;flex-wrap:wrap">
+   <label for="orc-brain-input" class="hidden">Pergunta sobre orçamento e compras</label>
+   <input id="orc-brain-input" class="field" style="flex:1;min-width:190px" placeholder="Ex.: quanto gastamos em setembro de 2026?" aria-label="Pergunta sobre orçamento e compras" maxlength="1000" required>
+   <button id="orc-brain-ask" class="btn primary" type="submit">Perguntar</button>
+  </form>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">
+   <button class="btn sm" onclick="brainAsk('Qual área mais gastou?')">Quem mais gastou?</button>
+   <button class="btn sm" onclick="brainAsk('Como é calculado o saldo?')">Explicar o saldo</button>
+   <button class="btn sm" onclick="brainLast=null;brainAsk('Explique os números do período selecionado.',{reset:true})">Usar filtros da tela</button>
+  </div>
+  <div id="orc-brain-answer" role="status" aria-live="polite" style="white-space:pre-wrap;line-height:1.65;max-height:45vh;overflow:auto"></div>
+  <div id="orc-brain-status" class="hint" style="margin-top:12px"></div>
+ </div>
+ <div class="modal-actions">
+  <label style="display:flex;align-items:center;gap:6px;margin-right:auto"><input id="orc-brain-voice" type="checkbox" checked> Ler respostas em voz alta</label>
+  <button class="btn sm" onclick="brainRead()">Ouvir resposta</button>
+  <button class="btn sm" onclick="brainStop()">Parar voz</button>
+ </div>
+</dialog>
+
 <script>
 const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co',
       SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h',
@@ -324,7 +350,7 @@ const ym=v=>{const s=String(v??'');
 const monthsBetween=(a,b)=>{const out=[];let[y,m]=a.split('-').map(Number);const[ey,em]=b.split('-').map(Number);
  while(y<ey||(y===ey&&m<=em)){out.push(y+'-'+String(m).padStart(2,'0'));m++;if(m>12){m=1;y++}if(out.length>120)break}return out};
 
-let S={session:null,profile:null,deps:[],budgets:[],requests:[],items:[],quotes:[],purchases:[],movs:[],suppliers:[]};
+let S={loadedAt:null,loadError:null,session:null,profile:null,deps:[],budgets:[],requests:[],items:[],quotes:[],purchases:[],movs:[],suppliers:[]};
 let TAB='orcamento';
 
 const depName=id=>S.deps.find(d=>d.id===id)?.nome||'Área não identificada';
@@ -376,6 +402,7 @@ function scoped(rows,field){return S.seeAll?rows:rows.filter(r=>r[field||'depart
 function visibleDeps(){let d=S.deps.slice().sort((a,b)=>a.nome.localeCompare(b.nome));return S.seeAll?d:d.filter(x=>x.id===S.myDep)}
 
 async function loadAll(){
+ S.loadError=null;
  busy(true,'Atualizando…');document.getElementById('notice').innerHTML='';
  const rb=document.getElementById('btn-refresh');if(rb)rb.disabled=true;
  try{
@@ -392,10 +419,11 @@ async function loadAll(){
   ]);
   const bad=[d,b,s,i,c,p,mv,f].find(x=>x.error);if(bad)throw bad.error;
   Object.assign(S,{deps:d.data||[],budgets:b.data||[],requests:s.data||[],items:i.data||[],quotes:c.data||[],purchases:p.data||[],movs:mv.data||[],suppliers:f.data||[]});
+  S.loadedAt=new Date().toISOString();
   fillSelects();buildTabs();renderAll();
   busy(false,'');
   syncCmp(false);
- }catch(e){busy(false,'');error(e)}
+ }catch(e){S.loadError=e.message||String(e);busy(false,'');error(e)}
  if(rb)rb.disabled=false;
 }
 
@@ -1034,6 +1062,168 @@ document.addEventListener('input',e=>{
  const bt=block.querySelector('.blk-total');if(bt)bt.textContent=money(blkTot);
 });
 
-loadAll();
+const ORC_BRAIN_VERSION='central-cerebro-15';
+const brainNorm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const brainMonths=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+function brainInteger(n){
+ n=Math.floor(Math.abs(n));
+ const small={"0":"zero","1":"um","2":"dois","3":"três","4":"quatro","5":"cinco","6":"seis","7":"sete","8":"oito","9":"nove","10":"dez","11":"onze","12":"doze","13":"treze","14":"quatorze","15":"quinze","16":"dezesseis","17":"dezessete","18":"dezoito","19":"dezenove"};
+ const tens={2:'vinte',3:'trinta',4:'quarenta',5:'cinquenta',6:'sessenta',7:'setenta',8:'oitenta',9:'noventa'};
+ const hundreds={1:'cento',2:'duzentos',3:'trezentos',4:'quatrocentos',5:'quinhentos',6:'seiscentos',7:'setecentos',8:'oitocentos',9:'novecentos'};
+ if(n<20)return small[n];
+ if(n<100)return tens[Math.floor(n/10)]+(n%10?' e '+small[n%10]:'');
+ if(n===100)return 'cem';
+ if(n<1000)return hundreds[Math.floor(n/100)]+(n%100?' e '+brainInteger(n%100):'');
+ for(const [unit,one,many] of [[1e12,'trilhão','trilhões'],[1e9,'bilhão','bilhões'],[1e6,'milhão','milhões'],[1e3,'mil','mil']]){
+  if(n>=unit){
+   const top=Math.floor(n/unit),rest=n%unit;
+   const head=unit===1000&&top===1?'mil':brainInteger(top)+' '+(top===1?one:many);
+   return head+(rest?(rest<100||rest%100===0?' e ':' ')+brainInteger(rest):'');
+  }
+ }
+}
+function brainSpeech(text){
+ return text.replace(/R\$\s*(-?[\d.]+),(\d{2})/g,(_,whole,cents)=>{
+  const reais=Number(whole.replace(/\./g,'')),c=Number(cents),abs=Math.abs(reais);
+  const r=brainInteger(abs)+(abs>=1e6&&abs%1e6===0?' de':'')+(abs===1?' real':' reais');
+  return (reais<0?'menos ':'')+(c?(abs?r+' e ':'')+brainInteger(c)+(c===1?' centavo':' centavos'):r);
+ }).replace(/(\d+)(?:,(\d+))?%/g,(_,a,b)=>brainInteger(Number(a))+(b?' vírgula '+b.split('').map(d=>brainInteger(Number(d))).join(' '):'')+' por cento');
+}
+
+function brainPeriod(question,previous){
+ const q=brainNorm(question),valid=/^\d{4}-(0[1-9]|1[0-2])$/;
+ const val=id=>document.getElementById(id).value;
+ let de=previous?.de||val('f-de'),ate=previous?.ate||val('f-ate');
+ const current=ym(new Date());
+ if(!valid.test(de))de=current;
+ if(!valid.test(ate))ate=current;
+ if([...q.matchAll(/\b(\d{1,2})\/(20\d{2})\b/g)].some(m=>Number(m[1])<1||Number(m[1])>12))throw Error('Informe um mês válido, de 01 a 12.');
+ const years=[...q.matchAll(/\b(20\d{2})\b/g)].map(m=>m[1]),year=years[0]||ate.slice(0,4);
+ const dates=[...q.matchAll(/\b(20\d{2})-(0[1-9]|1[0-2])\b|\b(0?[1-9]|1[0-2])\/(20\d{2})\b/g)].map(m=>m[1]?m[1]+'-'+m[2]:m[4]+'-'+m[3].padStart(2,'0'));
+ const named=[...q.matchAll(new RegExp('\\b('+brainMonths.map(brainNorm).join('|')+')\\b','g'))];
+ if(dates.length){de=dates[0];ate=dates[dates.length-1]}
+ else if(named.length){
+  const month=m=>String(brainMonths.map(brainNorm).indexOf(m[1])+1).padStart(2,'0');
+  de=year+'-'+month(named[0]);ate=(years.length>1?years[years.length-1]:year)+'-'+month(named[named.length-1]);
+ }else if(/mes (atual|corrente)|este mes/.test(q)){de=current;ate=current}
+ else if(/mes passado|mes anterior/.test(q)){const [y,m]=current.split('-').map(Number);de=(m===1?y-1:y)+'-'+String(m===1?12:m-1).padStart(2,'0');ate=de}
+ else if(/ano inteiro|anual|todo o ano/.test(q)||years.length){de=year+'-01';ate=year+'-12'}
+ if(/\b(primeiro|1[ºo]?) semestre\b/.test(q)){de=year+'-01';ate=year+'-06'}
+ if(/\b(segundo|2[ºo]?) semestre\b/.test(q)){de=year+'-07';ate=year+'-12'}
+ if(named.length===1&&/acumulad|\bate\b/.test(q)&&!dates.length)de=year+'-01';
+ if(de>ate)throw Error('O início está depois do fim. Informe o período, por exemplo: janeiro a setembro de 2026.');
+ if(monthsBetween(de,ate).length>120)throw Error('Consulte um período de até dez anos.');
+ if(/\b\d{1,2}\/\d{1,2}\/\d{4}\b|\b20\d{2}-\d{2}-\d{2}\b/.test(q))throw Error('O orçamento é mensal. Informe os meses desejados; um intervalo de dias exigiria uma consulta diferente.');
+ return {de,ate};
+}
+function brainContext(question,previous){
+ const q=' '+brainNorm(question).replace(/[^\w\s]/g,' ')+' ',all=visibleDeps();
+ const explicit=S.deps.filter(d=>brainNorm(d.nome).split(/\s*\/\s*/).some(name=>name==='compras'?/\b(area|departamento|setor)( de)? compras\b/.test(q):q.includes(' '+name+' ')));
+ if(explicit.some(d=>!all.some(a=>a.id===d.id)))throw Error('Essa área não está disponível para o seu perfil.');
+ const general=/todas as areas|empresa|geral/.test(q);
+ const ids=explicit.length?explicit.map(d=>d.id):general?all.map(d=>d.id):previous?.ids||((ORCTAB!=='all')?[ORCTAB]:all.map(d=>d.id));
+ const deps=all.filter(d=>ids.includes(d.id));
+ if(!deps.length)throw Error('Não há áreas disponíveis para o seu perfil.');
+ return {...brainPeriod(question,previous),ids:deps.map(d=>d.id),deps};
+}
+function brainTotals(ctx){
+ const months=monthsBetween(ctx.de,ctx.ate);
+ const rows=ctx.deps.map(d=>({d,...aggArea(d,ctx.ate,months)}));
+ const total=rows.reduce((t,r)=>({acum:t.acum+r.acum,real:t.real+r.real,cot:t.cot+r.cot,saldo:t.saldo+r.saldo}),{acum:0,real:0,cot:0,saldo:0});
+ return {rows,total,months};
+}
+function brainMonthName(s){return brainMonths[Number(s.slice(5))-1]+' de '+s.slice(0,4)}
+function brainSummary(ctx){
+ const {rows,total:t,months}=brainTotals(ctx);
+ const area=ctx.deps.length===1?'a área '+ctx.deps[0].nome:ctx.deps.length===visibleDeps().length?'as áreas disponíveis no seu perfil':ctx.deps.map(d=>d.nome).join(' e ');
+ const period=ctx.de===ctx.ate?brainMonthName(ctx.de):brainMonthName(ctx.de)+' a '+brainMonthName(ctx.ate);
+ let out='Para '+area+', em '+period+', o orçamento aprovado é de '+money(t.acum)+'. O realizado/pago registrado soma '+money(t.real)+'. ';
+ out+=t.cot?'Há ainda '+money(t.cot)+' em cotação. ':'Não há valor reservado em cotação. ';
+ out+=t.saldo<0?'O saldo está negativo em '+money(Math.abs(t.saldo))+'.':'O saldo disponível é de '+money(t.saldo)+'.';
+ if(t.acum>0)out+=' Os gastos realizados representam '+(t.real/t.acum*100).toLocaleString('pt-BR',{maximumFractionDigits:2})+'% do aprovado.';
+ out+='\n\nO saldo é o aprovado menos o realizado e o valor em cotação. As cotações representam a posição atual dos pedidos em aberto, independentemente do período selecionado.';
+ const missing=rows.filter(r=>months.some(m=>!budgetMonth(r.d.id,m).fonte));
+ if(missing.length)out+='\n\nHá meses sem verba cadastrada em '+missing.map(r=>r.d.nome).join(', ')+'. Esses meses entram sem valor no acumulado; isso não confirma que o orçamento previsto era zero.';
+ return out;
+}
+
+function brainAnswer(question,previous){
+ if(!S.loadedAt||S.loadError)throw Error('Não consegui confirmar os dados atuais. Use Atualizar e tente novamente.');
+ if(S.requests.length>=400||S.purchases.length>=1000||S.budgets.length>=1000)throw Error('A consulta pode estar incompleta pelo limite de registros. Não vou apresentar esses valores como totais confirmados.');
+ const q=brainNorm(question);
+ if(/^\s*(aprovar|aprove|rejeitar|rejeite|excluir|exclua|pagar|pague|alterar|altere|criar|crie)\b/.test(q))throw Error('Aqui eu explico os números. Para registrar uma ação, use os controles de aprovação e lançamento da Central.');
+ if(/compar|versus|\bvs\b|aumentou|diminuiu|evolucao/.test(q))throw Error('Para comparar períodos, consulte cada mês separadamente, por exemplo: “resumo de agosto de 2026” e “e setembro de 2026?”.');
+ if(/loja|filial|fornecedor|produto|item|preco|economia|lucro/.test(q))throw Error('Esta consulta explica orçamento, realizado, saldo, cotações e áreas. Para detalhes de pedido, produto ou fornecedor, use Acompanhamento ou Minha conta corrente.');
+ if(!/orcamento|compra|saldo|gast|gasto|realiz|pago|verba|cotac|aprov|resumo|numer|situacao|quanto|area|penden|acompanh|ranking|maior|menor|explique|disponivel/.test(q)&&!previous&&!brainMonths.some(m=>q.includes(brainNorm(m))))throw Error('Posso explicar o orçamento e o saldo, mostrar a área que mais gastou ou resumir um mês. Por exemplo: “Como está o orçamento de setembro de 2026?”.');
+ const ctx=brainContext(question,previous),{rows,total}=brainTotals(ctx);
+ let answer=brainSummary(ctx);
+ if(/quem|qual.*area|ranking|mais gast|maior gasto|menos gast|menor gasto/.test(q)){
+  const asc=/menos|menor/.test(q);
+  const ranked=[...rows].sort((a,b)=>asc?a.real-b.real:b.real-a.real);
+  const leaders=ranked.filter(r=>Math.abs(r.real-ranked[0].real)<0.005);
+  answer=(leaders.length===rows.length?'As áreas consultadas estão empatadas, com '+money(ranked[0].real)+' realizados cada.':leaders.map(r=>r.d.nome).join(' e ')+(leaders.length===1?' tem ':' têm ')+(asc?'o menor':'o maior')+' realizado no período: '+money(ranked[0].real)+(leaders.length>1?' por área.':'.'))+'\n\n'+answer;
+ }
+ if(/penden|acompanh|aprovacao/.test(q)){
+  const reqs=scoped(S.requests).filter(r=>ctx.ids.includes(r.departamento_id)&&!r.email_bloqueado&&!['cancelada','rejeitada'].includes(r.status));
+  const approval=reqs.filter(r=>['revisao_necessaria','aguardando_aprovacao_orcamento'].includes(r.status)).length;
+  const following=reqs.filter(r=>r.aprovado_em&&r.financeiro_status!=='realizado_pago').length;
+  answer='Na posição atual, há '+approval+(approval===1?' solicitação':' solicitações')+' na fila de revisão/aprovação e '+following+' em acompanhamento. Essas quantidades são de pedidos em aberto, sem filtro de mês.\n\n'+answer;
+ }
+ if(/por que|porque|como.*saldo|conta.*saldo/.test(q))answer='A conta do saldo é: '+money(total.acum)+' de orçamento, menos '+money(total.real)+' realizados, menos '+money(total.cot)+' em cotação, igual a '+money(total.saldo)+'.\n\n'+answer;
+ return {text:answer,context:ctx};
+}
+let brainLast=null,brainSpeaking=0;
+function brainStop(){brainSpeaking++;if('speechSynthesis' in window)window.speechSynthesis.cancel()}
+function brainRead(){
+ brainStop();
+ const text=document.getElementById('orc-brain-answer').textContent;
+ if(!text)return;
+ if(!('speechSynthesis' in window)){
+  document.getElementById('orc-brain-status').textContent='Leitura em voz alta não disponível neste navegador.';return;
+ }
+ const synth=window.speechSynthesis,voices=synth.getVoices();
+ const voice=voices.find(v=>/^pt[-_]BR$/i.test(v.lang)&&v.localService)||voices.find(v=>/^pt[-_]BR$/i.test(v.lang))||voices.find(v=>/^pt/i.test(v.lang));
+ const parts=brainSpeech(text).match(/[^.!?\n]+[.!?]?/g)||[text],run=brainSpeaking;
+ function next(i){
+  if(run!==brainSpeaking||i>=parts.length)return;
+  const u=new SpeechSynthesisUtterance(parts[i].trim());
+  u.lang='pt-BR';u.rate=1;u.pitch=1;if(voice)u.voice=voice;
+  u.onend=()=>next(i+1);
+  u.onerror=()=>{if(run===brainSpeaking)document.getElementById('orc-brain-status').textContent='Não foi possível concluir a leitura. Clique em Ouvir resposta para tentar novamente.'};
+  synth.speak(u);
+ }
+ next(0);
+}
+function brainClose(){brainStop();document.getElementById('orc-brain-dialog').close()}
+async function brainAsk(question,options={}){
+ const dialog=document.getElementById('orc-brain-dialog'),input=document.getElementById('orc-brain-input');
+ if(!dialog.open)dialog.showModal();
+ if(question!==undefined)input.value=question;
+ const query=input.value.trim();
+ if(!query){input.focus();return}
+ const out=document.getElementById('orc-brain-answer'),status=document.getElementById('orc-brain-status'),button=document.getElementById('orc-brain-ask');
+ brainStop();button.disabled=true;status.textContent='Conferindo os números…';
+ try{
+  await window.OrcCerebro.ready;
+  const result=brainAnswer(query,options.reset?null:brainLast);
+  brainLast=result.context;out.textContent=result.text;
+  status.textContent='Dados carregados em '+new Date(S.loadedAt).toLocaleString('pt-BR')+'.';
+  if(options.speak!==false&&document.getElementById('orc-brain-voice').checked)brainRead();
+ }catch(e){out.textContent=e.message||'Não foi possível consultar os números.';status.textContent='Consulta não confirmada.'}
+ finally{button.disabled=false}
+}
+function brainOpen(){brainLast=null;brainAsk('Explique os números do período selecionado.',{reset:true,speak:false})}
+window.OrcCerebro={version:ORC_BRAIN_VERSION,ask:brainAsk,open:brainOpen,ready:null};
+document.getElementById('orc-brain-dialog').addEventListener('cancel',brainStop);
+document.getElementById('orc-brain-voice').addEventListener('change',e=>{
+ if(!e.target.checked)brainStop();
+ try{localStorage.setItem('orc_brain_voice',e.target.checked?'1':'0')}catch(err){}
+});
+try{document.getElementById('orc-brain-voice').checked=localStorage.getItem('orc_brain_voice')!=='0'}catch(e){}
+window.addEventListener('pagehide',brainStop);
+
+window.OrcCerebro.ready=loadAll();
 </script>
+
 </body></html>
