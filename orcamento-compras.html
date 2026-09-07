@@ -21,7 +21,7 @@
 .tab.on{background:#16324f;color:#e8f2ff;border-color:#3b6795}
 .tab .count{display:inline-block;margin-left:6px;background:#1f3f5f;color:#bfdbfe;border-radius:99px;padding:1px 7px;font-size:10px;font-weight:800}
 .orc-subtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.orc-subtabs button{cursor:pointer;border:1px solid #24384f;background:#0b1929;color:var(--muted);border-radius:8px;padding:6px 11px;font-size:12px;font-weight:700}
+.orc-subtabs button{cursor:pointer;border:1px solid #24384f;background:#0b1929;color:var(--muted);border-radius:8px;padding:6px 11px;font-size:12px;font-weight:700;white-space:nowrap;flex:0 0 auto}
 .orc-subtabs button.on{background:#14304c;color:#e8f2ff;border-color:#3b6795}
 .vgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0}
 .vgrid label{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase}
@@ -71,13 +71,42 @@ dialog::backdrop{background:#02060dcc}
 .modal-body{padding:18px}.modal-actions{padding:14px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .print-only{display:none}
 .metric.link{cursor:pointer}.metric.link:hover{border-color:#3b6795}
-@media(max-width:900px){.cards{grid-template-columns:1fr 1fr}.srow{grid-template-columns:1fr 80px 80px}.srow .row-total{grid-column:1/-1;text-align:right}}
+.metric{text-align:center}
+/* ---- gráficos (SVG, sem lib — fill/stroke imprimem sempre) ---- */
+.chart-panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:14px}
+.chart-panel h2{font-size:15px;margin:0}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.chart-box{border:1px solid var(--line);border-radius:11px;padding:12px 12px 10px;background:#0b1a2b}
+.chart-box .ct{font-size:12px;font-weight:800;color:#cfe0f2;margin-bottom:8px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:8px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:middle}
+.bars12{width:100%;height:132px;display:block}
+.mstrip{display:grid;grid-template-columns:repeat(12,1fr);margin-top:3px}
+.mstrip span{text-align:center;font-size:9.5px;color:var(--muted);font-weight:700}
+.mstrip span.off{opacity:.32}
+.arows{margin-top:2px}
+.arow{display:grid;grid-template-columns:118px 1fr 104px;gap:9px;align-items:center;padding:5px 0}
+.arow .an{font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arow .av{font-size:11px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.arow svg{width:100%;height:19px;display:block;border-radius:5px;overflow:hidden}
+.ch-track{fill:rgba(148,163,184,.16)}
+.ch-empty{stroke:rgba(148,163,184,.45);stroke-width:2;stroke-dasharray:3 3}
+@media(max-width:900px){.cards{grid-template-columns:1fr 1fr}.srow{grid-template-columns:1fr 80px 80px}.srow .row-total{grid-column:1/-1;text-align:right}.chart-grid{grid-template-columns:1fr}}
 @media(max-width:760px){
  #tabs{display:none}#tab-select{display:block}
- .cards{grid-template-columns:1fr 1fr;gap:8px}.metric{padding:12px}.v{font-size:19px}
- .wrap{padding:10px}.request-head{flex-direction:column;align-items:flex-start}
- .filters label{font-size:10px}
+ .top{position:static;background:#081421;padding:9px 14px}
+ .top h1{font-size:15px}
+ html,body{overflow-x:hidden}
+ .cards{grid-template-columns:1fr 1fr;gap:8px}.metric{padding:10px 8px;min-width:0}.v{font-size:15px;word-break:break-word}.k{font-size:8.5px;letter-spacing:.3px}
+ .wrap{padding:10px;overflow-x:hidden}.request-head{flex-direction:column;align-items:flex-start}
+ .filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.filters label{font-size:10px}
+ .filters .field{width:100%}
+ .orc-subtabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+ .bars12{height:110px}
+ .arow{grid-template-columns:78px 1fr 88px;gap:7px}
+ .arow .an{font-size:10px}.arow .av{font-size:9.5px}
 }
+@media(max-width:380px){.cards{grid-template-columns:1fr}}
 @media print{
  @page{margin:14mm}
  body{background:#fff!important;color:#000!important;font-size:11px}
@@ -140,13 +169,14 @@ dialog::backdrop{background:#02060dcc}
   <div class="metric"><div class="k">REALIZADO / PAGO (PERÍODO)</div><div class="v" id="m-real">R$ 0,00</div></div>
   <div class="metric good"><div class="k">SALDO</div><div class="v" id="m-saldo">R$ 0,00</div></div>
  </div>
+ <div id="orc-charts"></div>
  <div id="orc-view"></div>
 </section>
 
 <!-- FILA DE APROVAÇÃO DA ÁREA -->
 <section data-tab="aprovacao" class="hidden">
  <div class="panel"><div class="between"><div><h2>Fila de aprovação da área</h2>
-  <div class="muted">Todo pedido de compra — inclusive os que chegam por e-mail — entra aqui aguardando a área liberar o orçamento. Ao aprovar, o pedido é enviado ao módulo <strong>Cotação e Pedidos</strong> para o comprador cotar de verdade.</div></div>
+  <div class="muted">Aprovar libera o pedido para o módulo Cotação e Pedidos.</div></div>
   <span id="cnt-aprovacao" class="badge">0</span></div>
   <div id="fila-aprovacao"><div class="empty">Carregando…</div></div>
  </div>
@@ -155,7 +185,7 @@ dialog::backdrop{background:#02060dcc}
 <!-- ACOMPANHAMENTO (Cotação e Pedidos) -->
 <section data-tab="acompanhamento" class="hidden">
  <div class="panel"><div class="between"><div><h2>Acompanhamento — Cotação e Pedidos</h2>
-  <div class="muted">Pedidos já liberados pela área. A cotação e a emissão do Pedido de Compra são feitas no módulo Cotação e Pedidos. Aqui você só acompanha: em cotação (reserva a verba) → Pedido emitido (vira Realizado/Pago e entra na Auditoria de Compras).</div></div>
+  <div class="muted">Em cotação reserva a verba; Pedido emitido vira Realizado/Pago.</div></div>
   <span id="cnt-acompanhamento" class="badge">0</span></div>
   <div class="toolbar no-print" style="margin:8px 0 0"><button class="btn sm" onclick="syncCmp(true)">↻ Sincronizar com Cotação e Pedidos</button><span id="cmp-sync-status" class="muted"></span></div>
   <div id="lista-acompanhamento"><div class="empty">Carregando…</div></div>
@@ -296,12 +326,14 @@ async function session(){
  S.canApproveArea=APPROVE_AREA.includes(S.profile.perfil)||S.profile.perfil==='gestor_departamento';
  S.canApproveCot=APPROVE_COT.includes(S.profile.perfil);
  S.canQuote=['administrador','controladoria','diretoria','comprador','gestor_compras'].includes(S.profile.perfil);
- S.canBudget=APPROVE_AREA.includes(S.profile.perfil);
  S.myDep=S.profile.departamento_id;
  S.seeAll=S.isOps&&(!S.myDep||APPROVE_AREA.includes(S.profile.perfil)||S.profile.perfil==='comprador');
  S.isAdmin=APPROVE_AREA.includes(S.profile.perfil);
+ // verba: Controladoria/Admin define qualquer área; gestor define só a própria
+ S.canBudget=S.isAdmin||['gestor_departamento','gestor_compras'].includes(S.profile.perfil);
+ S.canBudgetDep=id=>S.isAdmin||(S.canBudget&&id===S.myDep);
  document.getElementById('profile').textContent=({administrador:'Administrador',controladoria:'Controladoria',diretoria:'Diretoria',comprador:'Compras',gestor_compras:'Gestor de Compras',gestor_departamento:'Gestor de área'}[S.profile.perfil]||S.profile.perfil);
- document.getElementById('page-title').textContent=S.isOps?'Central de Compras':'Minha Conta Corrente';
+ document.getElementById('page-title').textContent='Central de Compras';
 }
 
 function scoped(rows,field){return S.seeAll?rows:rows.filter(r=>r[field||'departamento_id']===S.myDep)}
@@ -425,7 +457,8 @@ const TABDEFS=[
 function tabList(){return TABDEFS.filter(t=>!t.ops||S.isOps)}
 function buildTabs(){
  const list=tabList();
- if(!list.find(t=>t.id===TAB))TAB=S.isOps?'orcamento':'minha';
+ if(!list.find(t=>t.id===TAB))TAB='orcamento';
+ document.getElementById('page-title').textContent=S.isOps?'Central de Compras':('Orçamento — '+(depName(S.myDep)||'minha área'));
  const wrap=document.getElementById('tabs');
  wrap.innerHTML=list.map(t=>{
   const c=tabCount(t.id);
@@ -482,8 +515,95 @@ function aggArea(d,mes,meses){
  return {bm,acum,cot,real,saldo:acum-real-cot};
 }
 
+/* ---------- GRÁFICOS (SVG puro — fill/stroke sempre imprimem) ---------- */
+const _f=x=>Math.round(x*10)/10;
+function monthlySeries(depIds,ano){
+ const verbas=[],reais=[];
+ for(let m=1;m<=12;m++){
+  const comp=ano+'-'+String(m).padStart(2,'0');
+  let vb=null,rl=0;
+  depIds.forEach(id=>{
+   const v=budgetMes(id,ano,m); if(v!=='')vb=(vb||0)+Number(v);
+   rl+=S.purchases.filter(p=>p.departamento_id===id&&ym(p.realizado_em)===comp).reduce((a,p)=>a+num(p.valor_total_realizado),0);
+  });
+  verbas.push(vb);reais.push(rl);
+ }
+ return {verbas,reais};
+}
+function bars12SVG(verbas,reais){
+ const n=12,W=1200,H=300;
+ const maxV=Math.max(1,...verbas.map(v=>Number(v)||0),...reais.map(v=>Number(v)||0));
+ const bw=W/n,gap=bw*.30;
+ let s='';
+ for(let i=0;i<n;i++){
+  const x=bw*i+gap/2,w=bw-gap,vb=verbas[i];
+  if(vb!=null&&vb!==''){const h=Number(vb)/maxV*H;s+='<rect class="ch-track" x="'+_f(x)+'" y="'+_f(H-h)+'" width="'+_f(w)+'" height="'+_f(h)+'"/>';}
+  const rv=Number(reais[i])||0;
+  if(rv>0){const h=rv/maxV*H;s+='<rect x="'+_f(x)+'" y="'+_f(H-h)+'" width="'+_f(w)+'" height="'+_f(h)+'" fill="#22c55e"/>';}
+ }
+ return '<svg class="bars12" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true">'+s+'</svg>';
+}
+function mstripHTML(verbas){return '<div class="mstrip">'+MESNOME.map((mn,i)=>'<span class="'+((verbas[i]==null||verbas[i]==='')?'off':'')+'">'+mn[0]+'</span>').join('')+'</div>'}
+function areaRowsHTML(deps,mes,meses){
+ return '<div class="arows">'+deps.map(d=>{
+  const a=aggArea(d,mes,meses),base=a.acum||1;
+  const rp=Math.max(0,Math.min(100,a.real/base*100));
+  const cp=Math.max(0,Math.min(100-rp,a.cot/base*100));
+  const over=a.saldo<0;
+  const bar='<svg viewBox="0 0 100 10" preserveAspectRatio="none">'+
+   '<rect class="ch-track" x="0" y="0" width="100" height="10"/>'+
+   (rp>0?'<rect x="0" y="0" width="'+_f(rp)+'" height="10" fill="#22c55e"/>':'')+
+   (cp>0?'<rect x="'+_f(rp)+'" y="0" width="'+_f(cp)+'" height="10" fill="#f59e0b"/>':'')+
+   (over?'<rect x="0" y="0" width="100" height="10" fill="#ef4444" opacity="0.22"/>':'')+'</svg>';
+  return '<div class="arow"><div class="an" title="'+esc(d.nome)+'">'+esc(d.nome)+'</div>'+bar+
+   '<div class="av" style="color:'+(over?'#fca5a5':'#86efac')+'">'+money(a.saldo)+'</div></div>';
+ }).join('')+'</div>';
+}
+function donutSVG(parts){
+ const tot=parts.reduce((s,p)=>s+Math.max(0,p[1]||0),0)||1;
+ const R=42,C=2*Math.PI*R;let acc=0,segs='';
+ parts.forEach(p=>{const frac=Math.max(0,p[1]||0)/tot,len=frac*C;
+  segs+='<circle cx="60" cy="60" r="'+R+'" fill="none" stroke="'+p[2]+'" stroke-width="15" stroke-dasharray="'+_f(len)+' '+_f(C-len)+'" stroke-dashoffset="'+_f(-acc*C)+'" transform="rotate(-90 60 60)"/>';
+  acc+=frac;});
+ const leg=parts.map(p=>'<span><i style="background:'+p[2]+'"></i>'+esc(p[0])+' · '+money(Math.max(0,p[1]||0))+'</span>').join('');
+ return '<svg viewBox="0 0 120 120" style="width:100%;max-width:170px;height:auto;display:block;margin:2px auto 0">'+segs+'</svg>'+
+  '<div class="legend" style="justify-content:center;margin:8px 0 0">'+leg+'</div>';
+}
+const LG_VERBA='<span><i style="background:rgba(148,163,184,.5)"></i>Verba</span>',
+      LG_REAL='<span><i style="background:#22c55e"></i>Realizado</span>';
+function renderOrcCharts(mes,meses){
+ const box=document.getElementById('orc-charts');if(!box)return;
+ const ano=+document.getElementById('f-ano').value||new Date().getFullYear();
+ const deps=visibleDeps();
+ const per=fmtM(meses[0])+' a '+fmtM(meses[meses.length-1]);
+ if(ORCTAB!=='all'){
+  const d=deps.find(x=>x.id===ORCTAB);if(!d){box.innerHTML='';return}
+  const ms=monthlySeries([d.id],ano),a=aggArea(d,mes,meses);
+  box.innerHTML='<div class="chart-panel"><div class="between"><h2>Panorama — '+esc(d.nome)+'</h2>'+
+   '<span class="muted" style="font-size:11px">ano '+ano+' · período '+per+'</span></div>'+
+   '<div class="chart-grid">'+
+    '<div class="chart-box"><div class="ct">Verba × Realizado por mês</div>'+
+     '<div class="legend">'+LG_VERBA+LG_REAL+'</div>'+bars12SVG(ms.verbas,ms.reais)+mstripHTML(ms.verbas)+'</div>'+
+    '<div class="chart-box"><div class="ct">Consumo do período</div>'+
+     donutSVG([['Realizado',a.real,'#22c55e'],['Em cotação',a.cot,'#f59e0b'],['Saldo',a.saldo,'#31465f']])+'</div>'+
+   '</div></div>';
+  return;
+ }
+ const ms=monthlySeries(deps.map(d=>d.id),ano);
+ box.innerHTML='<div class="chart-panel"><div class="between"><h2>Panorama geral</h2>'+
+  '<span class="muted" style="font-size:11px">'+deps.length+' áreas · ano '+ano+'</span></div>'+
+  '<div class="chart-grid">'+
+   '<div class="chart-box"><div class="ct">Verba × Realizado por mês — empresa</div>'+
+    '<div class="legend">'+LG_VERBA+LG_REAL+'</div>'+bars12SVG(ms.verbas,ms.reais)+mstripHTML(ms.verbas)+'</div>'+
+   '<div class="chart-box"><div class="ct">Saldo por área <span class="muted">— barra = verba do período; verde realizado, âmbar em cotação</span></div>'+
+    areaRowsHTML(deps,mes,meses)+'</div>'+
+  '</div></div>';
+}
+
 function renderOrcSubtabs(){
  const deps=visibleDeps();
+ // gestor de uma única área: sem seletor, já abre a área dele
+ if(!S.seeAll&&deps.length===1){ORCTAB=deps[0].id;document.getElementById('orc-subtabs').innerHTML='';return}
  const btns=[{id:'all',nome:'▦ Todas as áreas'}].concat(deps.map(d=>({id:d.id,nome:d.nome})));
  if(!btns.find(b=>b.id===ORCTAB))ORCTAB='all';
  document.getElementById('orc-subtabs').innerHTML=btns.map(b=>
@@ -499,6 +619,7 @@ function renderOrcamento(){
  document.getElementById('print-period').textContent='Período '+fmtM(de)+' a '+fmtM(ate);
  document.getElementById('print-date').textContent=new Date().toLocaleString('pt-BR');
  renderOrcSubtabs();
+ renderOrcCharts(mes,meses);
  const deps=visibleDeps();
 
  if(ORCTAB==='all'){
@@ -519,7 +640,7 @@ function renderOrcamento(){
    '<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Área</th><th class="num">Aprovado no mês</th><th class="num">Aprovado acum. (período)</th><th class="num">Em cotação</th><th class="num">Realizado</th><th class="num">Saldo</th></tr></thead>'+
    '<tbody>'+(rows||'<tr><td colspan="6" class="empty">Nenhuma área visível.</td></tr>')+'</tbody>'+
    '<tfoot><tr><th>Total geral</th><th class="num">'+money(T.mes)+'</th><th class="num">'+money(T.acum)+'</th><th class="num">'+money(T.cot)+'</th><th class="num">'+money(T.real)+'</th><th class="num">'+money(T.saldo)+'</th></tr></tfoot></table></div>'+
-   '<div class="hint">Clique numa área para abrir a conta dela (cards + extrato de gastos). O orçamento aqui é só acompanhamento — cotação e pedido são feitos no fluxo de compras.</div></div>';
+   '<div class="hint">Clique numa área para abrir a conta dela.</div></div>';
   return;
  }
 
@@ -553,26 +674,27 @@ function verbaEditor(d){
  const definido=vals.some(v=>v!=='');
  const legado=definido&&!S.budgets.some(b=>b.departamento_id===d.id&&b.tipo==='mensal'&&String(b.competencia).slice(0,4)===String(ano))
    &&S.budgets.some(b=>b.departamento_id===d.id&&b.tipo==='anual'&&String(b.competencia).slice(0,4)===String(ano));
- if(!S.canBudget){
+ const canEdit=S.canBudgetDep&&S.canBudgetDep(d.id);
+ if(!canEdit){
   const cells=vals.map((v,i)=>'<div><label>'+MESNOME[i]+'</label><div style="padding:6px 0;font-weight:700">'+(v===''?'—':money(v))+'</div></div>').join('');
-  return '<div class="panel"><h2>Verba de '+esc(d.nome)+' · '+ano+'</h2>'+
-   (definido?'<div class="vgrid">'+cells+'</div><div class="hint">Total do ano: <strong>'+money(totalAno)+'</strong></div>':'<div class="empty">Verba ainda não definida para esta área em '+ano+'.</div>')+'</div>';
+  return '<div class="panel"><div class="between"><h2>Verba de '+esc(d.nome)+' · '+ano+'</h2>'+
+   (definido?'<span class="badge ok">'+money(totalAno)+' / ano</span>':'')+'</div>'+
+   (definido?'<div class="vgrid">'+cells+'</div>':'<div class="empty">Verba ainda não definida para '+ano+'.</div>')+'</div>';
  }
  const cells=vals.map((v,i)=>'<div><label>'+MESNOME[i]+'</label><input id="vb-'+i+'" value="'+(v===''?'':String(v).replace('.',','))+'" placeholder="0,00"></div>').join('');
  return '<div class="panel"><div class="between"><h2>Verba de '+esc(d.nome)+' · '+ano+'</h2>'+
   (definido?'<span class="badge ok">verba vigente</span>':'<span class="badge wait">a definir</span>')+'</div>'+
-  '<div class="muted" style="margin:6px 0">Preencha os 12 meses (jan a dez). Depois de salvo, passa a valer na conta da área. Para revisar/aumentar, altere o mês e salve de novo — a mudança fica registrada.</div>'+
-  (legado?'<div class="notice">Esta área ainda usa uma <strong>verba anual antiga</strong> dividida em 12 avos. Os valores abaixo são só uma sugestão — confira e clique em “Salvar orçamento do ano” para fixar mês a mês.</div>':'')+
+  (legado?'<div class="notice">Verba anual antiga dividida em 12 avos — confira os valores e salve para fixar mês a mês.</div>':'')+
   '<div class="vgrid">'+cells+'</div>'+
-  '<div class="filters" style="margin:6px 0">'+
-   '<input id="vb-todos" class="field" placeholder="aplicar o mesmo valor a todos os meses" style="min-width:240px">'+
+  '<div class="filters" style="margin:8px 0 4px">'+
+   '<input id="vb-todos" class="field" placeholder="valor p/ aplicar ou distribuir" style="min-width:200px">'+
    '<button class="btn sm" type="button" onclick="aplicarTodos()">Aplicar a todos</button>'+
-   '<button class="btn sm" type="button" onclick="distribuirAnual()">Distribuir um valor anual ÷ 12</button>'+
+   '<button class="btn sm" type="button" onclick="distribuirAnual()">Anual ÷ 12</button>'+
    '<span class="spacer"></span>'+
-   '<strong style="align-self:center">Total do ano: <span id="vb-total">'+money(totalAno)+'</span></strong>'+
-   '<button class="btn primary" type="button" onclick="saveVerbaAno(\''+d.id+'\')">Salvar orçamento do ano</button>'+
+   '<strong style="align-self:center">Total: <span id="vb-total">'+money(totalAno)+'</span></strong>'+
+   '<button class="btn primary" type="button" onclick="saveVerbaAno(\''+d.id+'\')">Salvar</button>'+
   '</div>'+
-  '<div class="hint">Deixe um mês em branco para marcá-lo como sem verba. Ano fechado por mês substitui qualquer verba anual antiga da área.</div></div>';
+  '<div class="hint">Mês em branco = sem verba.</div></div>';
 }
 function vbInputs(){return Array.from({length:12},(_,i)=>document.getElementById('vb-'+i))}
 function vbRecalc(){const t=vbInputs().reduce((s,el)=>s+(numDot(el.value)||0),0);const o=document.getElementById('vb-total');if(o)o.textContent=money(t)}
@@ -601,8 +723,7 @@ function extratoArea(d,mes,meses,de,ate){
  return '<div class="panel"><div class="between"><h2>Extrato de gastos — '+esc(d.nome)+'</h2><span class="muted">'+fmtM(de)+' a '+fmtM(ate)+'</span></div>'+
   '<div class="meta" style="margin:8px 0"><span>Verba do período: <strong>'+money(saldoIni)+'</strong></span><span>Realizado: <strong>'+money(saldoIni-saldo)+'</strong></span><span>Em cotação: <strong>'+money(cot)+'</strong></span><span>Saldo: <strong style="color:'+((saldo-cot)<0?'#fca5a5':'#86efac')+'">'+money(saldo-cot)+'</strong></span></div>'+
   '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Pedido</th><th>Item</th><th>Fornecedor</th><th class="num">Qtd.</th><th class="num">Unit.</th><th class="num">Valor</th><th class="num">Saldo após</th></tr></thead>'+
-  '<tbody>'+(linhas||'<tr><td colspan="8" class="empty">Nenhum gasto no período.</td></tr>')+'</tbody></table></div>'+
-  '<div class="hint">Esta é a “conta bancária” da área: verba do período menos cada gasto realizado. Cotações em aberto aparecem como reserva (Em cotação).</div></div>';
+  '<tbody>'+(linhas||'<tr><td colspan="8" class="empty">Nenhum gasto no período.</td></tr>')+'</tbody></table></div></div>';
 }
 
 /* ---------- FILA DE APROVAÇÃO ---------- */
@@ -757,7 +878,7 @@ function acompCard(r){
   (realizado?'<span>Realizado em '+date(r.cotacao_aprovada_em)+'</span>':'')+'</div>'+
   '<div class="table-wrap"><table><thead><tr><th>Item</th><th class="num">Qtd.</th><th>Un.</th><th>Especificação</th></tr></thead><tbody>'+linhas+'</tbody></table></div>'+
   emailBox(r)+
-  (realizado?'':'<div class="hint" style="margin-top:8px">A cotação (preço, prazo, fornecedor) e a emissão do Pedido de Compra são feitas no módulo <strong>Cotação e Pedidos</strong>. Quando o pedido for emitido lá, o valor entra como Realizado/Pago aqui e na Auditoria de Compras.</div>')+
+  (realizado?'':'<div class="hint" style="margin-top:8px">Cotação e Pedido de Compra são feitos no módulo Cotação e Pedidos.</div>')+
   '</div>'+(acts?'<div class="request-actions">'+acts+'</div>':'')+'</article>';
 }
 async function reenviarCmp(id){
