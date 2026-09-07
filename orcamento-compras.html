@@ -84,11 +84,18 @@ dialog::backdrop{background:#02060dcc}
 .mstrip{display:grid;grid-template-columns:repeat(12,1fr);margin-top:3px}
 .mstrip span{text-align:center;font-size:9.5px;color:var(--muted);font-weight:700}
 .mstrip span.off{opacity:.32}
+.chart-sum{display:flex;gap:14px;flex-wrap:wrap;margin-top:9px;font-size:11px;color:var(--muted);font-weight:700}
+.chart-sum b{color:#e8f2ff}
+.chart-sum span:last-child{margin-left:auto;color:#93c5fd}
+.chart-sum span.over{color:#fca5a5}
 .arows{margin-top:2px}
-.arow{display:grid;grid-template-columns:118px 1fr 104px;gap:9px;align-items:center;padding:5px 0}
+.arow{display:grid;grid-template-columns:132px 1fr 96px;gap:10px;align-items:center;padding:6px 0;border-top:1px solid rgba(148,163,184,.10)}
+.arow:first-child{border-top:0}
 .arow .an{font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.arow .av{font-size:11px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
-.arow svg{width:100%;height:19px;display:block;border-radius:5px;overflow:hidden}
+.arow .an small{display:block;font-size:9px;color:var(--muted);font-weight:600}
+.arow .av{font-size:11.5px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.arow .av small{font-size:8.5px}
+.arow svg{width:100%;height:22px;display:block;border-radius:5px;overflow:hidden}
 .ch-track{fill:rgba(148,163,184,.16)}
 .ch-empty{stroke:rgba(148,163,184,.45);stroke-width:2;stroke-dasharray:3 3}
 @media(max-width:900px){.cards{grid-template-columns:1fr 1fr}.srow{grid-template-columns:1fr 80px 80px}.srow .row-total{grid-column:1/-1;text-align:right}.chart-grid{grid-template-columns:1fr}}
@@ -102,9 +109,10 @@ dialog::backdrop{background:#02060dcc}
  .filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.filters label{font-size:10px}
  .filters .field{width:100%}
  .orc-subtabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
- .bars12{height:110px}
- .arow{grid-template-columns:78px 1fr 88px;gap:7px}
- .arow .an{font-size:10px}.arow .av{font-size:9.5px}
+ .bars12{height:118px}
+ .arow{grid-template-columns:96px 1fr 82px;gap:8px}
+ .arow .an{font-size:10px}.arow .av{font-size:10px}
+ .chart-sum{gap:9px;font-size:10px}
 }
 @media(max-width:380px){.cards{grid-template-columns:1fr}}
 @media print{
@@ -278,7 +286,9 @@ const DEP_CMP_AREA={FACILITIES:'03 - Facilities',COMERCIAL:'02 - Comercial',TI:'
 
 const money=n=>(Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const date=v=>v?new Date(v).toLocaleDateString('pt-BR'):'—';
-const num=v=>Number(String(v??0).replace(/\./g,'').replace(',','.'))||0;
+// aceita número do banco ("41666.67" / 41666.67) e string pt-BR ("41.666,67")
+const num=v=>{if(typeof v==='number')return isFinite(v)?v:0;const s=String(v??'').trim();if(!s)return 0;
+ const x=s.includes(',')?Number(s.replace(/\./g,'').replace(',','.')):Number(s);return isFinite(x)?x:0};
 const numDot=v=>Number(String(v??0).replace(',','.'))||0;
 const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const ym=v=>{const s=String(v??'');
@@ -517,6 +527,12 @@ function aggArea(d,mes,meses){
 
 /* ---------- GRÁFICOS (SVG puro — fill/stroke sempre imprimem) ---------- */
 const _f=x=>Math.round(x*10)/10;
+const CBLUE='#3b82f6',CGREEN='#22c55e',CAMBER='#f59e0b',CRED='#ef4444';
+const moneyC=n=>{n=Number(n)||0;const a=Math.abs(n);
+ if(a>=1e6)return 'R$ '+(n/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mi';
+ if(a>=1e3)return 'R$ '+Math.round(n/1e3).toLocaleString('pt-BR')+' mil';
+ return money(n)};
+const pct=(a,b)=>b>0?Math.round(a/b*100):0;
 function monthlySeries(depIds,ano){
  const verbas=[],reais=[];
  for(let m=1;m<=12;m++){
@@ -534,43 +550,55 @@ function bars12SVG(verbas,reais){
  const n=12,W=1200,H=300;
  const maxV=Math.max(1,...verbas.map(v=>Number(v)||0),...reais.map(v=>Number(v)||0));
  const bw=W/n,gap=bw*.30;
+ let grid='';for(let g=1;g<=3;g++){const y=_f(H-H*g/4);grid+='<line x1="0" y1="'+y+'" x2="'+W+'" y2="'+y+'" stroke="rgba(148,163,184,.16)" stroke-width="1"/>';}
  let s='';
  for(let i=0;i<n;i++){
   const x=bw*i+gap/2,w=bw-gap,vb=verbas[i];
-  if(vb!=null&&vb!==''){const h=Number(vb)/maxV*H;s+='<rect class="ch-track" x="'+_f(x)+'" y="'+_f(H-h)+'" width="'+_f(w)+'" height="'+_f(h)+'"/>';}
+  if(vb!=null&&vb!==''){const h=Number(vb)/maxV*H;s+='<rect x="'+_f(x)+'" y="'+_f(H-h)+'" width="'+_f(w)+'" height="'+_f(h)+'" fill="'+CBLUE+'" opacity="0.32"/>';}
   const rv=Number(reais[i])||0;
-  if(rv>0){const h=rv/maxV*H;s+='<rect x="'+_f(x)+'" y="'+_f(H-h)+'" width="'+_f(w)+'" height="'+_f(h)+'" fill="#22c55e"/>';}
+  if(rv>0){const h=rv/maxV*H;s+='<rect x="'+_f(x)+'" y="'+_f(H-h)+'" width="'+_f(w)+'" height="'+_f(h)+'" fill="'+CGREEN+'"/>';}
  }
- return '<svg class="bars12" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true">'+s+'</svg>';
+ return '<svg class="bars12" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true">'+grid+s+'</svg>';
 }
 function mstripHTML(verbas){return '<div class="mstrip">'+MESNOME.map((mn,i)=>'<span class="'+((verbas[i]==null||verbas[i]==='')?'off':'')+'">'+mn[0]+'</span>').join('')+'</div>'}
+function sumHTML(verba,real,cot){
+ const p=pct(real+cot,verba);
+ return '<div class="chart-sum"><span>Verba <b>'+moneyC(verba)+'</b></span>'+
+  '<span>Realizado <b style="color:#86efac">'+moneyC(real)+'</b></span>'+
+  (cot>0?'<span>Em cotação <b style="color:#fde68a">'+moneyC(cot)+'</b></span>':'')+
+  '<span class="'+(p>100?'over':'')+'">'+p+'% usado</span></div>';
+}
 function areaRowsHTML(deps,mes,meses){
  return '<div class="arows">'+deps.map(d=>{
   const a=aggArea(d,mes,meses),base=a.acum||1;
   const rp=Math.max(0,Math.min(100,a.real/base*100));
   const cp=Math.max(0,Math.min(100-rp,a.cot/base*100));
-  const over=a.saldo<0;
+  const over=a.saldo<0, semv=!temVerba(d.id);
   const bar='<svg viewBox="0 0 100 10" preserveAspectRatio="none">'+
-   '<rect class="ch-track" x="0" y="0" width="100" height="10"/>'+
-   (rp>0?'<rect x="0" y="0" width="'+_f(rp)+'" height="10" fill="#22c55e"/>':'')+
-   (cp>0?'<rect x="'+_f(rp)+'" y="0" width="'+_f(cp)+'" height="10" fill="#f59e0b"/>':'')+
-   (over?'<rect x="0" y="0" width="100" height="10" fill="#ef4444" opacity="0.22"/>':'')+'</svg>';
-  return '<div class="arow"><div class="an" title="'+esc(d.nome)+'">'+esc(d.nome)+'</div>'+bar+
-   '<div class="av" style="color:'+(over?'#fca5a5':'#86efac')+'">'+money(a.saldo)+'</div></div>';
+   '<rect x="0" y="0" width="100" height="10" fill="'+(semv?'rgba(148,163,184,.12)':'rgba(59,130,246,.22)')+'"/>'+
+   (rp>0?'<rect x="0" y="0" width="'+_f(rp)+'" height="10" fill="'+CGREEN+'"/>':'')+
+   (cp>0?'<rect x="'+_f(rp)+'" y="0" width="'+_f(cp)+'" height="10" fill="'+CAMBER+'"/>':'')+
+   (over?'<rect x="0" y="0" width="100" height="10" fill="'+CRED+'" opacity="0.28"/>':'')+'</svg>';
+  return '<div class="arow"><div class="an" title="'+esc(d.nome)+'">'+esc(d.nome)+
+    '<small>'+(semv?'sem verba':'verba '+moneyC(a.acum))+'</small></div>'+bar+
+   '<div class="av" style="color:'+(over?'#fca5a5':'#86efac')+'">'+moneyC(a.saldo)+
+    '<small class="muted" style="display:block;font-weight:600">'+pct(a.real+a.cot,a.acum)+'% usado</small></div></div>';
  }).join('')+'</div>';
 }
-function donutSVG(parts){
+function donutSVG(parts,ctr,sub){
  const tot=parts.reduce((s,p)=>s+Math.max(0,p[1]||0),0)||1;
  const R=42,C=2*Math.PI*R;let acc=0,segs='';
  parts.forEach(p=>{const frac=Math.max(0,p[1]||0)/tot,len=frac*C;
-  segs+='<circle cx="60" cy="60" r="'+R+'" fill="none" stroke="'+p[2]+'" stroke-width="15" stroke-dasharray="'+_f(len)+' '+_f(C-len)+'" stroke-dashoffset="'+_f(-acc*C)+'" transform="rotate(-90 60 60)"/>';
+  if(len>0)segs+='<circle cx="60" cy="60" r="'+R+'" fill="none" stroke="'+p[2]+'" stroke-width="15" stroke-dasharray="'+_f(len)+' '+_f(C-len)+'" stroke-dashoffset="'+_f(-acc*C)+'" transform="rotate(-90 60 60)" stroke-linecap="butt"/>';
   acc+=frac;});
  const leg=parts.map(p=>'<span><i style="background:'+p[2]+'"></i>'+esc(p[0])+' · '+money(Math.max(0,p[1]||0))+'</span>').join('');
- return '<svg viewBox="0 0 120 120" style="width:100%;max-width:170px;height:auto;display:block;margin:2px auto 0">'+segs+'</svg>'+
+ return '<svg viewBox="0 0 120 120" style="width:100%;max-width:172px;height:auto;display:block;margin:2px auto 0">'+segs+
+  '<text x="60" y="57" text-anchor="middle" font-size="22" font-weight="800" fill="currentColor">'+esc(ctr||'')+'</text>'+
+  '<text x="60" y="74" text-anchor="middle" font-size="9" fill="#8ca4bf" font-weight="700">'+esc(sub||'')+'</text></svg>'+
   '<div class="legend" style="justify-content:center;margin:8px 0 0">'+leg+'</div>';
 }
-const LG_VERBA='<span><i style="background:rgba(148,163,184,.5)"></i>Verba</span>',
-      LG_REAL='<span><i style="background:#22c55e"></i>Realizado</span>';
+const LG_VERBA='<span><i style="background:'+CBLUE+';opacity:.5"></i>Verba</span>',
+      LG_REAL='<span><i style="background:'+CGREEN+'"></i>Realizado</span>';
 function renderOrcCharts(mes,meses){
  const box=document.getElementById('orc-charts');if(!box)return;
  const ano=+document.getElementById('f-ano').value||new Date().getFullYear();
@@ -579,23 +607,30 @@ function renderOrcCharts(mes,meses){
  if(ORCTAB!=='all'){
   const d=deps.find(x=>x.id===ORCTAB);if(!d){box.innerHTML='';return}
   const ms=monthlySeries([d.id],ano),a=aggArea(d,mes,meses);
+  const verbaAno=ms.verbas.reduce((s,v)=>s+(Number(v)||0),0), realAno=ms.reais.reduce((s,v)=>s+v,0);
   box.innerHTML='<div class="chart-panel"><div class="between"><h2>Panorama — '+esc(d.nome)+'</h2>'+
    '<span class="muted" style="font-size:11px">ano '+ano+' · período '+per+'</span></div>'+
    '<div class="chart-grid">'+
     '<div class="chart-box"><div class="ct">Verba × Realizado por mês</div>'+
-     '<div class="legend">'+LG_VERBA+LG_REAL+'</div>'+bars12SVG(ms.verbas,ms.reais)+mstripHTML(ms.verbas)+'</div>'+
+     '<div class="legend">'+LG_VERBA+LG_REAL+'</div>'+bars12SVG(ms.verbas,ms.reais)+mstripHTML(ms.verbas)+
+     sumHTML(verbaAno,realAno,0)+'</div>'+
     '<div class="chart-box"><div class="ct">Consumo do período</div>'+
-     donutSVG([['Realizado',a.real,'#22c55e'],['Em cotação',a.cot,'#f59e0b'],['Saldo',a.saldo,'#31465f']])+'</div>'+
+     donutSVG([['Realizado',a.real,CGREEN],['Em cotação',a.cot,CAMBER],['Saldo',Math.max(0,a.saldo),CBLUE]],
+       pct(a.real+a.cot,a.acum)+'%','usado')+'</div>'+
    '</div></div>';
   return;
  }
  const ms=monthlySeries(deps.map(d=>d.id),ano);
+ const verbaAno=ms.verbas.reduce((s,v)=>s+(Number(v)||0),0), realAno=ms.reais.reduce((s,v)=>s+v,0);
+ let T={acum:0,real:0,cot:0};deps.forEach(d=>{const a=aggArea(d,mes,meses);T.acum+=a.acum;T.real+=a.real;T.cot+=a.cot});
  box.innerHTML='<div class="chart-panel"><div class="between"><h2>Panorama geral</h2>'+
   '<span class="muted" style="font-size:11px">'+deps.length+' áreas · ano '+ano+'</span></div>'+
   '<div class="chart-grid">'+
    '<div class="chart-box"><div class="ct">Verba × Realizado por mês — empresa</div>'+
-    '<div class="legend">'+LG_VERBA+LG_REAL+'</div>'+bars12SVG(ms.verbas,ms.reais)+mstripHTML(ms.verbas)+'</div>'+
-   '<div class="chart-box"><div class="ct">Saldo por área <span class="muted">— barra = verba do período; verde realizado, âmbar em cotação</span></div>'+
+    '<div class="legend">'+LG_VERBA+LG_REAL+'</div>'+bars12SVG(ms.verbas,ms.reais)+mstripHTML(ms.verbas)+
+    sumHTML(verbaAno,realAno,0)+'</div>'+
+   '<div class="chart-box"><div class="ct">Consumo por área <span class="muted">— período '+per+'</span></div>'+
+    '<div class="legend">'+LG_REAL+'<span><i style="background:'+CAMBER+'"></i>Em cotação</span><span><i style="background:'+CBLUE+';opacity:.35"></i>Disponível</span></div>'+
     areaRowsHTML(deps,mes,meses)+'</div>'+
   '</div></div>';
 }
