@@ -60,7 +60,9 @@
   function findBrain(doc){
     if(!doc)return null;
     const input=doc.getElementById('brain-quick-input'),ask=doc.getElementById('brain-quick-ask');
-    if(input&&ask)return {doc,input,ask};
+    if(input&&ask)return {doc,input,ask,kind:'portal'};
+    const orcInput=doc.getElementById('orc-brain-input'),orcAsk=doc.getElementById('orc-brain-ask');
+    if(orcInput&&orcAsk)return {doc,input:orcInput,ask:orcAsk,kind:'orc'};
     for(const fr of Array.from(doc.querySelectorAll('iframe'))){
       try{const hit=findBrain(fr.contentDocument);if(hit)return hit}catch{}
     }
@@ -86,15 +88,17 @@
   function sendToBrain(text){
     const hit=findBrain(document);
     if(!hit){status('Cérebro ainda não carregou. Aguarde um instante e tente novamente.','error');return false}
-    const {doc,input,ask}=hit;
-    const voice=doc.getElementById('bq-voz-toggle');
+    const {doc,input,ask,kind}=hit;
+    const voice=doc.getElementById(kind==='orc'?'orc-brain-voice':'bq-voz-toggle');
     if(voice&&!voice.checked){
       voice.checked=true;
       try{voice.dispatchEvent(new Event('change',{bubbles:true}))}catch{}
     }
     input.value=text;
     try{input.dispatchEvent(new Event('input',{bubbles:true}))}catch{}
-    ask.click();
+    if(kind==='orc'&&doc.defaultView&&doc.defaultView.OrcCerebro){
+      doc.defaultView.OrcCerebro.ask(text,{speak:true});
+    }else ask.click();
     const l=loja(text)||readStore();
     status(l?'Pergunta enviada · loja '+l+' mantida':'Pergunta enviada');
     setTimeout(()=>status(''),2200);
@@ -103,7 +107,8 @@
 
   let recognition=null,gotResult=false;
   function startVoice(){
-    const SR=window.SpeechRecognition||window.webkitSpeechRecognition||(window.top&&(window.top.SpeechRecognition||window.top.webkitSpeechRecognition));
+    let SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){try{SR=window.top&&(window.top.SpeechRecognition||window.top.webkitSpeechRecognition)}catch{}}
     if(!SR){status('Entrada por voz não está disponível neste navegador.','error');return}
     if(recognition){try{recognition.stop()}catch{};recognition=null;setListening(false);return}
     try{
