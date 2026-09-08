@@ -13,13 +13,11 @@
         const p=JSON.parse(init.body),q=String(p.pergunta_original||p.pergunta||''),c=get(),l=loja(q)||p.loja||c.loja;
         if(l){p.loja=l;p.lojas=[l]}
         if(!p.mes&&c.mes)p.mes=c.mes;if(!p.ano&&c.ano)p.ano=c.ano;
-        p.session_id=p.session_id||SESSION;
-        p.destino='integrado';
+        p.session_id=p.session_id||SESSION;p.destino='integrado';
         put({loja:l||c.loja,mes:p.mes||c.mes,ano:p.ano||c.ano,assunto:q||c.assunto});
         init={...init,body:JSON.stringify(p)};
         const nova=url.replace(/portal-cerebro(?:-integrado)?(?=\?|$)/i,'portal-conversa');
-        if(typeof input==='string') input=nova;
-        else if(input instanceof Request) input=new Request(nova,input);
+        if(typeof input==='string') input=nova; else if(input instanceof Request) input=new Request(nova,input);
       }
     }catch(e){console.warn('[Cérebro] contexto conversacional:',e)}
     return originalFetch(input,init);
