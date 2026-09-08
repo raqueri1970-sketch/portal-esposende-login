@@ -40,8 +40,8 @@
         const p=JSON.parse(init.body),q=String(p.pergunta_original||p.pergunta||''),c=get();
         const explicita=loja(q),geral=!explicita&&pedeGeral(q);
         const ativa=geral?null:(explicita||p.loja||c.loja||null);
-        if(geral){p.loja=null;p.lojas=[];put({loja:null})}
-        else if(ativa){p.loja=ativa;p.lojas=[ativa];put({loja:ativa})}
+        if(geral){p.loja=null;p.lojas=[]}
+        else if(ativa){p.loja=ativa;p.lojas=[ativa];if(explicita)put({loja:ativa})}
         if(!p.mes&&c.mes)p.mes=c.mes;
         if(!p.ano&&c.ano)p.ano=c.ano;
         p.session_id=SESSION;
