@@ -59,14 +59,30 @@
   function topDocument(){try{return window.top&&window.top.document?window.top.document:document}catch{return document}}
   function findBrain(doc){
     if(!doc)return null;
-    const input=doc.getElementById('brain-quick-input'),ask=doc.getElementById('brain-quick-ask');
-    if(input&&ask)return {doc,input,ask,kind:'portal'};
     const orcInput=doc.getElementById('orc-brain-input'),orcAsk=doc.getElementById('orc-brain-ask');
     if(orcInput&&orcAsk)return {doc,input:orcInput,ask:orcAsk,kind:'orc'};
+    const input=doc.getElementById('brain-quick-input'),ask=doc.getElementById('brain-quick-ask');
+    if(input&&ask)return {doc,input,ask,kind:'portal'};
     for(const fr of Array.from(doc.querySelectorAll('iframe'))){
       try{const hit=findBrain(fr.contentDocument);if(hit)return hit}catch{}
     }
     return null;
+  }
+  function findActiveBrain(){
+    const d=topDocument();
+    for(const id of ['orc-central-externa-frame','orc-central-frame']){
+      const fr=d.getElementById(id);
+      if(fr){
+        try{
+          const box=fr.closest('#orc-central-externa,#orc-central-unica');
+          if(!box||box.style.display!=='none'){
+            const hit=findBrain(fr.contentDocument);
+            if(hit)return hit;
+          }
+        }catch{}
+      }
+    }
+    return findBrain(d)||findBrain(document);
   }
   function status(text,kind){
     const d=topDocument(),el=d.getElementById('portal-voice-status');
@@ -86,7 +102,7 @@
     b.style.boxShadow=on?'0 0 0 7px rgba(220,38,38,.22),0 8px 24px rgba(0,0,0,.45)':'0 8px 24px rgba(0,0,0,.45)';
   }
   function sendToBrain(text){
-    const hit=findBrain(document);
+    const hit=findActiveBrain();
     if(!hit){status('Cérebro ainda não carregou. Aguarde um instante e tente novamente.','error');return false}
     const {doc,input,ask,kind}=hit;
     const voice=doc.getElementById(kind==='orc'?'orc-brain-voice':'bq-voz-toggle');
