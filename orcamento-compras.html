@@ -114,15 +114,21 @@ dialog::backdrop{background:#02060dcc}
 .ch-track{fill:rgba(148,163,184,.16)}
 .ch-empty{stroke:rgba(148,163,184,.45);stroke-width:2;stroke-dasharray:3 3}
 @media(max-width:900px){.cards{grid-template-columns:1fr 1fr}.srow{grid-template-columns:1fr 80px 80px}.srow .row-total{grid-column:1/-1;text-align:right}.chart-grid{grid-template-columns:1fr}}
+.mob-back{display:none}
 @media(max-width:760px){
  #tabs{display:none}#tab-select{display:block}
  .top{position:static;padding:8px 14px}
  .topline{height:auto}
  .brand-logo{height:32px}
  .top h1{font-size:13px}
- html,body{overflow-x:hidden}
+ /* menu (abas) sempre visível no topo ao rolar */
+ .tabbar{position:sticky;top:0;z-index:30;background:var(--bg);margin:-10px -10px 12px;padding:9px 10px;border-bottom:1px solid var(--line);gap:6px;flex-wrap:nowrap}
+ #tab-select{flex:1 1 auto;min-width:0;font-size:13px;font-weight:800;padding:11px 8px}
+ .tabbar .btn{padding:9px 10px;font-size:11px;flex:0 0 auto}
+ .tabbar .spacer{display:none}
+ .mob-back{display:inline-flex;margin-bottom:12px}
  .cards{grid-template-columns:1fr 1fr;gap:8px}.metric{padding:10px 8px;min-width:0}.v{font-size:15px;word-break:break-word}.k{font-size:8.5px;letter-spacing:.3px}
- .wrap{padding:10px;overflow-x:hidden}.request-head{flex-direction:column;align-items:flex-start}
+ .wrap{padding:10px}.request-head{flex-direction:column;align-items:flex-start}
  .filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.filters label{font-size:10px}
  .filters .field{width:100%}
  .orc-subtabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
@@ -175,7 +181,7 @@ dialog::backdrop{background:#02060dcc}
 </div>
 
 <div class="tabbar no-print">
- <select id="tab-select" class="field" onchange="setTab(this.value)"></select>
+ <select id="tab-select" class="field" onchange="setTab(this.value)" aria-label="Ir para a seção"></select>
  <div class="tabs" id="tabs"></div>
  <span class="spacer"></span>
  <button class="btn sm" onclick="window.print()">🖨️ PDF</button>
@@ -196,6 +202,7 @@ dialog::backdrop{background:#02060dcc}
    <input type="month" id="f-ate" class="field" onchange="renderOrcamento()"></label>
  </div>
  <div class="orc-subtabs no-print" id="orc-subtabs"></div>
+ <div id="orc-backslot" class="no-print"></div>
  <div class="cards" id="orc-cards">
   <div class="metric"><div class="k" id="k-budget">ORÇAMENTO APROVADO (ACUM. PERÍODO)</div><div class="v" id="m-budget">R$ 0,00</div></div>
   <div class="metric warn"><div class="k">EM COTAÇÃO</div><div class="v" id="m-cot">R$ 0,00</div></div>
@@ -530,7 +537,7 @@ function buildTabs(){
  }).join('');
  wrap.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.go));
  const sel=document.getElementById('tab-select');
- sel.innerHTML=list.map(t=>{const c=tabCount(t.id);return '<option value="'+t.id+'"'+(t.id===TAB?' selected':'')+'>'+esc(t.label)+(c?' ('+c+')':'')+'</option>'}).join('');
+ sel.innerHTML=list.map(t=>{const c=tabCount(t.id);return '<option value="'+t.id+'"'+(t.id===TAB?' selected':'')+'>☰ '+esc(t.label)+(c?' ('+c+')':'')+'</option>'}).join('');
  showTab();
 }
 function tabCount(id){
@@ -710,6 +717,7 @@ function renderOrcamento(){
  renderOrcSubtabs();
  renderOrcCharts(mes,meses);
  const deps=visibleDeps();
+ const bs=document.getElementById('orc-backslot'); if(bs&&ORCTAB==='all')bs.innerHTML='';
 
  if(ORCTAB==='all'){
   document.getElementById('k-budget').textContent='ORÇAMENTO APROVADO (ACUM. PERÍODO)';
@@ -738,6 +746,9 @@ function renderOrcamento(){
  const a=aggArea(d,mes,meses);
  document.getElementById('k-budget').textContent='VERBA APROVADA — '+d.nome.toUpperCase()+' (ACUM. PERÍODO)';
  setCards(a.acum,a.cot,a.real,a.saldo);
+ document.getElementById('orc-backslot').innerHTML=(deps.length>1)
+  ? '<button class="btn sm mob-back" style="width:100%;justify-content:center;margin-bottom:12px" type="button" onclick="ORCTAB=\'all\';renderOrcamento();window.scrollTo({top:0,behavior:\'smooth\'})">‹ Ver todas as áreas (menu)</button>'
+  : '';
  document.getElementById('orc-view').innerHTML=verbaEditor(d)+extratoArea(d,mes,meses,de,ate);
 }
 function setCards(bud,cot,real,saldo){
