@@ -21,6 +21,8 @@ button:disabled{opacity:.6;cursor:default}
 #status.err{color:#ff3355}
 #status.ok{color:#10b981}
 #portalFrame{display:none;position:fixed;inset:0;width:100vw;height:100vh;border:none;z-index:9999;background:#02060d}
+#btnSairGestor{position:fixed;top:14px;right:16px;z-index:10000;width:auto;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:800;letter-spacing:.04em}
+#btnSairGestor:hover{background:rgba(255,255,255,.24)}
 body.portal-on{display:block;padding:0}
 body.portal-on .card{display:none}
 .link-esqueci{display:block;text-align:center;margin-top:14px;font-size:12px;color:#6b88a8;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0}
@@ -58,6 +60,7 @@ body.portal-on .card{display:none}
   <div id="status"></div>
 </div>
 <iframe id="portalFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups allow-top-navigation-by-user-activation allow-popups-to-escape-sandbox"></iframe>
+<button id="btnSairGestor" class="hidden" type="button" onclick="sairGestor()">Sair</button>
 <script>
 var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -364,8 +367,41 @@ function setStatus(msg,cls){
 // arquivo (proteção deles contra hospedar HTML executável direto). Por isso
 // buscamos o conteúdo via fetch() autenticado e montamos um Blob local — o
 // mesmo truque que o próprio portal já usa pros módulos (getBlobUrl/execMod).
+// Gestor de área: entra DIRETO na Central de Compras (só a área dele), sem o portal de auditoria.
+async function abrirSomenteOrcamento(session){
+  setStatus('Abrindo a Central de Compras...','ok');
+  var sp={
+    access_token:session.access_token, refresh_token:session.refresh_token||'',
+    email:(session.user&&session.user.email)||null, uid:(session.user&&session.user.id)||null
+  };
+  var r=await fetch('orcamento-compras.html?v=central-cerebro-15',{cache:'no-store'});
+  if(!r.ok){ setStatus('Erro ao abrir a Central de Compras (status '+r.status+')','err'); return; }
+  var html=await r.text();
+  var inj='<scr'+'ipt>window.__PORTAL_SESSION='+JSON.stringify(sp)+';</scr'+'ipt>';
+  html=html.replace(/<\/head>/i,inj+'</head>');
+  var blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  var ifr=document.getElementById('portalFrame');
+  ifr.src=URL.createObjectURL(blob);
+  ifr.style.display='block';
+  document.getElementById('btnSairGestor').classList.remove('hidden');
+  document.body.classList.add('portal-on');
+  setStatus('','');
+}
+async function sairGestor(){
+  try{ await sb.auth.signOut(); }catch(e){}
+  location.reload();
+}
+
 async function openPortal(){
   setStatus('Abrindo o portal...','ok');
+  // Perfil gestor_departamento -> só a Central de Compras da área dele
+  try{
+    var _s0=(await sb.auth.getSession()).data.session;
+    if(_s0){
+      var _pf=await sb.from('orc_perfis').select('perfil').eq('user_id',_s0.user.id).eq('ativo',true).maybeSingle();
+      if(_pf.data && _pf.data.perfil==='gestor_departamento'){ return abrirSomenteOrcamento(_s0); }
+    }
+  }catch(e){ console.warn('checagem de perfil gestor falhou',e); }
   var res=await sb.storage.from(BUCKET).createSignedUrl(FILE_PATH,3600);
   if(res.error){ setStatus('Erro ao abrir o portal: '+res.error.message,'err'); return; }
   var fileRes=await fetch(res.data.signedUrl);
@@ -423,13 +459,19 @@ async function tryAutoLogin(){
 
 document.getElementById('loginForm').addEventListener('submit',async function(e){
   e.preventDefault();
-  var email=document.getElementById('email').value;
+  var email=document.getElementById('email').value.trim().toLowerCase();
   var password=document.getElementById('password').value;
   var btn=document.getElementById('btn');
   btn.disabled=true;
   setStatus('Entrando...','');
   var res=await sb.auth.signInWithPassword({email:email,password:password});
-  if(res.error){ setStatus('Login inválido: '+res.error.message,'err'); btn.disabled=false; return; }
+  if(res.error){
+    var _m=res.error.message||'';
+    var _amigavel=/invalid login credentials/i.test(_m) ? 'E-mail ou senha incorretos. Verifique se digitou o e-mail exato (sem espaços) e a senha respeitando maiúsculas.'
+      : /email not confirmed/i.test(_m) ? 'Conta ainda não confirmada. Avise a Controladoria.'
+      : 'Não foi possível entrar: '+_m;
+    setStatus(_amigavel,'err'); btn.disabled=false; return;
+  }
   await openPortal();
 });
 
