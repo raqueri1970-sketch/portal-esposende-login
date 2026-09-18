@@ -5,28 +5,143 @@
 <title>Ajuste Expresso de Estoque</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#06101c;color:#eef5ff;font-family:Inter,Arial,sans-serif}.wrap{max-width:760px;margin:auto;padding:18px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.ttl{font-size:20px;font-weight:900}.tag{font-size:11px;background:#0b5;color:#02160e;padding:6px 9px;border-radius:999px;font-weight:900}.card{background:#0b1726;border:1px solid #20334b;border-radius:14px;padding:16px;margin-bottom:14px}.notice{background:#10243a;border-left:4px solid #3b82f6;padding:12px;border-radius:8px;font-size:13px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{font-size:12px;color:#a9bdd3;font-weight:700;display:block;margin-bottom:6px}input,textarea{width:100%;background:#07111f;color:#fff;border:1px solid #29415e;border-radius:9px;padding:11px;font-size:15px}textarea{min-height:76px;resize:vertical}.full{grid-column:1/-1}.qty{font-size:20px;font-weight:900}.btn{width:100%;border:0;border-radius:10px;padding:13px;font-weight:900;font-size:15px;background:#2563eb;color:white;cursor:pointer}.btn:disabled{opacity:.55}.status{margin-top:12px;font-size:13px;min-height:18px}.ok{color:#34d399}.err{color:#fb7185}.hist{font-size:12px;color:#a9bdd3}.row{padding:10px 0;border-bottom:1px solid #1c2c40}.row:last-child{border:0}.p{color:#fff;font-weight:800}.muted{color:#7891ad}@media(max-width:600px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.wrap{padding:12px}.ttl{font-size:18px}}
+*{box-sizing:border-box}body{margin:0;background:#06101c;color:#eef5ff;font-family:Inter,Arial,sans-serif}.wrap{max-width:820px;margin:auto;padding:18px}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}.ttl{font-size:20px;font-weight:900}.tag{font-size:11px;background:#0b5;color:#02160e;padding:6px 9px;border-radius:999px;font-weight:900}.card{background:#0b1726;border:1px solid #20334b;border-radius:14px;padding:16px;margin-bottom:14px}.notice{background:#10243a;border-left:4px solid #3b82f6;padding:12px;border-radius:8px;font-size:13px;margin-bottom:14px}.sale{border-left-color:#34d399}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{font-size:12px;color:#a9bdd3;font-weight:700;display:block;margin-bottom:6px}input,textarea{width:100%;background:#07111f;color:#fff;border:1px solid #29415e;border-radius:9px;padding:11px;font-size:15px}textarea{min-height:76px;resize:vertical}.full{grid-column:1/-1}.qty{font-size:20px;font-weight:900}.btn{width:100%;border:0;border-radius:10px;padding:13px;font-weight:900;font-size:15px;background:#2563eb;color:white;cursor:pointer}.btn:disabled{opacity:.55}.status{margin-top:12px;font-size:13px;min-height:18px}.ok{color:#34d399}.err{color:#fb7185}.warn{color:#fbbf24}.hist{font-size:12px;color:#a9bdd3}.row{padding:11px 0;border-bottom:1px solid #1c2c40}.row:last-child{border:0}.p{color:#fff;font-weight:800}.muted{color:#7891ad}.proof{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:999px;font-weight:800;font-size:10px}.proof.okp{background:#103524;color:#5ee0a0}.proof.nop{background:#382414;color:#fbbf24}.smallbtn{border:1px solid #315170;background:#132a43;color:#fff;border-radius:7px;padding:5px 8px;font-size:11px;cursor:pointer;margin-left:6px}.support{display:none;text-align:center;font-size:13px;color:#a9bdd3}.support a{color:#60a5fa;font-weight:800;text-decoration:none}@media(max-width:600px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.wrap{padding:12px}.ttl{font-size:18px}}
 </style></head>
 <body><div class="wrap">
 <div class="top"><div class="ttl">Ajuste Expresso de Estoque</div><div class="tag">SOMENTE ENTRADA</div></div>
-<div class="notice"><b>Regra de segurança:</b> este módulo não possui saída de estoque. Toda solicitação é gravada como <b>ENTRADA</b> e quantidade negativa ou zero é bloqueada.</div>
+<div class="notice sale"><b>Uso exclusivo para venda:</b> este ajuste serve somente para corrigir estoque decorrente de uma venda. Não use para transferência, inventário, perda ou qualquer outro motivo.</div>
+<div class="notice"><b>Segurança:</b> toda solicitação é gravada como <b>ENTRADA</b>. Quantidade zero/negativa e qualquer operação diferente de ENTRADA são bloqueadas no banco.</div>
+
 <div class="card"><form id="f"><div class="grid">
 <div><label>Loja</label><input id="loja" required inputmode="numeric" placeholder="Ex.: 50"></div>
 <div><label>Solicitante</label><input id="solicitante" required placeholder="Nome do gerente/solicitante"></div>
 <div><label>Código do produto</label><input id="codigo" required inputmode="numeric" placeholder="Código no Seta"></div>
 <div><label>Quantidade de entrada</label><input id="qtd" class="qty" required type="number" min="1" step="1" value="1"></div>
-<div class="full"><label>Foto do comprovante/ticket — opcional para registrar, obrigatória para comprovação de auditoria</label><input id="foto" type="file" accept="image/*" capture="environment"></div>
-<div class="full"><label>Motivo / observação</label><textarea id="motivo">SOLICITADO PELO GERENTE</textarea></div>
-<div class="full"><button class="btn" id="btn" type="submit">Registrar ENTRADA</button><div id="st" class="status"></div></div>
+<div class="full"><label>Foto do comprovante de venda</label><input id="foto" type="file" accept="image/*" capture="environment">
+<div class="hist" style="margin-top:6px">A foto é solicitada para auditoria. Se não houver foto, o ajuste pode ser registrado, mas ficará marcado como <b>NÃO COMPROVADO</b>.</div></div>
+<div class="full"><label>Motivo / observação</label><textarea id="motivo">AJUSTE DE ESTOQUE REFERENTE A VENDA - SOLICITADO PELO GERENTE</textarea></div>
+<div class="full"><button class="btn" id="btn" type="submit">Registrar ENTRADA para venda</button><div id="st" class="status"></div></div>
 </div></form></div>
-<div class="card"><b>Últimas solicitações</b><div id="hist" class="hist" style="margin-top:8px">Carregando...</div></div>
+
+<div class="card"><b>Auditoria / últimas solicitações</b><div id="hist" class="hist" style="margin-top:8px">Carregando...</div></div>
+<div id="support" class="card support">Problema com o ajuste? Fale com o suporte: <a id="supportLink" href="#"></a></div>
 </div>
+
 <script>
-const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co',SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
-const sb=supabase.createClient(SB_URL,SB_KEY);let uid=null;
+const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
+const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
+const BUCKET='ajuste-estoque-comprovantes';
+const SUPPORT_PHONE='';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+let uid=null;
+
 const st=(m,c='')=>{let e=document.getElementById('st');e.textContent=m;e.className='status '+c};
-async function init(){let r=await sb.auth.getSession();if(!r.data.session){st('Sessão não encontrada. Entre novamente pelo Portal.','err');document.getElementById('btn').disabled=true;return}uid=r.data.session.user.id;carregar()}
-async function carregar(){let r=await sb.from('ajuste_estoque_entrada').select('protocolo,loja,codigo_produto,quantidade,status,criado_em').order('criado_em',{ascending:false}).limit(10);let h=document.getElementById('hist');if(r.error){h.textContent='Não foi possível carregar o histórico.';return}h.innerHTML=r.data.length?r.data.map(x=>'<div class="row"><span class="p">'+x.protocolo+'</span> · Loja '+x.loja+' · Produto '+x.codigo_produto+' · +'+x.quantidade+'<br><span class="muted">'+x.status+' · '+new Date(x.criado_em).toLocaleString('pt-BR')+'</span></div>').join(''):'Nenhuma solicitação ainda.'}
-document.getElementById('f').onsubmit=async e=>{e.preventDefault();let q=Number(document.getElementById('qtd').value);if(!Number.isInteger(q)||q<1){st('Quantidade inválida. Somente ENTRADA maior que zero.','err');return}let b=document.getElementById('btn');b.disabled=true;st('Registrando...');let foto=document.getElementById('foto').files[0];let payload={user_id:uid,loja:document.getElementById('loja').value.trim(),solicitante:document.getElementById('solicitante').value.trim(),codigo_produto:document.getElementById('codigo').value.trim(),quantidade:q,motivo:document.getElementById('motivo').value.trim()||'SOLICITADO PELO GERENTE',comprovante_nome:foto?foto.name:null,operacao:'ENTRADA'};let r=await sb.from('ajuste_estoque_entrada').insert(payload).select('protocolo').single();b.disabled=false;if(r.error){st('Erro ao registrar: '+r.error.message,'err');return}st('Entrada registrada. Protocolo '+r.data.protocolo+'.','ok');document.getElementById('codigo').value='';document.getElementById('qtd').value='1';document.getElementById('foto').value='';carregar()};
+const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+function normalizarLoja(valor){
+  const d=String(valor||'').replace(/\D/g,'');
+  if(!d)return null;
+  const n=parseInt(d,10);
+  if(!Number.isFinite(n)||n<1)return null;
+  if(n>=901&&n<=999)return n-900;
+  return n;
+}
+async function resolverLoja(valor){
+  const loja=normalizarLoja(valor);
+  if(!loja)return null;
+  const r=await sb.from('entrada_estoque_lojas').select('codigo_seta,nome_seta').eq('loja_normalizada',loja).eq('ativo',true).maybeSingle();
+  return {loja, codigoSeta:(r.data&&r.data.codigo_seta)?String(r.data.codigo_seta):String(loja), nomeSeta:r.data?.nome_seta||null};
+}
+function extArquivo(f){
+  const n=(f.name||'').toLowerCase(),m=n.match(/\.([a-z0-9]{2,5})$/);
+  if(m)return m[1]==='jpeg'?'jpg':m[1];
+  return f.type==='image/png'?'png':f.type==='image/webp'?'webp':f.type==='image/heic'?'heic':f.type==='image/heif'?'heif':'jpg';
+}
+async function init(){
+  if(SUPPORT_PHONE){
+    const s=document.getElementById('support'),a=document.getElementById('supportLink');
+    s.style.display='block';a.textContent=SUPPORT_PHONE;
+    a.href='tel:'+SUPPORT_PHONE.replace(/\D/g,'');
+  }
+  const r=await sb.auth.getSession();
+  if(!r.data.session){
+    st('Sessão não encontrada. Entre novamente pelo Portal.','err');
+    document.getElementById('btn').disabled=true;return;
+  }
+  uid=r.data.session.user.id;
+  const nome=r.data.session.user.user_metadata?.name||r.data.session.user.user_metadata?.full_name||'';
+  if(nome)document.getElementById('solicitante').value=nome;
+  carregar();
+}
+async function verComprovante(path){
+  const r=await sb.storage.from(BUCKET).createSignedUrl(path,120);
+  if(r.error){st('Não foi possível abrir o comprovante: '+r.error.message,'err');return}
+  window.open(r.data.signedUrl,'_blank','noopener');
+}
+async function carregar(){
+  const r=await sb.from('ajuste_estoque_entrada')
+    .select('id,protocolo,loja,loja_normalizada,codigo_seta_solicitado,codigo_produto,quantidade,status,etapa_executor,comprovado,comprovante_path,estoque_anterior,estoque_novo,loja_validada,criado_em,executado_em')
+    .order('criado_em',{ascending:false}).limit(20);
+  const h=document.getElementById('hist');
+  if(r.error){h.textContent='Não foi possível carregar o relatório de auditoria.';return}
+  if(!r.data.length){h.textContent='Nenhuma solicitação ainda.';return}
+  h.innerHTML=r.data.map(x=>{
+    const prova=x.comprovado
+      ? '<span class="proof okp">COMPROVADO</span>'+(x.comprovante_path?'<button class="smallbtn" data-proof="'+esc(x.comprovante_path)+'">Ver foto</button>':'')
+      : '<span class="proof nop">NÃO COMPROVADO</span>';
+    const estoque=(x.estoque_anterior!==null&&x.estoque_novo!==null)?' · Estoque '+esc(x.estoque_anterior)+' → '+esc(x.estoque_novo):'';
+    const lojaSeta=x.codigo_seta_solicitado?' · Seta '+esc(x.codigo_seta_solicitado):'';
+    return '<div class="row"><span class="p">'+esc(x.protocolo)+'</span> · Loja '+esc(x.loja_normalizada??x.loja)+lojaSeta+' · Produto '+esc(x.codigo_produto)+' · +'+esc(x.quantidade)+estoque+
+      '<br><span class="muted">'+esc(x.status)+' · '+esc(x.etapa_executor)+' · '+new Date(x.criado_em).toLocaleString('pt-BR')+'</span><br>'+prova+'</div>';
+  }).join('');
+  h.querySelectorAll('[data-proof]').forEach(b=>b.onclick=()=>verComprovante(b.dataset.proof));
+}
+document.getElementById('f').onsubmit=async e=>{
+  e.preventDefault();
+  const q=Number(document.getElementById('qtd').value);
+  const lojaRaw=document.getElementById('loja').value.trim();
+  const solicitante=document.getElementById('solicitante').value.trim();
+  const codigo=document.getElementById('codigo').value.trim();
+  if(!Number.isInteger(q)||q<1){st('Quantidade inválida. Somente ENTRADA maior que zero.','err');return}
+  if(!lojaRaw||!solicitante||!codigo){st('Preencha loja, solicitante e código do produto.','err');return}
+  const b=document.getElementById('btn');b.disabled=true;st('Validando loja...');
+  try{
+    const lr=await resolverLoja(lojaRaw);
+    if(!lr)throw new Error('Loja inválida.');
+    const foto=document.getElementById('foto').files[0]||null;
+    let comprovantePath=null;
+    if(foto){
+      st('Enviando comprovante...');
+      comprovantePath=uid+'/'+crypto.randomUUID()+'.'+extArquivo(foto);
+      const up=await sb.storage.from(BUCKET).upload(comprovantePath,foto,{cacheControl:'3600',upsert:false,contentType:foto.type||'image/jpeg'});
+      if(up.error)throw new Error('Falha no comprovante: '+up.error.message);
+    }
+    st('Registrando solicitação...');
+    const payload={
+      user_id:uid,
+      loja:lojaRaw,
+      loja_normalizada:lr.loja,
+      codigo_seta_solicitado:lr.codigoSeta,
+      solicitante,
+      codigo_produto:codigo,
+      quantidade:q,
+      motivo:document.getElementById('motivo').value.trim()||'AJUSTE DE ESTOQUE REFERENTE A VENDA - SOLICITADO PELO GERENTE',
+      comprovante_nome:foto?foto.name:null,
+      comprovante_path:comprovantePath,
+      comprovado:!!foto,
+      operacao:'ENTRADA',
+      finalidade:'VENDA',
+      status:'PENDENTE',
+      etapa_executor:'AGUARDANDO_TROCA_LOJA'
+    };
+    const r=await sb.from('ajuste_estoque_entrada').insert(payload).select('protocolo,codigo_seta_solicitado').single();
+    if(r.error)throw r.error;
+    st('Entrada registrada. Protocolo '+r.data.protocolo+'. Loja preparada para código Seta '+r.data.codigo_seta_solicitado+'.'+(foto?'':' Sem foto: NÃO COMPROVADO.'),'ok');
+    document.getElementById('codigo').value='';
+    document.getElementById('qtd').value='1';
+    document.getElementById('foto').value='';
+    await carregar();
+  }catch(err){st('Erro: '+(err.message||err),'err')}
+  finally{b.disabled=false}
+};
 init();
 </script></body></html>
