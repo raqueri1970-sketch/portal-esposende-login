@@ -358,6 +358,38 @@ function instalarPonteCentral(ifr){
   setInterval(function(){ligar();observar()},500);
 }
 
+
+// Módulo Ajuste Expresso de Estoque — exclusivamente ENTRADA.
+function abrirAjusteEstoqueEntrada(){
+  var old=document.getElementById('ajuste-entrada-externa');
+  if(old){old.style.display='flex';return}
+  var box=document.createElement('div');
+  box.id='ajuste-entrada-externa';
+  box.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#06101c;display:flex;flex-direction:column';
+  box.innerHTML='<div style="height:52px;flex:0 0 52px;background:#081421;border-bottom:1px solid #20334b;display:flex;align-items:center;padding:0 14px;gap:10px;font-family:Arial,sans-serif">'
+    +'<button id="ajuste-entrada-voltar" style="width:auto;background:#132a43;color:#fff;border:1px solid #315170;border-radius:8px;padding:8px 13px;font-weight:700;cursor:pointer">← Voltar ao Portal</button>'
+    +'<strong style="color:#edf4fb">Ajuste Expresso de Estoque</strong><span style="color:#34d399;font-size:12px;font-weight:800">SOMENTE ENTRADA</span></div>'
+    +'<iframe src="ajuste-estoque-entrada.html?v=1" title="Ajuste Expresso de Estoque" style="width:100%;height:calc(100vh - 52px);border:0;background:#06101c"></iframe>';
+  document.body.appendChild(box);
+  box.querySelector('#ajuste-entrada-voltar').onclick=function(){box.style.display='none'};
+}
+function instalarAjusteEntrada(ifr){
+  function ligar(){
+    var d;try{d=ifr.contentDocument}catch(e){return}
+    if(!d||d.__ajusteEntradaLigado)return; d.__ajusteEntradaLigado=true;
+    var btn=d.createElement('button');
+    btn.id='btn-ajuste-estoque-entrada';
+    btn.type='button';
+    btn.textContent='＋ Ajuste de Estoque';
+    btn.title='Registrar entrada de estoque';
+    btn.style.cssText='position:fixed;right:18px;bottom:18px;z-index:2147482000;border:0;border-radius:999px;padding:12px 16px;background:#2563eb;color:white;font:800 13px Arial;box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer';
+    btn.onclick=function(){abrirAjusteEstoqueEntrada()};
+    d.body.appendChild(btn);
+  }
+  ifr.addEventListener('load',function(){setTimeout(ligar,300)});
+  setTimeout(ligar,500);
+}
+
 function setStatus(msg,cls){
   var el=document.getElementById('status');
   el.textContent=msg;el.className=cls||'';
@@ -447,6 +479,7 @@ async function openPortal(){
   ifr.src=blobUrl;
   instalarPonteCentral(ifr);
   instalarCerebroCentral(ifr);
+  instalarAjusteEntrada(ifr);
   ifr.style.display='block';
   document.body.classList.add('portal-on');
 }
