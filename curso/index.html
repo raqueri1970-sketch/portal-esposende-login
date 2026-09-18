@@ -18,7 +18,7 @@
     --muted2:#6b7897;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
+  html,body{margin:0;padding:0; overflow-x:hidden; max-width:100%;}
   body{
     background:var(--bg);
     color:var(--text);
@@ -27,7 +27,7 @@
   }
   .topbar{
     position:sticky; top:0; z-index:20;
-    display:flex; align-items:center; gap:14px;
+    display:flex; align-items:center; flex-wrap:wrap; gap:8px 14px;
     padding:14px 28px;
     background:linear-gradient(180deg,#0a0f1ecc,#0a0f1ee6 70%,transparent);
     backdrop-filter:blur(6px);
@@ -36,7 +36,7 @@
   .topbar img{height:54px; width:54px; border-radius:12px; object-fit:cover; flex-shrink:0; box-shadow:0 0 0 1px var(--border);}
   .topbar h1{font-size:18px; font-weight:800; margin:0; letter-spacing:.2px;}
   .topbar p{margin:0; font-size:12.5px; color:var(--muted); font-weight:600;}
-  .identity{margin-left:auto; font-size:12.5px; color:var(--muted); text-align:right; white-space:nowrap;}
+  .identity{margin-left:auto; font-size:12.5px; color:var(--muted); text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
   .identity b{color:var(--text);}
   .identity button{background:none; border:none; color:#38bdf8; cursor:pointer; font-size:12px; font-weight:700; padding:0; margin-left:8px;}
   .identity button:hover{text-decoration:underline;}
@@ -48,11 +48,16 @@
   .gate-box h2{font-size:18px; font-weight:800; margin:0 0 8px;}
   .gate-box p{font-size:13px; color:var(--muted); margin:0 0 20px; line-height:1.5;}
   .gate-box label{display:block; text-align:left; font-size:12px; font-weight:700; color:var(--muted); margin:0 0 6px;}
-  .gate-box input{
+  .gate-box input, .gate-box select{
     width:100%; background:#0a1230; border:1px solid var(--border); border-radius:9px;
     color:var(--text); font-family:inherit; font-size:14px; padding:10px 12px; margin-bottom:16px;
   }
-  .gate-box input:focus{outline:none; border-color:#38bdf8;}
+  .gate-box select{appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2393a0bf' stroke-width='2.5' stroke-linecap='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat:no-repeat; background-position:right 12px center; background-size:16px; padding-right:36px;
+  }
+  .gate-box select:invalid{color:var(--muted);}
+  .gate-box input:focus, .gate-box select:focus{outline:none; border-color:#38bdf8;}
   .gate-box .err{color:#f87171; font-size:12px; font-weight:700; margin:-10px 0 14px; display:none;}
   .gate-box .err.show{display:block;}
   .gate-box button.submit{
@@ -154,7 +159,11 @@
   @media (max-width:520px){
     .wrap{padding:20px 16px 48px;}
     .topbar{padding:12px 16px;}
+    .topbar img{height:44px; width:44px;}
+    .topbar h1{font-size:16px;}
+    .identity{flex-basis:100%; margin-left:0; text-align:left; white-space:normal; overflow:visible; text-overflow:clip;}
     .grid{grid-template-columns:1fr;}
+    .gate-box{padding:24px 20px;}
   }
 </style>
 </head>
@@ -166,7 +175,9 @@
     <h2>Central de Treinamento</h2>
     <p>Antes de começar, confirme sua loja e seu nome — assim a gente sabe quem já viu cada processo.</p>
     <label for="gate-loja">Loja</label>
-    <input id="gate-loja" type="text" placeholder="Ex: 05 - Camaragibe" autocomplete="off">
+    <select id="gate-loja">
+      <option value="" selected disabled>Selecione sua loja</option>
+    </select>
     <label for="gate-nome">Seu nome</label>
     <input id="gate-nome" type="text" placeholder="Nome completo" autocomplete="off">
     <p class="err" id="gate-err">Preencha loja e nome pra continuar.</p>
@@ -358,6 +369,28 @@ const gate = document.getElementById('gate');
 function showGate(){ gate.classList.add('open'); }
 function hideGate(){ gate.classList.remove('open'); }
 
+const LOJAS = [
+  '905 - Camaragibe','906 - Abreu E Lima','907 - Recife','908 - Recife','909 - Casa Forte',
+  '913 - Paulista','914 - Recife','915 - Jaboatão Guararapes','916 - Peixinhos','917 - Mix Mateus Boa Viagem',
+  '918 - Olinda','919 - Jaboatão Guararapes','920 - Recife','921 - Goiana','923 - Caruaru',
+  '924 - Recife','926 - Macaíba','927 - Mangabeira','928 - ES Sports Manaíra','929 - Caruaru',
+  '930 - Palmares','931 - ES Sports Rio Mar','932 - Caruaru','933 - Natal','934 - Petrolina',
+  '935 - Natal','936 - Natal','937 - Juazeiro','938 - Recife','939 - Bezerros',
+  '940 - Recife','941 - Vitória De Santo Antão','942 - Cabo Santo Agostinho','943 - Caruaru','944 - ES Sports Natal Shopping',
+  '945 - Jaboatão Guararapes','946 - ES Sports S Boa Vista','949 - Natal','950 - Cabedelo','953 - Carpina',
+  '954 - Cabo Santo Agostinho','955 - Limoeiro','956 - Ipojuca','957 - São Lourenço Da Mata','958 - Santa Cruz Do Capibaribe',
+  '960 - Gravatá','961 - Surubim','963 - Igarassu','972 - Jaboatão Guararapes','974 - Recife',
+  '975 - Natal','977 - Arcoverde','978 - Vitória De Santo Antão','980 - Salgueiro','982 - Pesqueira',
+  '983 - João Pessoa','991 - Parnamirim','992 - Recife','993 - Olinda','994 - Bayeux',
+  '995 - Garanhuns','996 - Shopping Paulista'
+];
+const gateLojaSel = document.getElementById('gate-loja');
+LOJAS.forEach(l=>{
+  const opt = document.createElement('option');
+  opt.value = l; opt.textContent = l;
+  gateLojaSel.appendChild(opt);
+});
+
 function renderIdentityBadge(){
   const id = getIdentidade();
   const el = document.getElementById('identity-badge');
@@ -404,6 +437,18 @@ const playerTitle = document.getElementById('playerTitle');
 const playerSub = document.getElementById('playerSub');
 const playerDot = document.getElementById('playerDot');
 
+let audioCtx = null;
+function boostAudio(videoEl){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const source = audioCtx.createMediaElementSource(videoEl);
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.value = 2.5;
+    source.connect(gainNode).connect(audioCtx.destination);
+  }catch(e){ /* navegador sem suporte a Web Audio - toca no volume normal */ }
+}
+
 function openPlayer(c){
   if(!getIdentidade()){ showGate(); return; }
   overlay.classList.add('open');
@@ -412,7 +457,10 @@ function openPlayer(c){
   playerDot.style.background = c.accent;
   const posterUri = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(coverSVG(c))));
   playerBody.innerHTML = `<video controls preload="metadata" poster="${posterUri}" src="${VIDEOS_BASE}${c.path}"></video>`;
-  playerBody.querySelector('video').play().catch(()=>{});
+  const videoEl = playerBody.querySelector('video');
+  videoEl.volume = 1.0;
+  boostAudio(videoEl);
+  videoEl.play().catch(()=>{});
   logVisualizacao(c);
 }
 
