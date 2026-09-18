@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Entrada de Estoque — Portal Esposende</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#07111f;color:#edf4fb;font-family:Arial,sans-serif}.top{padding:18px 20px;background:#081421;border-bottom:1px solid #20334b}.top h1{margin:0;font-size:20px}.top p{margin:5px 0 0;color:#8ca4bf;font-size:13px}.wrap{max-width:900px;margin:auto;padding:18px}.card{background:#0b1828;border:1px solid #20334b;border-radius:14px;padding:18px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}label{display:block;font-size:12px;color:#9fb3c8;margin-bottom:6px}input,select,textarea{width:100%;padding:12px;border-radius:9px;border:1px solid #315170;background:#07111f;color:#fff;font-size:15px}textarea{min-height:80px}.lock{background:#10243a;color:#62d69f;font-weight:bold}.btn{width:100%;padding:14px;border:0;border-radius:10px;background:#2477e8;color:white;font-size:16px;font-weight:bold}.btn:disabled{opacity:.45}.warn{padding:11px;border-radius:9px;background:#251b10;color:#f7c66b;font-size:13px;margin-top:12px}.ok{color:#62d69f}.hist{font-size:13px;color:#9fb3c8}.badge{display:inline-block;padding:5px 9px;border-radius:20px;background:#123425;color:#62d69f;font-size:12px;font-weight:bold}@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style></head><body>
+<div class="top"><h1>Entrada de Estoque</h1><p>Solicitação, conferência e auditoria de ajustes no Seta</p></div>
+<div class="wrap">
+<div class="card"><span class="badge">SOMENTE ENTRADA</span><div class="warn">Este módulo não permite saída de estoque. Qualquer tentativa de movimento de saída deve ser rejeitada.</div></div>
+<div class="card"><div class="grid">
+<div><label>Loja / Empresa</label><input id="loja" placeholder="Ex.: 627 - Mangabeira Rua"></div>
+<div><label>Código do produto</label><input id="produto" inputmode="numeric" placeholder="Código do produto"></div>
+<div><label>Quantidade de entrada</label><input id="qtd" type="number" min="1" step="1" value="1"></div>
+<div><label>Movimento</label><input class="lock" value="ENTRADA" readonly aria-readonly="true"></div>
+<div><label>Estoque atual</label><input id="atual" type="number" min="0" step="1" placeholder="Antes do ajuste"></div>
+<div><label>Novo estoque</label><input id="novo" class="lock" readonly></div>
+</div>
+<div style="margin-top:14px"><label>Motivo / Observação</label><textarea id="obs" placeholder="Ex.: SOLICITADO PELO GERENTE"></textarea></div>
+<div style="margin-top:14px"><label><input id="defeito" type="checkbox" style="width:auto;margin-right:8px"> Produto com defeito</label></div>
+</div>
+<div class="card"><label>Comprovante / evidência (opcional para a operação, obrigatório para marcar como comprovada)</label><input id="foto" type="file" accept="image/*" capture="environment"><div class="hist" style="margin-top:8px">Sem foto, a entrada pode seguir, mas ficará registrada como “não comprovada” para auditoria.</div></div>
+<div class="card"><button class="btn" id="enviar">Registrar solicitação de entrada</button><div id="status" class="hist" style="margin-top:10px"></div></div>
+<div class="card"><b>Travas de segurança</b><p class="hist">Movimento fixo em ENTRADA; quantidade precisa ser positiva; novo estoque é calculado automaticamente; loja, produto, quantidade e estoque são reconferidos antes da confirmação final no Seta; toda solicitação deve manter histórico de usuário, data, motivo e evidência.</p></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+function calc(){let a=Number($('atual').value),q=Number($('qtd').value);$('novo').value=(Number.isFinite(a)&&Number.isFinite(q)&&q>0)?a+q:''}
+$('atual').addEventListener('input',calc);$('qtd').addEventListener('input',calc);
+$('enviar').onclick=function(){
+ let loja=$('loja').value.trim(),produto=$('produto').value.trim(),q=Number($('qtd').value),a=$('atual').value,obs=$('obs').value.trim();
+ if(!loja||!produto||!Number.isInteger(q)||q<1||a===''||!obs){$('status').textContent='Preencha loja, produto, quantidade, estoque atual e motivo.';return}
+ let registro={tipo:'ENTRADA',loja,produto,quantidade:q,estoque_atual:Number(a),novo_estoque:Number(a)+q,motivo:obs,produto_com_defeito:$('defeito').checked,comprovado:$('foto').files.length>0,criado_em:new Date().toISOString(),status:'PENDENTE_EXECUCAO_SETA'};
+ let h=JSON.parse(localStorage.getItem('entrada_estoque_pendentes')||'[]');h.push(registro);localStorage.setItem('entrada_estoque_pendentes',JSON.stringify(h));
+ $('status').innerHTML='<span class="ok">Solicitação registrada.</span> A execução no Seta permanece pendente até a automação estar conectada.';
+};
+</script></body></html>
