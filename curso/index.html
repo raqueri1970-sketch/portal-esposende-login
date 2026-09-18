@@ -156,6 +156,39 @@
   }
   @keyframes spin{to{transform:rotate(360deg);}}
 
+  .quiz{padding:22px 24px 26px; border-top:1px solid var(--border);}
+  .quiz h4{margin:0 0 16px; font-size:15px; font-weight:800;}
+  .quiz-q{margin-bottom:18px;}
+  .quiz-q label{display:block; font-size:13px; font-weight:700; color:var(--muted); margin-bottom:9px;}
+  .quiz-notas{display:flex; gap:6px; flex-wrap:wrap;}
+  .qn{
+    width:34px; height:34px; border-radius:8px; border:1px solid var(--border); background:#0a1230;
+    color:var(--text); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer;
+  }
+  .qn:hover{border-color:#38bdf8;}
+  .qn.sel{background:#38bdf8; border-color:#38bdf8; color:#04121f;}
+  .quiz-util{display:flex; gap:8px; flex-wrap:wrap;}
+  .qu{
+    padding:9px 16px; border-radius:9px; border:1px solid var(--border); background:#0a1230;
+    color:var(--text); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer;
+  }
+  .qu:hover{border-color:#38bdf8;}
+  .qu.sel{background:#38bdf8; border-color:#38bdf8; color:#04121f;}
+  .quiz-q textarea{
+    width:100%; background:#0a1230; border:1px solid var(--border); border-radius:9px;
+    color:var(--text); font-family:inherit; font-size:13.5px; padding:10px 12px; resize:vertical;
+  }
+  .quiz-q textarea:focus{outline:none; border-color:#38bdf8;}
+  .quiz-actions{display:flex; align-items:center; justify-content:flex-end; gap:16px;}
+  .quiz-skip{background:none; border:none; color:var(--muted); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer;}
+  .quiz-skip:hover{color:var(--text);}
+  .quiz-submit{
+    background:#38bdf8; color:#04121f; border:none; border-radius:9px;
+    font-family:inherit; font-size:13.5px; font-weight:800; padding:10px 20px; cursor:pointer;
+  }
+  .quiz-submit:hover{background:#5fc9fb;}
+  .quiz-thanks{padding:26px 24px; text-align:center; font-size:14px; font-weight:700; color:#4ade80; border-top:1px solid var(--border);}
+
   @media (max-width:520px){
     .wrap{padding:20px 16px 48px;}
     .topbar{padding:12px 16px;}
@@ -180,7 +213,20 @@
     </select>
     <label for="gate-nome">Seu nome</label>
     <input id="gate-nome" type="text" placeholder="Nome completo" autocomplete="off">
-    <p class="err" id="gate-err">Preencha loja e nome pra continuar.</p>
+    <label for="gate-cpf">CPF</label>
+    <input id="gate-cpf" type="text" inputmode="numeric" placeholder="000.000.000-00" autocomplete="off" maxlength="14">
+    <label for="gate-cargo">Cargo</label>
+    <select id="gate-cargo">
+      <option value="" selected disabled>Selecione seu cargo</option>
+      <option>Vendedor(a)</option>
+      <option>Estoquista</option>
+      <option>Caixa</option>
+      <option>Subgerente</option>
+      <option>Gerente</option>
+      <option>Líder de Loja</option>
+      <option>Outro</option>
+    </select>
+    <p class="err" id="gate-err">Preencha todos os campos pra continuar.</p>
     <button class="submit" id="gate-submit">Começar</button>
   </div>
 </div>
@@ -399,13 +445,26 @@ function renderIdentityBadge(){
   document.getElementById('trocar-id').addEventListener('click', showGate);
 }
 
+const gateCpfInput = document.getElementById('gate-cpf');
+gateCpfInput.addEventListener('input', ()=>{
+  let d = gateCpfInput.value.replace(/\D/g,'').slice(0,11);
+  let out = d;
+  if(d.length > 9) out = `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`;
+  else if(d.length > 6) out = `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`;
+  else if(d.length > 3) out = `${d.slice(0,3)}.${d.slice(3)}`;
+  gateCpfInput.value = out;
+});
+
 document.getElementById('gate-submit').addEventListener('click', ()=>{
   const loja = document.getElementById('gate-loja').value.trim();
   const nome = document.getElementById('gate-nome').value.trim();
+  const cpf = gateCpfInput.value.trim();
+  const cargo = document.getElementById('gate-cargo').value.trim();
   const err = document.getElementById('gate-err');
-  if(!loja || !nome){ err.classList.add('show'); return; }
+  const cpfDigits = cpf.replace(/\D/g,'');
+  if(!loja || !nome || cpfDigits.length !== 11 || !cargo){ err.classList.add('show'); return; }
   err.classList.remove('show');
-  setIdentidade({loja, nome});
+  setIdentidade({loja, nome, cpf, cargo});
   hideGate();
   renderIdentityBadge();
 });
@@ -413,19 +472,138 @@ document.getElementById('gate-submit').addEventListener('click', ()=>{
 if(!getIdentidade()) showGate();
 renderIdentityBadge();
 
-function logVisualizacao(c){
+async function logVisualizacao(c){
   const id = getIdentidade();
-  if(!id) return;
-  fetch(`${SUPA_URL}/rest/v1/curso_visualizacoes`, {
+  if(!id) return null;
+  const clientRef = (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+'-'+Math.random().toString(36).slice(2)));
+  try{
+    await fetch(`${SUPA_URL}/rest/v1/curso_visualizacoes`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({loja: id.loja, nome: id.nome, cpf: id.cpf, cargo: id.cargo, modulo_id: c.id, modulo_nome: c.nome, client_ref: clientRef})
+    });
+    return clientRef;
+  }catch(e){ return null; }
+}
+
+function rpc(nome, params){
+  return fetch(`${SUPA_URL}/rest/v1/rpc/${nome}`, {
     method: 'POST',
     headers: {
       'apikey': SUPA_KEY,
       'Authorization': 'Bearer ' + SUPA_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=minimal'
+      'Content-Type': 'application/json'
     },
-    body: JSON.stringify({loja: id.loja, nome: id.nome, modulo_id: c.id, modulo_nome: c.nome})
+    body: JSON.stringify(params)
   }).catch(()=>{});
+}
+
+let watchState = null;
+function startWatchTracking(videoEl, viewId){
+  stopWatchTracking();
+  watchState = {viewId, maxWatched:0, duration:0, checkpoint:null};
+  videoEl.addEventListener('timeupdate', ()=>{
+    if(!isNaN(videoEl.duration)) watchState.duration = videoEl.duration;
+    if(videoEl.currentTime > watchState.maxWatched) watchState.maxWatched = videoEl.currentTime;
+  });
+  videoEl.addEventListener('ended', ()=>{
+    watchState.maxWatched = watchState.duration || watchState.maxWatched;
+    sendWatchProgress(true);
+    showQuiz();
+  });
+  watchState.checkpoint = setInterval(()=>sendWatchProgress(false), 15000);
+}
+function sendWatchProgress(concluido){
+  if(!watchState || !watchState.viewId) return;
+  const seg = Math.round(watchState.maxWatched);
+  const dur = watchState.duration ? Math.round(watchState.duration) : null;
+  const pct = dur ? Math.min(100, Math.round((seg/dur)*100)) : null;
+  rpc('curso_registrar_progresso', {
+    p_client_ref: watchState.viewId,
+    p_segundos: seg,
+    p_duracao: dur,
+    p_percentual: pct,
+    p_concluido: !!concluido || (pct !== null && pct >= 90)
+  });
+}
+function stopWatchTracking(){
+  if(watchState && watchState.checkpoint) clearInterval(watchState.checkpoint);
+  if(watchState) sendWatchProgress(false);
+  watchState = null;
+}
+
+function showQuiz(){
+  const box = document.getElementById('quizBox');
+  if(box) box.style.display = 'block';
+}
+
+function quizHtml(){
+  const notas = Array.from({length:11}, (_,n)=>`<button type="button" class="qn" data-n="${n}">${n}</button>`).join('');
+  return `
+    <div class="quiz" id="quizBox" style="display:none">
+      <h4>O que você achou deste módulo?</h4>
+      <div class="quiz-q">
+        <label>De 0 a 10, que nota você daria para este módulo?</label>
+        <div class="quiz-notas">${notas}</div>
+      </div>
+      <div class="quiz-q">
+        <label>Esse conteúdo foi útil para o seu dia a dia?</label>
+        <div class="quiz-util">
+          <button type="button" class="qu" data-v="sim">Sim</button>
+          <button type="button" class="qu" data-v="mais_ou_menos">Mais ou menos</button>
+          <button type="button" class="qu" data-v="nao">Não</button>
+        </div>
+      </div>
+      <div class="quiz-q">
+        <label>Alguma sugestão para melhorar este módulo? (opcional)</label>
+        <textarea id="quizSugestao" rows="3" placeholder="Escreva aqui..."></textarea>
+      </div>
+      <div class="quiz-actions">
+        <button type="button" class="quiz-skip" id="quizSkip">Pular</button>
+        <button type="button" class="quiz-submit" id="quizSubmit">Enviar avaliação</button>
+      </div>
+    </div>
+    <div class="quiz-thanks" id="quizThanks" style="display:none">Obrigado pelo feedback! 🎉</div>`;
+}
+
+function wireQuiz(viewId){
+  let nota = null, util = null;
+  playerBody.querySelectorAll('.qn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      playerBody.querySelectorAll('.qn').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+      nota = parseInt(btn.dataset.n, 10);
+    });
+  });
+  playerBody.querySelectorAll('.qu').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      playerBody.querySelectorAll('.qu').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+      util = btn.dataset.v;
+    });
+  });
+  const finish = ()=>{
+    document.getElementById('quizBox').style.display = 'none';
+    document.getElementById('quizThanks').style.display = 'block';
+  };
+  document.getElementById('quizSkip').addEventListener('click', finish);
+  document.getElementById('quizSubmit').addEventListener('click', ()=>{
+    const sugestao = document.getElementById('quizSugestao').value.trim();
+    if(viewId && (nota !== null || util || sugestao)){
+      rpc('curso_registrar_feedback', {
+        p_client_ref: viewId,
+        p_nota: nota,
+        p_util: util || null,
+        p_sugestao: sugestao || null
+      });
+    }
+    finish();
+  });
 }
 
 // -------- player --------
@@ -449,22 +627,25 @@ function boostAudio(videoEl){
   }catch(e){ /* navegador sem suporte a Web Audio - toca no volume normal */ }
 }
 
-function openPlayer(c){
+async function openPlayer(c){
   if(!getIdentidade()){ showGate(); return; }
   overlay.classList.add('open');
   playerTitle.textContent = c.nome;
   playerSub.textContent = `Módulo ${c.ordem} · ${c.duracao}`;
   playerDot.style.background = c.accent;
   const posterUri = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(coverSVG(c))));
-  playerBody.innerHTML = `<video controls preload="metadata" poster="${posterUri}" src="${VIDEOS_BASE}${c.path}"></video>`;
+  playerBody.innerHTML = `<video controls preload="metadata" poster="${posterUri}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
   const videoEl = playerBody.querySelector('video');
   videoEl.volume = 1.0;
   boostAudio(videoEl);
   videoEl.play().catch(()=>{});
-  logVisualizacao(c);
+  const viewId = await logVisualizacao(c);
+  startWatchTracking(videoEl, viewId);
+  wireQuiz(viewId);
 }
 
 function closePlayer(){
+  stopWatchTracking();
   overlay.classList.remove('open');
   playerBody.innerHTML = '';
 }
