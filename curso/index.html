@@ -211,6 +211,7 @@
     <select id="gate-loja">
       <option value="" selected disabled>Selecione sua loja</option>
     </select>
+    <input id="gate-loja-outra" type="text" placeholder="Digite o número e o nome da loja" autocomplete="off" style="display:none">
     <label for="gate-nome">Seu nome</label>
     <input id="gate-nome" type="text" placeholder="Nome completo" autocomplete="off">
     <label for="gate-cpf">CPF</label>
@@ -436,6 +437,15 @@ LOJAS.forEach(l=>{
   opt.value = l; opt.textContent = l;
   gateLojaSel.appendChild(opt);
 });
+const outraOpt = document.createElement('option');
+outraOpt.value = '__outra__';
+outraOpt.textContent = 'Minha loja não está na lista';
+gateLojaSel.appendChild(outraOpt);
+
+const gateLojaOutra = document.getElementById('gate-loja-outra');
+gateLojaSel.addEventListener('change', ()=>{
+  gateLojaOutra.style.display = gateLojaSel.value === '__outra__' ? 'block' : 'none';
+});
 
 function renderIdentityBadge(){
   const id = getIdentidade();
@@ -456,7 +466,8 @@ gateCpfInput.addEventListener('input', ()=>{
 });
 
 document.getElementById('gate-submit').addEventListener('click', ()=>{
-  const loja = document.getElementById('gate-loja').value.trim();
+  let loja = document.getElementById('gate-loja').value.trim();
+  if(loja === '__outra__') loja = gateLojaOutra.value.trim();
   const nome = document.getElementById('gate-nome').value.trim();
   const cpf = gateCpfInput.value.trim();
   const cargo = document.getElementById('gate-cargo').value.trim();
@@ -506,10 +517,16 @@ function rpc(nome, params){
 let watchState = null;
 function startWatchTracking(videoEl, viewId){
   stopWatchTracking();
-  watchState = {viewId, maxWatched:0, duration:0, checkpoint:null};
+  watchState = {viewId, maxWatched:0, duration:0, checkpoint:null, nearEndFired:false};
   videoEl.addEventListener('timeupdate', ()=>{
     if(!isNaN(videoEl.duration)) watchState.duration = videoEl.duration;
     if(videoEl.currentTime > watchState.maxWatched) watchState.maxWatched = videoEl.currentTime;
+    // reforço: em alguns navegadores mobile o evento 'ended' não dispara de forma confiável
+    if(!watchState.nearEndFired && watchState.duration && watchState.maxWatched / watchState.duration >= 0.95){
+      watchState.nearEndFired = true;
+      sendWatchProgress(true);
+      showQuiz();
+    }
   });
   videoEl.addEventListener('ended', ()=>{
     watchState.maxWatched = watchState.duration || watchState.maxWatched;
@@ -588,8 +605,10 @@ function wireQuiz(viewId){
     });
   });
   const finish = ()=>{
+    quizResolved = true;
     document.getElementById('quizBox').style.display = 'none';
     document.getElementById('quizThanks').style.display = 'block';
+    setTimeout(closePlayer, 1100);
   };
   document.getElementById('quizSkip').addEventListener('click', finish);
   document.getElementById('quizSubmit').addEventListener('click', ()=>{
@@ -634,14 +653,27 @@ async function openPlayer(c){
   playerSub.textContent = `Módulo ${c.ordem} · ${c.duracao}`;
   playerDot.style.background = c.accent;
   const posterUri = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(coverSVG(c))));
-  playerBody.innerHTML = `<video controls preload="metadata" poster="${posterUri}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
+  playerBody.innerHTML = `<video controls preload="metadata" playsinline webkit-playsinline poster="${posterUri}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
   const videoEl = playerBody.querySelector('video');
   videoEl.volume = 1.0;
   boostAudio(videoEl);
   videoEl.play().catch(()=>{});
+  quizResolved = false;
   const viewId = await logVisualizacao(c);
   startWatchTracking(videoEl, viewId);
   wireQuiz(viewId);
+}
+
+let quizResolved = false;
+function attemptClose(){
+  const quizBox = document.getElementById('quizBox');
+  const quizVisible = quizBox && quizBox.style.display !== 'none';
+  const watchedEnough = watchState && watchState.maxWatched >= 8;
+  if(watchedEnough && !quizResolved && !quizVisible){
+    showQuiz();
+    return;
+  }
+  closePlayer();
 }
 
 function closePlayer(){
@@ -649,9 +681,9 @@ function closePlayer(){
   overlay.classList.remove('open');
   playerBody.innerHTML = '';
 }
-document.getElementById('closeBtn').addEventListener('click', closePlayer);
-overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closePlayer(); });
-document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closePlayer(); });
+document.getElementById('closeBtn').addEventListener('click', attemptClose);
+overlay.addEventListener('click', (e)=>{ if(e.target === overlay) attemptClose(); });
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') attemptClose(); });
 </script>
 </body>
 </html>
