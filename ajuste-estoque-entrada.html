@@ -24,7 +24,7 @@
 </div></form></div>
 
 <div class="card"><b>Auditoria / últimas solicitações</b><div id="hist" class="hist" style="margin-top:8px">Carregando...</div></div>
-<div id="support" class="card support">Problema com o ajuste? Fale com o suporte: <a id="supportLink" href="#"></a></div>
+<div id="support" class="card support">Se o ajuste não funcionar, fale com o suporte: <a id="supportLink" href="#"></a> <span>·</span> <a id="supportWhats" href="#" target="_blank" rel="noopener">WhatsApp</a></div>
 </div>
 
 <script>
@@ -33,6 +33,7 @@ const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
 const SUPPORT_PHONE='(81) 98908-7348';
 const SUPPORT_TEL='+5581989087348';
+const SUPPORT_WHATS='https://wa.me/5581989087348';
 const sb=supabase.createClient(SB_URL,SB_KEY);
 let uid=null;
 
@@ -59,9 +60,10 @@ function extArquivo(f){
 }
 async function init(){
   if(SUPPORT_PHONE){
-    const s=document.getElementById('support'),a=document.getElementById('supportLink');
+    const s=document.getElementById('support'),a=document.getElementById('supportLink'),w=document.getElementById('supportWhats');
     s.style.display='block';a.textContent=SUPPORT_PHONE;
     a.href='tel:'+SUPPORT_TEL;
+    w.href=SUPPORT_WHATS;
   }
   const r=await sb.auth.getSession();
   if(!r.data.session){
