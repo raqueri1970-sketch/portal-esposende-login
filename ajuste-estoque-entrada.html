@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Ajuste Expresso de Estoque</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#06101c;color:#eef5ff;font-family:Inter,Arial,sans-serif}.wrap{max-width:760px;margin:auto;padding:18px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.ttl{font-size:20px;font-weight:900}.tag{font-size:11px;background:#0b5;color:#02160e;padding:6px 9px;border-radius:999px;font-weight:900}.card{background:#0b1726;border:1px solid #20334b;border-radius:14px;padding:16px;margin-bottom:14px}.notice{background:#10243a;border-left:4px solid #3b82f6;padding:12px;border-radius:8px;font-size:13px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{font-size:12px;color:#a9bdd3;font-weight:700;display:block;margin-bottom:6px}input,textarea{width:100%;background:#07111f;color:#fff;border:1px solid #29415e;border-radius:9px;padding:11px;font-size:15px}textarea{min-height:76px;resize:vertical}.full{grid-column:1/-1}.qty{font-size:20px;font-weight:900}.btn{width:100%;border:0;border-radius:10px;padding:13px;font-weight:900;font-size:15px;background:#2563eb;color:white;cursor:pointer}.btn:disabled{opacity:.55}.status{margin-top:12px;font-size:13px;min-height:18px}.ok{color:#34d399}.err{color:#fb7185}.hist{font-size:12px;color:#a9bdd3}.row{padding:10px 0;border-bottom:1px solid #1c2c40}.row:last-child{border:0}.p{color:#fff;font-weight:800}.muted{color:#7891ad}@media(max-width:600px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.wrap{padding:12px}.ttl{font-size:18px}}
+</style></head>
+<body><div class="wrap">
+<div class="top"><div class="ttl">Ajuste Expresso de Estoque</div><div class="tag">SOMENTE ENTRADA</div></div>
+<div class="notice"><b>Regra de segurança:</b> este módulo não possui saída de estoque. Toda solicitação é gravada como <b>ENTRADA</b> e quantidade negativa ou zero é bloqueada.</div>
+<div class="card"><form id="f"><div class="grid">
+<div><label>Loja</label><input id="loja" required inputmode="numeric" placeholder="Ex.: 50"></div>
+<div><label>Solicitante</label><input id="solicitante" required placeholder="Nome do gerente/solicitante"></div>
+<div><label>Código do produto</label><input id="codigo" required inputmode="numeric" placeholder="Código no Seta"></div>
+<div><label>Quantidade de entrada</label><input id="qtd" class="qty" required type="number" min="1" step="1" value="1"></div>
+<div class="full"><label>Foto do comprovante/ticket — opcional para registrar, obrigatória para comprovação de auditoria</label><input id="foto" type="file" accept="image/*" capture="environment"></div>
+<div class="full"><label>Motivo / observação</label><textarea id="motivo">SOLICITADO PELO GERENTE</textarea></div>
+<div class="full"><button class="btn" id="btn" type="submit">Registrar ENTRADA</button><div id="st" class="status"></div></div>
+</div></form></div>
+<div class="card"><b>Últimas solicitações</b><div id="hist" class="hist" style="margin-top:8px">Carregando...</div></div>
+</div>
+<script>
+const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co',SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
+const sb=supabase.createClient(SB_URL,SB_KEY);let uid=null;
+const st=(m,c='')=>{let e=document.getElementById('st');e.textContent=m;e.className='status '+c};
+async function init(){let r=await sb.auth.getSession();if(!r.data.session){st('Sessão não encontrada. Entre novamente pelo Portal.','err');document.getElementById('btn').disabled=true;return}uid=r.data.session.user.id;carregar()}
+async function carregar(){let r=await sb.from('ajuste_estoque_entrada').select('protocolo,loja,codigo_produto,quantidade,status,criado_em').order('criado_em',{ascending:false}).limit(10);let h=document.getElementById('hist');if(r.error){h.textContent='Não foi possível carregar o histórico.';return}h.innerHTML=r.data.length?r.data.map(x=>'<div class="row"><span class="p">'+x.protocolo+'</span> · Loja '+x.loja+' · Produto '+x.codigo_produto+' · +'+x.quantidade+'<br><span class="muted">'+x.status+' · '+new Date(x.criado_em).toLocaleString('pt-BR')+'</span></div>').join(''):'Nenhuma solicitação ainda.'}
+document.getElementById('f').onsubmit=async e=>{e.preventDefault();let q=Number(document.getElementById('qtd').value);if(!Number.isInteger(q)||q<1){st('Quantidade inválida. Somente ENTRADA maior que zero.','err');return}let b=document.getElementById('btn');b.disabled=true;st('Registrando...');let foto=document.getElementById('foto').files[0];let payload={user_id:uid,loja:document.getElementById('loja').value.trim(),solicitante:document.getElementById('solicitante').value.trim(),codigo_produto:document.getElementById('codigo').value.trim(),quantidade:q,motivo:document.getElementById('motivo').value.trim()||'SOLICITADO PELO GERENTE',comprovante_nome:foto?foto.name:null,operacao:'ENTRADA'};let r=await sb.from('ajuste_estoque_entrada').insert(payload).select('protocolo').single();b.disabled=false;if(r.error){st('Erro ao registrar: '+r.error.message,'err');return}st('Entrada registrada. Protocolo '+r.data.protocolo+'.','ok');document.getElementById('codigo').value='';document.getElementById('qtd').value='1';document.getElementById('foto').value='';carregar()};
+init();
+</script></body></html>
