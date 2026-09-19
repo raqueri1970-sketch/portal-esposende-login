@@ -163,7 +163,7 @@ const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
 const WHATS='5581989087348';
-const BUILD='20260919-105633';
+const BUILD='20260919-110117';
 /* se o navegador guardou uma versao antiga desta pagina, busca a nova e recarrega (uma vez por versao) */
 (async()=>{try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);
   if(m&&m[1]!==BUILD&&m[1].indexOf('@@')<0){let k='';try{k=sessionStorage.getItem('ae_build')||''}catch(e){}if(k!==m[1]){try{sessionStorage.setItem('ae_build',m[1])}catch(e){}location.reload()}}}catch(e){}})();
@@ -285,7 +285,7 @@ $('fLogin').onsubmit=async e=>{e.preventDefault();msg('lMsg','');
     if(p.error||!p.data||!p.data.ok){await sb.auth.signOut();throw new Error('CPF ou senha inválidos.')}
     U=p.data;lojaSel=lojaInicial();$('lSenha').value='';$('lSenha2').value='';entrar();
   }catch(err){msg('lMsg',err.message)}finally{b.disabled=false;b.textContent=rot}};
-async function sair(m){clearInterval(poll);clearInterval(listaT);await sb.auth.signOut();U=null;uid=null;show('vLogin');atualizarZap();$('lSenha').value='';msg('lMsg',m||'','info')}
+async function sair(m){$('lista')._sig='';clearInterval(poll);clearInterval(listaT);await sb.auth.signOut();U=null;uid=null;show('vLogin');atualizarZap();$('lSenha').value='';msg('lMsg',m||'','info')}
 $('btnSair').onclick=()=>sair();
 function nomeLoja(){if(!lojaSel)return 'Escolha a loja';const l=U&&U.lojas.find(x=>x.loja===lojaSel);return 'Loja '+lojaSel+(l&&l.nome?' · '+l.nome:'')}
 function entrar(){$('whoNome').textContent=U.nome;$('whoLoja').textContent=nomeLoja();resetIdle();atualizarZap();
@@ -360,19 +360,28 @@ function pillVenda(x){if(x.status!=='CONCLUIDO')return'';if(x.venda_status==='VE
 function pillCod(x){if(!x.comprovado)return'';const s=x.foto_codigo_status;if(['CONFERE','CONFERIDO_MANUAL'].includes(s))return'<span class="pill done">CÓDIGO CONFERE</span>';if(s==='PROVAVEL')return'<span class="pill run">CONFERIR CÓDIGO</span>';if(['NAO_LOCALIZADO','ILEGIVEL','DIVERGENTE_MANUAL'].includes(s))return'<span class="pill err">CÓDIGO NÃO CONFERE</span>';return'<span class="pill gray">NÃO CONFERIDO</span>'}
 function pillFotoLista(x){if(x.status!=='CONCLUIDO')return'';return x.comprovado?'<span class="pill done">COM FOTO DO COMPROVANTE</span> '+pillCod(x):'<span class="pill err">SEM FOTO DO COMPROVANTE</span>'}
 async function carregarLista(silent){
-  const r=await sb.from('ajuste_estoque_entrada').select('id,protocolo,loja_normalizada,criado_em,executado_em,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,comprovado,solicitante,venda_status,venda_numero,venda_confirmada_em,erro_executor,foto_codigo_status')
+  const r=await sb.from('ajuste_estoque_entrada').select('id,user_id,protocolo,loja_normalizada,criado_em,executado_em,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,comprovado,solicitante,venda_status,venda_numero,venda_confirmada_em,erro_executor,foto_codigo_status')
     .order('criado_em',{ascending:false}).limit(40);
   if(r.error){if(!silent)$('lista').innerHTML='<div class="msg err">Não foi possível carregar.</div>';return}
   const pend=r.data.filter(x=>x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA');
   const a=$('pendVenda');if(pend.length){a.classList.remove('hidden');a.innerHTML='⚠️ '+pend.length+' ajuste(s) com venda por finalizar. <u style="cursor:pointer" id="irLista">Ver</u>';$('irLista').onclick=()=>aba('lista')}else a.classList.add('hidden');
+  const sig=JSON.stringify(r.data);if($('lista')._sig===sig)return;$('lista')._sig=sig;   /* so redesenha se mudou: um toque em botao nao se perde no meio de uma atualizacao */
   $('lista').innerHTML=r.data.length?r.data.map(x=>`<div class="it"><div class="h"><div><div class="p">${esc(x.protocolo)}</div><div class="d">${fmtDH(x.criado_em)} · Loja ${x.loja_normalizada} · ${esc(x.solicitante)}</div></div><div>${pill(x)}</div></div>
     <div class="kv">Produto <b>${esc(x.codigo_produto)}</b> · +${x.quantidade}${x.estoque_novo!=null?' · Estoque '+num(x.estoque_anterior)+' → <b>'+num(x.estoque_novo)+'</b>':''}</div>
     <div class="kv">${pillFotoLista(x)} ${pillVenda(x)}</div>
     ${x.venda_numero?`<div class="d" style="margin-top:4px">Venda nº ${esc(x.venda_numero)}</div>`:''}
     ${x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA'?`<button class="btn ok mini" data-venda='${esc(JSON.stringify({id:x.id,protocolo:x.protocolo,codigo_produto:x.codigo_produto,modo:'venda'}))}'>Finalizar venda</button>`:''}
     ${x.status==='CONCLUIDO'&&x.venda_status!=='AGUARDANDO_VENDA'&&!x.comprovado?`<button class="btn sec mini" data-venda='${esc(JSON.stringify({id:x.id,protocolo:x.protocolo,codigo_produto:x.codigo_produto,modo:'foto'}))}'>📷 Anexar foto do comprovante</button>`:''}
+    ${x.status==='PENDENTE'&&x.user_id===uid?`<button class="btn sec mini" data-cancelar="${x.id}">✕ Cancelar este pedido</button>`:''}
     ${(x.status==='ERRO')?`<div class="d" style="margin-top:6px">${esc(erroAmigavel(x.erro_executor))}</div>`:''}</div>`).join(''):'<div class="sub">Nenhum ajuste ainda.</div>';
-  $('lista').querySelectorAll('[data-venda]').forEach(b=>b.onclick=()=>{const d=JSON.parse(b.dataset.venda);abrirVenda(d,d.modo)})}
+  $('lista').querySelectorAll('[data-venda]').forEach(b=>b.onclick=()=>{const d=JSON.parse(b.dataset.venda);abrirVenda(d,d.modo)});
+  $('lista').querySelectorAll('[data-cancelar]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('Cancelar este pedido? Ele sai da fila e o estoque não será ajustado.'))return;
+    b.disabled=true;b.textContent='Cancelando…';
+    const cr=await sb.rpc('ajuste_cancelar_meu_pedido',{p_id:+b.dataset.cancelar});
+    if(cr.error){b.disabled=false;b.textContent='✕ Cancelar este pedido';alert('Não foi possível cancelar: '+cr.error.message.replace(/^.*?:\s*/,''));return}
+    if(!(cr.data&&cr.data.ok))alert('O robô já começou a lançar este pedido e ele não pode mais ser cancelado. Aguarde o resultado.');
+    $('lista')._sig='';carregarLista(true)})}
 
 // ---------- finalizar venda + foto do comprovante (SEMPRE depois do ajuste) ----------
 function abrirVenda(x,modo){vendaRef=x.id;vendaCod=x.codigo_produto;vendaModo=modo||'venda';vendaSt=null;vendaBlob=null;vendaOcr=null;
