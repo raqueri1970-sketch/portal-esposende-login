@@ -479,7 +479,7 @@ async function openPortal(){
   ifr.src=blobUrl;
   instalarPonteCentral(ifr);
   instalarCerebroCentral(ifr);
-  instalarAjusteEntrada(ifr);
+  // instalarAjusteEntrada(ifr); // desativado: o Ajuste Expresso agora tem modulo proprio no Portal (Acerto de Estoque Lojas) e link separado para gerentes
   ifr.style.display='block';
   document.body.classList.add('portal-on');
 }
