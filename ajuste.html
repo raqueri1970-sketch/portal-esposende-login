@@ -8,6 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Ajuste Expresso">
 <meta name="robots" content="noindex,nofollow">
+<meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="ajuste.webmanifest">
 <link rel="apple-touch-icon" href="ajuste-icon-192.png">
 <link rel="icon" href="ajuste-icon-192.png">
@@ -17,10 +18,14 @@
 :root{--bg:#f3f6fb;--card:#fff;--ink:#0f2440;--mut:#5b6f8a;--line:#d9e2ef;--brand:#0a3a7a;--brand2:#1456b8;--ok:#0b8a4b;--okbg:#e4f6ec;--warn:#9a5b00;--warnbg:#fff3d6;--err:#b3261e;--errbg:#fde8e6;--info:#0a3a7a;--infobg:#e6effb}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;font-size:16px;line-height:1.35}
-.top{background:linear-gradient(135deg,#0a2a55,#0a3a7a);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 16px 12px;position:sticky;top:0;z-index:5}
-.top .row{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:640px;margin:auto}
-.brand{font-weight:900;letter-spacing:2px;font-size:13px;opacity:.9}.ttl{font-weight:800;font-size:16px;line-height:1.15}
-.who{font-size:12px;opacity:.9;text-align:right;white-space:nowrap}.who .acts{display:flex;gap:12px;justify-content:flex-end}
+.top{background:linear-gradient(135deg,#071d3d 0%,#0a3a7a 100%);color:#fff;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;position:sticky;top:0;z-index:5;box-shadow:0 2px 12px rgba(7,29,61,.35)}
+.hrow{display:flex;align-items:center;gap:12px;max-width:640px;margin:auto}
+.logo{width:48px;height:48px;border-radius:12px;border:2px solid rgba(255,255,255,.35);flex:none;background:#0a2a55}
+.tt{min-width:0}.brand{font-weight:900;letter-spacing:3px;font-size:11px;opacity:.85}.ttl{font-weight:800;font-size:18px;line-height:1.15}
+.hbar{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:640px;margin:10px auto 0;padding-top:10px;border-top:1px solid rgba(255,255,255,.18)}
+.chip{font-size:12.5px;line-height:1.25;min-width:0}.chip b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chip span{opacity:.85}
+.acts{display:flex;gap:8px;flex:none}
+.acts button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:8px 13px;font-size:13px;font-weight:700;cursor:pointer}
 .wrap{max-width:640px;margin:0 auto;padding:14px 14px calc(40px + env(safe-area-inset-bottom))}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,36,64,.06)}
 h2{margin:0 0 4px;font-size:19px}.sub{color:var(--mut);font-size:13px;margin:0 0 12px}
@@ -31,15 +36,15 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
 .btn{width:100%;border:0;border-radius:12px;padding:15px;font-size:17px;font-weight:800;background:var(--brand2);color:#fff;cursor:pointer;margin-top:14px}
 .btn:active{transform:translateY(1px)}.btn[disabled]{opacity:.55;cursor:not-allowed}
 .btn.sec{background:#fff;color:var(--brand);border:1.5px solid var(--brand2)}.btn.ok{background:var(--ok)}.btn.bad{background:var(--err)}
-.link{background:none;border:0;color:#fff;text-decoration:underline;font-size:13px;cursor:pointer;padding:6px 2px}
 .msg{padding:11px 13px;border-radius:12px;font-size:14px;margin:12px 0}
 .msg.err{background:var(--errbg);color:var(--err)}.msg.ok{background:var(--okbg);color:var(--ok)}.msg.warn{background:var(--warnbg);color:var(--warn)}.msg.info{background:var(--infobg);color:var(--info)}
+.chip-ok{background:var(--okbg)!important;color:var(--ok)!important}.chip-warn{background:var(--warnbg)!important;color:var(--warn)!important}.chip-bad{background:var(--errbg)!important;color:var(--err)!important}
 .pw{position:relative}.pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--brand2);font-weight:700;padding:10px;cursor:pointer}
 .qty{display:flex;gap:8px;align-items:center}.qty button{width:52px;height:52px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font-size:26px;font-weight:800;color:var(--brand)}
 .qty input{text-align:center;font-size:22px;font-weight:800}
 .photo{border:2px dashed #9db6d8;border-radius:14px;padding:14px;text-align:center;background:#f7faff}
 .photo img{max-width:100%;max-height:260px;border-radius:10px;display:block;margin:8px auto}
-.photo .pbtn{display:inline-block;background:var(--brand2);color:#fff;border-radius:12px;padding:13px 18px;font-weight:800;cursor:pointer}
+.photo .pbtn{display:inline-block;background:var(--brand2);color:#fff;border-radius:12px;padding:13px 18px;font-weight:800;cursor:pointer;margin:2px}
 .chk{display:flex;gap:10px;align-items:flex-start;background:var(--warnbg);border:1px solid #f1d38a;border-radius:12px;padding:12px;margin-top:14px;font-size:14px}
 .chk input{width:22px;height:22px;flex:none;margin-top:1px}
 .tabs{display:flex;gap:6px;margin-bottom:12px}.tabs button{flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font-weight:800;color:var(--mut);font-size:15px}
@@ -47,30 +52,36 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
 .alert{background:var(--warnbg);border:1px solid #f1d38a;color:var(--warn);border-radius:12px;padding:11px 13px;margin-bottom:12px;font-size:14px;font-weight:700}
 .it{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;background:#fff}
 .it .h{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.it .p{font-weight:800;font-size:14px}.it .d{color:var(--mut);font-size:12px}
-.pill{display:inline-block;font-size:11px;font-weight:900;border-radius:999px;padding:4px 9px;letter-spacing:.3px;white-space:nowrap}
+.pill{display:inline-block;font-size:11px;font-weight:900;border-radius:999px;padding:4px 9px;letter-spacing:.3px;white-space:nowrap;margin:2px 2px 0 0}
 .pill.pend{background:var(--infobg);color:var(--info)}.pill.run{background:var(--warnbg);color:var(--warn)}.pill.done{background:var(--okbg);color:var(--ok)}.pill.err{background:var(--errbg);color:var(--err)}.pill.gray{background:#eceff4;color:#4b5b70}
 .kv{font-size:14px;margin-top:6px}.kv b{font-weight:700}
-.steps{display:flex;gap:4px;margin:10px 0 2px}.steps i{flex:1;height:6px;border-radius:4px;background:#dbe4f1}.steps i.on{background:var(--brand2)}.steps i.done{background:var(--ok)}
-.big{text-align:center;padding:8px 0}.big .ic{font-size:44px}.big .t{font-weight:900;font-size:20px;margin-top:4px}
+.steps{display:flex;gap:4px;margin:10px 0 2px}.steps i{flex:1;height:6px;border-radius:4px;background:#dbe4f1}.steps i.on{background:var(--brand2);animation:pulse 1.2s ease-in-out infinite}.steps i.done{background:var(--ok)}
+@keyframes pulse{50%{opacity:.35}}
+.big{text-align:center;padding:8px 0}.big .ic{font-size:46px;line-height:1.2}.big .t{font-weight:900;font-size:20px;margin-top:4px}
+.hg{display:inline-block;animation:hg 1.8s ease-in-out infinite}
+@keyframes hg{0%{transform:rotate(0)}40%{transform:rotate(180deg)}50%{transform:rotate(180deg)}90%{transform:rotate(360deg)}100%{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.hg,.steps i.on{animation:none}}
 .mini{font-size:13px;padding:9px 12px;width:auto;margin-top:8px}
-.foot{text-align:center;color:var(--mut);font-size:13px;margin-top:20px}.foot a{color:var(--brand2);font-weight:800;text-decoration:none}
+.foot{text-align:center;color:var(--mut);font-size:13px;margin-top:20px}.foot a{color:#0b7a3b;font-weight:800;text-decoration:none;background:#e4f6ec;border-radius:999px;padding:8px 14px;display:inline-block;margin-top:6px}
 .hidden{display:none!important}
 .modal{position:fixed;inset:0;background:rgba(10,25,50,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20}
 .modal>div{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:640px;max-height:92vh;overflow:auto;padding:18px 16px calc(22px + env(safe-area-inset-bottom))}
 .seg{display:flex;gap:8px;margin:10px 0}.seg button{flex:1;padding:13px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:800;font-size:15px}
 .seg button.on.ok{border-color:var(--ok);background:var(--okbg);color:var(--ok)}.seg button.on.bad{border-color:var(--err);background:var(--errbg);color:var(--err)}
-.chip-ok{background:var(--okbg)!important;color:var(--ok)!important}.chip-warn{background:var(--warnbg)!important;color:var(--warn)!important}.chip-bad{background:var(--errbg)!important;color:var(--err)!important}
 .spin{display:inline-block;width:16px;height:16px;border:3px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:s .8s linear infinite;vertical-align:-3px;margin-right:6px}@keyframes s{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
-<div class="top"><div class="row"><div><div class="brand">ESPOSENDE</div><div class="ttl">Ajuste Expresso de Estoque</div></div><div class="who hidden" id="who"><div id="whoNome"></div><div class="acts"><button class="link" id="btnSenha">Alterar senha</button><button class="link" id="btnSair">Sair</button></div></div></div></div>
+<header class="top">
+  <div class="hrow"><img class="logo" alt="Esposende" src="data:image/jpeg;base64,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"><div class="tt"><div class="brand">ESPOSENDE</div><div class="ttl">Ajuste Expresso de Estoque</div></div></div>
+  <div class="hbar hidden" id="who"><div class="chip"><b id="whoNome"></b><span id="whoLoja"></span></div><div class="acts"><button id="btnSenha">🔑 Senha</button><button id="btnSair">Sair</button></div></div>
+</header>
 <div class="wrap">
 
 <!-- LOGIN -->
 <section id="vLogin" class="hidden">
   <div class="card">
-    <h2>Entrar</h2><p class="sub">Use sua loja, seu CPF e sua senha. No primeiro acesso a senha é o seu CPF (você vai trocar em seguida).</p>
+    <h2>Entrar</h2><p class="sub">Informe sua loja, seu CPF e sua senha.</p>
     <form id="fLogin" autocomplete="on">
       <label for="lLoja">Loja</label><input id="lLoja" type="tel" inputmode="numeric" placeholder="Ex.: 50" autocomplete="off" maxlength="4" required>
       <label for="lCpf">CPF</label><input id="lCpf" type="tel" inputmode="numeric" placeholder="000.000.000-00" autocomplete="username" maxlength="14" required>
@@ -84,12 +95,12 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
 <!-- TROCAR SENHA -->
 <section id="vSenha" class="hidden">
   <div class="card">
-    <h2 id="sTitulo">Crie sua senha</h2><p class="sub" id="sSub">Por segurança, troque a senha inicial (seu CPF) por uma senha só sua.</p>
+    <h2 id="sTitulo">Crie sua senha</h2><p class="sub" id="sSub">Por segurança, crie uma senha só sua.</p>
     <form id="fSenha">
       <label for="sAtual">Senha atual</label><div class="pw"><input id="sAtual" type="password" autocomplete="current-password" required><button type="button" data-eye="sAtual">Mostrar</button></div>
       <label for="sNova">Nova senha</label><div class="pw"><input id="sNova" type="password" autocomplete="new-password" required minlength="8"><button type="button" data-eye="sNova">Mostrar</button></div>
       <label for="sNova2">Repita a nova senha</label><div class="pw"><input id="sNova2" type="password" autocomplete="new-password" required minlength="8"><button type="button" data-eye="sNova2">Mostrar</button></div>
-      <p class="sub" style="margin-top:8px">Mínimo 8 caracteres, com letras e números. Não pode ser o CPF.</p>
+      <p class="sub" style="margin-top:8px">Mínimo 8 caracteres, com letras e números.</p>
       <div id="sMsg"></div>
       <button class="btn" id="btnTrocar" type="submit">Salvar nova senha</button>
       <button class="btn sec hidden" id="btnSenhaVoltar" type="button">Voltar</button>
@@ -111,11 +122,8 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
         <label for="aCodigo">Código do produto</label><input id="aCodigo" type="tel" inputmode="numeric" placeholder="Código no Seta" autocomplete="off" required>
         <label>Quantidade a incluir</label>
         <div class="qty"><button type="button" id="qMenos" aria-label="Diminuir">−</button><input id="aQtd" type="number" min="1" max="50" step="1" value="1" inputmode="numeric"><button type="button" id="qMais" aria-label="Aumentar">+</button></div>
-        <label>Foto da venda (cupom / comprovante)</label>
-        <div class="photo"><div id="phEmpty"><label class="pbtn" for="aFoto">📷 Tirar foto da venda</label><div class="sub" style="margin:8px 0 0">Fotografe o ticket/pedido do cliente. Sem foto o ajuste é marcado como <b>NÃO COMPROVADO</b> e vai para a auditoria.</div></div>
-          <div id="phOk" class="hidden"><img id="phImg" alt="Foto da venda"><div id="phChip" class="msg info" style="text-align:left"></div><label class="pbtn" for="aFoto" style="background:#5b6f8a">Trocar foto</label> <button type="button" class="pbtn" id="phDel" style="background:#b3261e;border:0">Remover</button></div>
-          <input id="aFoto" type="file" accept="image/*" capture="environment" class="hidden"></div>
         <label class="chk"><input id="aDecl" type="checkbox"><span>Declaro que <b>há um cliente na loja</b> para este produto e que este ajuste é <b>para concluir a venda</b>. Sei que ele fica registrado com meu nome, dia e hora.</span></label>
+        <div class="msg info" style="margin-bottom:0">📷 A <b>foto do comprovante da venda</b> é enviada <b>depois</b> do ajuste, quando você finalizar a venda.</div>
         <div id="aMsg"></div>
         <button class="btn" id="btnEnviar" type="submit">Solicitar ajuste</button>
       </form>
@@ -124,19 +132,21 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
   </div>
 
   <div id="pLista" class="hidden"><div id="lista"><div class="sub">Carregando…</div></div></div>
-  <div class="foot" id="foot"></div>
 </section>
+<div class="foot" id="foot"></div>
 </div>
 
-<!-- MODAL: confirmar venda -->
+<!-- MODAL: finalizar venda / foto do comprovante (depois do ajuste) -->
 <div class="modal hidden" id="mVenda"><div>
-  <h2>Como ficou a venda?</h2><p class="sub" id="mvRef"></p>
-  <div class="seg"><button type="button" id="mvSim" class="ok">✅ Vendi</button><button type="button" id="mvNao" class="bad">❌ Não vendi</button></div>
-  <div id="mvSimBox" class="hidden">
-    <label for="mvNum">Nº do cupom / venda</label><input id="mvNum" type="text" placeholder="Número da venda no Seta" autocomplete="off">
-    <label>Foto do cupom (opcional se informou o número)</label>
-    <div class="photo"><div id="mvPhEmpty"><label class="pbtn" for="mvFoto">📷 Tirar foto do cupom</label></div><div id="mvPhOk" class="hidden"><img id="mvImg" alt="Cupom"><label class="pbtn" for="mvFoto" style="background:#5b6f8a">Trocar</label></div><input id="mvFoto" type="file" accept="image/*" capture="environment" class="hidden"></div>
+  <h2 id="mvTitulo">Como ficou a venda?</h2><p class="sub" id="mvRef"></p>
+  <div class="seg" id="mvSeg"><button type="button" id="mvSim" class="ok">✅ Vendi</button><button type="button" id="mvNao" class="bad">❌ Não vendi</button></div>
+  <div id="mvFotoBox" class="hidden">
+    <label>Foto do comprovante da venda (cupom)</label>
+    <div class="photo"><div id="mvPhEmpty"><label class="pbtn" for="mvFoto" style="margin:0">📷 Tirar foto do comprovante</label><div class="sub" style="margin:8px 0 0">A foto precisa mostrar o <b>código do produto</b>. Sem a foto, a venda fica <b>NÃO COMPROVADA</b> e é sinalizada para a auditoria.</div></div>
+      <div id="mvPhOk" class="hidden"><img id="mvImg" alt="Comprovante"><div id="mvChip" class="msg info" style="text-align:left"></div><label class="pbtn" for="mvFoto" style="background:#5b6f8a">Trocar foto</label> <button type="button" class="pbtn" id="mvPhDel" style="background:#b3261e;border:0">Remover</button></div>
+      <input id="mvFoto" type="file" accept="image/*" capture="environment" class="hidden"></div>
   </div>
+  <div id="mvNumBox" class="hidden"><label for="mvNum">Nº do cupom / venda (opcional se enviar a foto)</label><input id="mvNum" type="text" placeholder="Número da venda no Seta" autocomplete="off"></div>
   <div id="mvNaoBox" class="hidden"><label for="mvObs">Por que a venda não foi realizada?</label><textarea id="mvObs" placeholder="Ex.: cliente desistiu, produto não serviu…"></textarea></div>
   <div id="mvMsg"></div>
   <button class="btn" id="mvEnviar" disabled>Confirmar</button><button class="btn sec" id="mvCancelar" type="button">Fechar</button>
@@ -146,19 +156,20 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
 const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
-const SUPPORT={fone:'(81) 98908-7348',tel:'+5581989087348',whats:'https://wa.me/5581989087348'};
+const WHATS='5581989087348';
 const DOMINIO='@ajuste.esposende.app';
 const IDLE_MIN=30;
-// sessao separada da do Portal (mesma origem): o gerente nunca herda nem enxerga o login do administrador
 // armazenamento resiliente: se o navegador estiver com o espaco local CHEIO (quota) ou bloqueado, a sessao fica na memoria e o login continua funcionando
 const memStore={};
 const safeStorage={getItem:k=>{try{const v=localStorage.getItem(k);if(v!==null)return v}catch(e){}return k in memStore?memStore[k]:null},
   setItem:(k,v)=>{try{localStorage.setItem(k,v);delete memStore[k]}catch(e){memStore[k]=v}},
   removeItem:k=>{try{localStorage.removeItem(k)}catch(e){}delete memStore[k]}};
+// sessao separada da do Portal (mesma origem): o gerente nunca herda nem enxerga o login do administrador
 const sb=supabase.createClient(SB_URL,SB_KEY,{auth:{storage:safeStorage,storageKey:'ajuste-esposende-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let U=null /*perfil*/, uid=null, lojaSel=null, fotoBlob=null, vendaFoto=null, vendaRef=null, vendaSt=null, poll=null, idleT=null, listaT=null;
+let U=null,uid=null,lojaSel=null,poll=null,idleT=null,listaT=null;
+let vendaRef=null,vendaCod='',vendaModo='venda',vendaSt=null,vendaBlob=null,vendaOcr=null;
 
 const ETAPAS=['AGUARDANDO_TROCA_LOJA','MENU_PRINCIPAL','ABRIR_ACERTO_ESTOQUE','VALIDAR_PRODUTO','LER_ESTOQUE_ATUAL','PREENCHER_ENTRADA','CONFIRMAR_ENTRADA','CONCLUIDO'];
 const ETAPA_TXT={AGUARDANDO_TROCA_LOJA:'Na fila…',MENU_PRINCIPAL:'Iniciando…',ACIONAR_F5:'Trocando de loja…',DIGITAR_CODIGO_LOJA:'Trocando de loja…',VALIDAR_LOJA_ATIVA:'Conferindo a loja…',ABRIR_RETAGUARDA:'Abrindo o sistema…',ABRIR_ACERTO_ESTOQUE:'Abrindo o acerto de estoque…',VALIDAR_PRODUTO:'Conferindo o produto…',LER_ESTOQUE_ATUAL:'Lendo o estoque…',PREENCHER_ENTRADA:'Preenchendo o ajuste…',VALIDAR_DADOS:'Conferindo os dados…',CONFIRMAR_ENTRADA:'Confirmando o ajuste…',CONCLUIDO:'Concluído',ERRO:'Erro',BLOQUEADO_DIVERGENCIA:'Em análise da auditoria'};
@@ -175,15 +186,18 @@ function maskCpf(v){v=v.replace(/\D/g,'').slice(0,11);return v.replace(/(\d{3})(
 function resetIdle(){clearTimeout(idleT);if(U)idleT=setTimeout(()=>sair('Sessão encerrada por inatividade.'),IDLE_MIN*60*1000)}
 ['click','keydown','touchstart'].forEach(e=>document.addEventListener(e,resetIdle,{passive:true}));
 document.querySelectorAll('[data-eye]').forEach(b=>b.onclick=()=>{const i=$(b.dataset.eye);const s=i.type==='password';i.type=s?'text':'password';b.textContent=s?'Ocultar':'Mostrar'});
+// WhatsApp: abre a CONVERSA com mensagem pronta (nunca liga)
+function atualizarZap(){const t='Olá! Preciso de ajuda com o Ajuste Expresso.'+(U&&lojaSel?' Loja '+lojaSel+' - '+U.nome+'.':'');
+  $('foot').innerHTML='Precisa de ajuda?<br><a href="https://wa.me/'+WHATS+'?text='+encodeURIComponent(t)+'" target="_blank" rel="noopener">💬 Falar no WhatsApp</a>'}
+atualizarZap();
 
 // ---------- imagem: reduz para ~1600px JPEG (economiza dados e armazenamento) ----------
 function comprimir(file,max=1600,q=.82){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{let{width:w,height:h}=im;const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(new Error('Falha ao processar a foto')),'image/jpeg',q)};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('Foto inválida'))};im.src=u})}
 async function subirFoto(blob){const path=uid+'/'+crypto.randomUUID()+'.jpg';const r=await sb.storage.from(BUCKET).upload(path,blob,{contentType:'image/jpeg',cacheControl:'3600',upsert:false});if(r.error)throw new Error('Falha ao enviar a foto: '+r.error.message);return path}
 
-
 // ---------- conferencia: a foto mostra o MESMO codigo do ajuste? (leitura de numeros no proprio celular) ----------
 const TESS_URL='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-let ocrW=null,fotoOcr=null;
+let ocrW=null;
 const carregarScript=u=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=u;s.onload=res;s.onerror=()=>rej(new Error('ocr'));document.head.appendChild(s)});
 async function lerNumeros(blob){
   if(!window.Tesseract)await carregarScript(TESS_URL);
@@ -197,16 +211,15 @@ function conferirCodigo(texto,codigo){
   if(tk.some(t=>t.includes(c)))return'CONFERE';
   if(c.length>=5&&tk.some(t=>t.length>=c.length-1&&t.length<=c.length+1&&lev1(t,c)))return'PROVAVEL';
   return'NAO_LOCALIZADO'}
-function statusFotoAtual(){if(!fotoBlob||!fotoOcr)return null;if(!fotoOcr.pronto)return'LENDO';if(fotoOcr.erro)return'NAO_VERIFICADO';return conferirCodigo(fotoOcr.texto,$('aCodigo').value)}
+function lerFoto(blob,aoTerminar){const o={texto:'',pronto:false,erro:false};
+  o.promise=lerNumeros(blob).then(t=>{o.texto=t;o.pronto=true}).catch(()=>{o.erro=true;o.pronto=true}).then(aoTerminar);return o}
+function statusFoto(){if(!vendaBlob||!vendaOcr)return null;if(!vendaOcr.pronto)return'LENDO';if(vendaOcr.erro)return'NAO_VERIFICADO';return conferirCodigo(vendaOcr.texto,vendaCod)}
 function atualizarChipFoto(){
-  const el=$('phChip');if(!el)return;const st=statusFotoAtual();const c=$('aCodigo').value.replace(/\D/g,'').replace(/^0+/,'');
-  const M={LENDO:['info','🔎 Conferindo se a foto mostra o código…'],CONFERE:['chip-ok','✅ Código '+c+' encontrado na foto'],PROVAVEL:['chip-warn','🟡 Achei um código parecido com '+c+' na foto. Confira se está legível.'],
-    NAO_LOCALIZADO:['chip-bad','⚠️ Não achei o código '+c+' na foto. A foto da venda precisa mostrar o código do produto.'],ILEGIVEL:['chip-bad','⚠️ Não consegui ler números na foto. Tire mais perto, com boa luz.'],
-    NAO_VERIFICADO:['warn',c.length<4?'Digite o código do produto para conferir a foto.':'Não foi possível conferir a foto automaticamente.']};
+  const el=$('mvChip');if(!el)return;const st=statusFoto();const c=String(vendaCod||'').replace(/\D/g,'').replace(/^0+/,'');
+  const M={LENDO:['info','🔎 Conferindo se a foto mostra o código '+c+'…'],CONFERE:['chip-ok','✅ Código '+c+' encontrado na foto'],PROVAVEL:['chip-warn','🟡 Achei um código parecido com '+c+' na foto. Confira se está legível.'],
+    NAO_LOCALIZADO:['chip-bad','⚠️ Não achei o código '+c+' na foto. A foto do comprovante precisa mostrar o código do produto.'],ILEGIVEL:['chip-bad','⚠️ Não consegui ler números na foto. Tire mais perto, com boa luz.'],
+    NAO_VERIFICADO:['warn','Não foi possível conferir a foto automaticamente.']};
   const m=M[st]||M.NAO_VERIFICADO;el.className='msg '+m[0];el.style.textAlign='left';el.textContent=m[1]}
-function iniciarLeituraFoto(){fotoOcr={texto:'',pronto:false,erro:false};const o=fotoOcr;
-  o.promise=lerNumeros(fotoBlob).then(t=>{o.texto=t;o.pronto=true}).catch(()=>{o.erro=true;o.pronto=true}).then(atualizarChipFoto);atualizarChipFoto()}
-$('aCodigo').addEventListener('input',atualizarChipFoto);
 
 // ---------- LOGIN ----------
 $('lCpf').addEventListener('input',e=>e.target.value=maskCpf(e.target.value));
@@ -223,10 +236,11 @@ $('fLogin').onsubmit=async e=>{e.preventDefault();msg('lMsg','');
     if(!p.data.lojas.some(l=>l.loja===loja)){await sb.auth.signOut();throw new Error('Você não tem acesso a esta loja. Confira o número da loja.')}
     U=p.data;lojaSel=loja;$('lSenha').value='';entrar();
   }catch(err){msg('lMsg',err.message)}finally{b.disabled=false;b.textContent='Entrar'}};
-async function sair(m){clearInterval(poll);clearInterval(listaT);await sb.auth.signOut();U=null;uid=null;show('vLogin');$('lSenha').value='';msg('lMsg',m||'','info')}
+async function sair(m){clearInterval(poll);clearInterval(listaT);await sb.auth.signOut();U=null;uid=null;show('vLogin');atualizarZap();$('lSenha').value='';msg('lMsg',m||'','info')}
 $('btnSair').onclick=()=>sair();
-function entrar(){$('whoNome').textContent=U.nome+' · Loja '+lojaSel;resetIdle();
-  if(U.must_change){$('sTitulo').textContent='Crie sua senha';$('sSub').textContent='Por segurança, troque a senha inicial (seu CPF) por uma senha só sua.';$('btnSenhaVoltar').classList.add('hidden');show('vSenha');$('who').classList.remove('hidden');$('btnSenha').classList.add('hidden')}
+function nomeLoja(){const l=U&&U.lojas.find(x=>x.loja===lojaSel);return 'Loja '+lojaSel+(l&&l.nome?' · '+l.nome:'')}
+function entrar(){$('whoNome').textContent=U.nome;$('whoLoja').textContent=nomeLoja();resetIdle();atualizarZap();
+  if(U.must_change){$('sTitulo').textContent='Crie sua senha';$('sSub').textContent='Por segurança, crie uma senha só sua.';$('btnSenhaVoltar').classList.add('hidden');show('vSenha');$('who').classList.remove('hidden');$('btnSenha').classList.add('hidden')}
   else{$('btnSenha').classList.remove('hidden');montarApp()}}
 
 // ---------- TROCAR SENHA ----------
@@ -246,89 +260,96 @@ function montarApp(){show('vApp');$('who').classList.remove('hidden');
   $('boxLoja').innerHTML=lojas.length>1
     ?`<label for="aLoja">Loja</label><select id="aLoja">${lojas.map(l=>`<option value="${l.loja}" ${l.loja===lojaSel?'selected':''}>${l.loja} · ${esc(l.nome||'')}</option>`).join('')}</select>`
     :`<div class="msg info" style="margin-top:0">Loja <b>${lojas[0].loja}${lojas[0].nome?' · '+esc(lojas[0].nome):''}</b></div>`;
-  if($('aLoja'))$('aLoja').onchange=e=>{lojaSel=parseInt(e.target.value,10);$('whoNome').textContent=U.nome+' · Loja '+lojaSel;carregarLista()};
-  $('foot').innerHTML=`Precisa de ajuda? <a href="${SUPPORT.whats}" target="_blank" rel="noopener">WhatsApp</a> · <a href="tel:${SUPPORT.tel}">${SUPPORT.fone}</a>`;
-  aba('novo');carregarLista();clearInterval(listaT);listaT=setInterval(()=>{if(!document.hidden&&!$('vApp').classList.contains('hidden'))carregarLista(true)},15000)}
+  if($('aLoja'))$('aLoja').onchange=e=>{lojaSel=parseInt(e.target.value,10);$('whoLoja').textContent=nomeLoja();atualizarZap();carregarLista()};
+  atualizarZap();aba('novo');carregarLista();clearInterval(listaT);listaT=setInterval(()=>{if(!document.hidden&&!$('vApp').classList.contains('hidden'))carregarLista(true)},15000)}
 function aba(x){$('tabNovo').classList.toggle('on',x==='novo');$('tabLista').classList.toggle('on',x==='lista');$('pNovo').classList.toggle('hidden',x!=='novo');$('pLista').classList.toggle('hidden',x!=='lista')}
 $('tabNovo').onclick=()=>aba('novo');$('tabLista').onclick=()=>{aba('lista');carregarLista()};
 $('qMenos').onclick=()=>{$('aQtd').value=Math.max(1,(+$('aQtd').value||1)-1)};$('qMais').onclick=()=>{$('aQtd').value=Math.min(50,(+$('aQtd').value||0)+1)};
-$('aFoto').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{fotoBlob=await comprimir(f);$('phImg').src=URL.createObjectURL(fotoBlob);$('phEmpty').classList.add('hidden');$('phOk').classList.remove('hidden');iniciarLeituraFoto()}catch(err){msg('aMsg',err.message)}};
-$('phDel').onclick=()=>{fotoBlob=null;fotoOcr=null;$('aFoto').value='';$('phOk').classList.add('hidden');$('phEmpty').classList.remove('hidden')};
 
 $('fAjuste').onsubmit=async e=>{e.preventDefault();msg('aMsg','');
   const codigo=$('aCodigo').value.replace(/\D/g,''),q=parseInt($('aQtd').value,10),lj=U.lojas.find(l=>l.loja===lojaSel);
   if(!codigo){msg('aMsg','Informe o código do produto.');return}
   if(!Number.isInteger(q)||q<1||q>50){msg('aMsg','Quantidade inválida (1 a 50).');return}
   if(!$('aDecl').checked){msg('aMsg','Marque a declaração de venda para continuar.');return}
-  if(fotoBlob&&fotoOcr&&!fotoOcr.pronto){const b0=$('btnEnviar');b0.disabled=true;b0.innerHTML='<span class="spin"></span>Conferindo a foto…';await Promise.race([fotoOcr.promise,new Promise(r=>setTimeout(r,25000))]);b0.disabled=false;b0.textContent='Solicitar ajuste'}
-  const stFoto=fotoBlob?(fotoOcr&&fotoOcr.pronto&&!fotoOcr.erro?conferirCodigo(fotoOcr.texto,codigo):'NAO_VERIFICADO'):'SEM_FOTO';
-  if(fotoBlob&&(stFoto==='NAO_LOCALIZADO'||stFoto==='ILEGIVEL')&&!confirm('Não encontrei o código '+codigo+' na foto da venda.\n\nA foto precisa mostrar o mesmo código do ajuste. Se enviar assim, o pedido fica sinalizado em vermelho para a auditoria.\n\nEnviar mesmo assim?'))return;
-  if(!fotoBlob&&!confirm('Sem a foto da venda este ajuste ficará como NÃO COMPROVADO e será sinalizado para a auditoria.\n\nEnviar mesmo assim?'))return;
   const b=$('btnEnviar');b.disabled=true;b.innerHTML='<span class="spin"></span>Enviando…';
   try{
-    let path=null;if(fotoBlob){b.innerHTML='<span class="spin"></span>Enviando foto…';path=await subirFoto(fotoBlob)}
-    b.innerHTML='<span class="spin"></span>Registrando…';
     const r=await sb.from('ajuste_estoque_entrada').insert({user_id:uid,loja:String(lojaSel),loja_normalizada:lojaSel,codigo_seta_solicitado:lj.codigo_seta,solicitante:U.nome,codigo_produto:codigo,quantidade:q,
-      motivo:'AJUSTE PARA VENDA - SOLICITADO PELO GERENTE',comprovante_path:path,comprovante_nome:path?path.split('/').pop():null,comprovado:!!path,declaracao_venda:true,foto_codigo_status:stFoto,foto_codigo_texto:fotoBlob&&fotoOcr?tokensNum(fotoOcr.texto).join(' ').slice(0,300):null,operacao:'ENTRADA',finalidade:'VENDA'}).select('id,protocolo').single();
+      motivo:'AJUSTE PARA VENDA - SOLICITADO PELO GERENTE',comprovado:false,declaracao_venda:true,operacao:'ENTRADA',finalidade:'VENDA'}).select('id,protocolo').single();
     if(r.error)throw new Error(r.error.message);
-    $('fAjuste').reset();$('phDel').click();$('aQtd').value=1;acompanhar(r.data.id);carregarLista(true);
+    $('fAjuste').reset();$('aQtd').value=1;acompanhar(r.data.id);carregarLista(true);
   }catch(err){msg('aMsg',err.message)}finally{b.disabled=false;b.textContent='Solicitar ajuste'}};
 
 // ---------- acompanhamento em tempo real do pedido ----------
 function acompanhar(id){$('cForm').classList.add('hidden');const c=$('cAcomp');c.classList.remove('hidden');c.innerHTML='<div class="sub">Enviando…</div>';clearInterval(poll);
   const t0=Date.now();const tick=async()=>{
-    const r=await sb.from('ajuste_estoque_entrada').select('id,protocolo,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,erro_executor,comprovado,venda_status').eq('id',id).single();
+    const r=await sb.from('ajuste_estoque_entrada').select('id,protocolo,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,erro_executor').eq('id',id).single();
     if(r.error||!r.data)return;const x=r.data;
     const idx=Math.max(0,ETAPAS.indexOf(x.etapa_executor));const fim=['CONCLUIDO','ERRO','BLOQUEADO_DIVERGENCIA','CANCELADO'].includes(x.status);
     let h='';
     if(x.status==='CONCLUIDO'){clearInterval(poll);
       h=`<div class="big"><div class="ic">✅</div><div class="t">Estoque ajustado!</div><div class="sub">Produto ${esc(x.codigo_produto)}: ${num(x.estoque_anterior)} → <b>${num(x.estoque_novo)}</b>. Pode concluir a venda.</div></div>
-      <div class="msg warn">Depois de atender o cliente, volte e toque em <b>Confirmar venda</b> — é assim que a auditoria sabe que o ajuste serviu para vender.</div>
-      <button class="btn ok" id="acVenda">Confirmar venda agora</button><button class="btn sec" id="acNovo">Fazer outro ajuste</button>`}
+      <div class="msg warn">Depois de atender o cliente, toque em <b>Finalizar venda</b> e envie a <b>foto do comprovante</b> (cupom). É assim que a auditoria sabe que o ajuste serviu para vender.</div>
+      <button class="btn ok" id="acVenda">Finalizar venda e enviar comprovante</button><button class="btn sec" id="acNovo">Fazer outro ajuste</button>`}
     else if(x.status==='ERRO'||x.status==='CANCELADO'){clearInterval(poll);h=`<div class="big"><div class="ic">⚠️</div><div class="t">Não foi possível ajustar</div></div><div class="msg err">${esc(erroAmigavel(x.erro_executor))}<br><small>Protocolo ${esc(x.protocolo)}</small></div><button class="btn sec" id="acNovo">Voltar</button>`}
     else if(x.status==='BLOQUEADO_DIVERGENCIA'){clearInterval(poll);h=`<div class="big"><div class="ic">🔎</div><div class="t">Em análise da auditoria</div></div><div class="msg warn">Não confirmei o resultado com segurança. <b>Não repita o pedido.</b> A auditoria vai conferir e avisar. Protocolo ${esc(x.protocolo)}.</div><button class="btn sec" id="acNovo">Voltar</button>`}
-    else{h=`<div class="big"><div class="ic">⏳</div><div class="t">${esc(ETAPA_TXT[x.etapa_executor]||'Processando…')}</div><div class="sub">Protocolo ${esc(x.protocolo)} · produto ${esc(x.codigo_produto)} · +${x.quantidade}<br>Leva cerca de 1 minuto. Não feche esta tela.</div></div><div class="steps">${ETAPAS.map((_,i)=>`<i class="${i<idx?'done':i===idx?'on':''}"></i>`).join('')}</div>${!x.comprovado?'<div class="msg warn">Sem foto da venda: ficará NÃO COMPROVADO.</div>':''}`;
+    else{h=`<div class="big"><div class="ic"><span class="hg">⏳</span></div><div class="t">${esc(ETAPA_TXT[x.etapa_executor]||'Processando…')}</div><div class="sub">Protocolo ${esc(x.protocolo)} · produto ${esc(x.codigo_produto)} · +${x.quantidade}<br>Leva cerca de 1 minuto. Não feche esta tela.</div></div><div class="steps">${ETAPAS.map((_,i)=>`<i class="${i<idx?'done':i===idx?'on':''}"></i>`).join('')}</div>`;
       if(Date.now()-t0>15*60*1000){clearInterval(poll);h+='<div class="msg warn">Está demorando mais que o normal. Fale com o suporte informando o protocolo.</div>'}}
-    c.innerHTML=h;const n=$('acNovo');if(n)n.onclick=()=>{c.classList.add('hidden');$('cForm').classList.remove('hidden')};const v=$('acVenda');if(v)v.onclick=()=>abrirVenda(x);
+    c.innerHTML=h;const n=$('acNovo');if(n)n.onclick=()=>{c.classList.add('hidden');$('cForm').classList.remove('hidden')};const v=$('acVenda');if(v)v.onclick=()=>abrirVenda(x,'venda');
     if(fim)carregarLista(true)};
   tick();poll=setInterval(tick,4000)}
 
 // ---------- lista ----------
-function pill(x){if(x.status==='CONCLUIDO')return'<span class="pill done">AJUSTADO</span>';if(x.status==='EM_EXECUCAO')return'<span class="pill run">EXECUTANDO</span>';if(x.status==='PENDENTE')return'<span class="pill pend">NA FILA</span>';if(x.status==='BLOQUEADO_DIVERGENCIA')return'<span class="pill gray">EM ANÁLISE</span>';if(x.status==='CANCELADO')return'<span class="pill gray">CANCELADO</span>';return'<span class="pill err">ERRO</span>'}
+function pill(x){if(x.status==='CONCLUIDO')return'<span class="pill done">AJUSTADO</span>';if(x.status==='EM_EXECUCAO')return'<span class="pill run"><span class="hg" style="animation-duration:1.4s">⏳</span> EXECUTANDO</span>';if(x.status==='PENDENTE')return'<span class="pill pend"><span class="hg">⏳</span> NA FILA</span>';if(x.status==='BLOQUEADO_DIVERGENCIA')return'<span class="pill gray">EM ANÁLISE</span>';if(x.status==='CANCELADO')return'<span class="pill gray">CANCELADO</span>';return'<span class="pill err">ERRO</span>'}
+function pillVenda(x){if(x.status!=='CONCLUIDO')return'';if(x.venda_status==='VENDA_CONFIRMADA')return'<span class="pill done">VENDA CONFIRMADA</span>';if(x.venda_status==='VENDA_NAO_REALIZADA')return'<span class="pill err">NÃO VENDEU</span>';return'<span class="pill run">FINALIZAR VENDA</span>'}
 function pillCod(x){if(!x.comprovado)return'';const s=x.foto_codigo_status;if(['CONFERE','CONFERIDO_MANUAL'].includes(s))return'<span class="pill done">CÓDIGO CONFERE</span>';if(s==='PROVAVEL')return'<span class="pill run">CONFERIR CÓDIGO</span>';if(['NAO_LOCALIZADO','ILEGIVEL','DIVERGENTE_MANUAL'].includes(s))return'<span class="pill err">CÓDIGO NÃO CONFERE</span>';return'<span class="pill gray">NÃO CONFERIDO</span>'}
-function pillVenda(x){if(x.status!=='CONCLUIDO')return'';if(x.venda_status==='VENDA_CONFIRMADA')return'<span class="pill done">VENDA CONFIRMADA</span>';if(x.venda_status==='VENDA_NAO_REALIZADA')return'<span class="pill err">NÃO VENDEU</span>';return'<span class="pill run">CONFIRMAR VENDA</span>'}
+function pillFotoLista(x){if(x.status!=='CONCLUIDO')return'';return x.comprovado?'<span class="pill done">COM FOTO DO COMPROVANTE</span> '+pillCod(x):'<span class="pill err">SEM FOTO DO COMPROVANTE</span>'}
 async function carregarLista(silent){
   const r=await sb.from('ajuste_estoque_entrada').select('id,protocolo,criado_em,executado_em,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,comprovado,solicitante,venda_status,venda_numero,venda_confirmada_em,erro_executor,foto_codigo_status')
     .eq('loja_normalizada',lojaSel).order('criado_em',{ascending:false}).limit(40);
   if(r.error){if(!silent)$('lista').innerHTML='<div class="msg err">Não foi possível carregar.</div>';return}
   const pend=r.data.filter(x=>x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA');
-  const a=$('pendVenda');if(pend.length){a.classList.remove('hidden');a.innerHTML='⚠️ '+pend.length+' ajuste(s) sem confirmação de venda. <u style="cursor:pointer" id="irLista">Ver</u>';$('irLista').onclick=()=>aba('lista')}else a.classList.add('hidden');
+  const a=$('pendVenda');if(pend.length){a.classList.remove('hidden');a.innerHTML='⚠️ '+pend.length+' ajuste(s) com venda por finalizar. <u style="cursor:pointer" id="irLista">Ver</u>';$('irLista').onclick=()=>aba('lista')}else a.classList.add('hidden');
   $('lista').innerHTML=r.data.length?r.data.map(x=>`<div class="it"><div class="h"><div><div class="p">${esc(x.protocolo)}</div><div class="d">${fmtDH(x.criado_em)} · ${esc(x.solicitante)}</div></div><div>${pill(x)}</div></div>
     <div class="kv">Produto <b>${esc(x.codigo_produto)}</b> · +${x.quantidade}${x.estoque_novo!=null?' · Estoque '+num(x.estoque_anterior)+' → <b>'+num(x.estoque_novo)+'</b>':''}</div>
-    <div class="kv">${x.comprovado?'<span class="pill done">COM FOTO DA VENDA</span>':'<span class="pill err">SEM FOTO</span>'} ${pillCod(x)} ${pillVenda(x)}</div>
+    <div class="kv">${pillFotoLista(x)} ${pillVenda(x)}</div>
     ${x.venda_numero?`<div class="d" style="margin-top:4px">Venda nº ${esc(x.venda_numero)}</div>`:''}
-    ${x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA'?`<button class="btn ok mini" data-venda='${esc(JSON.stringify({id:x.id,protocolo:x.protocolo,codigo_produto:x.codigo_produto}))}'>Confirmar venda</button>`:''}
+    ${x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA'?`<button class="btn ok mini" data-venda='${esc(JSON.stringify({id:x.id,protocolo:x.protocolo,codigo_produto:x.codigo_produto,modo:'venda'}))}'>Finalizar venda</button>`:''}
+    ${x.status==='CONCLUIDO'&&x.venda_status!=='AGUARDANDO_VENDA'&&!x.comprovado?`<button class="btn sec mini" data-venda='${esc(JSON.stringify({id:x.id,protocolo:x.protocolo,codigo_produto:x.codigo_produto,modo:'foto'}))}'>📷 Anexar foto do comprovante</button>`:''}
     ${(x.status==='ERRO')?`<div class="d" style="margin-top:6px">${esc(erroAmigavel(x.erro_executor))}</div>`:''}</div>`).join(''):'<div class="sub">Nenhum ajuste ainda nesta loja.</div>';
-  $('lista').querySelectorAll('[data-venda]').forEach(b=>b.onclick=()=>abrirVenda(JSON.parse(b.dataset.venda)))}
+  $('lista').querySelectorAll('[data-venda]').forEach(b=>b.onclick=()=>{const d=JSON.parse(b.dataset.venda);abrirVenda(d,d.modo)})}
 
-// ---------- confirmar venda ----------
-function abrirVenda(x){vendaRef=x.id;vendaSt=null;vendaFoto=null;$('mvRef').textContent='Protocolo '+x.protocolo+' · produto '+x.codigo_produto;
-  ['mvSimBox','mvNaoBox'].forEach(i=>$(i).classList.add('hidden'));['mvSim','mvNao'].forEach(i=>$(i).classList.remove('on'));$('mvNum').value='';$('mvObs').value='';$('mvMsg').innerHTML='';
-  $('mvPhOk').classList.add('hidden');$('mvPhEmpty').classList.remove('hidden');$('mvFoto').value='';$('mvEnviar').disabled=true;$('mVenda').classList.remove('hidden')}
-$('mvSim').onclick=()=>{vendaSt='VENDA_CONFIRMADA';$('mvSim').classList.add('on');$('mvNao').classList.remove('on');$('mvSimBox').classList.remove('hidden');$('mvNaoBox').classList.add('hidden');$('mvEnviar').disabled=false};
-$('mvNao').onclick=()=>{vendaSt='VENDA_NAO_REALIZADA';$('mvNao').classList.add('on');$('mvSim').classList.remove('on');$('mvNaoBox').classList.remove('hidden');$('mvSimBox').classList.add('hidden');$('mvEnviar').disabled=false};
+// ---------- finalizar venda + foto do comprovante (SEMPRE depois do ajuste) ----------
+function abrirVenda(x,modo){vendaRef=x.id;vendaCod=x.codigo_produto;vendaModo=modo||'venda';vendaSt=null;vendaBlob=null;vendaOcr=null;
+  $('mvTitulo').textContent=vendaModo==='foto'?'Foto do comprovante da venda':'Como ficou a venda?';$('mvRef').textContent='Protocolo '+x.protocolo+' · produto '+x.codigo_produto;
+  $('mvSeg').classList.toggle('hidden',vendaModo==='foto');['mvNumBox','mvNaoBox'].forEach(i=>$(i).classList.add('hidden'));$('mvFotoBox').classList.toggle('hidden',vendaModo!=='foto');
+  ['mvSim','mvNao'].forEach(i=>$(i).classList.remove('on'));$('mvNum').value='';$('mvObs').value='';$('mvMsg').innerHTML='';
+  $('mvPhOk').classList.add('hidden');$('mvPhEmpty').classList.remove('hidden');$('mvFoto').value='';$('mvEnviar').disabled=vendaModo!=='foto';$('mvEnviar').textContent=vendaModo==='foto'?'Enviar foto':'Confirmar';$('mVenda').classList.remove('hidden')}
+$('mvSim').onclick=()=>{vendaSt='VENDA_CONFIRMADA';$('mvSim').classList.add('on');$('mvNao').classList.remove('on');$('mvFotoBox').classList.remove('hidden');$('mvNumBox').classList.remove('hidden');$('mvNaoBox').classList.add('hidden');$('mvEnviar').disabled=false};
+$('mvNao').onclick=()=>{vendaSt='VENDA_NAO_REALIZADA';$('mvNao').classList.add('on');$('mvSim').classList.remove('on');$('mvNaoBox').classList.remove('hidden');$('mvFotoBox').classList.add('hidden');$('mvNumBox').classList.add('hidden');$('mvEnviar').disabled=false};
 $('mvCancelar').onclick=()=>$('mVenda').classList.add('hidden');
-$('mvFoto').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{vendaFoto=await comprimir(f);$('mvImg').src=URL.createObjectURL(vendaFoto);$('mvPhEmpty').classList.add('hidden');$('mvPhOk').classList.remove('hidden')}catch(err){msg('mvMsg',err.message)}};
-$('mvEnviar').onclick=async()=>{msg('mvMsg','');const b=$('mvEnviar');
-  const num=$('mvNum').value.trim(),obs=$('mvObs').value.trim();
-  if(vendaSt==='VENDA_CONFIRMADA'&&!num&&!vendaFoto){msg('mvMsg','Informe o número da venda ou tire a foto do cupom.');return}
-  if(vendaSt==='VENDA_NAO_REALIZADA'&&!obs){msg('mvMsg','Explique por que a venda não foi realizada.');return}
-  b.disabled=true;b.innerHTML='<span class="spin"></span>Enviando…';
-  try{let path=null;if(vendaSt==='VENDA_CONFIRMADA'&&vendaFoto)path=await subirFoto(vendaFoto);
-    const r=await sb.rpc('ajuste_confirmar_venda',{p_id:vendaRef,p_status:vendaSt,p_numero:num||null,p_path:path,p_obs:obs||null});
+$('mvFoto').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{vendaBlob=await comprimir(f);$('mvImg').src=URL.createObjectURL(vendaBlob);$('mvPhEmpty').classList.add('hidden');$('mvPhOk').classList.remove('hidden');vendaOcr=lerFoto(vendaBlob,atualizarChipFoto);atualizarChipFoto()}catch(err){msg('mvMsg',err.message)}};
+$('mvPhDel').onclick=()=>{vendaBlob=null;vendaOcr=null;$('mvFoto').value='';$('mvPhOk').classList.add('hidden');$('mvPhEmpty').classList.remove('hidden')};
+$('mvEnviar').onclick=async()=>{msg('mvMsg','');const b=$('mvEnviar');const rotulo=b.textContent;
+  const numV=$('mvNum').value.trim(),obs=$('mvObs').value.trim();
+  if(vendaModo==='foto'&&!vendaBlob){msg('mvMsg','Tire a foto do comprovante.');return}
+  if(vendaModo==='venda'&&vendaSt==='VENDA_CONFIRMADA'&&!numV&&!vendaBlob){msg('mvMsg','Informe o número da venda ou tire a foto do comprovante.');return}
+  if(vendaModo==='venda'&&vendaSt==='VENDA_NAO_REALIZADA'&&!obs){msg('mvMsg','Explique por que a venda não foi realizada.');return}
+  b.disabled=true;
+  try{
+    if(vendaBlob&&vendaOcr&&!vendaOcr.pronto){b.innerHTML='<span class="spin"></span>Conferindo a foto…';await Promise.race([vendaOcr.promise,new Promise(r=>setTimeout(r,25000))])}
+    const stF=vendaBlob?(vendaOcr&&vendaOcr.pronto&&!vendaOcr.erro?conferirCodigo(vendaOcr.texto,vendaCod):'NAO_VERIFICADO'):null;
+    const querFoto=vendaModo==='foto'||vendaSt==='VENDA_CONFIRMADA';
+    if(querFoto&&!vendaBlob&&!confirm('Sem a foto do comprovante da venda, o registro ficará como NÃO COMPROVADO e será sinalizado em vermelho para a auditoria.\n\nEnviar mesmo assim?')){b.disabled=false;b.textContent=rotulo;return}
+    if(vendaBlob&&(stF==='NAO_LOCALIZADO'||stF==='ILEGIVEL')&&!confirm('Não encontrei o código '+vendaCod+' na foto do comprovante.\n\nA foto precisa mostrar o mesmo código do ajuste. Se enviar assim, fica sinalizado em vermelho para a auditoria.\n\nEnviar mesmo assim?')){b.disabled=false;b.textContent=rotulo;return}
+    b.innerHTML='<span class="spin"></span>Enviando…';
+    let path=null;if(vendaBlob&&(vendaModo==='foto'||vendaSt==='VENDA_CONFIRMADA'))path=await subirFoto(vendaBlob);
+    const txt=vendaBlob&&vendaOcr?tokensNum(vendaOcr.texto).join(' ').slice(0,300):null;
+    let r;
+    if(vendaModo==='foto')r=await sb.rpc('ajuste_anexar_comprovante',{p_id:vendaRef,p_path:path,p_nome:path.split('/').pop(),p_foto_status:stF||'NAO_VERIFICADO',p_foto_texto:txt});
+    else r=await sb.rpc('ajuste_confirmar_venda',{p_id:vendaRef,p_status:vendaSt,p_numero:numV||null,p_path:path,p_obs:obs||null,p_foto_status:stF||'NAO_VERIFICADO',p_foto_texto:txt});
     if(r.error)throw new Error(r.error.message.replace(/^.*?:\s*/,''));
     $('mVenda').classList.add('hidden');$('cAcomp').classList.add('hidden');$('cForm').classList.remove('hidden');carregarLista(true);aba('lista')}
-  catch(err){msg('mvMsg',err.message)}finally{b.disabled=false;b.textContent='Confirmar'}};
+  catch(err){msg('mvMsg',err.message)}finally{b.disabled=false;b.textContent=rotulo}};
 
 // ---------- inicio ----------
 (async()=>{
