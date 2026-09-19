@@ -59,6 +59,7 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
 .modal>div{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:640px;max-height:92vh;overflow:auto;padding:18px 16px calc(22px + env(safe-area-inset-bottom))}
 .seg{display:flex;gap:8px;margin:10px 0}.seg button{flex:1;padding:13px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:800;font-size:15px}
 .seg button.on.ok{border-color:var(--ok);background:var(--okbg);color:var(--ok)}.seg button.on.bad{border-color:var(--err);background:var(--errbg);color:var(--err)}
+.chip-ok{background:var(--okbg)!important;color:var(--ok)!important}.chip-warn{background:var(--warnbg)!important;color:var(--warn)!important}.chip-bad{background:var(--errbg)!important;color:var(--err)!important}
 .spin{display:inline-block;width:16px;height:16px;border:3px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:s .8s linear infinite;vertical-align:-3px;margin-right:6px}@keyframes s{to{transform:rotate(360deg)}}
 </style>
 </head>
@@ -112,7 +113,7 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
         <div class="qty"><button type="button" id="qMenos" aria-label="Diminuir">−</button><input id="aQtd" type="number" min="1" max="50" step="1" value="1" inputmode="numeric"><button type="button" id="qMais" aria-label="Aumentar">+</button></div>
         <label>Foto da venda (cupom / comprovante)</label>
         <div class="photo"><div id="phEmpty"><label class="pbtn" for="aFoto">📷 Tirar foto da venda</label><div class="sub" style="margin:8px 0 0">Fotografe o ticket/pedido do cliente. Sem foto o ajuste é marcado como <b>NÃO COMPROVADO</b> e vai para a auditoria.</div></div>
-          <div id="phOk" class="hidden"><img id="phImg" alt="Foto da venda"><label class="pbtn" for="aFoto" style="background:#5b6f8a">Trocar foto</label> <button type="button" class="pbtn" id="phDel" style="background:#b3261e;border:0">Remover</button></div>
+          <div id="phOk" class="hidden"><img id="phImg" alt="Foto da venda"><div id="phChip" class="msg info" style="text-align:left"></div><label class="pbtn" for="aFoto" style="background:#5b6f8a">Trocar foto</label> <button type="button" class="pbtn" id="phDel" style="background:#b3261e;border:0">Remover</button></div>
           <input id="aFoto" type="file" accept="image/*" capture="environment" class="hidden"></div>
         <label class="chk"><input id="aDecl" type="checkbox"><span>Declaro que <b>há um cliente na loja</b> para este produto e que este ajuste é <b>para concluir a venda</b>. Sei que ele fica registrado com meu nome, dia e hora.</span></label>
         <div id="aMsg"></div>
@@ -174,6 +175,34 @@ document.querySelectorAll('[data-eye]').forEach(b=>b.onclick=()=>{const i=$(b.da
 function comprimir(file,max=1600,q=.82){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{let{width:w,height:h}=im;const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(new Error('Falha ao processar a foto')),'image/jpeg',q)};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('Foto inválida'))};im.src=u})}
 async function subirFoto(blob){const path=uid+'/'+crypto.randomUUID()+'.jpg';const r=await sb.storage.from(BUCKET).upload(path,blob,{contentType:'image/jpeg',cacheControl:'3600',upsert:false});if(r.error)throw new Error('Falha ao enviar a foto: '+r.error.message);return path}
 
+
+// ---------- conferencia: a foto mostra o MESMO codigo do ajuste? (leitura de numeros no proprio celular) ----------
+const TESS_URL='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+let ocrW=null,fotoOcr=null;
+const carregarScript=u=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=u;s.onload=res;s.onerror=()=>rej(new Error('ocr'));document.head.appendChild(s)});
+async function lerNumeros(blob){
+  if(!window.Tesseract)await carregarScript(TESS_URL);
+  if(!ocrW){ocrW=await Tesseract.createWorker('eng');await ocrW.setParameters({tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'11'})}
+  const r=await ocrW.recognize(blob);return (r.data&&r.data.text)||''}
+const tokensNum=t=>(String(t).match(/\d{4,}/g)||[]).map(x=>x.replace(/^0+/,'')).filter(Boolean);
+function lev1(a,b){if(Math.abs(a.length-b.length)>1)return false;let i=0,j=0,d=0;while(i<a.length&&j<b.length){if(a[i]===b[j]){i++;j++;continue}if(++d>1)return false;if(a.length>b.length)i++;else if(a.length<b.length)j++;else{i++;j++}}return d+(a.length-i)+(b.length-j)<=1}
+function conferirCodigo(texto,codigo){
+  const c=String(codigo||'').replace(/\D/g,'').replace(/^0+/,'');if(c.length<4)return'NAO_VERIFICADO';
+  const tk=tokensNum(texto);if(!tk.length)return'ILEGIVEL';
+  if(tk.some(t=>t.includes(c)))return'CONFERE';
+  if(c.length>=5&&tk.some(t=>t.length>=c.length-1&&t.length<=c.length+1&&lev1(t,c)))return'PROVAVEL';
+  return'NAO_LOCALIZADO'}
+function statusFotoAtual(){if(!fotoBlob||!fotoOcr)return null;if(!fotoOcr.pronto)return'LENDO';if(fotoOcr.erro)return'NAO_VERIFICADO';return conferirCodigo(fotoOcr.texto,$('aCodigo').value)}
+function atualizarChipFoto(){
+  const el=$('phChip');if(!el)return;const st=statusFotoAtual();const c=$('aCodigo').value.replace(/\D/g,'').replace(/^0+/,'');
+  const M={LENDO:['info','🔎 Conferindo se a foto mostra o código…'],CONFERE:['chip-ok','✅ Código '+c+' encontrado na foto'],PROVAVEL:['chip-warn','🟡 Achei um código parecido com '+c+' na foto. Confira se está legível.'],
+    NAO_LOCALIZADO:['chip-bad','⚠️ Não achei o código '+c+' na foto. A foto da venda precisa mostrar o código do produto.'],ILEGIVEL:['chip-bad','⚠️ Não consegui ler números na foto. Tire mais perto, com boa luz.'],
+    NAO_VERIFICADO:['warn',c.length<4?'Digite o código do produto para conferir a foto.':'Não foi possível conferir a foto automaticamente.']};
+  const m=M[st]||M.NAO_VERIFICADO;el.className='msg '+m[0];el.style.textAlign='left';el.textContent=m[1]}
+function iniciarLeituraFoto(){fotoOcr={texto:'',pronto:false,erro:false};const o=fotoOcr;
+  o.promise=lerNumeros(fotoBlob).then(t=>{o.texto=t;o.pronto=true}).catch(()=>{o.erro=true;o.pronto=true}).then(atualizarChipFoto);atualizarChipFoto()}
+$('aCodigo').addEventListener('input',atualizarChipFoto);
+
 // ---------- LOGIN ----------
 $('lCpf').addEventListener('input',e=>e.target.value=maskCpf(e.target.value));
 $('fLogin').onsubmit=async e=>{e.preventDefault();msg('lMsg','');
@@ -218,21 +247,24 @@ function montarApp(){show('vApp');$('who').classList.remove('hidden');
 function aba(x){$('tabNovo').classList.toggle('on',x==='novo');$('tabLista').classList.toggle('on',x==='lista');$('pNovo').classList.toggle('hidden',x!=='novo');$('pLista').classList.toggle('hidden',x!=='lista')}
 $('tabNovo').onclick=()=>aba('novo');$('tabLista').onclick=()=>{aba('lista');carregarLista()};
 $('qMenos').onclick=()=>{$('aQtd').value=Math.max(1,(+$('aQtd').value||1)-1)};$('qMais').onclick=()=>{$('aQtd').value=Math.min(50,(+$('aQtd').value||0)+1)};
-$('aFoto').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{fotoBlob=await comprimir(f);$('phImg').src=URL.createObjectURL(fotoBlob);$('phEmpty').classList.add('hidden');$('phOk').classList.remove('hidden')}catch(err){msg('aMsg',err.message)}};
-$('phDel').onclick=()=>{fotoBlob=null;$('aFoto').value='';$('phOk').classList.add('hidden');$('phEmpty').classList.remove('hidden')};
+$('aFoto').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{fotoBlob=await comprimir(f);$('phImg').src=URL.createObjectURL(fotoBlob);$('phEmpty').classList.add('hidden');$('phOk').classList.remove('hidden');iniciarLeituraFoto()}catch(err){msg('aMsg',err.message)}};
+$('phDel').onclick=()=>{fotoBlob=null;fotoOcr=null;$('aFoto').value='';$('phOk').classList.add('hidden');$('phEmpty').classList.remove('hidden')};
 
 $('fAjuste').onsubmit=async e=>{e.preventDefault();msg('aMsg','');
   const codigo=$('aCodigo').value.replace(/\D/g,''),q=parseInt($('aQtd').value,10),lj=U.lojas.find(l=>l.loja===lojaSel);
   if(!codigo){msg('aMsg','Informe o código do produto.');return}
   if(!Number.isInteger(q)||q<1||q>50){msg('aMsg','Quantidade inválida (1 a 50).');return}
   if(!$('aDecl').checked){msg('aMsg','Marque a declaração de venda para continuar.');return}
+  if(fotoBlob&&fotoOcr&&!fotoOcr.pronto){const b0=$('btnEnviar');b0.disabled=true;b0.innerHTML='<span class="spin"></span>Conferindo a foto…';await Promise.race([fotoOcr.promise,new Promise(r=>setTimeout(r,25000))]);b0.disabled=false;b0.textContent='Solicitar ajuste'}
+  const stFoto=fotoBlob?(fotoOcr&&fotoOcr.pronto&&!fotoOcr.erro?conferirCodigo(fotoOcr.texto,codigo):'NAO_VERIFICADO'):'SEM_FOTO';
+  if(fotoBlob&&(stFoto==='NAO_LOCALIZADO'||stFoto==='ILEGIVEL')&&!confirm('Não encontrei o código '+codigo+' na foto da venda.\n\nA foto precisa mostrar o mesmo código do ajuste. Se enviar assim, o pedido fica sinalizado em vermelho para a auditoria.\n\nEnviar mesmo assim?'))return;
   if(!fotoBlob&&!confirm('Sem a foto da venda este ajuste ficará como NÃO COMPROVADO e será sinalizado para a auditoria.\n\nEnviar mesmo assim?'))return;
   const b=$('btnEnviar');b.disabled=true;b.innerHTML='<span class="spin"></span>Enviando…';
   try{
     let path=null;if(fotoBlob){b.innerHTML='<span class="spin"></span>Enviando foto…';path=await subirFoto(fotoBlob)}
     b.innerHTML='<span class="spin"></span>Registrando…';
     const r=await sb.from('ajuste_estoque_entrada').insert({user_id:uid,loja:String(lojaSel),loja_normalizada:lojaSel,codigo_seta_solicitado:lj.codigo_seta,solicitante:U.nome,codigo_produto:codigo,quantidade:q,
-      motivo:'AJUSTE PARA VENDA - SOLICITADO PELO GERENTE',comprovante_path:path,comprovante_nome:path?path.split('/').pop():null,comprovado:!!path,declaracao_venda:true,operacao:'ENTRADA',finalidade:'VENDA'}).select('id,protocolo').single();
+      motivo:'AJUSTE PARA VENDA - SOLICITADO PELO GERENTE',comprovante_path:path,comprovante_nome:path?path.split('/').pop():null,comprovado:!!path,declaracao_venda:true,foto_codigo_status:stFoto,foto_codigo_texto:fotoBlob&&fotoOcr?tokensNum(fotoOcr.texto).join(' ').slice(0,300):null,operacao:'ENTRADA',finalidade:'VENDA'}).select('id,protocolo').single();
     if(r.error)throw new Error(r.error.message);
     $('fAjuste').reset();$('phDel').click();$('aQtd').value=1;acompanhar(r.data.id);carregarLista(true);
   }catch(err){msg('aMsg',err.message)}finally{b.disabled=false;b.textContent='Solicitar ajuste'}};
@@ -258,16 +290,17 @@ function acompanhar(id){$('cForm').classList.add('hidden');const c=$('cAcomp');c
 
 // ---------- lista ----------
 function pill(x){if(x.status==='CONCLUIDO')return'<span class="pill done">AJUSTADO</span>';if(x.status==='EM_EXECUCAO')return'<span class="pill run">EXECUTANDO</span>';if(x.status==='PENDENTE')return'<span class="pill pend">NA FILA</span>';if(x.status==='BLOQUEADO_DIVERGENCIA')return'<span class="pill gray">EM ANÁLISE</span>';if(x.status==='CANCELADO')return'<span class="pill gray">CANCELADO</span>';return'<span class="pill err">ERRO</span>'}
+function pillCod(x){if(!x.comprovado)return'';const s=x.foto_codigo_status;if(['CONFERE','CONFERIDO_MANUAL'].includes(s))return'<span class="pill done">CÓDIGO CONFERE</span>';if(s==='PROVAVEL')return'<span class="pill run">CONFERIR CÓDIGO</span>';if(['NAO_LOCALIZADO','ILEGIVEL','DIVERGENTE_MANUAL'].includes(s))return'<span class="pill err">CÓDIGO NÃO CONFERE</span>';return'<span class="pill gray">NÃO CONFERIDO</span>'}
 function pillVenda(x){if(x.status!=='CONCLUIDO')return'';if(x.venda_status==='VENDA_CONFIRMADA')return'<span class="pill done">VENDA CONFIRMADA</span>';if(x.venda_status==='VENDA_NAO_REALIZADA')return'<span class="pill err">NÃO VENDEU</span>';return'<span class="pill run">CONFIRMAR VENDA</span>'}
 async function carregarLista(silent){
-  const r=await sb.from('ajuste_estoque_entrada').select('id,protocolo,criado_em,executado_em,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,comprovado,solicitante,venda_status,venda_numero,venda_confirmada_em,erro_executor')
+  const r=await sb.from('ajuste_estoque_entrada').select('id,protocolo,criado_em,executado_em,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,comprovado,solicitante,venda_status,venda_numero,venda_confirmada_em,erro_executor,foto_codigo_status')
     .eq('loja_normalizada',lojaSel).order('criado_em',{ascending:false}).limit(40);
   if(r.error){if(!silent)$('lista').innerHTML='<div class="msg err">Não foi possível carregar.</div>';return}
   const pend=r.data.filter(x=>x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA');
   const a=$('pendVenda');if(pend.length){a.classList.remove('hidden');a.innerHTML='⚠️ '+pend.length+' ajuste(s) sem confirmação de venda. <u style="cursor:pointer" id="irLista">Ver</u>';$('irLista').onclick=()=>aba('lista')}else a.classList.add('hidden');
   $('lista').innerHTML=r.data.length?r.data.map(x=>`<div class="it"><div class="h"><div><div class="p">${esc(x.protocolo)}</div><div class="d">${fmtDH(x.criado_em)} · ${esc(x.solicitante)}</div></div><div>${pill(x)}</div></div>
     <div class="kv">Produto <b>${esc(x.codigo_produto)}</b> · +${x.quantidade}${x.estoque_novo!=null?' · Estoque '+num(x.estoque_anterior)+' → <b>'+num(x.estoque_novo)+'</b>':''}</div>
-    <div class="kv">${x.comprovado?'<span class="pill done">COM FOTO DA VENDA</span>':'<span class="pill err">SEM FOTO</span>'} ${pillVenda(x)}</div>
+    <div class="kv">${x.comprovado?'<span class="pill done">COM FOTO DA VENDA</span>':'<span class="pill err">SEM FOTO</span>'} ${pillCod(x)} ${pillVenda(x)}</div>
     ${x.venda_numero?`<div class="d" style="margin-top:4px">Venda nº ${esc(x.venda_numero)}</div>`:''}
     ${x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA'?`<button class="btn ok mini" data-venda='${esc(JSON.stringify({id:x.id,protocolo:x.protocolo,codigo_produto:x.codigo_produto}))}'>Confirmar venda</button>`:''}
     ${(x.status==='ERRO')?`<div class="d" style="margin-top:6px">${esc(erroAmigavel(x.erro_executor))}</div>`:''}</div>`).join(''):'<div class="sub">Nenhum ajuste ainda nesta loja.</div>';
