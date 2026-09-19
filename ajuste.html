@@ -87,7 +87,8 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
       <div id="lInfo"></div>
       <div id="lNomeBox" class="hidden"><label for="lNome">Seu nome completo</label><input id="lNome" type="text" autocomplete="name" maxlength="80"></div>
       <label for="lSenha" id="lSenhaRot">Senha</label><div class="pw"><input id="lSenha" type="password" autocomplete="current-password" required><button type="button" data-eye="lSenha">Mostrar</button></div>
-      <div id="lSenha2Box" class="hidden"><label for="lSenha2">Repita a senha</label><div class="pw"><input id="lSenha2" type="password" autocomplete="new-password"><button type="button" data-eye="lSenha2">Mostrar</button></div><p class="sub" style="margin-top:6px">Mínimo 8 caracteres, com letras e números.</p></div>
+      <div style="text-align:right;margin:-6px 0 8px"><a href="#" id="lEsqueci" class="hidden" style="font-size:14.5px;font-weight:700;color:var(--brand2)">Esqueci minha senha</a></div>
+      <div id="lSenha2Box" class="hidden"><label for="lSenha2">Repita a senha</label><div class="pw"><input id="lSenha2" type="password" autocomplete="new-password"><button type="button" data-eye="lSenha2">Mostrar</button></div><p class="sub" style="margin-top:6px">Mínimo de 5 caracteres.</p></div>
       <div id="lMsg"></div>
       <button class="btn" id="btnEntrar" type="submit">Entrar</button>
     </form>
@@ -100,9 +101,9 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
     <h2 id="sTitulo">Crie sua senha</h2><p class="sub" id="sSub">Por segurança, crie uma senha só sua.</p>
     <form id="fSenha">
       <label for="sAtual">Senha atual</label><div class="pw"><input id="sAtual" type="password" autocomplete="current-password" required><button type="button" data-eye="sAtual">Mostrar</button></div>
-      <label for="sNova">Nova senha</label><div class="pw"><input id="sNova" type="password" autocomplete="new-password" required minlength="8"><button type="button" data-eye="sNova">Mostrar</button></div>
-      <label for="sNova2">Repita a nova senha</label><div class="pw"><input id="sNova2" type="password" autocomplete="new-password" required minlength="8"><button type="button" data-eye="sNova2">Mostrar</button></div>
-      <p class="sub" style="margin-top:8px">Mínimo 8 caracteres, com letras e números.</p>
+      <label for="sNova">Nova senha</label><div class="pw"><input id="sNova" type="password" autocomplete="new-password" required minlength="5"><button type="button" data-eye="sNova">Mostrar</button></div>
+      <label for="sNova2">Repita a nova senha</label><div class="pw"><input id="sNova2" type="password" autocomplete="new-password" required minlength="5"><button type="button" data-eye="sNova2">Mostrar</button></div>
+      <p class="sub" style="margin-top:8px">Mínimo de 5 caracteres.</p>
       <div id="sMsg"></div>
       <button class="btn" id="btnTrocar" type="submit">Salvar nova senha</button>
       <button class="btn sec hidden" id="btnSenhaVoltar" type="button">Voltar</button>
@@ -229,7 +230,7 @@ function atualizarChipFoto(){
 
 // ---------- LOGIN ----------
 let modoLogin='entrar',cpfConsultado='';
-function modoTela(modo,pedirNome){modoLogin=modo;
+function modoTela(modo,pedirNome){modoLogin=modo;$('lEsqueci').classList.add('hidden');
   $('lSenha2Box').classList.toggle('hidden',modo!=='novo');$('lNomeBox').classList.toggle('hidden',!(modo==='novo'&&pedirNome));
   $('lSenhaRot').textContent=modo==='novo'?'Crie uma senha':'Senha';$('lSenha').autocomplete=modo==='novo'?'new-password':'current-password';
   $('btnEntrar').textContent=modo==='novo'?'Criar acesso e entrar':'Entrar';
@@ -247,12 +248,18 @@ async function consultarCpf(cpf){
   const aviso=d.desligado?'<br>⚠ O cadastro do Seta consta como <b>desligado</b>. Você pode entrar, mas o pedido será sinalizado.':'';
   if(d.tem_acesso){
     $('lInfo').innerHTML=d.achou?'<div class="msg ok" style="text-align:left">✔ '+quem+'<br><span class="sub">Cadastro do Seta encontrado.</span>'+aviso+'</div>':'<div class="msg warn" style="text-align:left">CPF não localizado no cadastro do Seta. Você pode entrar normalmente; o pedido ficará sinalizado para a auditoria.</div>';
-    modoTela('entrar');
+    modoTela('entrar');$('lEsqueci').classList.remove('hidden');
   }else{
     $('lInfo').innerHTML=d.achou?'<div class="msg ok" style="text-align:left">✔ '+quem+'<br><span class="sub">Cadastro do Seta encontrado. É o seu primeiro acesso: crie uma senha.</span>'+aviso+'</div>':'<div class="msg warn" style="text-align:left">CPF não localizado no cadastro do Seta. Você pode entrar mesmo assim: digite seu nome e crie uma senha. O pedido ficará sinalizado para a auditoria.</div>';
     modoTela('novo',!d.achou);
   }
 }
+$('lEsqueci').onclick=async e=>{e.preventDefault();msg('lMsg','');
+  const cpf=$('lCpf').value.replace(/\D/g,'');if(cpf.length!==11)return;
+  const r=await sb.rpc('ajuste_pedir_nova_senha',{p_cpf:cpf});
+  if(r.error){msg('lMsg',r.error.message.replace(/^.*?:\s*/,''));return}
+  const t='Olá! Esqueci minha senha do Ajuste Expresso.\n\nCPF: '+$('lCpf').value;
+  $('lMsg').innerHTML='<div class="msg ok" style="text-align:left">✔ Pedido enviado à Controladoria. Assim que for liberado, entre com o <b>seu CPF no campo da senha</b> e crie uma senha nova.<br><a href="https://wa.me/'+WHATS+'?text='+encodeURIComponent(t)+'" target="_blank" rel="noopener" style="font-weight:800">💬 Avisar pelo WhatsApp para agilizar</a></div>'};
 $('lCpf').addEventListener('input',e=>{e.target.value=maskCpf(e.target.value);consultarCpf(e.target.value.replace(/\D/g,''))});
 function lojaInicial(){return U&&U.loja_origem&&U.lojas.some(l=>l.loja===U.loja_origem)?U.loja_origem:(U&&U.lojas.length===1?U.lojas[0].loja:null)}
 $('fLogin').onsubmit=async e=>{e.preventDefault();msg('lMsg','');
