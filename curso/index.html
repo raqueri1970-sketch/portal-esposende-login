@@ -122,15 +122,15 @@
 
   /* Player overlay */
   .overlay{
-    position:fixed; inset:0; background:#03060eee;
-    display:none; align-items:center; justify-content:center;
-    z-index:100; padding:24px;
+    position:fixed; inset:0; background:#03060ef2;
+    display:none; overflow-y:auto; overscroll-behavior:contain;
+    z-index:100; padding:20px;
   }
   .overlay.open{display:flex;}
   .player-box{
-    width:100%; max-width:1000px;
+    margin:auto; width:100%; max-width:1180px;
     background:#0a0f1e; border:1px solid var(--border); border-radius:14px;
-    overflow:hidden;
+    overflow:hidden; box-shadow:0 24px 80px #000a;
   }
   .player-head{
     display:flex; align-items:center; justify-content:space-between;
@@ -145,7 +145,14 @@
     width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center;
   }
   .close-btn:hover{background:var(--card-hover); color:var(--text);}
-  video{width:100%; display:block; background:#000; max-height:70vh;}
+  #playerBody{display:grid; grid-template-columns:minmax(0,1fr); background:#000;}
+  video{width:100%; display:block; background:#000; max-height:calc(100vh - 124px); align-self:center;}
+  .quiz-side{display:none; background:#0d1327;}
+  .player-box.quiz-open .quiz-side{display:flex; flex-direction:column; justify-content:center; border-top:1px solid var(--border);}
+  @media (min-width:980px){
+    .player-box.quiz-open #playerBody{grid-template-columns:minmax(0,1fr) 400px;}
+    .player-box.quiz-open .quiz-side{border-top:0; border-left:1px solid var(--border);}
+  }
   .player-status{
     padding:60px 20px; text-align:center; color:var(--muted); font-size:13.5px; font-weight:600;
   }
@@ -156,23 +163,25 @@
   }
   @keyframes spin{to{transform:rotate(360deg);}}
 
-  .quiz{padding:28px 24px 30px; border-top:1px solid var(--border); background:#0d1327;}
-  .quiz-inner{max-width:560px; margin:0 auto;}
-  .quiz h4{margin:0 0 22px; font-size:16px; font-weight:800; text-align:center;}
+  .quiz{padding:30px 28px 26px;}
+  .quiz-kicker{margin:0 0 8px; font-size:11px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; color:var(--qacc,#38bdf8);}
+  .quiz h4{margin:0 0 24px; font-size:19px; font-weight:800; line-height:1.25;}
   .quiz-q{margin-bottom:22px;}
-  .quiz-q label{display:block; font-size:13px; font-weight:700; color:var(--muted); margin-bottom:12px;}
-  .quiz-notas{display:flex; gap:7px; justify-content:center;}
+  .quiz-q label{display:block; font-size:13px; font-weight:700; color:var(--text); margin-bottom:11px; line-height:1.4;}
+  .quiz-notas{display:grid; grid-template-columns:repeat(11,1fr); gap:5px;}
   .qn{
-    flex:1 1 0; max-width:44px; height:40px; border-radius:9px; border:1px solid var(--border); background:#0a1230;
-    color:var(--text); font-family:inherit; font-size:13.5px; font-weight:700; cursor:pointer;
+    height:40px; padding:0; border-radius:8px; border:1px solid var(--border); background:#0a1230;
+    color:var(--text); font-family:inherit; font-size:13px; font-weight:800; cursor:pointer;
+    box-shadow:inset 0 -3px 0 var(--c);
     transition:border-color .15s ease, background .15s ease, transform .1s ease;
   }
-  .qn:hover{border-color:#38bdf8; transform:translateY(-1px);}
-  .qn.sel{background:#38bdf8; border-color:#38bdf8; color:#04121f;}
-  .quiz-notas-scale{display:flex; justify-content:space-between; margin-top:7px; font-size:11px; color:var(--muted2); font-weight:600;}
+  .qn.bad{--c:#f87171;} .qn.mid{--c:#fbbf24;} .qn.good{--c:#4ade80;}
+  .qn:hover{border-color:var(--c); transform:translateY(-1px);}
+  .qn.sel{background:var(--c); border-color:var(--c); color:#0b1220; box-shadow:none;}
+  .quiz-notas-scale{display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:var(--muted2); font-weight:600;}
   .quiz-util{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
   .qu{
-    padding:11px 10px; border-radius:9px; border:1px solid var(--border); background:#0a1230;
+    padding:12px 8px; border-radius:9px; border:1px solid var(--border); background:#0a1230;
     color:var(--text); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer;
     text-align:center; transition:border-color .15s ease, background .15s ease, transform .1s ease;
   }
@@ -180,22 +189,23 @@
   .qu.sel{background:#38bdf8; border-color:#38bdf8; color:#04121f;}
   .quiz-q textarea{
     width:100%; background:#0a1230; border:1px solid var(--border); border-radius:9px;
-    color:var(--text); font-family:inherit; font-size:13.5px; line-height:1.5; padding:12px 14px; resize:vertical; min-height:78px;
+    color:var(--text); font-family:inherit; font-size:13.5px; line-height:1.5; padding:12px 14px; resize:vertical; min-height:84px;
   }
   .quiz-q textarea:focus{outline:none; border-color:#38bdf8;}
-  .quiz-actions{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:6px;}
+  .quiz-actions{display:flex; flex-direction:column-reverse; gap:8px; margin-top:6px;}
   .quiz-skip{
-    background:none; border:1px solid transparent; color:var(--muted); font-family:inherit;
-    font-size:13px; font-weight:700; cursor:pointer; padding:10px 14px; border-radius:9px;
+    align-self:center; background:none; border:1px solid transparent; color:var(--muted); font-family:inherit;
+    font-size:13px; font-weight:700; cursor:pointer; padding:8px 14px; border-radius:9px;
   }
-  .quiz-skip:hover{color:var(--text); border-color:var(--border);}
+  .quiz-skip:hover{color:var(--text);}
   .quiz-submit{
-    background:#38bdf8; color:#04121f; border:none; border-radius:9px;
-    font-family:inherit; font-size:13.5px; font-weight:800; padding:11px 26px; cursor:pointer;
+    width:100%; background:#38bdf8; color:#04121f; border:none; border-radius:10px;
+    font-family:inherit; font-size:14px; font-weight:800; padding:13px; cursor:pointer;
     transition:background .15s ease;
   }
   .quiz-submit:hover{background:#5fc9fb;}
-  .quiz-thanks{padding:34px 24px; text-align:center; font-size:14.5px; font-weight:700; color:#4ade80; border-top:1px solid var(--border);}
+  .quiz-thanks{padding:48px 28px; text-align:center; font-size:15px; font-weight:800; color:#4ade80;}
+  .quiz-thanks svg{display:block; margin:0 auto 14px;}
 
   @media (max-width:520px){
     .wrap{padding:20px 16px 48px;}
@@ -205,6 +215,8 @@
     .identity{flex-basis:100%; margin-left:0; text-align:left; white-space:normal; overflow:visible; text-overflow:clip;}
     .grid{grid-template-columns:1fr;}
     .gate-box{padding:24px 20px;}
+    .overlay{padding:10px;}
+    .quiz{padding:24px 18px 22px;}
   }
 </style>
 </head>
@@ -476,13 +488,19 @@ function stopWatchTracking(){
 function showQuiz(){
   const box = document.getElementById('quizBox');
   if(box) box.style.display = 'block';
+  const caixa = document.querySelector('.player-box');
+  if(caixa) caixa.classList.add('quiz-open');
+  if(box) box.scrollIntoView({block:'nearest', behavior:'smooth'});
 }
 
 function quizHtml(){
-  const notas = Array.from({length:11}, (_,n)=>`<button type="button" class="qn" data-n="${n}">${n}</button>`).join('');
+  const faixa = n => n <= 6 ? 'bad' : n <= 8 ? 'mid' : 'good';
+  const notas = Array.from({length:11}, (_,n)=>`<button type="button" class="qn ${faixa(n)}" data-n="${n}">${n}</button>`).join('');
+  const check = '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 11 15.5 16 9"/></svg>';
   return `
-    <div class="quiz" id="quizBox" style="display:none">
-      <div class="quiz-inner">
+    <div class="quiz-side">
+      <div class="quiz" id="quizBox" style="display:none">
+        <p class="quiz-kicker">Avaliação do módulo</p>
         <h4>O que você achou deste módulo?</h4>
         <div class="quiz-q">
           <label>De 0 a 10, que nota você daria para este módulo?</label>
@@ -506,8 +524,8 @@ function quizHtml(){
           <button type="button" class="quiz-submit" id="quizSubmit">Enviar avaliação</button>
         </div>
       </div>
-    </div>
-    <div class="quiz-thanks" id="quizThanks" style="display:none">Obrigado pelo feedback! 🎉</div>`;
+      <div class="quiz-thanks" id="quizThanks" style="display:none">${check}Obrigado pelo feedback!</div>
+    </div>`;
 }
 
 function wireQuiz(viewId){
@@ -587,6 +605,7 @@ async function openPlayer(c){
   playerTitle.textContent = c.nome;
   playerSub.textContent = `Módulo ${c.ordem} · ${c.duracao}`;
   playerDot.style.background = c.accent;
+  playerBody.style.setProperty('--qacc', c.accent);
   prepararAudio();
   playerBody.innerHTML = `<video controls preload="metadata" playsinline webkit-playsinline crossorigin="anonymous" poster="${capaUrl(c)}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
   const videoEl = playerBody.querySelector('video');
@@ -622,6 +641,7 @@ function attemptClose(){
 function closePlayer(){
   stopWatchTracking();
   overlay.classList.remove('open');
+  document.querySelector('.player-box').classList.remove('quiz-open');
   playerBody.innerHTML = '';
 }
 document.getElementById('closeBtn').addEventListener('click', attemptClose);
