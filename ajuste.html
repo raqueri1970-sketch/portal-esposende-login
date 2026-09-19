@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="ajuste-icon-192.png">
 <link rel="icon" href="ajuste-icon-192.png">
 <title>Ajuste Expresso · Esposende</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous"></script>
 <style>
 :root{--bg:#f3f6fb;--card:#fff;--ink:#0f2440;--mut:#5b6f8a;--line:#d9e2ef;--brand:#0a3a7a;--brand2:#1456b8;--ok:#0b8a4b;--okbg:#e4f6ec;--warn:#9a5b00;--warnbg:#fff3d6;--err:#b3261e;--errbg:#fde8e6;--info:#0a3a7a;--infobg:#e6effb}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
@@ -167,7 +167,7 @@ const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
 const WHATS='5581989087348';
-const BUILD='20260919-124225';
+const BUILD='20260919-144451';
 /* se o navegador guardou uma versao antiga desta pagina, busca a nova e recarrega (uma vez por versao) */
 (async()=>{try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);
   if(m&&m[1]!==BUILD&&m[1].indexOf('@@')<0){let k='';try{k=sessionStorage.getItem('ae_build')||''}catch(e){}if(k!==m[1]){try{sessionStorage.setItem('ae_build',m[1])}catch(e){}location.reload()}}}catch(e){}})();
@@ -213,11 +213,11 @@ function comprimir(file,max=1600,q=.82){return new Promise((res,rej)=>{const u=U
 async function subirFoto(blob){const path=uid+'/'+crypto.randomUUID()+'.jpg';const r=await sb.storage.from(BUCKET).upload(path,blob,{contentType:'image/jpeg',cacheControl:'3600',upsert:false});if(r.error)throw new Error('Falha ao enviar a foto: '+r.error.message);return path}
 
 // ---------- conferencia: a foto mostra o MESMO codigo do ajuste? (leitura de numeros no proprio celular) ----------
-const TESS_URL='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+const TESS_URL='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',TESS_SRI='sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F';
 let ocrW=null;
-const carregarScript=u=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=u;s.onload=res;s.onerror=()=>rej(new Error('ocr'));document.head.appendChild(s)});
+const carregarScript=(u,sri)=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=u;if(sri){s.integrity=sri;s.crossOrigin='anonymous'}s.onload=res;s.onerror=()=>rej(new Error('ocr'));document.head.appendChild(s)});
 async function lerNumeros(blob){
-  if(!window.Tesseract)await carregarScript(TESS_URL);
+  if(!window.Tesseract)await carregarScript(TESS_URL,TESS_SRI);
   if(!ocrW){ocrW=await Tesseract.createWorker('eng');await ocrW.setParameters({tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'11'})}
   const r=await ocrW.recognize(blob);return (r.data&&r.data.text)||''}
 const tokensNum=t=>(String(t).match(/\d{4,}/g)||[]).map(x=>x.replace(/^0+/,'')).filter(Boolean);
@@ -335,7 +335,7 @@ $('fAjuste').onsubmit=async e=>{e.preventDefault();msg('aMsg','');
     let fotoProd=null;if(fpBlob){try{fotoProd=await subirFoto(fpBlob)}catch(err){throw new Error('Não consegui enviar a foto do produto. Tente de novo ou toque em Remover para pedir sem a foto.')}}
     const r=await sb.from('ajuste_estoque_entrada').insert({user_id:uid,loja:String(lojaSel),loja_normalizada:lojaSel,codigo_seta_solicitado:lj.codigo_seta,solicitante:U.nome,codigo_produto:codigo,quantidade:q,
       motivo:'AJUSTE PARA VENDA - SOLICITADO PELO GERENTE',foto_produto_path:fotoProd,comprovado:false,declaracao_venda:true,operacao:'ENTRADA',finalidade:'VENDA'}).select('id,protocolo').single();
-    if(r.error)throw new Error(r.error.message);
+    if(r.error)throw new Error(r.error.message.replace(/^(PEDIDO_DUPLICADO|LIMITE_DIARIO|LINK_PAUSADO|SEGURANCA):\s*/,''));
     $('fAjuste').reset();$('aQtd').value=1;fpLimpar();acompanhar(r.data.id);carregarLista(true);
   }catch(err){msg('aMsg',err.message)}finally{b.disabled=false;b.textContent='Solicitar ajuste'}};
 
