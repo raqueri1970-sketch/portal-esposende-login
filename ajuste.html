@@ -190,6 +190,9 @@ document.querySelectorAll('[data-eye]').forEach(b=>b.onclick=()=>{const i=$(b.da
 function atualizarZap(){const t='Olá! Preciso de ajuda com o Ajuste Expresso.'+(U&&lojaSel?' Loja '+lojaSel+' - '+U.nome+'.':'');
   $('foot').innerHTML='Precisa de ajuda?<br><a href="https://wa.me/'+WHATS+'?text='+encodeURIComponent(t)+'" target="_blank" rel="noopener">💬 Falar no WhatsApp</a>'}
 atualizarZap();
+/* conta quem tocou em "Falar no WhatsApp" (o link abre normalmente; o registro nao bloqueia nada) */
+$('foot').addEventListener('click',e=>{if(!e.target.closest('a[href*="wa.me"]'))return;
+  try{Promise.resolve(sb.rpc('ajuste_registrar_whatsapp',{p_loja:lojaSel?String(lojaSel):null,p_origem:U?'RODAPE':'LOGIN',p_protocolo:null})).catch(()=>{})}catch(err){}});
 
 // ---------- imagem: reduz para ~1600px JPEG (economiza dados e armazenamento) ----------
 function comprimir(file,max=1600,q=.82){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{let{width:w,height:h}=im;const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(new Error('Falha ao processar a foto')),'image/jpeg',q)};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('Foto inválida'))};im.src=u})}

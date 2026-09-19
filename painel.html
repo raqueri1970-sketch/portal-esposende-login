@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0b0c14">
+<title>Ajuste Expresso ao vivo</title>
+<style>
+:root{--page:#0b0c14;--surface:#171927;--surface2:#202336;--ink:#fff;--muted:#e6eaf8;--border:rgba(255,255,255,.16);--neon:#4fa8ff;--violet:#9d6bff;--ok:#17c964;--warn:#fab219;--bad:#f5455c;--aqua:#22d3b6;--gray:#8b93b3}
+*{box-sizing:border-box}
+html{font-size:16px}
+body{margin:0;background:radial-gradient(1200px 500px at 15% -10%,#1a2350 0,transparent 60%),var(--page);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;line-height:1.3;min-height:100vh}
+.wrap{max-width:1600px;margin:0 auto;padding:16px 20px 40px}
+header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.logo{height:64px;background:#fff;border-radius:12px;padding:6px 10px}
+h1{margin:0;font-size:1.7rem;letter-spacing:.2px}
+.sub{color:var(--muted);font-size:1rem}
+.sp{flex:1}
+.live{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.05rem;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--border)}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(23,201,100,.7);animation:pulso 1.6s infinite}
+.live.off .dot{background:var(--bad);animation:none}
+@keyframes pulso{0%{box-shadow:0 0 0 0 rgba(23,201,100,.6)}70%{box-shadow:0 0 0 12px rgba(23,201,100,0)}100%{box-shadow:0 0 0 0 rgba(23,201,100,0)}}
+.tag{font-size:.9rem;color:#fff;background:rgba(79,168,255,.18);border:1px solid rgba(79,168,255,.5);padding:6px 12px;border-radius:999px;font-weight:700}
+button{font:inherit;color:#fff;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:700}
+button:hover{background:#2a2e48}
+.grid{display:grid;gap:14px}
+.g-top{grid-template-columns:1.3fr 1fr 1fr}
+.g-kpi{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-top:14px}
+.g-2{grid-template-columns:1fr 1fr;margin-top:14px}
+.g-3{grid-template-columns:1.8fr 1fr 1fr;margin-top:14px}
+.card{background:linear-gradient(180deg,var(--surface),#131523);border:1px solid var(--border);border-radius:16px;padding:16px 18px;min-width:0}
+.card h3{margin:0 0 10px;font-size:1.1rem;color:#fff;font-weight:800}
+.big{font-size:2.6rem;font-weight:900;line-height:1.05}
+.robo{display:flex;align-items:center;gap:16px}
+.robo .ic{font-size:3rem}
+.robo.on{border-color:rgba(23,201,100,.6);box-shadow:0 0 0 1px rgba(23,201,100,.25) inset}
+.robo.off{border-color:rgba(245,69,92,.7);box-shadow:0 0 0 1px rgba(245,69,92,.3) inset}
+.st-ok{color:var(--ok)}.st-warn{color:var(--warn)}.st-bad{color:var(--bad)}
+.kpi{background:linear-gradient(180deg,var(--surface),#131523);border:1px solid var(--border);border-radius:16px;padding:14px 16px;position:relative;overflow:hidden}
+.kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--gray)}
+.kpi.g:before{background:var(--ok)}.kpi.w:before{background:var(--warn)}.kpi.b:before{background:var(--bad)}.kpi.n:before{background:var(--neon)}.kpi.z:before{background:#25d366}
+.kpi .l{font-size:1rem;color:var(--muted);font-weight:700}
+.kpi .v{font-size:2.5rem;font-weight:900;line-height:1.1;margin:4px 0}
+.kpi .n{font-size:.95rem;color:var(--muted)}
+.flash{animation:fl 1.4s ease-out}
+@keyframes fl{0%{background:rgba(79,168,255,.55)}100%{background:transparent}}
+.cols{display:flex;align-items:flex-end;gap:6px;height:190px;padding-top:6px}
+.col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+.col .cv{font-size:.9rem;font-weight:800;height:20px}
+.col .cb{width:100%;background:var(--neon);border-radius:6px 6px 0 0;min-height:2px;display:flex;align-items:flex-end;overflow:hidden}
+.col .cb2{width:100%;background:var(--ok)}
+.col .cl{font-size:.8rem;color:var(--muted);margin-top:4px;white-space:nowrap}
+.col.hoje .cl{color:#fff;font-weight:800}
+.hb{display:flex;flex-direction:column;gap:8px}
+.hbr{display:grid;grid-template-columns:minmax(120px,42%) 1fr auto;gap:10px;align-items:center}
+.hbl{font-size:.98rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbt{background:rgba(255,255,255,.08);border-radius:8px;height:16px;overflow:hidden}
+.hbf{height:100%;border-radius:8px}
+.hbv{font-weight:800;min-width:34px;text-align:right}
+table{width:100%;border-collapse:collapse}
+th{font-size:.85rem;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+td{padding:9px 8px;border-bottom:1px solid rgba(255,255,255,.07);font-size:1rem;vertical-align:top}
+td.c,th.c{text-align:center}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-weight:800;font-size:.85rem;white-space:nowrap}
+.p-ok{background:rgba(23,201,100,.2);color:#6dffab}.p-warn{background:rgba(250,178,25,.2);color:#ffd166}.p-bad{background:rgba(245,69,92,.22);color:#ff8fa0}.p-n{background:rgba(79,168,255,.2);color:#9fd0ff}.p-g{background:rgba(139,147,179,.25);color:#e6eaf8}
+.small{font-size:.9rem;color:var(--muted)}
+.empty{color:var(--muted);padding:14px;text-align:center}
+.zap{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+#erro{display:none;margin:60px auto;max-width:560px;text-align:center}
+#erro .big{font-size:1.8rem}
+footer{margin-top:18px;color:var(--muted);font-size:.9rem;text-align:center}
+body.tv{font-size:19px}
+body.tv .kpi .v{font-size:3.2rem}
+@media(max-width:1100px){.g-top,.g-2,.g-3{grid-template-columns:1fr}.big{font-size:2.1rem}h1{font-size:1.35rem}}
+@media(max-width:600px){.wrap{padding:12px 16px 32px}.logo{height:44px}.hbr{grid-template-columns:90px 1fr auto}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header>
+    <img class="logo" alt="Esposende" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAgQDAwMEBAQFBgoGBgUFBgwICQcKDgwPDg4MDQ0PERYTDxAVEQ0NExoTFRcYGRkZDxIbHRsYHRYYGRj/2wBDAQQEBAYFBgsGBgsYEA0QGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBj/wAARCADcANwDASIAAhEBAxEB/8QAHQAAAwEBAQEBAQEAAAAAAAAAAAECAwgHBgUECf/EAEEQAAIBAwIFAgQCBAoLAAAAAAABAgMEEQUGBwgSITETQRQiUWEycQkVFmIYOFJWgZGVobTTIzM1QlNyc3R2grL/xAAaAQEBAAMBAQAAAAAAAAAAAAAAAQIDBAUH/8QAKBEBAAICAgEDBAIDAQAAAAAAAAECAxEEEiExQWEFEyJRgcEUkaHh/9oADAMBAAIRAxEAPwDk8AA+hPNAAAAAAgAeB4AADA8DAWEMeB4+wE4HgrAYAnAYKwGAJwIvAYAgMFY+wsAS0IvAsAQ0ItoQEgNoQAAAAAAAAAC8gC7lANAGB4AoBYGkPA8ALA8FYHgCcBgrA8fYCMIMIsAIwGCxYQE4ZODTAsAZtCwaNE4AgTReCWgJE0UxASA35EAAAABQkhryA0hgUkADwNIeABIaQ0vqUkAsDwNL6DwXQSQ8FYDA0JwGCsIeCiMCwXgMAZ4Fg0a+pLRNCGiWjRonBBBLRo0S0Bm1gTRbRIEiwU0ICQXkBoBjSEvJQDSKS9xJFJANFJAvJSQAkUkCKSLAWCkhpDSKFgeCsDSAnAYKwGAIwLBpgTQGbQsGjRLQGbQmi2iWSRm0S0aNEsghol+C2SwIJLfklruBBS8EooBrwUvAikA0UkJItANIpCRSLApIpISRSRQ0ikhJFJACQ8DSHgCcIeCsfYMfYCMA0XgnAENEtGjRLQGbRLRo0Q0BDRDNGiGiSIaJZbJfkghokp+SQIQ15Eil5AZS8iRS8gUikSvBS8AWil5EvJS8FgUi0iUWihpFJCRS8ANDwC8FJAIMFABJOC34EBDRDRoyH4AholotksDNkM0fghkkQ0Q/Bb8kvwQQyWu5T8CAyXgpeSUUvIFIpEopeQP2dr7Z1veO7LLbO3LL43VL6bhb2/qRp9bUXJrqk0l2i33fsepLlR4+fzDf9o2v+Yfw8sP8bXZX/dVv8NVO0+LUuZ2PEGK4SUdBlt74Onl33o+p6+Zdf43nGOj+88nm83JizRjpMR435bqUia7lwBvThxvTh3uS10Hd+iTsNRu6Kr0LeNWFeVSDm4Jr03Lu5Rax5Psbflo4419DerfsBeUbdU3VauLihSqKKWW3TlNSTx7NZPVbW54iUee7hzV4+0tKjqXp9Fn8H6bppP1lQb6Hjq9Z9s989J9rzS8aOKfDTiTYaNt2tYW237/TPUi69lGt69TqlGqnJ904pw7LH4k/cTzM82pix9ZmY3vzr+DpXUzLnLSuXTjNre1LLcuk7KrXmm3tvC6t6tK7t+qpTnHqi1BzUu6a7NZPP9Y0PWduazW0jX9KvNLv6P8ArLW8oypVI/R4ft912Z31qe/dd4Z8gW0N2bbjaO+tdM0qnGF3TdSnKE+iMk0mn3T8pn4O6bnbvM7yealvZ6PS07cugU69RNPqdCtRgqlSnGfmVKpB5Sfhte8cmGL6ll32yVjpvW49lnFHtPlxBpum6hq+qUNM0mwub69uJdFG2tqbqVKkvpGK7s9gsuVPjne6ZG9W0KNv1LqjQudQoU6r/wDXqeH9m0e8cK9J2ty58q8eLW4dOV3uLWLenWhHsqslW70LWnJ/gTjic3/zN56UjxLU+bnjbfa5K/tNesNNt+rMLC2sKU6UV/JbmnOX5t/1G7/K5Ge1o40R1jxufefhOlax+TyzdWzN1bI1paTu3QL7SLtpuELmnhVEveElmM194tn9ezOHe9uIN/Vs9m7cvNWnQSdadJRjTpZ8ddSTUYt98LOWdl8PN7bd5ruEmr7J3zpVrabgsacajq28e0XLKp3VDLbg1LtKOWvbupYP7+Xu11Ha3K5unRdCtbee79E1DU7evQlHKne08+nleWnFU8fVdjVk+p5KUtFq6vExHx591jFEz6+HJd7wA4t6bu/S9r3m0pU9U1WFapZUPjKDVaNJKVT5lPCwpLy157H6/wDBa46/zGf9oW3+Yei8DeLm9+KfNRtCO9Ly1up6da6h6EqNpG3kvUoLqUunz+Bfl3PbeJ0uaGPEi7XDGjoEtt+lS9B3no+p19P+kz1POOrwY5udyMWSMVprE6353r1K46zG/LiifBbiXT4m0+H09ttbjqWjvY2PxVHvR7/N19fT7PtnJ/Ju7hHxL2LaSvN1bM1Sws4/iu+hVqEfzqU3KMf6WjpHhs+JUufiwfFaFhDX/wBnq2FY9Hp+j36Pwds56/7j6fe/NHW2BzG65sPdm37W/wBrUZUaTuLaL+IpQqUYSk5wbcascyl27PH18Gc87kfcilKxb8dzr+k+3XW58OTty8FuJW0KOj1tw7b+DhrF1CzsX8VRn61WazGPyyfTn6vCP79a5deNeg2s7m94e6nVpQWZSspU7ppfXppyk/7jrTmjlRnQ4UztlFUZbttHBRWF04WML27GvMVx23Rwa3ztaGj2Gnahp1/QuKl5aXUZRlPonBLoqReYPEn5TX2NeP6jyMkU6ViZtv8A5/LKcVY3t/ntXp1KFWpRr050qlOTjOFSLjKDXlNPun9meq6Zyz8bda0Oy1jTdluvZXtCFzb1fj7aPXTnFSjLDqZWU08M6F467V2Zxt5Z3xx2fZK31eytXdVZKCjVrUqb6a1CtjzOniTUv3ezxI9VrviXHlK2e+E8LCe4f1XpvSr3o9P0vRj6n43jOMYMsv1S/Ss0iInep37JGKNztwjvDgJxX2HtO43LurarsNLoShCpcfGUKnS5yUY/LCbfdtLweaPwdW8bqnNO+DGorihQ29HbPq0PiHZ+h6vV6sfTx0vP4+nP2OUn4O/h5r5aTa8xPn29Gu9YifCWQy2Q/B1MEPwIb8CAyRS8kpjXkCl5LXkheSl5A9a5Zq1KhzZbJnWqRhF3tSCcn5lK3qpL+ltI6L5oOOXFvhfxis9H2pqtvY6PdaZTuaSrWFKt11OucamJSWe2IZXtlfU4m03UL7SdYtNV0y5qWt7aVoXFvXpvEqdSElKMl900mdsaNzIcDOLmxrPROO+hW9pqNt80p17WpWtpTxh1KNSnmdLq94vH0zJHkc7DMZq5pp3rrUx/bdjt+M13qXKe+uJ29eJO6rPce7NUhX1OyoxoW9xbUI27pxjNzi0oJd1KTafnwdla7Ro8yHIfS3Nf28FuXS7atc06yjjF3bZjVS/dqxi+3j5l/JR5nCXKF/CEagtH/YiW3cNzV50frD4n2b+dS9L+jH3PqeI/Mtwn2rwYu+HXBS0Vd17WpZ0alvazoWtnCompzzUSlUn80mu3l5b+unkWnLOOuDHMTExPpqIhlXxvtL7jV9i6/wASv0fu0dq7YhbSv7nTNKqQd1V9KEYQ6JSblh+EvCTZ85uiy0blj5M9V2TV1mhqG6dxU7inBU10+rWrQVOc4RfdUqdNL5n5aXvLB83r3MNoWh8mm2Nu8PN9q03lY2Wn2tahQt5epSjCKjWj1TpuHZLyn+RyfrWv63uXWqusbh1e91W/q9p3N5WdWbS8LL8L7LsOJw8uTcZJ1SLTOteZ/wDC14j09dO1OPljW37yKbS3NtmMrm006nZ6hXpUVnpoqhKlN4X/AA5S7/RKX0OIV4PfOX3mPq8LbWptLdVlW1TadxOU4xpJTq2UpfjcYvtOnLy4du+WvLT9br6TyQbiu3uKWq6TYqb9SrZ07y5sotvu06HbH5RSRuw5L8LeK9Jmu9xMef8AaTEX8xL5Pkf21qlfiLuDdqpVIaXb6f8Aq71WsRqVqlSE+lfXpjDL+nVH6mnCri0tO579zWtjVdbb+7dYrWmI94+rFtUa0fzcZL8p/ZG3FHmb2jo/D2fDjgVpysbGVJ28tUpW7tqdGm+0lQg8Sc5d81JJYy2svuv1eFe8OVPY+ydtbnvZaXS3nZ6fS+JlStbmvXhcenibUcOCnltdS+vk58sXvF82THP5xqI94+ZZV1GoifR+5+wembA/SPbe1HTo07bTtyWN7d06K+WMLn0pKrCP2k8TS+smfh8xfHbi5w4453Ogbd1W3stInZULm1jW0+lVc+pNTalJZfzxa+x49xl49ahv/jVpW8dr07jSbbQMLSXVS9XqU+uVWaTaXU0l05a6Vh+We52nMDy/8XtqWVnxn0G30/UrVZaubarVpKePmlRrUl1xi8Z6Xj2znGSTx8lJx5c2PvHXUx6zH6O0TuInT4Pl535ubiNzmWO4t23lK71H9TXNt6lKhGiuiKTiumPb/efc8/5pf41u7vzt/wDDUj0XbW8eBmxuc603Ds/VLPTdlw0SpRlcU6dxKCuZZTWJpzy8R9sHkfMBubQ95cw25Nx7a1CGoaXdui6FzCMoqfTQhF9pJPtKLXdex2cau+VF61mK9f18+jC06rqZ93WPMr/sXhB/5RY//CPOee5pbt2W20krO8y3/wBSkf18c+MnDTdul8NaW3d1UL6eka/aXl8oUasfQpQilKb6oLOPtln3O9uYHlhvtcsNx6nSW7NV0yM1YulplSq6XU030+qowTzGLy+6wefx65cM4r9JnXbxr9tltW3G35HD7TLzhz+je3PdbpoztZ6lY391Stq6cZxVxBUqMWn4cn0yx++j6Xee+d1bN5C9r7v2Dd043drpelqpcOhGvGFFwhCo3GXbs8Jv2OW+OXMTuDjFVpaVRsv1Ntu3qetTsFU66leovFStJdm1l4iuyznu8NfW8AOZfTNj7Rnw64j6dV1HbEuuNvcU6Sru2hPLnRqUn+Ok221jLWWsNYxtycHNNPvWru3btNfj9JGSu+sT4ecb25huK/EHZtxtbdet2l1plxOE6lKnYUqMm4SU4/NFZXdI8qfg6h401+VG54Q6hX4WU9Mp7pqVqEqEbeld05Rj6sfUSjNKC+Tq7f1HLrPV4dqWpPSnWN+kxppvE78zsn5Ifgpv3Ifg6mCWIbJyBkvJRJS8AUUQvBSAtMtPuZopeANE39S13M0ykIGibKRCZSZkNEylJr3ZmmUmBaZWc+5mmPIF5Y8v6kABWe/kTeScg2ANslsMktgDIbG2SwE2Q2UyGQJkvyNv3JZBL8kvyU2SBmNCBAUvJXuSNMCyl5ITKQGi8lJmaZSYGiZSZmmUmUaJlZM0xplGiY8meR5AvKDKJyGQKyIWScoCskthknIA2JsTYmySEyWDZLZAMljbwSwE/IsgSBIAADT9hrySUBRWSEMDRMeSBpgaJlJmaZSYFplJmeR5LsaZHkzyPJdi8/cM/cjIZAvP3FknINk2Hn7ibJyLI2G2JsTYmyAbJbBkgGSWNktgDYgE33AQAAAPIgAoaZORgUUQmMC0xpkZGmBomPJnkeQLyPJGQyBeWGWTn7hn7gVkMk5FkCsiFkWQG2LIsiyACbFkTYA2IBNgDYgAAAAAAAAAaYgAoeSBpgVkeSQyBeRkZGBeQyRljyBWUGSchkCshknIssCsiyhBkBtiFkQDyITYsgPIgAAAAAAAAAAAAAAAAAADI0xABQEjy8gVkMiAB5DIgAeQyIAABN9xZAbYsgAAAAAAAAAAAH//2Q==">
+    <div><h1>Ajuste Expresso de Estoque</h1><div class="sub">Acompanhamento ao vivo · <span id="hojeTxt"></span></div></div>
+    <div class="sp"></div>
+    <span class="tag">👁 Somente visualização</span>
+    <div class="live" id="live"><span class="dot"></span><span id="liveTxt">Conectando…</span></div>
+    <button id="btnTv" title="Modo TV: fonte maior e tela cheia">⛶ Modo TV</button>
+  </header>
+
+  <div class="grid g-top">
+    <div class="card robo" id="robo"><div class="ic" id="roboIc">🤖</div><div><div class="sub">Robô que lança no sistema</div><div class="big" id="roboTxt">—</div><div class="small" id="roboDet"></div></div></div>
+    <div class="card"><h3>Fila agora</h3><div style="display:flex;gap:22px;flex-wrap:wrap"><div><div class="big" id="fPend">—</div><div class="small">na fila</div></div><div><div class="big" id="fExec">—</div><div class="small">ajustando</div></div><div><div class="big" id="fProb">—</div><div class="small">com problema (7 dias)</div></div></div></div>
+    <div class="card"><h3>💬 WhatsApp (suporte)</h3><div class="zap"><div><div class="big" id="zHoje">—</div><div class="small">hoje</div></div><div><div class="big" id="zSete" style="font-size:1.8rem">—</div><div class="small">nos últimos 7 dias</div></div><div><div class="big" id="zLojas" style="font-size:1.8rem">—</div><div class="small">lojas hoje</div></div></div></div>
+  </div>
+
+  <div class="grid g-kpi" id="kpis"></div>
+
+  <div class="grid g-2">
+    <div class="card"><h3>Últimos 7 dias <span class="small">— <span style="color:var(--neon)">■</span> pedidos <span style="color:var(--ok)">■</span> ajustados</span></h3><div id="chDias"></div></div>
+    <div class="card"><h3>Pedidos de hoje por hora</h3><div id="chHoras"></div></div>
+  </div>
+
+  <div class="grid g-3">
+    <div class="card"><h3>Movimento ao vivo</h3><div id="feed"></div></div>
+    <div class="card"><h3>Lojas de hoje</h3><div id="chLojas"></div></div>
+    <div class="card"><h3>Regionais de hoje</h3><div id="chReg"></div><h3 style="margin-top:18px">💬 WhatsApp por dia</h3><div id="chZap"></div></div>
+  </div>
+
+  <div class="card" style="margin-top:14px"><h3>⏳ Ajustes feitos que ainda não confirmaram a venda</h3><div id="alertas"></div></div>
+
+  <footer>Atualiza sozinho a cada poucos segundos · Esposende Calçados · Esta tela não permite alterar nada</footer>
+</div>
+
+<div class="card" id="erro"><div class="big">🔒</div><div class="big" id="erroTxt">Link inválido ou revogado</div><p class="sub">Peça um novo link à Controladoria.</p></div>
+
+<script>
+const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
+const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
+const INTERVALO=5000;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf=v=>v==null?'—':Number(v).toLocaleString('pt-BR');
+const COR={ok:'#17c964',warn:'#fab219',bad:'#f5455c',blue:'#4fa8ff',violet:'#9d6bff',aqua:'#22d3b6'};
+
+/* codigo secreto do link: vem depois do # (nao vai para o servidor nem para logs). Guardado so nesta aba. */
+function lerToken(){
+  let t=null;
+  try{const m=location.hash.match(/[#&]t=([A-Za-z0-9_-]{20,80})/);if(m)t=m[1]}catch(e){}
+  let guardou=false;
+  try{if(t){sessionStorage.setItem('pnl_t',t);guardou=true}else t=sessionStorage.getItem('pnl_t')}catch(e){}
+  try{if(t&&guardou&&location.hash)history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+  return t;
+}
+const TOKEN=lerToken();
+let ultimoOk=0,falhas=0,timer=null,primeira=true,vistos=new Set(),prevK={};
+
+function horaMin(d){return new Date(d).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
+function dur(min){if(min==null)return '—';if(min<1)return 'agora';if(min<60)return Math.round(min)+' min';const h=min/60;return h<48?(h.toFixed(h<10?1:0).replace('.',',')+' h'):Math.round(h/24)+' dias'}
+
+function kpi(l,v,n,c,id){const cur=String(v);const ch=id&&prevK[id]!==undefined&&prevK[id]!==cur;if(id)prevK[id]=cur;return '<div class="kpi '+(c||'')+(ch?' flash':'')+'"><div class="l">'+esc(l)+'</div><div class="v">'+esc(cur)+'</div><div class="n">'+esc(n||'')+'</div></div>'}
+function cols(items,hojeIdx){const max=Math.max(1,...items.map(i=>i.v));return '<div class="cols">'+items.map((i,ix)=>'<div class="col'+(ix===hojeIdx?' hoje':'')+'" title="'+esc(i.t||i.l)+'"><div class="cv">'+(i.v||'')+'</div><div class="cb" style="height:'+(i.v/max*78)+'%">'+(i.v2?'<div class="cb2" style="height:'+(i.v2/i.v*100)+'%"></div>':'')+'</div><div class="cl">'+esc(i.l)+'</div></div>').join('')+'</div>'}
+function hbars(items){if(!items.length)return '<div class="empty">Sem movimento hoje.</div>';const max=Math.max(1,...items.map(i=>i.v));return '<div class="hb">'+items.map(i=>'<div class="hbr"><div class="hbl" title="'+esc(i.l)+'">'+esc(i.l)+'</div><div class="hbt"><div class="hbf" style="width:'+Math.max(3,i.v/max*100)+'%;background:'+i.c+'"></div></div><div class="hbv">'+esc(i.t||i.v)+'</div></div>').join('')+'</div>'}
+
+const ST_TXT={CONCLUIDO:['Ajustado','p-ok'],PENDENTE:['Na fila','p-n'],EM_EXECUCAO:['Ajustando…','p-warn'],ERRO:['Problema','p-bad'],BLOQUEADO_DIVERGENCIA:['Em análise','p-bad'],CANCELADO:['Cancelado','p-g']};
+const VD_TXT={VENDA_CONFIRMADA:['💰 Vendeu','p-ok'],AGUARDANDO_VENDA:['⏳ Aguardando venda','p-warn'],VENDA_NAO_REALIZADA:['✖ Não vendeu','p-bad']};
+const ROBO_TXT={OCIOSO:['Aguardando pedidos','st-ok','🤖'],EXECUTANDO:['Ajustando agora','st-ok','⚙️'],SETA_FECHADO:['Sistema Seta fechado','st-bad','⚠️'],TELA_BLOQUEADA:['Tela do computador bloqueada','st-bad','⚠️'],SETA_TRAVADO:['Seta travado','st-bad','⚠️']};
+
+function render(d){
+  const h=d.hoje||{},f=d.fila||{},r=d.robo||{},z=d.whatsapp||{};
+  $('hojeTxt').textContent=new Date(d.agora).toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  /* robo */
+  const idade=r.ultimo_sinal?(new Date(d.agora)-new Date(r.ultimo_sinal))/60000:null;
+  const box=$('robo');
+  if(r.online){const t=ROBO_TXT[r.status]||[r.status||'Online','st-ok','🤖'];box.className='card robo '+(t[1]==='st-ok'?'on':'off');$('roboIc').textContent=t[2];$('roboTxt').className='big '+t[1];$('roboTxt').textContent='ONLINE · '+t[0];$('roboDet').textContent=(r.detalhe?r.detalhe+' · ':'')+'último sinal há '+dur(idade)}
+  else{box.className='card robo off';$('roboIc').textContent='🛑';$('roboTxt').className='big st-bad';$('roboTxt').textContent='OFFLINE';$('roboDet').textContent=r.ultimo_sinal?'sem sinal há '+dur(idade)+' — pedidos ficam na fila':'nenhum robô conectado'}
+  $('fPend').textContent=nf(f.pendentes);$('fExec').textContent=nf(f.executando);$('fProb').textContent=nf(f.problemas);
+  $('fProb').className='big '+(f.problemas?'st-bad':'');$('fPend').className='big '+(f.pendentes>3?'st-warn':'');
+  $('zHoje').textContent=nf(z.hoje);$('zSete').textContent=nf(z.sete_dias);$('zLojas').textContent=nf(z.lojas_hoje);
+  /* kpis */
+  const pct=h.ajustados?Math.round(h.vendeu/h.ajustados*100):0;
+  $('kpis').innerHTML=[
+    kpi('Pedidos hoje',nf(h.pedidos),'solicitações dos gerentes','n','k1'),
+    kpi('Ajustados',nf(h.ajustados),nf(h.unidades)+' unidades incluídas','g','k2'),
+    kpi('Lojas atendidas',nf(h.lojas),'com ajuste concluído','n','k3'),
+    kpi('Vendas confirmadas',h.ajustados?pct+'%':'—',nf(h.vendeu)+' de '+nf(h.ajustados)+' ajustes',h.ajustados?(pct>=80?'g':(pct>=50?'w':'b')):'n','k4'),
+    kpi('Aguardando venda',nf(h.aguardando),'ajustou e ainda não vendeu',h.aguardando?'w':'n','k5'),
+    kpi('Não vendeu',nf(h.nao_vendeu),'venda perdida / desistência',h.nao_vendeu?'b':'n','k6'),
+    kpi('Sem foto do comprovante',nf(h.sem_foto),'ajustados sem foto',h.sem_foto?'b':'n','k7'),
+    kpi('Foto não confere',nf(h.foto_nao_confere),'código diferente / ilegível',h.foto_nao_confere?'b':'n','k8'),
+    kpi('Erros hoje',nf(h.erros),'precisam de análise',h.erros?'b':'n','k9'),
+    kpi('💬 WhatsApp hoje',nf(z.hoje),nf(z.lojas_hoje)+' loja(s) acionaram o suporte',z.hoje?'z':'n','k10')
+  ].join('');
+  /* graficos */
+  const dias=(d.dias||[]);const hj=d.hoje_data;
+  $('chDias').innerHTML=cols(dias.map(x=>{const p=x.dia.split('-');return{l:p[2]+'/'+p[1],v:x.pedidos,v2:x.ajustados,t:p[2]+'/'+p[1]+': '+x.pedidos+' pedido(s), '+x.ajustados+' ajustado(s)'}}),dias.findIndex(x=>x.dia===hj));
+  $('chHoras').innerHTML=cols((d.horas||[]).map(x=>({l:String(x.h),v:x.pedidos,t:x.h+'h: '+x.pedidos+' pedido(s)'})),new Date().getHours());
+  $('chLojas').innerHTML=hbars((d.lojas||[]).map(x=>({l:(x.loja||'')+' '+(x.nome||''),v:x.pedidos,c:COR.blue,t:x.pedidos+(x.ajustados!==x.pedidos?' ('+x.ajustados+' aj.)':'')})));
+  $('chReg').innerHTML=hbars((d.regionais||[]).map(x=>({l:x.regional,v:x.pedidos,c:COR.violet,t:x.pedidos+(x.ajustados!==x.pedidos?' ('+x.ajustados+' aj.)':'')})));
+  const zd=(z.dias||[]);$('chZap').innerHTML=cols(zd.map(x=>{const p=x.dia.split('-');return{l:p[2]+'/'+p[1],v:x.n,t:p[2]+'/'+p[1]+': '+x.n}}),zd.findIndex(x=>x.dia===hj)).replace(/var\(--neon\)/g,'#25d366');
+  /* feed */
+  const F=d.feed||[];
+  if(!F.length)$('feed').innerHTML='<div class="empty">Nenhum movimento ainda.</div>';
+  else $('feed').innerHTML='<table><tr><th>Hora</th><th>Loja</th><th>Produto</th><th>Situação</th></tr>'+F.map(x=>{
+    const st=ST_TXT[x.status]||[x.status,'p-g'],vd=x.status==='CONCLUIDO'&&VD_TXT[x.venda]?VD_TXT[x.venda]:null;
+    const chave=x.id+'|'+x.status+'|'+x.venda,novo=!primeira&&!vistos.has(chave);
+    return '<tr class="'+(novo?'flash':'')+'"><td>'+horaMin(x.quando)+'</td><td>'+esc(x.loja||'')+' <span class="small">'+esc(x.nome||'')+'</span></td><td>'+esc(x.produto)+' <b>+'+esc(x.qtd)+'</b></td><td><span class="pill '+st[1]+'">'+esc(st[0])+'</span>'+(vd?' <span class="pill '+vd[1]+'">'+esc(vd[0])+'</span>':'')+(x.status==='CONCLUIDO'&&!x.foto?' <span class="pill p-bad">sem foto</span>':'')+(x.seg!=null&&x.status==='CONCLUIDO'?' <span class="small">'+x.seg+'s</span>':'')+'</td></tr>'}).join('')+'</table>';
+  vistos=new Set(F.map(x=>x.id+'|'+x.status+'|'+x.venda));
+  /* alertas */
+  const A=d.alertas||[];
+  $('alertas').innerHTML=A.length?'<table><tr><th>Loja</th><th>Produto</th><th class="c">Espera</th><th class="c">Comprovante</th></tr>'+A.map(x=>'<tr><td>'+esc(x.loja||'')+' <span class="small">'+esc(x.nome||'')+'</span></td><td>'+esc(x.produto)+' <b>+'+esc(x.qtd)+'</b></td><td class="c"><span class="pill '+(x.horas>=24?'p-bad':(x.horas>=4?'p-warn':'p-n'))+'">'+dur(x.horas*60)+'</span></td><td class="c">'+(x.foto?'<span class="pill p-ok">com foto</span>':'<span class="pill p-bad">sem foto</span>')+'</td></tr>').join('')+'</table>':'<div class="empty">✅ Nenhum ajuste aguardando confirmação de venda.</div>';
+  primeira=false;
+}
+
+function status(ok){
+  const l=$('live');l.classList.toggle('off',!ok);
+  $('liveTxt').textContent=ok?('AO VIVO · atualizado '+new Date().toLocaleTimeString('pt-BR')):('Sem conexão — tentando de novo… (último dado '+(ultimoOk?new Date(ultimoOk).toLocaleTimeString('pt-BR'):'—')+')');
+}
+function invalido(msg){$('app').style.display='none';$('erro').style.display='block';if(msg)$('erroTxt').textContent=msg;clearInterval(timer)}
+
+async function atualizar(){
+  if(document.hidden)return;
+  if(!TOKEN){invalido('Link incompleto');return}
+  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),8000);
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/rpc/ajuste_painel',{method:'POST',signal:ctl.signal,cache:'no-store',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:TOKEN})});
+    if(r.status===400||r.status===401||r.status===403){const j=await r.json().catch(()=>({}));if(/link inv/i.test(j.message||'')||r.status!==400){invalido('Link inválido ou revogado');return}}
+    if(!r.ok)throw new Error('http '+r.status);
+    const d=await r.json();render(d);ultimoOk=Date.now();falhas=0;status(true);
+  }catch(e){falhas++;status(false)}finally{clearTimeout(to)}
+}
+function iniciar(){atualizar();timer=setInterval(atualizar,INTERVALO)}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)atualizar()});
+setInterval(()=>{if(ultimoOk&&Date.now()-ultimoOk>INTERVALO*4)status(false)},3000);
+$('btnTv').onclick=()=>{document.body.classList.toggle('tv');try{const el=document.documentElement;if(!document.fullscreenElement&&el.requestFullscreen)el.requestFullscreen();else if(document.exitFullscreen&&document.fullscreenElement)document.exitFullscreen()}catch(e){}};
+iniciar();
+</script>
+</body>
+</html>
