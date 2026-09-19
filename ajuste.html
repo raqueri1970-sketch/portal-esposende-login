@@ -161,6 +161,10 @@ const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
 const WHATS='5581989087348';
+const BUILD='20260919-104558';
+/* se o navegador guardou uma versao antiga desta pagina, busca a nova e recarrega (uma vez por versao) */
+(async()=>{try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);
+  if(m&&m[1]!==BUILD&&m[1].indexOf('@@')<0){let k='';try{k=sessionStorage.getItem('ae_build')||''}catch(e){}if(k!==m[1]){try{sessionStorage.setItem('ae_build',m[1])}catch(e){}location.reload()}}}catch(e){}})();
 const DOMINIO='@ajuste.esposende.app';
 const IDLE_MIN=30;
 // armazenamento resiliente: se o navegador estiver com o espaco local CHEIO (quota) ou bloqueado, a sessao fica na memoria e o login continua funcionando
