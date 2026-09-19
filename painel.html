@@ -8,75 +8,107 @@
 <meta name="theme-color" content="#0b0c14">
 <title>Ajuste Expresso ao vivo</title>
 <style>
-:root{--page:#0b0c14;--surface:#171927;--surface2:#202336;--ink:#ffffff;--muted:#e6eaf8;--border:rgba(255,255,255,.16);--neon:#4fa8ff;--violet:#9d6bff;--ok:#17c964;--warn:#fab219;--bad:#f5455c;--aqua:#22d3b6;--gray:#8b93b3}
+:root{--page:#0b0c14;--surface:#171927;--surface2:#202336;--border:rgba(255,255,255,.16);--neon:#4fa8ff;--violet:#9d6bff;--ok:#17c964;--warn:#fab219;--bad:#f5455c;--aqua:#22d3b6;--gray:#8b93b3}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{color:#fff;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+html,body{color:#fff;font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 body{background:radial-gradient(1100px 700px at 8% -10%,rgba(79,168,255,.10),transparent 60%),radial-gradient(900px 600px at 100% 0%,rgba(157,107,255,.09),transparent 55%),var(--page);background-attachment:fixed;min-height:100vh}
 b,strong{font-weight:700}
-.wrap{max-width:1600px;margin:0 auto;padding:22px 28px 60px}
-header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
-.logo{height:64px;background:#fff;border-radius:12px;padding:6px 10px}
-h1{font-size:26px;line-height:1.2;font-weight:800}
-.sub{font-size:14px;color:#e6eaf8;margin-top:2px}
+.wrap{padding:12px 18px 14px;display:flex;flex-direction:column;gap:10px;min-height:100vh}
+/* cabecalho */
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{height:46px;background:#fff;border-radius:10px;padding:4px 8px}
+h1{font-size:22px;line-height:1.15;font-weight:800}
+.sub{font-size:13px;color:#e6eaf8}
 .sp{flex:1}
-.live{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;padding:9px 16px;border-radius:999px;background:var(--surface);border:1px solid var(--border)}
-.dot{width:12px;height:12px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(23,201,100,.7);animation:pulso 1.6s infinite}
+.live{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--border);white-space:nowrap}
+.dot{width:11px;height:11px;border-radius:50%;background:var(--ok);animation:pulso 1.6s infinite}
 .live.off .dot{background:var(--bad);animation:none}
-@keyframes pulso{0%{box-shadow:0 0 0 0 rgba(23,201,100,.6)}70%{box-shadow:0 0 0 12px rgba(23,201,100,0)}100%{box-shadow:0 0 0 0 rgba(23,201,100,0)}}
-.tag{font-size:14px;color:#fff;background:rgba(79,168,255,.12);border:1px solid rgba(79,168,255,.35);padding:9px 14px;border-radius:10px;font-weight:600}
-button{font:inherit;font-size:14.5px;color:#fff;background:#262a44;border:1px solid var(--border);border-radius:9px;padding:10px 16px;cursor:pointer;font-weight:700}
+@keyframes pulso{0%{box-shadow:0 0 0 0 rgba(23,201,100,.6)}70%{box-shadow:0 0 0 11px rgba(23,201,100,0)}100%{box-shadow:0 0 0 0 rgba(23,201,100,0)}}
+.tag{font-size:13px;background:rgba(79,168,255,.12);border:1px solid rgba(79,168,255,.35);padding:7px 12px;border-radius:10px;font-weight:600;white-space:nowrap}
+button{font:inherit;font-size:13.5px;color:#fff;background:#262a44;border:1px solid var(--border);border-radius:9px;padding:7px 13px;cursor:pointer;font-weight:700}
 button:hover{filter:brightness(1.15)}
-.grid{display:grid;gap:14px}
-.g-top{grid-template-columns:1.3fr 1fr 1fr}
-.g-kpi{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:14px}
-.g-2{grid-template-columns:1fr 1fr;margin-top:14px}
-.g-3{grid-template-columns:1.8fr 1fr 1fr;margin-top:14px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;min-width:0}
-.card h3{font-size:14.5px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;font-weight:700}
-.big{font-size:46px;font-weight:800;line-height:1.1}
-.robo{display:flex;align-items:center;gap:18px;border-radius:16px;padding:20px 24px}
-.robo .ic{font-size:46px}
-.robo.on{background:linear-gradient(135deg,rgba(23,201,100,.22),rgba(23,201,100,.04));border-color:var(--ok);box-shadow:0 0 30px rgba(23,201,100,.12)}
-.robo.off{background:linear-gradient(135deg,rgba(245,69,92,.24),rgba(245,69,92,.04));border-color:var(--bad);box-shadow:0 0 30px rgba(245,69,92,.14)}
-.st-ok{color:#4dfc9a;text-shadow:0 0 22px rgba(23,201,100,.35)}.st-warn{color:#ffd166}.st-bad{color:#ff7b8d;text-shadow:0 0 22px rgba(245,69,92,.4)}
-.kpi{background:linear-gradient(160deg,var(--surface),#191b29);border:1px solid var(--border);border-radius:12px;padding:16px 10px;text-align:center}
-.kpi .l{font-size:13px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;margin-bottom:4px}
-.kpi .v{font-size:32px;font-weight:800;line-height:1.15}
-.kpi .n{font-size:14px;margin-top:3px}
+/* herois */
+.heroes{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.hero{border-radius:14px;padding:10px 16px;text-align:center;border:1px solid var(--border);min-width:0}
+.hero .hl{font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.hero .hv{font-size:38px;font-weight:800;line-height:1.1;margin:2px 0}
+.hero .hv.txt{font-size:26px;padding:6px 0}
+.hero .hn{font-size:13.5px}
+.hero.g{background:linear-gradient(135deg,rgba(23,201,100,.22),rgba(23,201,100,.04));border-color:var(--ok);box-shadow:0 0 30px rgba(23,201,100,.12)}.hero.g .hv{color:#4dfc9a;text-shadow:0 0 22px rgba(23,201,100,.35)}
+.hero.b{background:linear-gradient(135deg,rgba(245,69,92,.24),rgba(245,69,92,.04));border-color:var(--bad);box-shadow:0 0 30px rgba(245,69,92,.14)}.hero.b .hv{color:#ff7b8d;text-shadow:0 0 22px rgba(245,69,92,.4)}
+.hero.w{background:linear-gradient(135deg,rgba(250,178,25,.22),rgba(250,178,25,.04));border-color:var(--warn)}.hero.w .hv{color:#ffd166}
+.hero.n{background:linear-gradient(135deg,rgba(79,168,255,.22),rgba(79,168,255,.04));border-color:var(--neon)}.hero.n .hv{color:#8cc8ff}
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(10,1fr);gap:8px}
+.kpi{background:linear-gradient(160deg,var(--surface),#191b29);border:1px solid var(--border);border-radius:12px;padding:8px 6px;text-align:center;min-width:0}
+.kpi .l{font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;font-weight:600;line-height:1.2;min-height:28px;display:flex;align-items:center;justify-content:center}
+.kpi .v{font-size:27px;font-weight:800;line-height:1.1}
+.kpi .n{font-size:12px;margin-top:2px;line-height:1.2;color:#e6eaf8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kpi.g .v{color:#4dfc9a}.kpi.w .v{color:#ffd166}.kpi.b .v{color:#ff7b8d}.kpi.n .v{color:#8cc8ff}.kpi.z .v{color:#4dfc9a}
-.kpi.b{border-color:rgba(245,69,92,.5)}.kpi.w{border-color:rgba(250,178,25,.45)}.kpi.g{border-color:rgba(23,201,100,.4)}.kpi.z{border-color:rgba(37,211,102,.5)}
+.kpi.b{border-color:rgba(245,69,92,.5)}.kpi.w{border-color:rgba(250,178,25,.45)}.kpi.z{border-color:rgba(37,211,102,.5)}
 .flash{animation:fl 1.4s ease-out}
 @keyframes fl{0%{background:rgba(79,168,255,.55)}100%{background:transparent}}
-.cols{display:flex;align-items:flex-end;gap:4px;height:230px;padding-top:6px}
-.col{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;border-radius:6px;padding:0 1px}
-.col .cv{font-size:12.5px;font-weight:700;min-height:16px}
+/* areas de conteudo: ocupam o restante da tela */
+.rowA,.rowB{display:grid;gap:10px;min-height:0;flex:1}
+.rowA{grid-template-columns:repeat(4,1fr)}
+.rowB{grid-template-columns:1.5fr 1.15fr 1fr 1fr}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 12px;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.card h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;font-weight:700;white-space:nowrap;display:flex;justify-content:space-between;gap:8px}
+.card h3 span{font-weight:600;text-transform:none;letter-spacing:0;font-size:12px}
+.cbody{position:relative;flex:1;min-height:0}
+/* rosca */
+.donut{position:absolute;inset:0;display:flex;gap:10px;align-items:center;justify-content:center}
+.donut svg{height:100%;max-height:170px;aspect-ratio:1;flex:none}
+.leg{min-width:0}
+.lg{display:flex;gap:7px;align-items:center;padding:3px 4px;font-size:13.5px;white-space:nowrap}
+.lg i{width:11px;height:11px;border-radius:3px;flex:none}.lg span{flex:1;overflow:hidden;text-overflow:ellipsis}.lg b{min-width:22px;text-align:right}.lg em{font-style:normal;min-width:34px;text-align:right;color:#e6eaf8;font-size:12px}
+.dc1{font-size:34px;font-weight:800;fill:#fff}.dc2{font-size:11px;fill:#e6eaf8;text-transform:uppercase}
+/* colunas */
+.cols{position:absolute;inset:0;display:flex;align-items:flex-end;gap:3px}
+.col{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.col .cv{font-size:12px;font-weight:700;min-height:15px}
+.col .bar{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;min-height:0}
 .col .cb{width:100%;max-width:34px;background:var(--neon);border-radius:5px 5px 0 0;position:relative;overflow:hidden;min-height:2px}
 .col .cb2{position:absolute;left:0;right:0;bottom:0;background:var(--ok)}
-.col .cl{font-size:12px;margin-top:5px;white-space:nowrap;color:#fff}
+.col .cl{font-size:11.5px;margin-top:3px;white-space:nowrap}
 .col.hoje .cl{font-weight:800}
-.hb{display:flex;flex-direction:column;gap:6px}
-.hbr{display:grid;grid-template-columns:minmax(120px,36%) 1fr 104px;gap:10px;align-items:center;padding:3px 6px;border-radius:8px}
-.hbl{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hbt{background:rgba(255,255,255,.08);border-radius:8px;height:16px;overflow:hidden}
+/* barras horizontais */
+.hb{display:flex;flex-direction:column;gap:5px}
+.hbr{display:grid;grid-template-columns:minmax(80px,38%) 1fr auto;gap:8px;align-items:center}
+.hbl{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbt{background:rgba(255,255,255,.08);border-radius:8px;height:13px;overflow:hidden}
 .hbf{height:100%;border-radius:8px}
-.hbv{font-weight:700;font-size:15px;text-align:right;white-space:nowrap}
-table{border-collapse:collapse;width:100%;font-size:14.5px}
-th{background:#1c1f33;color:#fff;text-align:left;padding:11px 12px;white-space:nowrap;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
-td{padding:10px 12px;border-top:1px solid var(--border);vertical-align:top;color:#fff}
-tr:hover td{background:#1e2136}
+.hbv{font-weight:700;font-size:13.5px;text-align:right;white-space:nowrap}
+/* tabelas */
+.tw{position:absolute;inset:0;overflow:hidden}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{background:#1c1f33;text-align:left;padding:6px 8px;white-space:nowrap;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+td{padding:5px 8px;border-top:1px solid var(--border);vertical-align:middle}
 td.c,th.c{text-align:center}
-.pill{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.pill{display:inline-block;font-size:11.5px;font-weight:800;border-radius:999px;padding:2px 9px;white-space:nowrap}
 .p-ok{background:rgba(23,201,100,.2);color:#6dffab}.p-warn{background:rgba(250,178,25,.2);color:#ffd166}.p-bad{background:rgba(245,69,92,.22);color:#ff8fa0}.p-n{background:rgba(79,168,255,.2);color:#9fd0ff}.p-g{background:rgba(139,147,179,.25);color:#e6eaf8}
-.small{font-size:13.5px;color:#e6eaf8}
-.empty{color:#e6eaf8;padding:14px;text-align:center;font-size:15px}
-.zap{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
-#erro{display:none;margin:60px auto;max-width:560px;text-align:center;padding:30px}
-#erro .big{font-size:30px}
-footer{margin-top:18px;color:#e6eaf8;font-size:13.5px;text-align:center}
-#feed,#alertas{overflow-x:auto}
-body.tv{zoom:1.25}
-@media(max-width:1100px){.g-top,.g-2,.g-3{grid-template-columns:1fr}h1{font-size:22px}}
-@media(max-width:600px){.wrap{padding:14px 16px 32px}.logo{height:48px}.hbr{grid-template-columns:90px 1fr auto}.pill{white-space:normal}td{padding:8px 6px}th{padding:8px 6px}}
+.small{font-size:12px;color:#e6eaf8}
+.empty{color:#e6eaf8;padding:10px;text-align:center;font-size:14px}
+.st-ok{color:#4dfc9a}.st-warn{color:#ffd166}.st-bad{color:#ff7b8d}
+.split{position:absolute;inset:0;display:flex;flex-direction:column;gap:6px}
+.split .a{flex:1;min-height:0;position:relative;overflow:hidden}.split .b{height:70px;position:relative;flex:none}
+.split h4{font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:2px 0 3px}
+#erro{display:none;margin:60px auto;max-width:560px;text-align:center;padding:30px;background:var(--surface);border:1px solid var(--border);border-radius:14px}
+#erro .big{font-size:30px;font-weight:800}
+body.tv .tag,body.tv #btnTv{display:none}
+body.tv{cursor:none}
+/* tela unica: so em monitor/TV; em telas menores rola normalmente */
+@media(min-width:1150px) and (min-height:640px){
+  html,body{height:100vh;overflow:hidden}
+  .wrap{height:100vh;min-height:0}
+  .rowA{flex:5}.rowB{flex:6}
+}
+@media(min-width:1700px) and (min-height:900px){html,body{font-size:16px}.kpi .v{font-size:30px}.hero .hv{font-size:42px}}
+@media(max-width:1149px),(max-height:639px){
+  .heroes{grid-template-columns:repeat(2,1fr)}.kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .rowA,.rowB{grid-template-columns:1fr;flex:none}.card{min-height:230px}.tw{position:static;overflow-x:auto}.cbody{min-height:170px}
+}
+@media(max-width:600px){.heroes{grid-template-columns:1fr}.logo{height:40px}h1{font-size:19px}.pill{white-space:normal}}
 </style>
 </head>
 <body>
@@ -87,34 +119,28 @@ body.tv{zoom:1.25}
     <div class="sp"></div>
     <span class="tag">👁 Somente visualização</span>
     <div class="live" id="live"><span class="dot"></span><span id="liveTxt">Conectando…</span></div>
-    <button id="btnTv" title="Modo TV: fonte maior e tela cheia">⛶ Modo TV</button>
+    <button id="btnTv" title="Tela cheia">⛶ Modo TV</button>
   </header>
 
-  <div class="grid g-top">
-    <div class="card robo" id="robo"><div class="ic" id="roboIc">🤖</div><div><div class="sub">Robô que lança no sistema</div><div class="big" id="roboTxt">—</div><div class="small" id="roboDet"></div></div></div>
-    <div class="card"><h3>Fila agora</h3><div style="display:flex;gap:22px;flex-wrap:wrap"><div><div class="big" id="fPend">—</div><div class="small">na fila</div></div><div><div class="big" id="fExec">—</div><div class="small">ajustando</div></div><div><div class="big" id="fProb">—</div><div class="small">com problema (7 dias)</div></div></div></div>
-    <div class="card"><h3>💬 WhatsApp (suporte)</h3><div class="zap"><div><div class="big" id="zHoje">—</div><div class="small">hoje</div></div><div><div class="big" id="zSete" style="font-size:32px">—</div><div class="small">nos últimos 7 dias</div></div><div><div class="big" id="zLojas" style="font-size:32px">—</div><div class="small">lojas hoje</div></div></div></div>
+  <div class="heroes" id="heroes"></div>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="rowA">
+    <div class="card"><h3>Situação dos pedidos de hoje</h3><div class="cbody" id="dSit"></div></div>
+    <div class="card"><h3>Controle da venda</h3><div class="cbody" id="dVenda"></div></div>
+    <div class="card"><h3>Últimos 7 dias <span><b style="color:var(--neon)">■</b> pedidos <b style="color:var(--ok)">■</b> ajustados</span></h3><div class="cbody" id="chDias"></div></div>
+    <div class="card"><h3>Pedidos de hoje por hora</h3><div class="cbody" id="chHoras"></div></div>
   </div>
 
-  <div class="grid g-kpi" id="kpis"></div>
-
-  <div class="grid g-2">
-    <div class="card"><h3>Últimos 7 dias <span class="small">— <span style="color:var(--neon)">■</span> pedidos <span style="color:var(--ok)">■</span> ajustados</span></h3><div id="chDias"></div></div>
-    <div class="card"><h3>Pedidos de hoje por hora</h3><div id="chHoras"></div></div>
+  <div class="rowB">
+    <div class="card"><h3>Movimento ao vivo</h3><div class="cbody"><div class="tw" id="feed"></div></div></div>
+    <div class="card"><h3>⏳ Aguardando confirmar a venda</h3><div class="cbody"><div class="tw" id="alertas"></div></div></div>
+    <div class="card"><h3>Lojas de hoje</h3><div class="cbody"><div class="tw" id="chLojas" style="padding-top:2px"></div></div></div>
+    <div class="card"><h3>Regionais · 💬 WhatsApp</h3><div class="cbody"><div class="split"><div class="a" id="chReg"></div><h4>💬 WhatsApp por dia</h4><div class="b"><div class="cols" id="chZap"></div></div></div></div></div>
   </div>
-
-  <div class="grid g-3">
-    <div class="card"><h3>Movimento ao vivo</h3><div id="feed"></div></div>
-    <div class="card"><h3>Lojas de hoje</h3><div id="chLojas"></div></div>
-    <div class="card"><h3>Regionais de hoje</h3><div id="chReg"></div><h3 style="margin-top:18px">💬 WhatsApp por dia</h3><div id="chZap"></div></div>
-  </div>
-
-  <div class="card" style="margin-top:14px"><h3>⏳ Ajustes feitos que ainda não confirmaram a venda</h3><div id="alertas"></div></div>
-
-  <footer>Atualiza sozinho a cada poucos segundos · Esposende Calçados · Esta tela não permite alterar nada</footer>
 </div>
 
-<div class="card" id="erro"><div class="big">🔒</div><div class="big" id="erroTxt">Link inválido ou revogado</div><p class="sub">Peça um novo link à Controladoria.</p></div>
+<div id="erro"><div class="big">🔒</div><div class="big" id="erroTxt">Link inválido ou revogado</div><p class="sub" style="margin-top:8px">Peça um novo link à Controladoria.</p></div>
 
 <script>
 const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
@@ -123,7 +149,7 @@ const INTERVALO=5000;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=v=>v==null?'—':Number(v).toLocaleString('pt-BR');
-const COR={ok:'#17c964',warn:'#fab219',bad:'#f5455c',blue:'#4fa8ff',violet:'#9d6bff',aqua:'#22d3b6'};
+const COR={ok:'#17c964',warn:'#fab219',bad:'#f5455c',blue:'#4fa8ff',violet:'#9d6bff',aqua:'#22d3b6',gray:'#8b93b3',zap:'#25d366'};
 
 /* codigo secreto do link: vem depois do # (nao vai para o servidor nem para logs). Guardado so nesta aba. */
 function lerToken(){
@@ -135,64 +161,77 @@ function lerToken(){
   return t;
 }
 const TOKEN=lerToken();
-let ultimoOk=0,falhas=0,timer=null,primeira=true,vistos=new Set(),prevK={};
+let ultimoOk=0,timer=null,primeira=true,vistos=new Set(),prevK={},ULT=null;
 
 function horaMin(d){return new Date(d).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
 function dur(min){if(min==null)return '—';if(min<1)return 'agora';if(min<60)return Math.round(min)+' min';const h=min/60;return h<48?(h.toFixed(h<10?1:0).replace('.',',')+' h'):Math.round(h/24)+' dias'}
-
+function hero(c,l,v,n,txt){return '<div class="hero '+c+'"><div class="hl">'+esc(l)+'</div><div class="hv'+(txt?' txt':'')+'">'+esc(v)+'</div><div class="hn">'+esc(n||'')+'</div></div>'}
 function kpi(l,v,n,c,id){const cur=String(v);const ch=id&&prevK[id]!==undefined&&prevK[id]!==cur;if(id)prevK[id]=cur;return '<div class="kpi '+(c||'')+(ch?' flash':'')+'"><div class="l">'+esc(l)+'</div><div class="v">'+esc(cur)+'</div><div class="n">'+esc(n||'')+'</div></div>'}
-function cols(items,hojeIdx){const max=Math.max(1,...items.map(i=>i.v));return '<div class="cols">'+items.map((i,ix)=>'<div class="col'+(ix===hojeIdx?' hoje':'')+'" title="'+esc(i.t||i.l)+'"><div class="cv">'+(i.v||'')+'</div><div class="cb" style="height:'+(i.v/max*78)+'%">'+(i.v2?'<div class="cb2" style="height:'+(i.v2/i.v*100)+'%"></div>':'')+'</div><div class="cl">'+esc(i.l)+'</div></div>').join('')+'</div>'}
+function cols(items,hojeIdx){const max=Math.max(1,...items.map(i=>i.v));return items.map((i,ix)=>'<div class="col'+(ix===hojeIdx?' hoje':'')+'" title="'+esc(i.t||i.l)+'"><div class="cv">'+(i.v||'')+'</div><div class="bar"><div class="cb" style="height:'+Math.max(i.v?4:0,i.v/max*100)+'%;'+(i.c?'background:'+i.c:'')+'">'+(i.v2?'<div class="cb2" style="height:'+(i.v2/i.v*100)+'%"></div>':'')+'</div></div><div class="cl">'+esc(i.l)+'</div></div>').join('')}
 function hbars(items){if(!items.length)return '<div class="empty">Sem movimento hoje.</div>';const max=Math.max(1,...items.map(i=>i.v));return '<div class="hb">'+items.map(i=>'<div class="hbr"><div class="hbl" title="'+esc(i.l)+'">'+esc(i.l)+'</div><div class="hbt"><div class="hbf" style="width:'+Math.max(3,i.v/max*100)+'%;background:'+i.c+'"></div></div><div class="hbv">'+esc(i.t||i.v)+'</div></div>').join('')+'</div>'}
+function donut(items,centro){
+  const its=items.filter(i=>i.v>0),tot=its.reduce((a,i)=>a+i.v,0);
+  if(!tot)return '<div class="empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">Sem pedidos hoje.</div>';
+  const R=62,C=2*Math.PI*R;let off=0;
+  const segs=its.map(i=>{const len=i.v/tot*C;const s='<circle cx="90" cy="90" r="'+R+'" fill="none" stroke="'+i.c+'" stroke-width="26" stroke-dasharray="'+len+' '+(C-len)+'" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 90 90)"><title>'+esc(i.l)+': '+i.v+'</title></circle>';off+=len;return s}).join('');
+  const leg=items.map(i=>'<div class="lg"><i style="background:'+i.c+'"></i><span>'+esc(i.l)+'</span><b>'+i.v+'</b><em>'+Math.round(i.v/tot*100)+'%</em></div>').join('');
+  return '<div class="donut"><svg viewBox="0 0 180 180"><circle cx="90" cy="90" r="'+R+'" fill="none" stroke="rgba(128,128,160,.25)" stroke-width="26"/>'+segs+'<text x="90" y="92" text-anchor="middle" class="dc1">'+tot+'</text><text x="90" y="112" text-anchor="middle" class="dc2">'+esc(centro)+'</text></svg><div class="leg">'+leg+'</div></div>';
+}
+/* tira as linhas que nao cabem, para nunca aparecer linha cortada nem barra de rolagem */
+function ajustar(el){const t=el.querySelector('table');if(!t)return;const rows=t.querySelectorAll('tr');for(let i=rows.length-1;i>1&&t.offsetHeight>el.clientHeight;i--)rows[i].remove()}
 
 const ST_TXT={CONCLUIDO:['Ajustado','p-ok'],PENDENTE:['Na fila','p-n'],EM_EXECUCAO:['Ajustando…','p-warn'],ERRO:['Problema','p-bad'],BLOQUEADO_DIVERGENCIA:['Em análise','p-bad'],CANCELADO:['Cancelado','p-g']};
-const VD_TXT={VENDA_CONFIRMADA:['💰 Vendeu','p-ok'],AGUARDANDO_VENDA:['⏳ Aguardando venda','p-warn'],VENDA_NAO_REALIZADA:['✖ Não vendeu','p-bad']};
-const ROBO_TXT={OCIOSO:['Aguardando pedidos','st-ok','🤖'],EXECUTANDO:['Ajustando agora','st-ok','⚙️'],SETA_FECHADO:['Sistema Seta fechado','st-bad','⚠️'],TELA_BLOQUEADA:['Tela do computador bloqueada','st-bad','⚠️'],SETA_TRAVADO:['Seta travado','st-bad','⚠️']};
+const VD_TXT={VENDA_CONFIRMADA:['💰 Vendeu','p-ok'],AGUARDANDO_VENDA:['⏳ Aguardando','p-warn'],VENDA_NAO_REALIZADA:['✖ Não vendeu','p-bad']};
+const ROBO_TXT={OCIOSO:['Aguardando pedidos','st-ok','🤖'],EXECUTANDO:['Ajustando agora','st-ok','⚙️'],SETA_FECHADO:['Seta fechado','st-bad','⚠️'],TELA_BLOQUEADA:['Tela bloqueada','st-bad','⚠️'],SETA_TRAVADO:['Seta travado','st-bad','⚠️']};
 
 function render(d){
-  const h=d.hoje||{},f=d.fila||{},r=d.robo||{},z=d.whatsapp||{};
+  ULT=d;
+  const h=d.hoje||{},f=d.fila||{},r=d.robo||{},z=d.whatsapp||{},A=d.alertas||[];
   $('hojeTxt').textContent=new Date(d.agora).toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-  /* robo */
   const idade=r.ultimo_sinal?(new Date(d.agora)-new Date(r.ultimo_sinal))/60000:null;
-  const box=$('robo');
-  if(r.online){const t=ROBO_TXT[r.status]||[r.status||'Online','st-ok','🤖'];box.className='card robo '+(t[1]==='st-ok'?'on':'off');$('roboIc').textContent=t[2];$('roboTxt').className='big '+t[1];$('roboTxt').textContent='ONLINE · '+t[0];$('roboDet').textContent=(r.detalhe?r.detalhe+' · ':'')+'último sinal há '+dur(idade)}
-  else{box.className='card robo off';$('roboIc').textContent='🛑';$('roboTxt').className='big st-bad';$('roboTxt').textContent='OFFLINE';$('roboDet').textContent=r.ultimo_sinal?'sem sinal há '+dur(idade)+' — pedidos ficam na fila':'nenhum robô conectado'}
-  $('fPend').textContent=nf(f.pendentes);$('fExec').textContent=nf(f.executando);$('fProb').textContent=nf(f.problemas);
-  $('fProb').className='big '+(f.problemas?'st-bad':'');$('fPend').className='big '+(f.pendentes>3?'st-warn':'');
-  $('zHoje').textContent=nf(z.hoje);$('zSete').textContent=nf(z.sete_dias);$('zLojas').textContent=nf(z.lojas_hoje);
-  /* kpis */
   const pct=h.ajustados?Math.round(h.vendeu/h.ajustados*100):0;
+  const a24=A.filter(x=>x.horas>=24).length;
+  const alertas=(h.sem_foto||0)+(h.foto_nao_confere||0)+(h.erros||0)+a24;
+  let roboH;
+  if(r.online){const t=ROBO_TXT[r.status]||[r.status||'Online','st-ok','🤖'];roboH=hero(t[1]==='st-ok'?'g':'b','Robô · online',t[2]+' '+t[0],'fila '+nf(f.pendentes)+' · ajustando '+nf(f.executando)+' · problemas '+nf(f.problemas)+' · sinal há '+dur(idade),1)}
+  else roboH=hero('b','Robô · OFFLINE','🛑 Sem sinal',(r.ultimo_sinal?'há '+dur(idade)+' — ':'')+'pedidos ficam na fila ('+nf(f.pendentes)+' agora)',1);
+  $('heroes').innerHTML=roboH+
+    hero('g','Ajustes concluídos hoje',nf(h.ajustados),nf(h.unidades)+' unidades incluídas · '+nf(h.lojas)+' loja(s)')+
+    hero(h.ajustados?(pct>=80?'g':(pct>=50?'w':'b')):'n','Vendas confirmadas',h.ajustados?pct+'%':'—',nf(h.vendeu)+' de '+nf(h.ajustados)+' ajustes · '+nf(h.aguardando)+' aguardando')+
+    hero(alertas?'b':'g','Alertas de auditoria',nf(alertas),'sem foto, foto não confere, erros e espera > 24h');
   $('kpis').innerHTML=[
-    kpi('Pedidos hoje',nf(h.pedidos),'solicitações dos gerentes','n','k1'),
-    kpi('Ajustados',nf(h.ajustados),nf(h.unidades)+' unidades incluídas','g','k2'),
-    kpi('Lojas atendidas',nf(h.lojas),'com ajuste concluído','n','k3'),
-    kpi('Vendas confirmadas',h.ajustados?pct+'%':'—',nf(h.vendeu)+' de '+nf(h.ajustados)+' ajustes',h.ajustados?(pct>=80?'g':(pct>=50?'w':'b')):'n','k4'),
-    kpi('Aguardando venda',nf(h.aguardando),'ajustou e ainda não vendeu',h.aguardando?'w':'n','k5'),
-    kpi('Não vendeu',nf(h.nao_vendeu),'venda perdida / desistência',h.nao_vendeu?'b':'n','k6'),
-    kpi('Sem foto do comprovante',nf(h.sem_foto),'ajustados sem foto',h.sem_foto?'b':'n','k7'),
-    kpi('Foto não confere',nf(h.foto_nao_confere),'código diferente / ilegível',h.foto_nao_confere?'b':'n','k8'),
-    kpi('Erros hoje',nf(h.erros),'precisam de análise',h.erros?'b':'n','k9'),
-    kpi('💬 WhatsApp hoje',nf(z.hoje),nf(z.lojas_hoje)+' loja(s) acionaram o suporte',z.hoje?'z':'n','k10')
+    kpi('Pedidos hoje',nf(h.pedidos),'solicitações','n','k1'),
+    kpi('Lojas atendidas',nf(h.lojas),'com ajuste concluído','n','k2'),
+    kpi('Unidades',nf(h.unidades),'incluídas no estoque','n','k3'),
+    kpi('Aguardando venda',nf(h.aguardando),'ajustou, não vendeu ainda',h.aguardando?'w':'n','k4'),
+    kpi('Não vendeu',nf(h.nao_vendeu),'venda perdida',h.nao_vendeu?'b':'n','k5'),
+    kpi('Sem foto',nf(h.sem_foto),'sem comprovante',h.sem_foto?'b':'n','k6'),
+    kpi('Foto não confere',nf(h.foto_nao_confere),'código diferente',h.foto_nao_confere?'b':'n','k7'),
+    kpi('Erros hoje',nf(h.erros),'precisam de análise',h.erros?'b':'n','k8'),
+    (h.fora_cadastro!==undefined?kpi('Fora do cadastro',nf(h.fora_cadastro),'CPF não está no Seta',h.fora_cadastro?'w':'n','k9'):kpi('Na fila agora',nf(f.pendentes),nf(f.executando)+' ajustando',f.pendentes?'w':'n','k9')),
+    kpi('💬 WhatsApp',nf(z.hoje),nf(z.lojas_hoje)+' loja(s) hoje · '+nf(z.sete_dias)+' em 7 dias',z.hoje?'z':'n','k10')
   ].join('');
-  /* graficos */
-  const dias=(d.dias||[]);const hj=d.hoje_data;
-  $('chDias').innerHTML=cols(dias.map(x=>{const p=x.dia.split('-');return{l:p[2]+'/'+p[1],v:x.pedidos,v2:x.ajustados,t:p[2]+'/'+p[1]+': '+x.pedidos+' pedido(s), '+x.ajustados+' ajustado(s)'}}),dias.findIndex(x=>x.dia===hj));
-  $('chHoras').innerHTML=cols((d.horas||[]).map(x=>({l:String(x.h),v:x.pedidos,t:x.h+'h: '+x.pedidos+' pedido(s)'})),new Date().getHours());
-  $('chLojas').innerHTML=hbars((d.lojas||[]).map(x=>({l:(x.loja||'')+' '+(x.nome||''),v:x.pedidos,c:COR.blue,t:x.pedidos+(x.ajustados!==x.pedidos?' ('+x.ajustados+' aj.)':'')})));
-  $('chReg').innerHTML=hbars((d.regionais||[]).map(x=>({l:x.regional,v:x.pedidos,c:COR.violet,t:x.pedidos+(x.ajustados!==x.pedidos?' ('+x.ajustados+' aj.)':'')})));
-  const zd=(z.dias||[]);$('chZap').innerHTML=cols(zd.map(x=>{const p=x.dia.split('-');return{l:p[2]+'/'+p[1],v:x.n,t:p[2]+'/'+p[1]+': '+x.n}}),zd.findIndex(x=>x.dia===hj));$('chZap').querySelectorAll('.cb').forEach(e=>{e.style.background='#25d366'});
-  /* feed */
+  const andam=Math.max(0,(h.pedidos||0)-(h.ajustados||0)-(h.erros||0));
+  $('dSit').innerHTML=donut([{l:'Ajustado',v:h.ajustados||0,c:COR.ok},{l:'Na fila / ajustando',v:andam,c:COR.blue},{l:'Erro / divergência',v:h.erros||0,c:COR.bad}],'pedidos');
+  $('dVenda').innerHTML=donut([{l:'Venda confirmada',v:h.vendeu||0,c:COR.ok},{l:'Aguardando',v:h.aguardando||0,c:COR.warn},{l:'Não vendeu',v:h.nao_vendeu||0,c:COR.bad}],'ajustes');
+  const dias=d.dias||[],hj=d.hoje_data;
+  $('chDias').innerHTML='<div class="cols">'+cols(dias.map(x=>{const p=x.dia.split('-');return{l:p[2]+'/'+p[1],v:x.pedidos,v2:x.ajustados,t:p[2]+'/'+p[1]+': '+x.pedidos+' pedido(s), '+x.ajustados+' ajustado(s)'}}),dias.findIndex(x=>x.dia===hj))+'</div>';
+  $('chHoras').innerHTML='<div class="cols">'+cols((d.horas||[]).map(x=>({l:String(x.h),v:x.pedidos,t:x.h+'h: '+x.pedidos+' pedido(s)'})),new Date().getHours())+'</div>';
   const F=d.feed||[];
-  if(!F.length)$('feed').innerHTML='<div class="empty">Nenhum movimento ainda.</div>';
-  else $('feed').innerHTML='<table><tr><th>Hora</th><th>Loja</th><th>Produto</th><th>Situação</th></tr>'+F.map(x=>{
+  $('feed').innerHTML=F.length?'<table><tr><th>Hora</th><th>Loja</th><th>Produto</th><th>Situação</th></tr>'+F.map(x=>{
     const st=ST_TXT[x.status]||[x.status,'p-g'],vd=x.status==='CONCLUIDO'&&VD_TXT[x.venda]?VD_TXT[x.venda]:null;
     const chave=x.id+'|'+x.status+'|'+x.venda,novo=!primeira&&!vistos.has(chave);
-    return '<tr class="'+(novo?'flash':'')+'"><td>'+horaMin(x.quando)+'</td><td>'+esc(x.loja||'')+' <span class="small">'+esc(x.nome||'')+'</span></td><td>'+esc(x.produto)+' <b>+'+esc(x.qtd)+'</b></td><td><span class="pill '+st[1]+'">'+esc(st[0])+'</span>'+(vd?' <span class="pill '+vd[1]+'">'+esc(vd[0])+'</span>':'')+(x.status==='CONCLUIDO'&&!x.foto?' <span class="pill p-bad">sem foto</span>':'')+(x.seg!=null&&x.status==='CONCLUIDO'?' <span class="small">'+x.seg+'s</span>':'')+'</td></tr>'}).join('')+'</table>';
+    return '<tr class="'+(novo?'flash':'')+'"><td>'+horaMin(x.quando)+'</td><td>'+esc(x.loja||'')+' <span class="small">'+esc((x.nome||'').slice(0,18))+'</span></td><td>'+esc(x.produto)+' <b>+'+esc(x.qtd)+'</b></td><td><span class="pill '+st[1]+'">'+esc(st[0])+'</span>'+(vd?' <span class="pill '+vd[1]+'">'+esc(vd[0])+'</span>':'')+(x.status==='CONCLUIDO'&&!x.foto?' <span class="pill p-bad">sem foto</span>':'')+'</td></tr>'}).join('')+'</table>':'<div class="empty">Nenhum movimento ainda.</div>';
   vistos=new Set(F.map(x=>x.id+'|'+x.status+'|'+x.venda));
-  /* alertas */
-  const A=d.alertas||[];
-  $('alertas').innerHTML=A.length?'<table><tr><th>Loja</th><th>Produto</th><th class="c">Espera</th><th class="c">Comprovante</th></tr>'+A.map(x=>'<tr><td>'+esc(x.loja||'')+' <span class="small">'+esc(x.nome||'')+'</span></td><td>'+esc(x.produto)+' <b>+'+esc(x.qtd)+'</b></td><td class="c"><span class="pill '+(x.horas>=24?'p-bad':(x.horas>=4?'p-warn':'p-n'))+'">'+dur(x.horas*60)+'</span></td><td class="c">'+(x.foto?'<span class="pill p-ok">com foto</span>':'<span class="pill p-bad">sem foto</span>')+'</td></tr>').join('')+'</table>':'<div class="empty">✅ Nenhum ajuste aguardando confirmação de venda.</div>';
+  $('alertas').innerHTML=A.length?'<table><tr><th>Loja</th><th>Produto</th><th class="c">Espera</th><th class="c">Foto</th></tr>'+A.map(x=>'<tr><td>'+esc(x.loja||'')+' <span class="small">'+esc((x.nome||'').slice(0,16))+'</span></td><td>'+esc(x.produto)+' <b>+'+esc(x.qtd)+'</b></td><td class="c"><span class="pill '+(x.horas>=24?'p-bad':(x.horas>=4?'p-warn':'p-n'))+'">'+dur(x.horas*60)+'</span></td><td class="c">'+(x.foto?'<span class="pill p-ok">com</span>':'<span class="pill p-bad">sem</span>')+'</td></tr>').join('')+'</table>':'<div class="empty">✅ Nenhum ajuste aguardando venda.</div>';
+  $('chLojas').innerHTML=hbars((d.lojas||[]).map(x=>({l:(x.loja||'')+' '+(x.nome||''),v:x.pedidos,c:COR.blue,t:x.pedidos+(x.ajustados!==x.pedidos?' ('+x.ajustados+' aj.)':'')})));
+  $('chReg').innerHTML=hbars((d.regionais||[]).slice(0,6).map(x=>({l:x.regional,v:x.pedidos,c:COR.violet,t:x.pedidos+(x.ajustados!==x.pedidos?' ('+x.ajustados+' aj.)':'')})));
+  const zd=z.dias||[];
+  $('chZap').innerHTML=cols(zd.map(x=>{const p=x.dia.split('-');return{l:p[2]+'/'+p[1],v:x.n,c:COR.zap,t:p[2]+'/'+p[1]+': '+x.n}}),zd.findIndex(x=>x.dia===hj));
+  ['feed','alertas','chLojas'].forEach(i=>ajustar($(i)));
   primeira=false;
 }
+addEventListener('resize',()=>{if(ULT){clearTimeout(window._rz);window._rz=setTimeout(()=>render(ULT),200)}});
 
 function status(ok){
   const l=$('live');l.classList.toggle('off',!ok);
@@ -208,13 +247,14 @@ async function atualizar(){
     const r=await fetch(SB_URL+'/rest/v1/rpc/ajuste_painel',{method:'POST',signal:ctl.signal,cache:'no-store',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:TOKEN})});
     if(r.status===400||r.status===401||r.status===403){const j=await r.json().catch(()=>({}));if(/link inv/i.test(j.message||'')||r.status!==400){invalido('Link inválido ou revogado');return}}
     if(!r.ok)throw new Error('http '+r.status);
-    const d=await r.json();render(d);ultimoOk=Date.now();falhas=0;status(true);
-  }catch(e){falhas++;status(false)}finally{clearTimeout(to)}
+    const d=await r.json();render(d);ultimoOk=Date.now();status(true);
+  }catch(e){status(false)}finally{clearTimeout(to)}
 }
 function iniciar(){atualizar();timer=setInterval(atualizar,INTERVALO)}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)atualizar()});
 setInterval(()=>{if(ultimoOk&&Date.now()-ultimoOk>INTERVALO*4)status(false)},3000);
-$('btnTv').onclick=()=>{document.body.classList.toggle('tv');try{const el=document.documentElement;if(!document.fullscreenElement&&el.requestFullscreen)el.requestFullscreen();else if(document.exitFullscreen&&document.fullscreenElement)document.exitFullscreen()}catch(e){}};
+$('btnTv').onclick=()=>{try{const el=document.documentElement;if(el.requestFullscreen)el.requestFullscreen()}catch(e){}};
+document.addEventListener('fullscreenchange',()=>document.body.classList.toggle('tv',!!document.fullscreenElement));
 iniciar();
 </script>
 </body>
