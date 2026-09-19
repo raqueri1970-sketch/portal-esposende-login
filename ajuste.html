@@ -150,7 +150,12 @@ const SUPPORT={fone:'(81) 98908-7348',tel:'+5581989087348',whats:'https://wa.me/
 const DOMINIO='@ajuste.esposende.app';
 const IDLE_MIN=30;
 // sessao separada da do Portal (mesma origem): o gerente nunca herda nem enxerga o login do administrador
-const sb=supabase.createClient(SB_URL,SB_KEY,{auth:{storageKey:'ajuste-esposende-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+// armazenamento resiliente: se o navegador estiver com o espaco local CHEIO (quota) ou bloqueado, a sessao fica na memoria e o login continua funcionando
+const memStore={};
+const safeStorage={getItem:k=>{try{const v=localStorage.getItem(k);if(v!==null)return v}catch(e){}return k in memStore?memStore[k]:null},
+  setItem:(k,v)=>{try{localStorage.setItem(k,v);delete memStore[k]}catch(e){memStore[k]=v}},
+  removeItem:k=>{try{localStorage.removeItem(k)}catch(e){}delete memStore[k]}};
+const sb=supabase.createClient(SB_URL,SB_KEY,{auth:{storage:safeStorage,storageKey:'ajuste-esposende-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let U=null /*perfil*/, uid=null, lojaSel=null, fotoBlob=null, vendaFoto=null, vendaRef=null, vendaSt=null, poll=null, idleT=null, listaT=null;
