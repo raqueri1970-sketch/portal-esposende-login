@@ -125,6 +125,12 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
       <form id="fAjuste">
         <div id="boxLoja"></div>
         <label for="aCodigo">Código do produto</label><input id="aCodigo" type="tel" inputmode="numeric" placeholder="Código no Seta" autocomplete="off" required>
+        <label>Foto do produto <span style="font-weight:600;color:var(--mut)">(opcional)</span></label>
+        <div class="photo" style="padding:10px">
+          <div id="fpEmpty"><label class="pbtn" for="fpFoto" style="margin:0">📷 Tirar foto do produto</label></div>
+          <div id="fpOk" class="hidden"><img id="fpImg" alt="Foto do produto" style="max-height:170px"><div><label class="pbtn" for="fpFoto" style="background:#5b6f8a;margin:2px">Trocar foto</label> <button type="button" class="pbtn" id="fpDel" style="background:#b3261e;border:0;margin:2px">Remover</button></div></div>
+          <input id="fpFoto" type="file" accept="image/*" capture="environment" class="hidden">
+        </div>
         <label for="aQtd">Quantidade de unidades a incluir</label>
         <div class="qty"><input id="aQtd" type="number" min="1" max="50" step="1" value="1" inputmode="numeric" required><button type="button" id="qMais" aria-label="Aumentar">+</button></div>
         <div class="sub" style="margin-top:4px">Já vem <b>1</b>. Toque em <b>+</b> ou digite para pedir mais unidades do <b>mesmo código</b> (até 50).</div>
@@ -163,7 +169,7 @@ const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
 const WHATS='5581989087348';
-const BUILD='20260919-110117';
+const BUILD='20260919-122559';
 /* se o navegador guardou uma versao antiga desta pagina, busca a nova e recarrega (uma vez por versao) */
 (async()=>{try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);
   if(m&&m[1]!==BUILD&&m[1].indexOf('@@')<0){let k='';try{k=sessionStorage.getItem('ae_build')||''}catch(e){}if(k!==m[1]){try{sessionStorage.setItem('ae_build',m[1])}catch(e){}location.reload()}}}catch(e){}})();
@@ -315,6 +321,10 @@ function aba(x){$('tabNovo').classList.toggle('on',x==='novo');$('tabLista').cla
 $('tabNovo').onclick=()=>aba('novo');$('tabLista').onclick=()=>{aba('lista');carregarLista()};
 $('qMais').onclick=()=>{$('aQtd').value=Math.min(50,(+$('aQtd').value||0)+1)};
 
+let fpBlob=null;
+function fpLimpar(){fpBlob=null;$('fpFoto').value='';$('fpOk').classList.add('hidden');$('fpEmpty').classList.remove('hidden')}
+$('fpFoto').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{fpBlob=await comprimir(f);$('fpImg').src=URL.createObjectURL(fpBlob);$('fpEmpty').classList.add('hidden');$('fpOk').classList.remove('hidden')}catch(err){fpLimpar();msg('aMsg',err.message)}};
+$('fpDel').onclick=fpLimpar;
 $('fAjuste').onsubmit=async e=>{e.preventDefault();msg('aMsg','');
   const codigo=$('aCodigo').value.replace(/\D/g,''),q=parseInt($('aQtd').value,10),lj=U.lojas.find(l=>l.loja===lojaSel);
   if(!lojaSel||!lj){msg('aMsg','Selecione a loja deste pedido.');return}
@@ -324,10 +334,11 @@ $('fAjuste').onsubmit=async e=>{e.preventDefault();msg('aMsg','');
   if(!$('aDecl').checked){msg('aMsg','Marque a declaração de venda para continuar.');return}
   const b=$('btnEnviar');b.disabled=true;b.innerHTML='<span class="spin"></span>Enviando…';
   try{
+    let fotoProd=null;if(fpBlob){try{fotoProd=await subirFoto(fpBlob)}catch(err){throw new Error('Não consegui enviar a foto do produto. Tente de novo ou toque em Remover para pedir sem a foto.')}}
     const r=await sb.from('ajuste_estoque_entrada').insert({user_id:uid,loja:String(lojaSel),loja_normalizada:lojaSel,codigo_seta_solicitado:lj.codigo_seta,solicitante:U.nome,codigo_produto:codigo,quantidade:q,
-      motivo:'AJUSTE PARA VENDA - SOLICITADO PELO GERENTE',comprovado:false,declaracao_venda:true,operacao:'ENTRADA',finalidade:'VENDA'}).select('id,protocolo').single();
+      motivo:'AJUSTE PARA VENDA - SOLICITADO PELO GERENTE',foto_produto_path:fotoProd,comprovado:false,declaracao_venda:true,operacao:'ENTRADA',finalidade:'VENDA'}).select('id,protocolo').single();
     if(r.error)throw new Error(r.error.message);
-    $('fAjuste').reset();$('aQtd').value=1;acompanhar(r.data.id);carregarLista(true);
+    $('fAjuste').reset();$('aQtd').value=1;fpLimpar();acompanhar(r.data.id);carregarLista(true);
   }catch(err){msg('aMsg',err.message)}finally{b.disabled=false;b.textContent='Solicitar ajuste'}};
 
 // ---------- acompanhamento em tempo real do pedido ----------
