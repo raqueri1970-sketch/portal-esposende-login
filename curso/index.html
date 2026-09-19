@@ -546,15 +546,28 @@ const playerSub = document.getElementById('playerSub');
 const playerDot = document.getElementById('playerDot');
 
 let audioCtx = null;
-function boostAudio(videoEl){
+function prepararAudio(){
   try{
     if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if(audioCtx.state === 'suspended') audioCtx.resume();
+    if(audioCtx.state !== 'running') audioCtx.resume();
+  }catch(e){ audioCtx = null; }
+}
+
+// A fala nos vídeos está ~35 dB abaixo do máximo (−35 dBFS): ganho de +20 dB, compressor para nivelar e limitador para os picos não estourarem.
+// Só liga depois de o vídeo carregar com CORS; sem isso o Web Audio devolve silêncio total em vez de som.
+function boostAudio(videoEl){
+  if(!audioCtx || videoEl.dataset.boosted) return;
+  try{
     const source = audioCtx.createMediaElementSource(videoEl);
-    const gainNode = audioCtx.createGain();
-    gainNode.gain.value = 2.5;
-    source.connect(gainNode).connect(audioCtx.destination);
-  }catch(e){ /* navegador sem suporte a Web Audio - toca no volume normal */ }
+    const pre = audioCtx.createGain(); pre.gain.value = 10;
+    const nivela = audioCtx.createDynamicsCompressor();
+    nivela.threshold.value = -26; nivela.knee.value = 24; nivela.ratio.value = 5; nivela.attack.value = 0.004; nivela.release.value = 0.25;
+    const limita = audioCtx.createDynamicsCompressor();
+    limita.threshold.value = -4; limita.knee.value = 0; limita.ratio.value = 20; limita.attack.value = 0.001; limita.release.value = 0.1;
+    const saida = audioCtx.createGain(); saida.gain.value = 0.92;
+    source.connect(pre); pre.connect(nivela); nivela.connect(limita); limita.connect(saida); saida.connect(audioCtx.destination);
+    videoEl.dataset.boosted = '1';
+  }catch(e){ /* sem Web Audio: toca no volume normal */ }
 }
 
 async function openPlayer(c){
@@ -563,10 +576,19 @@ async function openPlayer(c){
   playerTitle.textContent = c.nome;
   playerSub.textContent = `Módulo ${c.ordem} · ${c.duracao}`;
   playerDot.style.background = c.accent;
-  playerBody.innerHTML = `<video controls preload="metadata" playsinline webkit-playsinline poster="${capaUrl(c)}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
+  prepararAudio();
+  playerBody.innerHTML = `<video controls preload="metadata" playsinline webkit-playsinline crossorigin="anonymous" poster="${capaUrl(c)}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
   const videoEl = playerBody.querySelector('video');
   videoEl.volume = 1.0;
-  boostAudio(videoEl);
+  videoEl.addEventListener('loadedmetadata', ()=>{ if(videoEl.hasAttribute('crossorigin')) boostAudio(videoEl); }, {once:true});
+  videoEl.addEventListener('play', ()=>{ if(audioCtx && audioCtx.state !== 'running') audioCtx.resume(); });
+  videoEl.addEventListener('error', ()=>{
+    if(!videoEl.dataset.boosted && videoEl.hasAttribute('crossorigin')){
+      videoEl.removeAttribute('crossorigin');
+      videoEl.load();
+      videoEl.play().catch(()=>{});
+    }
+  }, {once:true});
   videoEl.play().catch(()=>{});
   quizResolved = false;
   const viewId = await logVisualizacao(c);
