@@ -81,11 +81,13 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
 <!-- LOGIN -->
 <section id="vLogin" class="hidden">
   <div class="card">
-    <h2>Entrar</h2><p class="sub">Informe sua loja, seu CPF e sua senha.</p>
+    <h2 id="lTitulo">Entrar</h2><p class="sub" id="lSub">Digite seu CPF para começar.</p>
     <form id="fLogin" autocomplete="on">
-      <label for="lLoja">Loja</label><input id="lLoja" type="tel" inputmode="numeric" placeholder="Ex.: 50" autocomplete="off" maxlength="4" required>
       <label for="lCpf">CPF</label><input id="lCpf" type="tel" inputmode="numeric" placeholder="000.000.000-00" autocomplete="username" maxlength="14" required>
-      <label for="lSenha">Senha</label><div class="pw"><input id="lSenha" type="password" autocomplete="current-password" required><button type="button" data-eye="lSenha">Mostrar</button></div>
+      <div id="lInfo"></div>
+      <div id="lNomeBox" class="hidden"><label for="lNome">Seu nome completo</label><input id="lNome" type="text" autocomplete="name" maxlength="80"></div>
+      <label for="lSenha" id="lSenhaRot">Senha</label><div class="pw"><input id="lSenha" type="password" autocomplete="current-password" required><button type="button" data-eye="lSenha">Mostrar</button></div>
+      <div id="lSenha2Box" class="hidden"><label for="lSenha2">Repita a senha</label><div class="pw"><input id="lSenha2" type="password" autocomplete="new-password"><button type="button" data-eye="lSenha2">Mostrar</button></div><p class="sub" style="margin-top:6px">Mínimo 8 caracteres, com letras e números.</p></div>
       <div id="lMsg"></div>
       <button class="btn" id="btnEntrar" type="submit">Entrar</button>
     </form>
@@ -225,23 +227,53 @@ function atualizarChipFoto(){
   const m=M[st]||M.NAO_VERIFICADO;el.className='msg '+m[0];el.style.textAlign='left';el.textContent=m[1]}
 
 // ---------- LOGIN ----------
-$('lCpf').addEventListener('input',e=>e.target.value=maskCpf(e.target.value));
+let modoLogin='entrar',cpfConsultado='';
+function modoTela(modo,pedirNome){modoLogin=modo;
+  $('lSenha2Box').classList.toggle('hidden',modo!=='novo');$('lNomeBox').classList.toggle('hidden',!(modo==='novo'&&pedirNome));
+  $('lSenhaRot').textContent=modo==='novo'?'Crie uma senha':'Senha';$('lSenha').autocomplete=modo==='novo'?'new-password':'current-password';
+  $('btnEntrar').textContent=modo==='novo'?'Criar acesso e entrar':'Entrar';
+  $('lTitulo').textContent=modo==='novo'?'Primeiro acesso':'Entrar';$('lSub').textContent=modo==='novo'?'Confirme seus dados e crie sua senha.':'Digite seu CPF e sua senha.'}
+async function consultarCpf(cpf){
+  if(cpf.length!==11){cpfConsultado='';$('lInfo').innerHTML='';modoTela('entrar');return}
+  if(cpf===cpfConsultado)return;cpfConsultado=cpf;
+  const r=await sb.rpc('ajuste_consultar_cpf',{p_cpf:cpf});
+  if(cpf!==$('lCpf').value.replace(/\D/g,''))return;
+  const d=r.data;
+  if(r.error||!d){cpfConsultado='';$('lInfo').innerHTML='';modoTela('entrar');return}
+  if(!d.valido){$('lInfo').innerHTML='<div class="msg err">CPF inválido. Confira os números.</div>';modoTela('entrar');return}
+  if(d.bloqueado){$('lInfo').innerHTML='<div class="msg err">Este acesso está bloqueado. Fale com o suporte.</div>';modoTela('entrar');return}
+  const quem=d.achou?'<b>'+esc(d.nome_curto||'')+'</b>'+(d.cargo?' · '+esc(d.cargo):''):'';
+  const aviso=d.desligado?'<br>⚠ O cadastro do Seta consta como <b>desligado</b>. Você pode entrar, mas o pedido será sinalizado.':'';
+  if(d.tem_acesso){
+    $('lInfo').innerHTML=d.achou?'<div class="msg ok" style="text-align:left">✔ '+quem+'<br><span class="sub">Cadastro do Seta encontrado.</span>'+aviso+'</div>':'<div class="msg warn" style="text-align:left">CPF não localizado no cadastro do Seta. Você pode entrar normalmente; o pedido ficará sinalizado para a auditoria.</div>';
+    modoTela('entrar');
+  }else{
+    $('lInfo').innerHTML=d.achou?'<div class="msg ok" style="text-align:left">✔ '+quem+'<br><span class="sub">Cadastro do Seta encontrado. É o seu primeiro acesso: crie uma senha.</span>'+aviso+'</div>':'<div class="msg warn" style="text-align:left">CPF não localizado no cadastro do Seta. Você pode entrar mesmo assim: digite seu nome e crie uma senha. O pedido ficará sinalizado para a auditoria.</div>';
+    modoTela('novo',!d.achou);
+  }
+}
+$('lCpf').addEventListener('input',e=>{e.target.value=maskCpf(e.target.value);consultarCpf(e.target.value.replace(/\D/g,''))});
+function lojaInicial(){return U&&U.loja_origem&&U.lojas.some(l=>l.loja===U.loja_origem)?U.loja_origem:(U&&U.lojas.length===1?U.lojas[0].loja:null)}
 $('fLogin').onsubmit=async e=>{e.preventDefault();msg('lMsg','');
-  const loja=parseInt($('lLoja').value.replace(/\D/g,''),10),cpf=$('lCpf').value.replace(/\D/g,''),senha=$('lSenha').value;
-  if(!loja||cpf.length!==11||!senha){msg('lMsg','Preencha loja, CPF e senha.');return}
-  const b=$('btnEntrar');b.disabled=true;b.innerHTML='<span class="spin"></span>Entrando…';
+  const cpf=$('lCpf').value.replace(/\D/g,''),senha=$('lSenha').value;
+  if(cpf.length!==11||!senha){msg('lMsg','Preencha o CPF e a senha.');return}
+  const b=$('btnEntrar'),rot=b.textContent;b.disabled=true;b.innerHTML='<span class="spin"></span>Entrando…';
   try{
+    if(modoLogin==='novo'){
+      if(senha!==$('lSenha2').value)throw new Error('As senhas não conferem.');
+      const c=await sb.rpc('ajuste_primeiro_acesso',{p_cpf:cpf,p_nome:$('lNome').value.trim(),p_senha:senha});
+      if(c.error)throw new Error(c.error.message.replace(/^.*?:\s*/,''));
+    }
     const r=await sb.auth.signInWithPassword({email:cpf+DOMINIO,password:senha});
-    if(r.error)throw new Error('Loja, CPF ou senha inválidos.');
+    if(r.error)throw new Error('CPF ou senha inválidos. Se é seu primeiro acesso, confira o CPF.');
     uid=r.data.user.id;
     const p=await sb.rpc('ajuste_meu_perfil');
-    if(p.error||!p.data||!p.data.ok){await sb.auth.signOut();throw new Error('Loja, CPF ou senha inválidos.')}
-    if(!p.data.lojas.some(l=>l.loja===loja)){await sb.auth.signOut();throw new Error('Você não tem acesso a esta loja. Confira o número da loja.')}
-    U=p.data;lojaSel=loja;$('lSenha').value='';entrar();
-  }catch(err){msg('lMsg',err.message)}finally{b.disabled=false;b.textContent='Entrar'}};
+    if(p.error||!p.data||!p.data.ok){await sb.auth.signOut();throw new Error('CPF ou senha inválidos.')}
+    U=p.data;lojaSel=lojaInicial();$('lSenha').value='';$('lSenha2').value='';entrar();
+  }catch(err){msg('lMsg',err.message)}finally{b.disabled=false;b.textContent=rot}};
 async function sair(m){clearInterval(poll);clearInterval(listaT);await sb.auth.signOut();U=null;uid=null;show('vLogin');atualizarZap();$('lSenha').value='';msg('lMsg',m||'','info')}
 $('btnSair').onclick=()=>sair();
-function nomeLoja(){const l=U&&U.lojas.find(x=>x.loja===lojaSel);return 'Loja '+lojaSel+(l&&l.nome?' · '+l.nome:'')}
+function nomeLoja(){if(!lojaSel)return 'Escolha a loja';const l=U&&U.lojas.find(x=>x.loja===lojaSel);return 'Loja '+lojaSel+(l&&l.nome?' · '+l.nome:'')}
 function entrar(){$('whoNome').textContent=U.nome;$('whoLoja').textContent=nomeLoja();resetIdle();atualizarZap();
   if(U.must_change){$('sTitulo').textContent='Crie sua senha';$('sSub').textContent='Por segurança, crie uma senha só sua.';$('btnSenhaVoltar').classList.add('hidden');show('vSenha');$('who').classList.remove('hidden');$('btnSenha').classList.add('hidden')}
   else{$('btnSenha').classList.remove('hidden');montarApp()}}
@@ -261,9 +293,9 @@ $('fSenha').onsubmit=async e=>{e.preventDefault();msg('sMsg','');
 function montarApp(){show('vApp');$('who').classList.remove('hidden');
   const lojas=U.lojas;
   $('boxLoja').innerHTML=lojas.length>1
-    ?`<label for="aLoja">Loja</label><select id="aLoja">${lojas.map(l=>`<option value="${l.loja}" ${l.loja===lojaSel?'selected':''}>${l.loja} · ${esc(l.nome||'')}</option>`).join('')}</select>`
+    ?`<label for="aLoja">Loja deste pedido</label><select id="aLoja">${lojaSel?'':'<option value="">Selecione a loja…</option>'}${lojas.map(l=>`<option value="${l.loja}" ${l.loja===lojaSel?'selected':''}>${l.loja} · ${esc(l.nome||'')}</option>`).join('')}</select>`
     :`<div class="msg info" style="margin-top:0">Loja <b>${lojas[0].loja}${lojas[0].nome?' · '+esc(lojas[0].nome):''}</b></div>`;
-  if($('aLoja'))$('aLoja').onchange=e=>{lojaSel=parseInt(e.target.value,10);$('whoLoja').textContent=nomeLoja();atualizarZap();carregarLista()};
+  if($('aLoja'))$('aLoja').onchange=e=>{lojaSel=parseInt(e.target.value,10)||null;$('whoLoja').textContent=nomeLoja();atualizarZap();carregarLista()};
   atualizarZap();aba('novo');carregarLista();clearInterval(listaT);listaT=setInterval(()=>{if(!document.hidden&&!$('vApp').classList.contains('hidden'))carregarLista(true)},15000)}
 function aba(x){$('tabNovo').classList.toggle('on',x==='novo');$('tabLista').classList.toggle('on',x==='lista');$('pNovo').classList.toggle('hidden',x!=='novo');$('pLista').classList.toggle('hidden',x!=='lista')}
 $('tabNovo').onclick=()=>aba('novo');$('tabLista').onclick=()=>{aba('lista');carregarLista()};
@@ -271,6 +303,7 @@ $('qMenos').onclick=()=>{$('aQtd').value=Math.max(1,(+$('aQtd').value||1)-1)};$(
 
 $('fAjuste').onsubmit=async e=>{e.preventDefault();msg('aMsg','');
   const codigo=$('aCodigo').value.replace(/\D/g,''),q=parseInt($('aQtd').value,10),lj=U.lojas.find(l=>l.loja===lojaSel);
+  if(!lojaSel||!lj){msg('aMsg','Selecione a loja deste pedido.');return}
   if(!codigo){msg('aMsg','Informe o código do produto.');return}
   if(!Number.isInteger(q)||q<1||q>50){msg('aMsg','Quantidade inválida (1 a 50).');return}
   if(!$('aDecl').checked){msg('aMsg','Marque a declaração de venda para continuar.');return}
@@ -307,18 +340,18 @@ function pillVenda(x){if(x.status!=='CONCLUIDO')return'';if(x.venda_status==='VE
 function pillCod(x){if(!x.comprovado)return'';const s=x.foto_codigo_status;if(['CONFERE','CONFERIDO_MANUAL'].includes(s))return'<span class="pill done">CÓDIGO CONFERE</span>';if(s==='PROVAVEL')return'<span class="pill run">CONFERIR CÓDIGO</span>';if(['NAO_LOCALIZADO','ILEGIVEL','DIVERGENTE_MANUAL'].includes(s))return'<span class="pill err">CÓDIGO NÃO CONFERE</span>';return'<span class="pill gray">NÃO CONFERIDO</span>'}
 function pillFotoLista(x){if(x.status!=='CONCLUIDO')return'';return x.comprovado?'<span class="pill done">COM FOTO DO COMPROVANTE</span> '+pillCod(x):'<span class="pill err">SEM FOTO DO COMPROVANTE</span>'}
 async function carregarLista(silent){
-  const r=await sb.from('ajuste_estoque_entrada').select('id,protocolo,criado_em,executado_em,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,comprovado,solicitante,venda_status,venda_numero,venda_confirmada_em,erro_executor,foto_codigo_status')
-    .eq('loja_normalizada',lojaSel).order('criado_em',{ascending:false}).limit(40);
+  const r=await sb.from('ajuste_estoque_entrada').select('id,protocolo,loja_normalizada,criado_em,executado_em,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,comprovado,solicitante,venda_status,venda_numero,venda_confirmada_em,erro_executor,foto_codigo_status')
+    .order('criado_em',{ascending:false}).limit(40);
   if(r.error){if(!silent)$('lista').innerHTML='<div class="msg err">Não foi possível carregar.</div>';return}
   const pend=r.data.filter(x=>x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA');
   const a=$('pendVenda');if(pend.length){a.classList.remove('hidden');a.innerHTML='⚠️ '+pend.length+' ajuste(s) com venda por finalizar. <u style="cursor:pointer" id="irLista">Ver</u>';$('irLista').onclick=()=>aba('lista')}else a.classList.add('hidden');
-  $('lista').innerHTML=r.data.length?r.data.map(x=>`<div class="it"><div class="h"><div><div class="p">${esc(x.protocolo)}</div><div class="d">${fmtDH(x.criado_em)} · ${esc(x.solicitante)}</div></div><div>${pill(x)}</div></div>
+  $('lista').innerHTML=r.data.length?r.data.map(x=>`<div class="it"><div class="h"><div><div class="p">${esc(x.protocolo)}</div><div class="d">${fmtDH(x.criado_em)} · Loja ${x.loja_normalizada} · ${esc(x.solicitante)}</div></div><div>${pill(x)}</div></div>
     <div class="kv">Produto <b>${esc(x.codigo_produto)}</b> · +${x.quantidade}${x.estoque_novo!=null?' · Estoque '+num(x.estoque_anterior)+' → <b>'+num(x.estoque_novo)+'</b>':''}</div>
     <div class="kv">${pillFotoLista(x)} ${pillVenda(x)}</div>
     ${x.venda_numero?`<div class="d" style="margin-top:4px">Venda nº ${esc(x.venda_numero)}</div>`:''}
     ${x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA'?`<button class="btn ok mini" data-venda='${esc(JSON.stringify({id:x.id,protocolo:x.protocolo,codigo_produto:x.codigo_produto,modo:'venda'}))}'>Finalizar venda</button>`:''}
     ${x.status==='CONCLUIDO'&&x.venda_status!=='AGUARDANDO_VENDA'&&!x.comprovado?`<button class="btn sec mini" data-venda='${esc(JSON.stringify({id:x.id,protocolo:x.protocolo,codigo_produto:x.codigo_produto,modo:'foto'}))}'>📷 Anexar foto do comprovante</button>`:''}
-    ${(x.status==='ERRO')?`<div class="d" style="margin-top:6px">${esc(erroAmigavel(x.erro_executor))}</div>`:''}</div>`).join(''):'<div class="sub">Nenhum ajuste ainda nesta loja.</div>';
+    ${(x.status==='ERRO')?`<div class="d" style="margin-top:6px">${esc(erroAmigavel(x.erro_executor))}</div>`:''}</div>`).join(''):'<div class="sub">Nenhum ajuste ainda.</div>';
   $('lista').querySelectorAll('[data-venda]').forEach(b=>b.onclick=()=>{const d=JSON.parse(b.dataset.venda);abrirVenda(d,d.modo)})}
 
 // ---------- finalizar venda + foto do comprovante (SEMPRE depois do ajuste) ----------
@@ -358,7 +391,7 @@ $('mvEnviar').onclick=async()=>{msg('mvMsg','');const b=$('mvEnviar');const rotu
 (async()=>{
   const s=await sb.auth.getSession();
   if(s.data.session){uid=s.data.session.user.id;const p=await sb.rpc('ajuste_meu_perfil');
-    if(!p.error&&p.data&&p.data.ok){U=p.data;lojaSel=U.lojas[0].loja;entrar();return}
+    if(!p.error&&p.data&&p.data.ok){U=p.data;lojaSel=lojaInicial();entrar();return}
     await sb.auth.signOut()}
   show('vLogin')})();
 </script>
