@@ -58,9 +58,11 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
 .steps{display:flex;gap:4px;margin:10px 0 2px}.steps i{flex:1;height:6px;border-radius:4px;background:#dbe4f1}.steps i.on{background:var(--brand2);animation:pulse 1.2s ease-in-out infinite}.steps i.done{background:var(--ok)}
 @keyframes pulse{50%{opacity:.35}}
 .big{text-align:center;padding:8px 0}.big .ic{font-size:46px;line-height:1.2}.big .t{font-weight:900;font-size:20px;margin-top:4px}
-.hg{display:inline-block;animation:hg 1.8s ease-in-out infinite}
-@keyframes hg{0%{transform:rotate(0)}40%{transform:rotate(180deg)}50%{transform:rotate(180deg)}90%{transform:rotate(360deg)}100%{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.hg,.steps i.on{animation:none}}
+/* ampulheta SEMPRE girando (indicador de que o robo esta trabalhando; nao desligar por 'reduzir movimento' do celular) */
+.hg{display:inline-block;animation:hg 2.4s linear infinite;transform-origin:50% 55%;will-change:transform}
+.hg.fast{animation-duration:1.2s}
+@keyframes hg{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.steps i.on{animation:none}}
 .mini{font-size:13px;padding:9px 12px;width:auto;margin-top:8px}
 .foot{text-align:center;color:var(--mut);font-size:13px;margin-top:20px}.foot a{color:#0b7a3b;font-weight:800;text-decoration:none;background:#e4f6ec;border-radius:999px;padding:8px 14px;display:inline-block;margin-top:6px}
 .hidden{display:none!important}
@@ -161,7 +163,7 @@ const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
 const WHATS='5581989087348';
-const BUILD='20260919-104558';
+const BUILD='20260919-105633';
 /* se o navegador guardou uma versao antiga desta pagina, busca a nova e recarrega (uma vez por versao) */
 (async()=>{try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);
   if(m&&m[1]!==BUILD&&m[1].indexOf('@@')<0){let k='';try{k=sessionStorage.getItem('ae_build')||''}catch(e){}if(k!==m[1]){try{sessionStorage.setItem('ae_build',m[1])}catch(e){}location.reload()}}}catch(e){}})();
@@ -329,7 +331,7 @@ $('fAjuste').onsubmit=async e=>{e.preventDefault();msg('aMsg','');
   }catch(err){msg('aMsg',err.message)}finally{b.disabled=false;b.textContent='Solicitar ajuste'}};
 
 // ---------- acompanhamento em tempo real do pedido ----------
-function acompanhar(id){$('cForm').classList.add('hidden');const c=$('cAcomp');c.classList.remove('hidden');c.innerHTML='<div class="sub">Enviando…</div>';clearInterval(poll);
+function acompanhar(id){$('cForm').classList.add('hidden');const c=$('cAcomp');c.classList.remove('hidden');c._h=null;c.innerHTML='<div class="sub">Enviando…</div>';clearInterval(poll);
   const t0=Date.now();const tick=async()=>{
     const r=await sb.from('ajuste_estoque_entrada').select('id,protocolo,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,erro_executor').eq('id',id).single();
     if(r.error||!r.data)return;const x=r.data;
@@ -341,9 +343,9 @@ function acompanhar(id){$('cForm').classList.add('hidden');const c=$('cAcomp');c
       <button class="btn ok" id="acVenda">Finalizar venda e enviar comprovante</button><button class="btn sec" id="acNovo">Fazer outro ajuste</button>`}
     else if(x.status==='ERRO'||x.status==='CANCELADO'){clearInterval(poll);h=`<div class="big"><div class="ic">⚠️</div><div class="t">Não foi possível ajustar</div></div><div class="msg err">${esc(erroAmigavel(x.erro_executor))}<br><small>Protocolo ${esc(x.protocolo)}</small></div><button class="btn sec" id="acNovo">Voltar</button>`}
     else if(x.status==='BLOQUEADO_DIVERGENCIA'){clearInterval(poll);h=`<div class="big"><div class="ic">🔎</div><div class="t">Em análise da auditoria</div></div><div class="msg warn">Não confirmei o resultado com segurança. <b>Não repita o pedido.</b> A auditoria vai conferir e avisar. Protocolo ${esc(x.protocolo)}.</div><button class="btn sec" id="acNovo">Voltar</button>`}
-    else{h=`<div class="big"><div class="ic"><span class="hg">⏳</span></div><div class="t">${esc(ETAPA_TXT[x.etapa_executor]||'Processando…')}</div><div class="sub">Protocolo ${esc(x.protocolo)} · produto ${esc(x.codigo_produto)} · +${x.quantidade}<br>Leva cerca de 1 minuto. Não feche esta tela.</div></div><div class="steps">${ETAPAS.map((_,i)=>`<i class="${i<idx?'done':i===idx?'on':''}"></i>`).join('')}</div>${x.status==='PENDENTE'?'<button class="btn sec" id="acCancelar" style="margin-top:14px">✕ Cancelar este pedido</button>':'<div class="small" style="text-align:center;margin-top:12px">O robô já está lançando este pedido.</div>'}`;
+    else{h=`<div class="big"><div class="ic"><span class="hg${x.status==='EM_EXECUCAO'?' fast':''}">⏳</span></div><div class="t">${esc(ETAPA_TXT[x.etapa_executor]||'Processando…')}</div><div class="sub">Protocolo ${esc(x.protocolo)} · produto ${esc(x.codigo_produto)} · +${x.quantidade}<br>Leva cerca de 1 minuto. Não feche esta tela.</div></div><div class="steps">${ETAPAS.map((_,i)=>`<i class="${i<idx?'done':i===idx?'on':''}"></i>`).join('')}</div>${x.status==='PENDENTE'?'<button class="btn sec" id="acCancelar" style="margin-top:14px">✕ Cancelar este pedido</button>':'<div class="small" style="text-align:center;margin-top:12px">O robô já está lançando este pedido.</div>'}`;
       if(Date.now()-t0>15*60*1000){clearInterval(poll);h+='<div class="msg warn">Está demorando mais que o normal. Fale com o suporte informando o protocolo.</div>'}}
-    c.innerHTML=h;const n=$('acNovo');if(n)n.onclick=()=>{c.classList.add('hidden');$('cForm').classList.remove('hidden')};const v=$('acVenda');if(v)v.onclick=()=>abrirVenda(x,'venda');
+    if(c._h!==h){c._h=h;c.innerHTML=h}const n=$('acNovo');if(n)n.onclick=()=>{c.classList.add('hidden');$('cForm').classList.remove('hidden')};const v=$('acVenda');if(v)v.onclick=()=>abrirVenda(x,'venda');
     const cb=$('acCancelar');if(cb)cb.onclick=async()=>{cb.disabled=true;cb.textContent='Cancelando…';
       const cr=await sb.rpc('ajuste_cancelar_meu_pedido',{p_id:id});
       if(cr.error){cb.disabled=false;cb.textContent='✕ Cancelar este pedido';alert('Não foi possível cancelar: '+cr.error.message.replace(/^.*?:\s*/,''));return}
