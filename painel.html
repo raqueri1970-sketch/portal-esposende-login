@@ -186,10 +186,11 @@ const ROBO_TXT={OCIOSO:['Aguardando pedidos','st-ok','🤖'],EXECUTANDO:['Ajusta
 
 function render(d){
   ULT=d;
-  const h=d.hoje||{},f=d.fila||{},r=d.robo||{},z=d.whatsapp||{},A=d.alertas||[];
+  const h=d.hoje||{},f=d.fila||{},r=d.robo||{},z=d.whatsapp||{},A=d.alertas||[],lei=d.leitor||{};
   $('hojeTxt').textContent=new Date(d.agora).toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
   const idade=r.ultimo_sinal?(new Date(d.agora)-new Date(r.ultimo_sinal))/60000:null;
-  const pct=h.ajustados?Math.round(h.vendeu/h.ajustados*100):0;
+  const ajl=Math.max(0,(h.ajustados||0)-(h.wa_ajustes||0));   /* controle de venda so vale para pedidos do link */
+  const pct=ajl?Math.round(h.vendeu/ajl*100):0;
   const a24=A.filter(x=>x.horas>=24).length;
   const alertas=(h.sem_foto||0)+(h.foto_nao_confere||0)+(h.erros||0)+a24;
   let roboH;
@@ -197,12 +198,12 @@ function render(d){
   else roboH=hero('b','Robô · OFFLINE','🛑 Sem sinal',(r.ultimo_sinal?'há '+dur(idade)+' — ':'')+'pedidos ficam na fila ('+nf(f.pendentes)+' agora)',1);
   $('heroes').innerHTML=roboH+
     hero('g','Ajustes concluídos hoje',nf(h.ajustados),nf(h.unidades)+' unidades incluídas · '+nf(h.lojas)+' loja(s)')+
-    hero(h.ajustados?(pct>=80?'g':(pct>=50?'w':'b')):'n','Vendas confirmadas',h.ajustados?pct+'%':'—',nf(h.vendeu)+' de '+nf(h.ajustados)+' ajustes · '+nf(h.aguardando)+' aguardando')+
+    hero(ajl?(pct>=80?'g':(pct>=50?'w':'b')):'n','Vendas confirmadas',ajl?pct+'%':'—',nf(h.vendeu)+' de '+nf(ajl)+' ajustes do link · '+nf(h.aguardando)+' aguardando')+
     hero(alertas?'b':'g','Alertas de auditoria',nf(alertas),'sem foto, foto não confere, erros e espera > 24h');
   $('kpis').innerHTML=[
     kpi('Pedidos hoje',nf(h.pedidos),'solicitações','n','k1'),
     kpi('Lojas atendidas',nf(h.lojas),'com ajuste concluído','n','k2'),
-    kpi('Unidades',nf(h.unidades),'incluídas no estoque','n','k3'),
+    kpi('💬 Ajustes pelo WhatsApp',nf(h.wa_ajustes),nf(h.wa_confirmados)+' confirmados · leitor '+(lei.configurado?(lei.online?'online':'OFFLINE'):'não instalado'),h.wa_ajustes?'z':(lei.configurado&&!lei.online?'w':'n'),'k3'),
     kpi('Aguardando venda',nf(h.aguardando),'ajustou, não vendeu ainda',h.aguardando?'w':'n','k4'),
     kpi('Não vendeu',nf(h.nao_vendeu),'venda perdida',h.nao_vendeu?'b':'n','k5'),
     kpi('Sem foto',nf(h.sem_foto),'sem comprovante',h.sem_foto?'b':'n','k6'),
@@ -219,9 +220,9 @@ function render(d){
   $('chHoras').innerHTML='<div class="cols">'+cols((d.horas||[]).map(x=>({l:String(x.h),v:x.pedidos,t:x.h+'h: '+x.pedidos+' pedido(s)'})),new Date().getHours())+'</div>';
   const F=d.feed||[];
   $('feed').innerHTML=F.length?'<table><tr><th>Hora</th><th>Loja</th><th>Produto</th><th>Situação</th></tr>'+F.map(x=>{
-    const st=ST_TXT[x.status]||[x.status,'p-g'],vd=x.status==='CONCLUIDO'&&VD_TXT[x.venda]?VD_TXT[x.venda]:null;
+    const st=ST_TXT[x.status]||[x.status,'p-g'],wa=x.origem==='WHATSAPP',vd=!wa&&x.status==='CONCLUIDO'&&VD_TXT[x.venda]?VD_TXT[x.venda]:null;
     const chave=x.id+'|'+x.status+'|'+x.venda,novo=!primeira&&!vistos.has(chave);
-    return '<tr class="'+(novo?'flash':'')+'"><td>'+horaMin(x.quando)+'</td><td>'+esc(x.loja||'')+' <span class="small">'+esc((x.nome||'').slice(0,18))+'</span></td><td>'+esc(x.produto)+' <b>+'+esc(x.qtd)+'</b></td><td><span class="pill '+st[1]+'">'+esc(st[0])+'</span>'+(vd?' <span class="pill '+vd[1]+'">'+esc(vd[0])+'</span>':'')+(x.status==='CONCLUIDO'&&!x.foto?' <span class="pill p-bad">sem foto</span>':'')+'</td></tr>'}).join('')+'</table>':'<div class="empty">Nenhum movimento ainda.</div>';
+    return '<tr class="'+(novo?'flash':'')+'"><td>'+horaMin(x.quando)+'</td><td>'+esc(x.loja||'')+' <span class="small">'+esc((x.nome||'').slice(0,18))+'</span></td><td>'+esc(x.produto)+' <b>+'+esc(x.qtd)+'</b></td><td><span class="pill '+st[1]+'">'+esc(st[0])+'</span>'+(wa?' <span class="pill p-ok">💬 WhatsApp</span>'+(x.wa_ok?' <span class="pill p-ok">✔ feito</span>':''):'')+(vd?' <span class="pill '+vd[1]+'">'+esc(vd[0])+'</span>':'')+(!wa&&x.status==='CONCLUIDO'&&!x.foto?' <span class="pill p-bad">sem foto</span>':'')+'</td></tr>'}).join('')+'</table>':'<div class="empty">Nenhum movimento ainda.</div>';
   vistos=new Set(F.map(x=>x.id+'|'+x.status+'|'+x.venda));
   $('alertas').innerHTML=A.length?'<table><tr><th>Loja</th><th>Produto</th><th class="c">Espera</th><th class="c">Foto</th></tr>'+A.map(x=>'<tr><td>'+esc(x.loja||'')+' <span class="small">'+esc((x.nome||'').slice(0,16))+'</span></td><td>'+esc(x.produto)+' <b>+'+esc(x.qtd)+'</b></td><td class="c"><span class="pill '+(x.horas>=24?'p-bad':(x.horas>=4?'p-warn':'p-n'))+'">'+dur(x.horas*60)+'</span></td><td class="c">'+(x.foto?'<span class="pill p-ok">com</span>':'<span class="pill p-bad">sem</span>')+'</td></tr>').join('')+'</table>':'<div class="empty">✅ Nenhum ajuste aguardando venda.</div>';
   $('chLojas').innerHTML=hbars((d.lojas||[]).map(x=>({l:(x.loja||'')+' '+(x.nome||''),v:x.pedidos,c:COR.blue,t:x.pedidos+(x.ajustados!==x.pedidos?' ('+x.ajustados+' aj.)':'')})));
