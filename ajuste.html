@@ -122,8 +122,9 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
       <form id="fAjuste">
         <div id="boxLoja"></div>
         <label for="aCodigo">Código do produto</label><input id="aCodigo" type="tel" inputmode="numeric" placeholder="Código no Seta" autocomplete="off" required>
-        <label>Quantidade a incluir</label>
-        <div class="qty"><button type="button" id="qMenos" aria-label="Diminuir">−</button><input id="aQtd" type="number" min="1" max="50" step="1" value="1" inputmode="numeric"><button type="button" id="qMais" aria-label="Aumentar">+</button></div>
+        <label for="aQtd">Quantidade de unidades a incluir</label>
+        <div class="qty"><button type="button" id="qMenos" aria-label="Diminuir">−</button><input id="aQtd" type="number" min="1" max="50" step="1" placeholder="Digite a quantidade" inputmode="numeric" required><button type="button" id="qMais" aria-label="Aumentar">+</button></div>
+        <div class="sub" style="margin-top:4px">Digite quantas unidades o cliente precisa (de 1 a 50) para o <b>mesmo código</b>.</div>
         <label class="chk"><input id="aDecl" type="checkbox"><span>Declaro que <b>há um cliente na loja</b> para este produto e que este ajuste é <b>para concluir a venda</b>. Sei que ele fica registrado com meu nome, dia e hora.</span></label>
         <div class="msg info" style="margin-bottom:0">📷 A <b>foto do comprovante da venda</b> é enviada <b>depois</b> do ajuste, quando você finalizar a venda.</div>
         <div id="aMsg"></div>
@@ -299,12 +300,13 @@ function montarApp(){show('vApp');$('who').classList.remove('hidden');
   atualizarZap();aba('novo');carregarLista();clearInterval(listaT);listaT=setInterval(()=>{if(!document.hidden&&!$('vApp').classList.contains('hidden'))carregarLista(true)},15000)}
 function aba(x){$('tabNovo').classList.toggle('on',x==='novo');$('tabLista').classList.toggle('on',x==='lista');$('pNovo').classList.toggle('hidden',x!=='novo');$('pLista').classList.toggle('hidden',x!=='lista')}
 $('tabNovo').onclick=()=>aba('novo');$('tabLista').onclick=()=>{aba('lista');carregarLista()};
-$('qMenos').onclick=()=>{$('aQtd').value=Math.max(1,(+$('aQtd').value||1)-1)};$('qMais').onclick=()=>{$('aQtd').value=Math.min(50,(+$('aQtd').value||0)+1)};
+$('qMenos').onclick=()=>{$('aQtd').value=Math.max(1,(+$('aQtd').value||2)-1)};$('qMais').onclick=()=>{$('aQtd').value=Math.min(50,(+$('aQtd').value||0)+1)};
 
 $('fAjuste').onsubmit=async e=>{e.preventDefault();msg('aMsg','');
   const codigo=$('aCodigo').value.replace(/\D/g,''),q=parseInt($('aQtd').value,10),lj=U.lojas.find(l=>l.loja===lojaSel);
   if(!lojaSel||!lj){msg('aMsg','Selecione a loja deste pedido.');return}
   if(!codigo){msg('aMsg','Informe o código do produto.');return}
+  if(!$('aQtd').value.trim()){msg('aMsg','Digite a quantidade de unidades que você precisa.');$('aQtd').focus();return}
   if(!Number.isInteger(q)||q<1||q>50){msg('aMsg','Quantidade inválida (1 a 50).');return}
   if(!$('aDecl').checked){msg('aMsg','Marque a declaração de venda para continuar.');return}
   const b=$('btnEnviar');b.disabled=true;b.innerHTML='<span class="spin"></span>Enviando…';
@@ -312,7 +314,7 @@ $('fAjuste').onsubmit=async e=>{e.preventDefault();msg('aMsg','');
     const r=await sb.from('ajuste_estoque_entrada').insert({user_id:uid,loja:String(lojaSel),loja_normalizada:lojaSel,codigo_seta_solicitado:lj.codigo_seta,solicitante:U.nome,codigo_produto:codigo,quantidade:q,
       motivo:'AJUSTE PARA VENDA - SOLICITADO PELO GERENTE',comprovado:false,declaracao_venda:true,operacao:'ENTRADA',finalidade:'VENDA'}).select('id,protocolo').single();
     if(r.error)throw new Error(r.error.message);
-    $('fAjuste').reset();$('aQtd').value=1;acompanhar(r.data.id);carregarLista(true);
+    $('fAjuste').reset();$('aQtd').value='';acompanhar(r.data.id);carregarLista(true);
   }catch(err){msg('aMsg',err.message)}finally{b.disabled=false;b.textContent='Solicitar ajuste'}};
 
 // ---------- acompanhamento em tempo real do pedido ----------
@@ -328,9 +330,15 @@ function acompanhar(id){$('cForm').classList.add('hidden');const c=$('cAcomp');c
       <button class="btn ok" id="acVenda">Finalizar venda e enviar comprovante</button><button class="btn sec" id="acNovo">Fazer outro ajuste</button>`}
     else if(x.status==='ERRO'||x.status==='CANCELADO'){clearInterval(poll);h=`<div class="big"><div class="ic">⚠️</div><div class="t">Não foi possível ajustar</div></div><div class="msg err">${esc(erroAmigavel(x.erro_executor))}<br><small>Protocolo ${esc(x.protocolo)}</small></div><button class="btn sec" id="acNovo">Voltar</button>`}
     else if(x.status==='BLOQUEADO_DIVERGENCIA'){clearInterval(poll);h=`<div class="big"><div class="ic">🔎</div><div class="t">Em análise da auditoria</div></div><div class="msg warn">Não confirmei o resultado com segurança. <b>Não repita o pedido.</b> A auditoria vai conferir e avisar. Protocolo ${esc(x.protocolo)}.</div><button class="btn sec" id="acNovo">Voltar</button>`}
-    else{h=`<div class="big"><div class="ic"><span class="hg">⏳</span></div><div class="t">${esc(ETAPA_TXT[x.etapa_executor]||'Processando…')}</div><div class="sub">Protocolo ${esc(x.protocolo)} · produto ${esc(x.codigo_produto)} · +${x.quantidade}<br>Leva cerca de 1 minuto. Não feche esta tela.</div></div><div class="steps">${ETAPAS.map((_,i)=>`<i class="${i<idx?'done':i===idx?'on':''}"></i>`).join('')}</div>`;
+    else{h=`<div class="big"><div class="ic"><span class="hg">⏳</span></div><div class="t">${esc(ETAPA_TXT[x.etapa_executor]||'Processando…')}</div><div class="sub">Protocolo ${esc(x.protocolo)} · produto ${esc(x.codigo_produto)} · +${x.quantidade}<br>Leva cerca de 1 minuto. Não feche esta tela.</div></div><div class="steps">${ETAPAS.map((_,i)=>`<i class="${i<idx?'done':i===idx?'on':''}"></i>`).join('')}</div>${x.status==='PENDENTE'?'<button class="btn sec" id="acCancelar" style="margin-top:14px">✕ Cancelar este pedido</button>':'<div class="small" style="text-align:center;margin-top:12px">O robô já está lançando este pedido.</div>'}<button class="btn sec" id="acVoltar" style="margin-top:8px">← Voltar ao ajuste (o pedido continua em Meus ajustes)</button>`;
       if(Date.now()-t0>15*60*1000){clearInterval(poll);h+='<div class="msg warn">Está demorando mais que o normal. Fale com o suporte informando o protocolo.</div>'}}
     c.innerHTML=h;const n=$('acNovo');if(n)n.onclick=()=>{c.classList.add('hidden');$('cForm').classList.remove('hidden')};const v=$('acVenda');if(v)v.onclick=()=>abrirVenda(x,'venda');
+    const vb=$('acVoltar');if(vb)vb.onclick=()=>{c.classList.add('hidden');$('cForm').classList.remove('hidden');carregarLista(true)};
+    const cb=$('acCancelar');if(cb)cb.onclick=async()=>{cb.disabled=true;cb.textContent='Cancelando…';
+      const cr=await sb.rpc('ajuste_cancelar_meu_pedido',{p_id:id});
+      if(cr.error){cb.disabled=false;cb.textContent='✕ Cancelar este pedido';alert('Não foi possível cancelar: '+cr.error.message.replace(/^.*?:\s*/,''));return}
+      if(cr.data&&cr.data.ok){clearInterval(poll);c.classList.add('hidden');$('cForm').classList.remove('hidden');msg('aMsg','Pedido cancelado. Corrija o código e solicite de novo.','info');carregarLista(true)}
+      else{cb.disabled=false;cb.textContent='✕ Cancelar este pedido';alert('O robô já começou a lançar este pedido e ele não pode mais ser cancelado. Aguarde o resultado.')}};
     if(fim)carregarLista(true)};
   tick();poll=setInterval(tick,4000)}
 
