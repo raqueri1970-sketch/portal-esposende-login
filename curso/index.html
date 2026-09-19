@@ -90,7 +90,7 @@
     background:var(--card-hover);
   }
   .cover-wrap{position:relative; aspect-ratio:16/9; overflow:hidden; background:#060a16;}
-  .cover-wrap svg{display:block; width:100%; height:100%;}
+  .cover-wrap img{display:block; width:100%; height:100%; object-fit:cover;}
   .play-badge{
     position:absolute; inset:0;
     display:flex; align-items:center; justify-content:center;
@@ -275,106 +275,17 @@ document.getElementById('brand-logo').src = "data:image/jpeg;base64," + LOGO_B64
 document.getElementById('gate-logo').src = "data:image/jpeg;base64," + LOGO_B64;
 
 // -------- dados dos módulos --------
-const NEUTRAL = '#c9d2e6';
-const NEUTRAL2 = '#8b96b3';
-
-// pessoa (busto) atrás do balcão, olhando para a esquerda
-function pessoa(cx){
-  return `<circle cx="${cx}" cy="98" r="16" fill="${NEUTRAL}"/>
-    <rect x="${cx-30}" y="112" width="60" height="60" rx="22" fill="${NEUTRAL}"/>`;
-}
-function braco(x1,y1,x2,y2){
-  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${NEUTRAL2}" stroke-width="14" stroke-linecap="round"/><circle cx="${x2}" cy="${y2}" r="8.5" fill="${NEUTRAL}"/>`;
-}
-const BALCAO = `<rect x="0" y="152" width="400" height="4" fill="var(--linha)" fill-opacity="0.5"/><rect x="0" y="156" width="400" height="69" fill="#0d1730" fill-opacity="0.55"/>`;
-
-const ILUSTRACOES = {
-  recebimento: (a)=>`
-    ${BALCAO.replace('var(--linha)',a)}
-    <path d="M140 76 L140 100 M132 92 L140 100 L148 92" stroke="${a}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <rect x="104" y="118" width="72" height="42" rx="6" fill="${a}" fill-opacity="0.2" stroke="${a}" stroke-width="2.5"/>
-    <path d="M104 118 L94 100 M176 118 L186 100 M104 118 L140 130 L176 118" stroke="${a}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    ${pessoa(262)}
-    ${braco(234,132,182,142)}`,
-  'notas-fiscais': (a)=>`
-    ${BALCAO.replace('var(--linha)',a)}
-    <rect x="120" y="90" width="58" height="74" rx="5" fill="${NEUTRAL}"/>
-    <rect x="130" y="104" width="38" height="4" rx="2" fill="${a}" opacity="0.8"/>
-    <rect x="130" y="116" width="38" height="4" rx="2" fill="${a}" opacity="0.55"/>
-    <rect x="130" y="128" width="26" height="4" rx="2" fill="${a}" opacity="0.55"/>
-    <rect x="130" y="146" width="4" height="10" fill="${a}"/><rect x="137" y="146" width="2" height="10" fill="${a}"/><rect x="142" y="146" width="5" height="10" fill="${a}"/><rect x="150" y="146" width="3" height="10" fill="${a}"/><rect x="156" y="146" width="4" height="10" fill="${a}"/><rect x="163" y="146" width="2" height="10" fill="${a}"/>
-    ${pessoa(262)}
-    ${braco(234,130,184,126)}`,
-  'fazer-etiquetas': (a)=>`
-    ${BALCAO.replace('var(--linha)',a)}
-    <rect x="106" y="128" width="66" height="34" rx="5" fill="${a}" fill-opacity="0.18" stroke="${a}" stroke-width="2.5"/>
-    <g transform="translate(148,92) rotate(18)">
-      <path d="M0 10 L22 10 L30 19 L22 28 L0 28 Z" fill="${a}"/>
-      <circle cx="8" cy="19" r="2.8" fill="#0a1230"/>
-    </g>
-    ${pessoa(262)}
-    ${braco(234,128,172,116)}`,
-  'fechamento-de-volumes': (a)=>`
-    ${BALCAO.replace('var(--linha)',a)}
-    <path d="M112 120 L126 104 L140 120 Z" fill="${a}" opacity="0.35"/>
-    <path d="M148 120 L162 104 L176 120 Z" fill="${a}" opacity="0.35"/>
-    <rect x="104" y="120" width="72" height="42" rx="5" fill="${a}" fill-opacity="0.2" stroke="${a}" stroke-width="2.5"/>
-    <rect x="92" y="112" width="96" height="15" fill="${a}" opacity="0.65" transform="rotate(-7 140 120)"/>
-    <circle cx="222" cy="90" r="13" fill="none" stroke="${a}" stroke-width="5"/>
-    <path d="M213 96 Q190 108 168 118" stroke="${a}" stroke-width="4" stroke-linecap="round" fill="none"/>
-    ${pessoa(280)}
-    ${braco(252,132,196,134)}`,
-  defeito: (a)=>`
-    ${BALCAO.replace('var(--linha)',a)}
-    <path d="M96 158 Q96 140 118 138 L148 134 Q160 118 178 121 L192 130 Q200 132 200 142 L200 158 Q200 164 192 164 L104 164 Q96 164 96 158 Z" fill="${NEUTRAL}"/>
-    <rect x="104" y="158" width="88" height="7" rx="3" fill="${NEUTRAL2}"/>
-    <circle cx="188" cy="120" r="23" fill="${a}" fill-opacity="0.14" stroke="${a}" stroke-width="3.5"/>
-    <line x1="204" y1="137" x2="221" y2="154" stroke="${a}" stroke-width="5.5" stroke-linecap="round"/>
-    <path d="M180 113 L196 127 M196 113 L180 127" stroke="${a}" stroke-width="3" stroke-linecap="round"/>`,
-  remanejo: (a)=>`
-    <path d="M64 152 L64 116 L94 96 L124 116 L124 152 Z" fill="${NEUTRAL}"/><rect x="80" y="130" width="18" height="22" fill="#0a1230"/>
-    <path d="M276 152 L276 116 L306 96 L336 116 L336 152 Z" fill="${NEUTRAL}"/><rect x="292" y="130" width="18" height="22" fill="#0a1230"/>
-    <rect x="0" y="152" width="400" height="6" fill="${a}" fill-opacity="0.18"/>
-    <path d="M128 108 Q200 66 272 108" stroke="${a}" stroke-width="3" stroke-dasharray="6 7" fill="none" stroke-linecap="round"/>
-    <path d="M132 116 L120 106 L134 100 Z" fill="${a}"/>
-    <path d="M268 116 L280 106 L266 100 Z" fill="${a}"/>
-    <rect x="185" y="70" width="30" height="24" rx="4" fill="${a}"/><path d="M185 79 L215 79 M200 70 L200 94" stroke="#0a1230" stroke-width="1.6"/>`
-};
-
 const CURSOS = [
-  {ordem:1, id:'recebimento', nome:'Recebimento', desc:'Conferência e entrada de mercadoria na loja/CD.', duracao:'11:22', accent:'#2dd4bf', icon:'package', path:'recebimento.mp4'},
-  {ordem:2, id:'notas-fiscais', nome:'Notas Fiscais', desc:'Lançamento e conferência de notas fiscais.', duracao:'11:42', accent:'#38bdf8', icon:'file', path:'notas-fiscais.mp4'},
-  {ordem:3, id:'fazer-etiquetas', nome:'Fazer Etiquetas', desc:'Geração e impressão de etiquetas de produto.', duracao:'06:12', accent:'#fb923c', icon:'tag', path:'fazer-etiquetas.mp4'},
-  {ordem:4, id:'fechamento-de-volumes', nome:'Fechamento de Volumes', desc:'Fechamento e lacre de volumes para envio.', duracao:'13:13', accent:'#a78bfa', icon:'archive', path:'fechamento-de-volumes.mp4'},
-  {ordem:5, id:'defeito', nome:'Defeito', desc:'Identificação e tratamento de produto com defeito.', duracao:'08:46', accent:'#f87171', icon:'alert', path:'defeito.mp4'},
-  {ordem:6, id:'remanejo', nome:'Remanejo', desc:'Transferência de mercadoria entre lojas via CD.', duracao:'09:14', accent:'#4ade80', icon:'repeat', path:'remanejo.mp4'},
+  {ordem:1, id:'recebimento', nome:'Recebimento de Mercadoria', desc:'Conferência e entrada de mercadoria na loja/CD.', duracao:'11:22', accent:'#2dd4bf', path:'recebimento.mp4'},
+  {ordem:2, id:'notas-fiscais', nome:'Notas Fiscais', desc:'Lançamento e conferência de notas fiscais.', duracao:'11:42', accent:'#38bdf8', path:'notas-fiscais.mp4'},
+  {ordem:3, id:'fazer-etiquetas', nome:'Emitir Etiquetas', desc:'Geração e impressão de etiquetas de produto.', duracao:'06:12', accent:'#fb923c', path:'fazer-etiquetas.mp4'},
+  {ordem:4, id:'fechamento-de-volumes', nome:'Fechamento de Volume', desc:'Fechamento e lacre de volumes para envio.', duracao:'13:13', accent:'#a78bfa', path:'fechamento-de-volumes.mp4'},
+  {ordem:5, id:'defeito', nome:'Defeito', desc:'Identificação e tratamento de produto com defeito.', duracao:'08:46', accent:'#f87171', path:'defeito.mp4'},
+  {ordem:6, id:'remanejo', nome:'Remanejo', desc:'Transferência de mercadoria entre lojas via CD.', duracao:'09:14', accent:'#4ade80', path:'remanejo.mp4'},
 ];
 
-function coverSVG(c){
-  const cena = ILUSTRACOES[c.id](c.accent);
-  return `<svg viewBox="0 0 400 225" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="bg-${c.id}" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#0d1428"/>
-        <stop offset="100%" stop-color="#080c18"/>
-      </linearGradient>
-      <radialGradient id="glow-${c.id}" cx="85%" cy="10%" r="70%">
-        <stop offset="0%" stop-color="${c.accent}" stop-opacity="0.32"/>
-        <stop offset="100%" stop-color="${c.accent}" stop-opacity="0"/>
-      </radialGradient>
-      <clipPath id="logoclip-${c.id}">
-        <rect x="14" y="14" width="60" height="60" rx="13"/>
-      </clipPath>
-    </defs>
-    <rect width="400" height="225" fill="url(#bg-${c.id})"/>
-    <rect width="400" height="225" fill="url(#glow-${c.id})"/>
-    <text x="384" y="30" fill="${c.accent}" font-family="Nunito,sans-serif" font-size="12" font-weight="800" letter-spacing="2" text-anchor="end">PROCESSO 0${c.ordem}</text>
-    ${cena}
-    <rect x="14" y="14" width="60" height="60" rx="13" fill="#0a1230"/>
-    <image href="data:image/jpeg;base64,${LOGO_B64}" x="14" y="14" width="60" height="60" preserveAspectRatio="xMidYMid slice" clip-path="url(#logoclip-${c.id})"/>
-    <rect x="14" y="14" width="60" height="60" rx="13" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.5"/>
-  </svg>`;
-}
+const CAPA_VERSAO = '1';
+function capaUrl(c){ return 'capas/' + c.id + '.jpg?v=' + CAPA_VERSAO; }
 
 const grid = document.getElementById('grid');
 CURSOS.forEach(c=>{
@@ -383,7 +294,7 @@ CURSOS.forEach(c=>{
   card.style.setProperty('--accent', c.accent);
   card.innerHTML = `
     <div class="cover-wrap">
-      ${coverSVG(c)}
+      <img src="${capaUrl(c)}" alt="Capa do módulo ${c.ordem}: ${c.nome}" loading="lazy" decoding="async">
       <div class="duration-pill">${c.duracao}</div>
       <div class="play-badge"><div class="circle">
         <svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
@@ -652,8 +563,7 @@ async function openPlayer(c){
   playerTitle.textContent = c.nome;
   playerSub.textContent = `Módulo ${c.ordem} · ${c.duracao}`;
   playerDot.style.background = c.accent;
-  const posterUri = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(coverSVG(c))));
-  playerBody.innerHTML = `<video controls preload="metadata" playsinline webkit-playsinline poster="${posterUri}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
+  playerBody.innerHTML = `<video controls preload="metadata" playsinline webkit-playsinline poster="${capaUrl(c)}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
   const videoEl = playerBody.querySelector('video');
   videoEl.volume = 1.0;
   boostAudio(videoEl);
