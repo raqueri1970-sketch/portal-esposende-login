@@ -132,9 +132,7 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
           <input id="fpFoto" type="file" accept="image/*" capture="environment" class="hidden">
         </div>
         <label for="aQtd">Quantidade de unidades a incluir</label>
-        <div class="qty"><input id="aQtd" type="number" min="1" max="50" step="1" value="1" inputmode="numeric" required><button type="button" id="qMais" aria-label="Aumentar">+</button></div>
-        <div class="sub" style="margin-top:4px">Já vem <b>1</b>. Toque em <b>+</b> ou digite para pedir mais unidades do <b>mesmo código</b> (até 50).</div>
-        <label class="chk"><input id="aDecl" type="checkbox"><span>Declaro que <b>há um cliente na loja</b> para este produto e que este ajuste é <b>para concluir a venda</b>. Sei que ele fica registrado com meu nome, dia e hora.</span></label>
+        <div class="qty"><input id="aQtd" type="number" min="1" max="50" step="1" value="1" inputmode="numeric" required><button type="button" id="qMais" aria-label="Aumentar">+</button></div>        <label class="chk"><input id="aDecl" type="checkbox"><span>Declaro que <b>há um cliente na loja</b> para este produto e que este ajuste é <b>para concluir a venda</b>. Sei que ele fica registrado com meu nome, dia e hora.</span></label>
         <div class="msg info" style="margin-bottom:0">📷 A <b>foto do comprovante da venda</b> é enviada <b>depois</b> do ajuste, quando você finalizar a venda.</div>
         <div id="aMsg"></div>
         <button class="btn" id="btnEnviar" type="submit">Solicitar ajuste</button>
@@ -169,7 +167,7 @@ const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
 const WHATS='5581989087348';
-const BUILD='20260919-122559';
+const BUILD='20260919-124225';
 /* se o navegador guardou uma versao antiga desta pagina, busca a nova e recarrega (uma vez por versao) */
 (async()=>{try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);
   if(m&&m[1]!==BUILD&&m[1].indexOf('@@')<0){let k='';try{k=sessionStorage.getItem('ae_build')||''}catch(e){}if(k!==m[1]){try{sessionStorage.setItem('ae_build',m[1])}catch(e){}location.reload()}}}catch(e){}})();
