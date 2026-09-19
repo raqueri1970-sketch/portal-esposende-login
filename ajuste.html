@@ -123,8 +123,8 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
         <div id="boxLoja"></div>
         <label for="aCodigo">Código do produto</label><input id="aCodigo" type="tel" inputmode="numeric" placeholder="Código no Seta" autocomplete="off" required>
         <label for="aQtd">Quantidade de unidades a incluir</label>
-        <div class="qty"><button type="button" id="qMenos" aria-label="Diminuir">−</button><input id="aQtd" type="number" min="1" max="50" step="1" placeholder="Digite a quantidade" inputmode="numeric" required><button type="button" id="qMais" aria-label="Aumentar">+</button></div>
-        <div class="sub" style="margin-top:4px">Digite quantas unidades o cliente precisa (de 1 a 50) para o <b>mesmo código</b>.</div>
+        <div class="qty"><input id="aQtd" type="number" min="1" max="50" step="1" value="1" inputmode="numeric" required><button type="button" id="qMais" aria-label="Aumentar">+</button></div>
+        <div class="sub" style="margin-top:4px">Já vem <b>1</b>. Toque em <b>+</b> ou digite para pedir mais unidades do <b>mesmo código</b> (até 50).</div>
         <label class="chk"><input id="aDecl" type="checkbox"><span>Declaro que <b>há um cliente na loja</b> para este produto e que este ajuste é <b>para concluir a venda</b>. Sei que ele fica registrado com meu nome, dia e hora.</span></label>
         <div class="msg info" style="margin-bottom:0">📷 A <b>foto do comprovante da venda</b> é enviada <b>depois</b> do ajuste, quando você finalizar a venda.</div>
         <div id="aMsg"></div>
@@ -190,7 +190,7 @@ function resetIdle(){clearTimeout(idleT);if(U)idleT=setTimeout(()=>sair('Sessão
 ['click','keydown','touchstart'].forEach(e=>document.addEventListener(e,resetIdle,{passive:true}));
 document.querySelectorAll('[data-eye]').forEach(b=>b.onclick=()=>{const i=$(b.dataset.eye);const s=i.type==='password';i.type=s?'text':'password';b.textContent=s?'Ocultar':'Mostrar'});
 // WhatsApp: abre a CONVERSA com mensagem pronta (nunca liga)
-function atualizarZap(){const t='Olá! Preciso de ajuda com o Ajuste Expresso.'+(U&&lojaSel?' Loja '+lojaSel+' - '+U.nome+'.':'');
+function atualizarZap(){const t='Olá! Preciso de ajuda com o Ajuste Expresso.\n\nLoja: '+(U&&lojaSel?lojaSel:'')+'\nCPF: \nProduto: \nQuantidade: ';
   $('foot').innerHTML='Precisa de ajuda?<br><a href="https://wa.me/'+WHATS+'?text='+encodeURIComponent(t)+'" target="_blank" rel="noopener">💬 Falar no WhatsApp</a>'}
 atualizarZap();
 /* conta quem tocou em "Falar no WhatsApp" (o link abre normalmente; o registro nao bloqueia nada) */
@@ -300,13 +300,13 @@ function montarApp(){show('vApp');$('who').classList.remove('hidden');
   atualizarZap();aba('novo');carregarLista();clearInterval(listaT);listaT=setInterval(()=>{if(!document.hidden&&!$('vApp').classList.contains('hidden'))carregarLista(true)},15000)}
 function aba(x){$('tabNovo').classList.toggle('on',x==='novo');$('tabLista').classList.toggle('on',x==='lista');$('pNovo').classList.toggle('hidden',x!=='novo');$('pLista').classList.toggle('hidden',x!=='lista')}
 $('tabNovo').onclick=()=>aba('novo');$('tabLista').onclick=()=>{aba('lista');carregarLista()};
-$('qMenos').onclick=()=>{$('aQtd').value=Math.max(1,(+$('aQtd').value||2)-1)};$('qMais').onclick=()=>{$('aQtd').value=Math.min(50,(+$('aQtd').value||0)+1)};
+$('qMais').onclick=()=>{$('aQtd').value=Math.min(50,(+$('aQtd').value||0)+1)};
 
 $('fAjuste').onsubmit=async e=>{e.preventDefault();msg('aMsg','');
   const codigo=$('aCodigo').value.replace(/\D/g,''),q=parseInt($('aQtd').value,10),lj=U.lojas.find(l=>l.loja===lojaSel);
   if(!lojaSel||!lj){msg('aMsg','Selecione a loja deste pedido.');return}
   if(!codigo){msg('aMsg','Informe o código do produto.');return}
-  if(!$('aQtd').value.trim()){msg('aMsg','Digite a quantidade de unidades que você precisa.');$('aQtd').focus();return}
+  if(!$('aQtd').value.trim()){msg('aMsg','Informe a quantidade de unidades (mínimo 1).');$('aQtd').focus();return}
   if(!Number.isInteger(q)||q<1||q>50){msg('aMsg','Quantidade inválida (1 a 50).');return}
   if(!$('aDecl').checked){msg('aMsg','Marque a declaração de venda para continuar.');return}
   const b=$('btnEnviar');b.disabled=true;b.innerHTML='<span class="spin"></span>Enviando…';
@@ -314,7 +314,7 @@ $('fAjuste').onsubmit=async e=>{e.preventDefault();msg('aMsg','');
     const r=await sb.from('ajuste_estoque_entrada').insert({user_id:uid,loja:String(lojaSel),loja_normalizada:lojaSel,codigo_seta_solicitado:lj.codigo_seta,solicitante:U.nome,codigo_produto:codigo,quantidade:q,
       motivo:'AJUSTE PARA VENDA - SOLICITADO PELO GERENTE',comprovado:false,declaracao_venda:true,operacao:'ENTRADA',finalidade:'VENDA'}).select('id,protocolo').single();
     if(r.error)throw new Error(r.error.message);
-    $('fAjuste').reset();$('aQtd').value='';acompanhar(r.data.id);carregarLista(true);
+    $('fAjuste').reset();$('aQtd').value=1;acompanhar(r.data.id);carregarLista(true);
   }catch(err){msg('aMsg',err.message)}finally{b.disabled=false;b.textContent='Solicitar ajuste'}};
 
 // ---------- acompanhamento em tempo real do pedido ----------
