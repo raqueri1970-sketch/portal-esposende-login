@@ -296,12 +296,12 @@ document.getElementById('gate-logo').src = "data:image/jpeg;base64," + LOGO_B64;
 
 // -------- dados dos módulos --------
 const CURSOS = [
-  {ordem:1, id:'recebimento', nome:'Recebimento de Mercadoria', desc:'Conferência e entrada de mercadoria na loja/CD.', duracao:'11:19', accent:'#2dd4bf', path:'recebimento-v2.mp4'},
-  {ordem:2, id:'notas-fiscais', nome:'Notas Fiscais', desc:'Lançamento e conferência de notas fiscais.', duracao:'11:39', accent:'#38bdf8', path:'notas-fiscais-v2.mp4'},
-  {ordem:3, id:'fazer-etiquetas', nome:'Emitir Etiquetas', desc:'Geração e impressão de etiquetas de produto.', duracao:'06:09', accent:'#fb923c', path:'fazer-etiquetas-v2.mp4'},
-  {ordem:4, id:'fechamento-de-volumes', nome:'Fechamento de Volume', desc:'Fechamento e lacre de volumes para envio.', duracao:'13:10', accent:'#a78bfa', path:'fechamento-de-volumes-v2.mp4'},
-  {ordem:5, id:'defeito', nome:'Defeito', desc:'Identificação e tratamento de produto com defeito.', duracao:'08:43', accent:'#f87171', path:'defeito-v2.mp4'},
-  {ordem:6, id:'remanejo', nome:'Remanejo', desc:'Transferência de mercadoria entre lojas via CD.', duracao:'09:11', accent:'#4ade80', path:'remanejo-v2.mp4'},
+  {ordem:1, id:'recebimento', nome:'Recebimento de Mercadoria', desc:'Conferência e entrada de mercadoria na loja/CD.', duracao:'11:19', accent:'#2dd4bf', path:'recebimento-v3.mp4'},
+  {ordem:2, id:'notas-fiscais', nome:'Notas Fiscais', desc:'Lançamento e conferência de notas fiscais.', duracao:'11:39', accent:'#38bdf8', path:'notas-fiscais-v3.mp4'},
+  {ordem:3, id:'fazer-etiquetas', nome:'Emitir Etiquetas', desc:'Geração e impressão de etiquetas de produto.', duracao:'06:09', accent:'#fb923c', path:'fazer-etiquetas-v3.mp4'},
+  {ordem:4, id:'fechamento-de-volumes', nome:'Fechamento de Volume', desc:'Fechamento e lacre de volumes para envio.', duracao:'13:10', accent:'#a78bfa', path:'fechamento-de-volumes-v3.mp4'},
+  {ordem:5, id:'defeito', nome:'Defeito', desc:'Identificação e tratamento de produto com defeito.', duracao:'08:43', accent:'#f87171', path:'defeito-v3.mp4'},
+  {ordem:6, id:'remanejo', nome:'Remanejo', desc:'Transferência de mercadoria entre lojas via CD.', duracao:'09:11', accent:'#4ade80', path:'remanejo-v3.mp4'},
 ];
 
 const CAPA_VERSAO = '1';
@@ -607,7 +607,7 @@ async function openPlayer(c){
   playerDot.style.background = c.accent;
   playerBody.style.setProperty('--qacc', c.accent);
   prepararAudio();
-  playerBody.innerHTML = `<video controls preload="metadata" playsinline webkit-playsinline crossorigin="anonymous" poster="${capaUrl(c)}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
+  playerBody.innerHTML = `<video controls preload="metadata" playsinline webkit-playsinline poster="${capaUrl(c)}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
   const videoEl = playerBody.querySelector('video');
   videoEl.volume = 1.0;
   videoEl.addEventListener('loadedmetadata', ()=>{ if(videoEl.hasAttribute('crossorigin')) boostAudio(videoEl); }, {once:true});
