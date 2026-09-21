@@ -44,6 +44,17 @@
         else if(ativa){p.loja=ativa;p.lojas=[ativa];if(explicita)put({loja:ativa})}
         if(!p.mes&&c.mes)p.mes=c.mes;
         if(!p.ano&&c.ano)p.ano=c.ano;
+        // Regra SACI: quantidade/estoque deve vir da base consolidada D1; fotos sao somente evidencia.
+        if(/\bsaci\b/i.test(norm(q))){
+          p.modulo='saci';
+          p.fonte_prioritaria='saci_d1_consolidada';
+          p.saci_fonte='base_consolidada_d1';
+          p.saci_agregacao='direito+esquerdo';
+          p.saci_chave_loja='loja_origem';
+          p.saci_ignorar_fotos_como_fonte=true;
+          p.instrucoes_fonte=(p.instrucoes_fonte?String(p.instrucoes_fonte)+' | ':'')+
+            'SACI: consultar sempre a base consolidada D1, somando Direito + Esquerdo por Loja Origem. Fotos servem apenas como evidencia e nunca como fonte de quantidade.';
+        }
         p.session_id=SESSION;
         p.destino='integrado';
         put({mes:p.mes||c.mes,ano:p.ano||c.ano,assunto:q||c.assunto});
