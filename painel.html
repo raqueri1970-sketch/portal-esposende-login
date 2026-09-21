@@ -190,7 +190,7 @@ function render(d){
   const h=d.hoje||{},f=d.fila||{},r=d.robo||{},z=d.whatsapp||{},A=d.alertas||[],lei=d.leitor||{},cu=d.custo||{},cuH=cu.hoje||{},cu7=cu.sete_dias||{};
   $('hojeTxt').textContent=new Date(d.agora).toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
   const idade=r.ultimo_sinal?(new Date(d.agora)-new Date(r.ultimo_sinal))/60000:null;
-  const ajl=Math.max(0,(h.ajustados||0)-(h.wa_ajustes||0));   /* controle de venda so vale para pedidos do link */
+  const ajl=Math.max(0,(h.ajustados||0)-(h.wa_ajustes||0));   /* controle de venda vale para pedidos do link e do WhatsApp lido */
   const pct=ajl?Math.round(h.vendeu/ajl*100):0;
   const a24=A.filter(x=>x.horas>=24).length;
   const alertas=(h.sem_foto||0)+(h.foto_nao_confere||0)+(h.erros||0)+a24;
@@ -199,7 +199,7 @@ function render(d){
   else roboH=hero('b','Robô · OFFLINE','🛑 Sem sinal',(r.ultimo_sinal?'há '+dur(idade)+' — ':'')+'pedidos ficam na fila ('+nf(f.pendentes)+' agora)',1);
   $('heroes').innerHTML=roboH+
     hero('g','Ajustes concluídos hoje',nf(h.ajustados),nf(h.unidades)+' unidades incluídas · '+nf(h.lojas)+' loja(s)'+(d.custo?' · custo '+brl(cuH.total):''))+
-    hero(ajl?(pct>=80?'g':(pct>=50?'w':'b')):'n','Vendas confirmadas',ajl?pct+'%':'—',nf(h.vendeu)+' de '+nf(ajl)+' ajustes do link · '+nf(h.aguardando)+' aguardando')+
+    hero(ajl?(pct>=80?'g':(pct>=50?'w':'b')):'n','Vendas confirmadas',ajl?pct+'%':'—',nf(h.vendeu)+' de '+nf(ajl)+' ajustes com controle de venda · '+nf(h.aguardando)+' aguardando')+
     hero(alertas?'b':'g','Alertas de auditoria',nf(alertas),'sem foto, foto não confere, erros e espera > 24h');
   $('kpis').innerHTML=[
     kpi('Pedidos hoje',nf(h.pedidos),'solicitações','n','k1'),
