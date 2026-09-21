@@ -43,7 +43,9 @@ button:hover{filter:brightness(1.15)}
 .kpi{background:linear-gradient(160deg,var(--surface),#191b29);border:1px solid var(--border);border-radius:12px;padding:8px 6px;text-align:center;min-width:0}
 .kpi .l{font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;font-weight:600;line-height:1.2;min-height:28px;display:flex;align-items:center;justify-content:center}
 .kpi .v{font-size:27px;font-weight:800;line-height:1.1}
+.kpi .v.long{font-size:20px;line-height:1.35}
 .kpi .n{font-size:12px;margin-top:2px;line-height:1.2;color:#e6eaf8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kpi .n.q{white-space:normal}
 .kpi.g .v{color:#4dfc9a}.kpi.w .v{color:#ffd166}.kpi.b .v{color:#ff7b8d}.kpi.n .v{color:#8cc8ff}.kpi.z .v{color:#4dfc9a}
 .kpi.b{border-color:rgba(245,69,92,.5)}.kpi.w{border-color:rgba(250,178,25,.45)}.kpi.z{border-color:rgba(37,211,102,.5)}
 .flash{animation:fl 1.4s ease-out}
@@ -79,6 +81,8 @@ button:hover{filter:brightness(1.15)}
 .hbt{background:rgba(255,255,255,.08);border-radius:8px;height:13px;overflow:hidden}
 .hbf{height:100%;border-radius:8px}
 .hbv{font-weight:700;font-size:13.5px;text-align:right;white-space:nowrap}
+.hb.d1{gap:3px}.hb.d1 .hbl,.hb.d1 .hbv{font-size:12.5px}.hb.d1 .hbt{height:11px}
+.hb.d2{gap:2px}.hb.d2 .hbl,.hb.d2 .hbv{font-size:11.5px}.hb.d2 .hbt{height:9px}
 /* tabelas */
 .tw{position:absolute;inset:0;overflow:hidden}
 table{border-collapse:collapse;width:100%;font-size:13.5px}
@@ -91,7 +95,8 @@ td.c,th.c{text-align:center}
 .empty{color:#e6eaf8;padding:10px;text-align:center;font-size:14px}
 .st-ok{color:#4dfc9a}.st-warn{color:#ffd166}.st-bad{color:#ff7b8d}
 .split{position:absolute;inset:0;display:flex;flex-direction:column;gap:6px}
-.split .a{flex:1;min-height:0;position:relative;overflow:hidden}.split .b{height:70px;position:relative;flex:none}
+.split .a{flex:1 1 auto;min-height:0;position:relative;overflow:hidden}.split .b{height:56px;position:relative;flex:none}
+.split.sem-zap h4,.split.sem-zap .b{display:none}
 .split h4{font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:2px 0 3px}
 #erro{display:none;margin:60px auto;max-width:560px;text-align:center;padding:30px;background:var(--surface);border:1px solid var(--border);border-radius:14px}
 #erro .big{font-size:30px;font-weight:800}
@@ -106,9 +111,11 @@ body.tv{cursor:none}
 @media(min-width:1700px) and (min-height:900px){html,body{font-size:16px}.kpi .v{font-size:30px}.hero .hv{font-size:42px}}
 @media(max-width:1149px),(max-height:639px){
   .heroes{grid-template-columns:repeat(2,1fr)}.kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-  .rowA,.rowB{grid-template-columns:1fr;flex:none}.card{min-height:230px}.tw{position:static;overflow-x:auto}.cbody{min-height:170px}
+  .rowA,.rowB{grid-template-columns:1fr;flex:none}.card{min-height:230px;overflow:visible}.tw{position:static;overflow-x:auto}.cbody{min-height:170px}
+  .cbody:has(.split){min-height:0}.split{position:static;gap:10px}.split .a{overflow:visible}.split .b{height:90px}
+  .card:has(.tw) .cbody{min-height:0}
 }
-@media(max-width:600px){.heroes{grid-template-columns:1fr}.logo{height:40px}h1{font-size:19px}.pill{white-space:normal}}
+@media(max-width:600px){.donut svg{max-height:130px}.lg{font-size:13px}.kpis{grid-template-columns:repeat(2,1fr)}.hbr{grid-template-columns:minmax(90px,42%) 1fr auto}.heroes{grid-template-columns:1fr}.logo{height:40px}h1{font-size:19px}.pill{white-space:normal}}
 </style>
 </head>
 <body>
@@ -136,7 +143,7 @@ body.tv{cursor:none}
     <div class="card"><h3>Movimento ao vivo</h3><div class="cbody"><div class="tw" id="feed"></div></div></div>
     <div class="card"><h3>⏳ Aguardando confirmar a venda</h3><div class="cbody"><div class="tw" id="alertas"></div></div></div>
     <div class="card"><h3>Lojas de hoje</h3><div class="cbody"><div class="tw" id="chLojas" style="padding-top:2px"></div></div></div>
-    <div class="card"><h3>Regionais · 💬 WhatsApp</h3><div class="cbody"><div class="split"><div class="a" id="chReg"></div><h4>💬 WhatsApp por dia</h4><div class="b"><div class="cols" id="chZap"></div></div></div></div></div>
+    <div class="card"><h3>Regionais · pedidos hoje</h3><div class="cbody"><div class="split"><div class="a" id="chReg"></div><h4>💬 Suporte no WhatsApp por dia</h4><div class="b"><div class="cols" id="chZap"></div></div></div></div></div>
   </div>
 </div>
 
@@ -167,7 +174,7 @@ let ultimoOk=0,timer=null,primeira=true,vistos=new Set(),prevK={},ULT=null;
 function horaMin(d){return new Date(d).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
 function dur(min){if(min==null)return '—';if(min<1)return 'agora';if(min<60)return Math.round(min)+' min';const h=min/60;return h<48?(h.toFixed(h<10?1:0).replace('.',',')+' h'):Math.round(h/24)+' dias'}
 function hero(c,l,v,n,txt){return '<div class="hero '+c+'"><div class="hl">'+esc(l)+'</div><div class="hv'+(txt?' txt':'')+'">'+esc(v)+'</div><div class="hn">'+esc(n||'')+'</div></div>'}
-function kpi(l,v,n,c,id){const cur=String(v);const ch=id&&prevK[id]!==undefined&&prevK[id]!==cur;if(id)prevK[id]=cur;return '<div class="kpi '+(c||'')+(ch?' flash':'')+'"><div class="l">'+esc(l)+'</div><div class="v">'+esc(cur)+'</div><div class="n">'+esc(n||'')+'</div></div>'}
+function kpi(l,v,n,c,id){const cur=String(v);const ch=id&&prevK[id]!==undefined&&prevK[id]!==cur;if(id)prevK[id]=cur;return '<div class="kpi '+(c||'')+(ch?' flash':'')+'"><div class="l">'+esc(l)+'</div><div class="v'+(cur.length>9?' long':'')+'">'+esc(cur)+'</div><div class="n">'+esc(n||'')+'</div></div>'}
 function cols(items,hojeIdx){const max=Math.max(1,...items.map(i=>i.v));return items.map((i,ix)=>'<div class="col'+(ix===hojeIdx?' hoje':'')+'" title="'+esc(i.t||i.l)+'"><div class="cv">'+(i.v||'')+'</div><div class="bar"><div class="cb" style="height:'+Math.max(i.v?4:0,i.v/max*100)+'%;'+(i.c?'background:'+i.c:'')+'">'+(i.v2?'<div class="cb2" style="height:'+(i.v2/i.v*100)+'%"></div>':'')+'</div></div><div class="cl">'+esc(i.l)+'</div></div>').join('')}
 function hbars(items){if(!items.length)return '<div class="empty">Sem movimento hoje.</div>';const max=Math.max(1,...items.map(i=>i.v));return '<div class="hb">'+items.map(i=>'<div class="hbr"><div class="hbl" title="'+esc(i.l)+'">'+esc(i.l)+'</div><div class="hbt"><div class="hbf" style="width:'+Math.max(3,i.v/max*100)+'%;background:'+i.c+'"></div></div><div class="hbv">'+esc(i.t||i.v)+'</div></div>').join('')+'</div>'}
 function donut(items,centro){
@@ -179,7 +186,18 @@ function donut(items,centro){
   return '<div class="donut"><svg viewBox="0 0 180 180"><circle cx="90" cy="90" r="'+R+'" fill="none" stroke="rgba(128,128,160,.25)" stroke-width="26"/>'+segs+'<text x="90" y="92" text-anchor="middle" class="dc1">'+tot+'</text><text x="90" y="112" text-anchor="middle" class="dc2">'+esc(centro)+'</text></svg><div class="leg">'+leg+'</div></div>';
 }
 /* tira as linhas que nao cabem, para nunca aparecer linha cortada nem barra de rolagem */
-function ajustar(el){const t=el.querySelector('table');if(!t)return;const rows=t.querySelectorAll('tr');for(let i=rows.length-1;i>1&&t.offsetHeight>el.clientHeight;i--)rows[i].remove()}
+function ajustar(el){
+  if(getComputedStyle(el).position!=='absolute')return;   /* em tela pequena rola: nao corta nada */
+  const t=el.querySelector('table');
+  if(t){const rows=t.querySelectorAll('tr');for(let i=rows.length-1;i>1&&t.offsetHeight>el.clientHeight;i--)rows[i].remove();return}
+  const hb=el.querySelector('.hb');if(hb){const r=hb.querySelectorAll('.hbr');for(let i=r.length-1;i>2&&hb.offsetHeight>el.clientHeight;i--)r[i].remove()}
+}
+function encaixar(el){const hb=el.querySelector('.hb');if(!hb)return;hb.classList.remove('d1','d2');if(hb.offsetHeight<=el.clientHeight+1)return;hb.classList.add('d1');if(hb.offsetHeight<=el.clientHeight+1)return;hb.classList.add('d2')}
+function encaixarReg(){
+  const sp=document.querySelector('.split');if(!sp)return;const a=$('chReg');
+  sp.classList.remove('sem-zap');encaixar(a);
+  const hb=a.querySelector('.hb');if(hb&&hb.offsetHeight>a.clientHeight+1&&getComputedStyle(sp).position==='absolute'){sp.classList.add('sem-zap');encaixar(a)}
+}
 
 const ST_TXT={CONCLUIDO:['Ajustado','p-ok'],PENDENTE:['Na fila','p-n'],EM_EXECUCAO:['Ajustando…','p-warn'],ERRO:['Problema','p-bad'],BLOQUEADO_DIVERGENCIA:['Em análise','p-bad'],CANCELADO:['Cancelado','p-g']};
 const VD_TXT={VENDA_CONFIRMADA:['💰 Vendeu','p-ok'],AGUARDANDO_VENDA:['⏳ Aguardando','p-warn'],VENDA_NAO_REALIZADA:['✖ Não vendeu','p-bad']};
@@ -190,7 +208,7 @@ function render(d){
   const h=d.hoje||{},f=d.fila||{},r=d.robo||{},z=d.whatsapp||{},A=d.alertas||[],lei=d.leitor||{},cu=d.custo||{},cuH=cu.hoje||{},cu7=cu.sete_dias||{};
   $('hojeTxt').textContent=new Date(d.agora).toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
   const idade=r.ultimo_sinal?(new Date(d.agora)-new Date(r.ultimo_sinal))/60000:null;
-  const ajl=Math.max(0,(h.ajustados||0)-(h.wa_ajustes||0));   /* controle de venda vale para pedidos do link e do WhatsApp lido */
+  const ajl=(h.vendeu||0)+(h.aguardando||0)+(h.nao_vendeu||0);   /* ajustes com controle de venda (link e WhatsApp lido) */
   const pct=ajl?Math.round(h.vendeu/ajl*100):0;
   const a24=A.filter(x=>x.horas>=24).length;
   const alertas=(h.sem_foto||0)+(h.foto_nao_confere||0)+(h.erros||0)+a24;
@@ -198,25 +216,25 @@ function render(d){
   if(r.online){const t=ROBO_TXT[r.status]||[r.status||'Online','st-ok','🤖'];roboH=hero(t[1]==='st-ok'?'g':'b','Robô · online',t[2]+' '+t[0],'fila '+nf(f.pendentes)+' · ajustando '+nf(f.executando)+' · problemas '+nf(f.problemas)+' · sinal há '+dur(idade),1)}
   else roboH=hero('b','Robô · OFFLINE','🛑 Sem sinal',(r.ultimo_sinal?'há '+dur(idade)+' — ':'')+'pedidos ficam na fila ('+nf(f.pendentes)+' agora)',1);
   $('heroes').innerHTML=roboH+
-    hero('g','Ajustes concluídos hoje',nf(h.ajustados),nf(h.unidades)+' unidades incluídas · '+nf(h.lojas)+' loja(s)'+(d.custo?' · custo '+brl(cuH.total):''))+
-    hero(ajl?(pct>=80?'g':(pct>=50?'w':'b')):'n','Vendas confirmadas',ajl?pct+'%':'—',nf(h.vendeu)+' de '+nf(ajl)+' ajustes com controle de venda · '+nf(h.aguardando)+' aguardando')+
+    hero('g','Ajustes concluídos hoje',nf(h.ajustados),nf(h.unidades)+' unidades incluídas · '+nf(h.lojas)+' loja(s)')+
+    hero(ajl?(pct>=80?'g':(pct>=50?'w':'b')):'n','Vendas confirmadas',ajl?pct+'%':'—',nf(h.vendeu)+' de '+nf(ajl)+' ajustes · '+nf(h.aguardando)+' aguardando o cupom')+
     hero(alertas?'b':'g','Alertas de auditoria',nf(alertas),'sem foto, foto não confere, erros e espera > 24h');
   $('kpis').innerHTML=[
     kpi('Pedidos hoje',nf(h.pedidos),'solicitações','n','k1'),
-    kpi('Lojas atendidas',nf(h.lojas),'com ajuste concluído','n','k2'),
-    kpi('💬 Ajustes pelo WhatsApp',nf(h.wa_ajustes),nf(h.wa_confirmados)+' confirmados · leitor '+(lei.configurado?(lei.online?'online':'OFFLINE'):'não instalado'),h.wa_ajustes?'z':(lei.configurado&&!lei.online?'w':'n'),'k3'),
-    kpi('Aguardando venda',nf(h.aguardando),'ajustou, não vendeu ainda',h.aguardando?'w':'n','k4'),
+    kpi('Lojas atendidas',nf(h.lojas),'com ajuste','n','k2'),
+    kpi('💬 Ajustes pelo WhatsApp',nf(h.wa_ajustes),nf(h.wa_confirmados)+' feitos · '+(lei.configurado?(lei.online?'leitor ON':'leitor OFF'):'sem leitor'),h.wa_ajustes?'z':(lei.configurado&&!lei.online?'w':'n'),'k3'),
+    kpi('Aguardando venda',nf(h.aguardando),'aguarda cupom',h.aguardando?'w':'n','k4'),
     kpi('Não vendeu',nf(h.nao_vendeu),'venda perdida',h.nao_vendeu?'b':'n','k5'),
     kpi('Sem foto',nf(h.sem_foto),'sem comprovante',h.sem_foto?'b':'n','k6'),
     kpi('Foto não confere',nf(h.foto_nao_confere),'código diferente',h.foto_nao_confere?'b':'n','k7'),
-    kpi('Erros hoje',nf(h.erros),'precisam de análise',h.erros?'b':'n','k8'),
-    (h.fora_cadastro!==undefined?kpi('Fora do cadastro',nf(h.fora_cadastro),'CPF não está no Seta',h.fora_cadastro?'w':'n','k9'):kpi('Na fila agora',nf(f.pendentes),nf(f.executando)+' ajustando',f.pendentes?'w':'n','k9')),
-    kpi('💬 WhatsApp',nf(z.hoje),nf(z.lojas_hoje)+' loja(s) hoje · '+nf(z.sete_dias)+' em 7 dias',z.hoje?'z':'n','k10'),
-    (d.custo?kpi('💲 Custo dos ajustes',brl(cuH.total),'7 dias: '+brl(cu7.total)+(cuH.sem_custo?' · '+cuH.sem_custo+' sem custo':''),cuH.total?'g':'n','k11'):'')
+    kpi('Erros hoje',nf(h.erros),'a analisar',h.erros?'b':'n','k8'),
+    (h.fora_cadastro!==undefined?kpi('Fora do cadastro',nf(h.fora_cadastro),'CPF fora do Seta',h.fora_cadastro?'w':'n','k9'):kpi('Na fila agora',nf(f.pendentes),nf(f.executando)+' ajustando',f.pendentes?'w':'n','k9')),
+    kpi('💬 WhatsApp',nf(z.hoje),nf(z.hoje)+' hoje · '+nf(z.sete_dias)+' em 7d',z.hoje?'z':'n','k10'),
+    (d.custo?kpi('💲 Custo dos ajustes',brl(cuH.total),'7 dias: '+brl(cu7.total),cuH.total?'g':'n','k11'):'')
   ].join('');
   const andam=Math.max(0,(h.pedidos||0)-(h.ajustados||0)-(h.erros||0));
-  $('dSit').innerHTML=donut([{l:'Ajustado',v:h.ajustados||0,c:COR.ok},{l:'Na fila / ajustando',v:andam,c:COR.blue},{l:'Erro / divergência',v:h.erros||0,c:COR.bad}],'pedidos');
-  $('dVenda').innerHTML=donut([{l:'Venda confirmada',v:h.vendeu||0,c:COR.ok},{l:'Aguardando',v:h.aguardando||0,c:COR.warn},{l:'Não vendeu',v:h.nao_vendeu||0,c:COR.bad}],'ajustes');
+  $('dSit').innerHTML=donut([{l:'Ajustado',v:h.ajustados||0,c:COR.ok},{l:'Na fila',v:andam,c:COR.blue},{l:'Erro',v:h.erros||0,c:COR.bad}],'pedidos');
+  $('dVenda').innerHTML=donut([{l:'Confirmada',v:h.vendeu||0,c:COR.ok},{l:'Aguardando',v:h.aguardando||0,c:COR.warn},{l:'Não vendeu',v:h.nao_vendeu||0,c:COR.bad}],'ajustes');
   const dias=d.dias||[],hj=d.hoje_data,cuD={};(cu.dias||[]).forEach(x=>{cuD[x.dia]=x.total});
   $('chDias').innerHTML='<div class="cols">'+cols(dias.map(x=>{const p=x.dia.split('-');return{l:p[2]+'/'+p[1],v:x.pedidos,v2:x.ajustados,t:p[2]+'/'+p[1]+': '+x.pedidos+' pedido(s), '+x.ajustados+' ajustado(s)'+(cuD[x.dia]!=null?' · custo '+brl(cuD[x.dia]):'')}}),dias.findIndex(x=>x.dia===hj))+'</div>';
   $('chHoras').innerHTML='<div class="cols">'+cols((d.horas||[]).map(x=>({l:String(x.h),v:x.pedidos,t:x.h+'h: '+x.pedidos+' pedido(s)'})),new Date().getHours())+'</div>';
@@ -231,7 +249,8 @@ function render(d){
   $('chReg').innerHTML=hbars((d.regionais||[]).slice(0,6).map(x=>({l:x.regional,v:x.pedidos,c:COR.violet,t:x.pedidos+(x.ajustados!==x.pedidos?' ('+x.ajustados+' aj.)':'')})));
   const zd=z.dias||[];
   $('chZap').innerHTML=cols(zd.map(x=>{const p=x.dia.split('-');return{l:p[2]+'/'+p[1],v:x.n,c:COR.zap,t:p[2]+'/'+p[1]+': '+x.n}}),zd.findIndex(x=>x.dia===hj));
-  ['feed','alertas','chLojas'].forEach(i=>ajustar($(i)));
+  ['feed','alertas'].forEach(i=>ajustar($(i)));
+  encaixar($('chLojas'));ajustar($('chLojas'));encaixarReg();
   primeira=false;
 }
 addEventListener('resize',()=>{if(ULT){clearTimeout(window._rz);window._rz=setTimeout(()=>render(ULT),200)}});
