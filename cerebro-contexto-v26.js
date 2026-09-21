@@ -62,8 +62,10 @@
           p.saci_agregacao='direito+esquerdo';
           p.saci_chave_loja='loja_origem';
           p.saci_ignorar_fotos_como_fonte=true;
+          p.saci_fallback='dados_operacionais_do_modulo_saci';
+          p.saci_ordem_fontes=['saci_d1_consolidada','dados_operacionais_do_modulo_saci'];
           p.instrucoes_fonte=(p.instrucoes_fonte?String(p.instrucoes_fonte)+' | ':'')+
-            'SACI: consultar sempre a base consolidada D1, somando Direito + Esquerdo por Loja Origem. Fotos servem apenas como evidencia e nunca como fonte de quantidade.';
+            'SACI: primeira fonte = base consolidada D1, somando Direito + Esquerdo por Loja Origem. Se a informacao solicitada nao existir ou nao estiver disponivel na D1, segunda fonte = base/dados operacionais usados pelo proprio modulo SACI, inclusive pesquisas e agrupamentos por marca. Fotos servem apenas como evidencia e nunca como fonte de quantidade. Nunca inventar dados.';
         }
         p.session_id=SESSION;
         p.destino='integrado';
