@@ -155,6 +155,7 @@ body.tv{cursor:none}
 const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const INTERVALO=5000;
+const BUILD='20260921-203727';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=v=>v==null?'—':Number(v).toLocaleString('pt-BR');
@@ -279,6 +280,18 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)atualizar(
 setInterval(()=>{if(ultimoOk&&Date.now()-ultimoOk>INTERVALO*4)status(false)},3000);
 $('btnTv').onclick=()=>{try{const el=document.documentElement;if(el.requestFullscreen)el.requestFullscreen()}catch(e){}};
 document.addEventListener('fullscreenchange',()=>document.body.classList.toggle('tv',!!document.fullscreenElement));
+/* atualiza sozinho quando sai versao nova (TV e celular nao precisam recarregar na mao) */
+async function checarVersao(){
+  try{
+    const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;
+    const t=await r.text(),m=t.match(/const BUILD='([^']+)'/);
+    if(m&&m[1]!==BUILD){
+      let n=0;try{n=+sessionStorage.getItem('pnl_rl_'+m[1])||0;sessionStorage.setItem('pnl_rl_'+m[1],String(n+1))}catch(e){}
+      if(n<3)location.reload();
+    }
+  }catch(e){}
+}
+setInterval(checarVersao,120000);setTimeout(checarVersao,8000);
 iniciar();
 </script>
 </body>
