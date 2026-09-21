@@ -64,6 +64,7 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
 @keyframes hg{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.steps i.on{animation:none}}
 .mini{font-size:13px;padding:9px 12px;width:auto;margin-top:8px}
+.vtbar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}.vtbar button{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:800;color:var(--mut);font-size:14px}.vtbar button.on{background:var(--brand);color:#fff;border-color:var(--brand)}.vtbar select{flex:1 1 100%;padding:10px;border-radius:10px;border:1.5px solid var(--line);font-size:15px;background:#fff}
 .foot{text-align:center;color:var(--mut);font-size:13px;margin-top:20px}.foot a{color:#0b7a3b;font-weight:800;text-decoration:none;background:#e4f6ec;border-radius:999px;padding:8px 14px;display:inline-block;margin-top:6px}
 .hidden{display:none!important}
 .modal{position:fixed;inset:0;background:rgba(10,25,50,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20}
@@ -141,7 +142,7 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
     <div class="card hidden" id="cAcomp"></div>
   </div>
 
-  <div id="pLista" class="hidden"><div id="lista"><div class="sub">Carregando…</div></div></div>
+  <div id="pLista" class="hidden"><div id="vtBar" class="vtbar hidden"><button id="vtMeus" class="on">Meus</button><button id="vtTodos">Todos os ajustes</button><select id="vtLoja"><option value="">Todas as lojas</option></select></div><div id="lista"><div class="sub">Carregando…</div></div></div>
 </section>
 <div class="foot" id="foot"></div>
 </div>
@@ -167,7 +168,7 @@ const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
 const WHATS='5581989087348';
-const BUILD='20260919-144451';
+const BUILD='20260921-201033';
 /* se o navegador guardou uma versao antiga desta pagina, busca a nova e recarrega (uma vez por versao) */
 (async()=>{try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);
   if(m&&m[1]!==BUILD&&m[1].indexOf('@@')<0){let k='';try{k=sessionStorage.getItem('ae_build')||''}catch(e){}if(k!==m[1]){try{sessionStorage.setItem('ae_build',m[1])}catch(e){}location.reload()}}}catch(e){}})();
@@ -289,10 +290,10 @@ $('fLogin').onsubmit=async e=>{e.preventDefault();msg('lMsg','');
     if(p.error||!p.data||!p.data.ok){await sb.auth.signOut();throw new Error('CPF ou senha inválidos.')}
     U=p.data;lojaSel=lojaInicial();$('lSenha').value='';$('lSenha2').value='';entrar();
   }catch(err){msg('lMsg',err.message)}finally{b.disabled=false;b.textContent=rot}};
-async function sair(m){$('lista')._sig='';clearInterval(poll);clearInterval(listaT);await sb.auth.signOut();U=null;uid=null;show('vLogin');atualizarZap();$('lSenha').value='';msg('lMsg',m||'','info')}
+async function sair(m){vtModo='meus';vtLoja='';$('lista')._sig='';clearInterval(poll);clearInterval(listaT);await sb.auth.signOut();U=null;uid=null;show('vLogin');atualizarZap();$('lSenha').value='';msg('lMsg',m||'','info')}
 $('btnSair').onclick=()=>sair();
 function nomeLoja(){if(!lojaSel)return 'Escolha a loja';const l=U&&U.lojas.find(x=>x.loja===lojaSel);return 'Loja '+lojaSel+(l&&l.nome?' · '+l.nome:'')}
-function entrar(){$('whoNome').textContent=U.nome;$('whoLoja').textContent=nomeLoja();resetIdle();atualizarZap();
+function entrar(){montarVtBar();$('whoNome').textContent=U.nome;$('whoLoja').textContent=nomeLoja();resetIdle();atualizarZap();
   if(U.must_change){$('sTitulo').textContent='Crie sua senha';$('sSub').textContent='Por segurança, crie uma senha só sua.';$('btnSenhaVoltar').classList.add('hidden');show('vSenha');$('who').classList.remove('hidden');$('btnSenha').classList.add('hidden')}
   else{$('btnSenha').classList.remove('hidden');montarApp()}}
 
@@ -316,6 +317,7 @@ function montarApp(){show('vApp');$('who').classList.remove('hidden');
   if($('aLoja'))$('aLoja').onchange=e=>{lojaSel=parseInt(e.target.value,10)||null;$('whoLoja').textContent=nomeLoja();atualizarZap();carregarLista()};
   atualizarZap();aba('novo');carregarLista();clearInterval(listaT);listaT=setInterval(()=>{if(!document.hidden&&!$('vApp').classList.contains('hidden'))carregarLista(true)},15000)}
 function aba(x){$('tabNovo').classList.toggle('on',x==='novo');$('tabLista').classList.toggle('on',x==='lista');$('pNovo').classList.toggle('hidden',x!=='novo');$('pLista').classList.toggle('hidden',x!=='lista')}
+$('vtMeus').onclick=()=>{vtModo='meus';montarVtBar();$('lista')._sig='';carregarLista()};$('vtTodos').onclick=()=>{vtModo='todos';montarVtBar();$('lista')._sig='';carregarLista()};$('vtLoja').onchange=()=>{vtLoja=$('vtLoja').value;$('lista')._sig='';carregarLista()};
 $('tabNovo').onclick=()=>aba('novo');$('tabLista').onclick=()=>{aba('lista');carregarLista()};
 $('qMais').onclick=()=>{$('aQtd').value=Math.min(50,(+$('aQtd').value||0)+1)};
 
@@ -368,19 +370,31 @@ function pill(x){if(x.status==='CONCLUIDO')return'<span class="pill done">AJUSTA
 function pillVenda(x){if(x.status!=='CONCLUIDO')return'';if(x.venda_status==='VENDA_CONFIRMADA')return'<span class="pill done">VENDA CONFIRMADA</span>';if(x.venda_status==='VENDA_NAO_REALIZADA')return'<span class="pill err">NÃO VENDEU</span>';return'<span class="pill run">FINALIZAR VENDA</span>'}
 function pillCod(x){if(!x.comprovado)return'';const s=x.foto_codigo_status;if(['CONFERE','CONFERIDO_MANUAL'].includes(s))return'<span class="pill done">CÓDIGO CONFERE</span>';if(s==='PROVAVEL')return'<span class="pill run">CONFERIR CÓDIGO</span>';if(['NAO_LOCALIZADO','ILEGIVEL','DIVERGENTE_MANUAL'].includes(s))return'<span class="pill err">CÓDIGO NÃO CONFERE</span>';return'<span class="pill gray">NÃO CONFERIDO</span>'}
 function pillFotoLista(x){if(x.status!=='CONCLUIDO')return'';return x.comprovado?'<span class="pill done">COM FOTO DO COMPROVANTE</span> '+pillCod(x):'<span class="pill err">SEM FOTO DO COMPROVANTE</span>'}
+let vtModo='meus',vtLoja='';
+function montarVtBar(){
+  const b=$('vtBar');if(!(U&&U.ve_tudo)){b.classList.add('hidden');return}
+  b.classList.remove('hidden');
+  $('vtLoja').innerHTML='<option value="">Todas as lojas</option>'+(U.lojas||[]).map(l=>'<option value="'+l.loja+'">Loja '+l.loja+(l.nome?' · '+esc(l.nome):'')+'</option>').join('');
+  $('vtLoja').value=vtLoja;$('vtLoja').classList.toggle('hidden',vtModo!=='todos');
+  $('vtMeus').classList.toggle('on',vtModo==='meus');$('vtTodos').classList.toggle('on',vtModo==='todos');
+}
 async function carregarLista(silent){
-  const r=await sb.from('ajuste_estoque_entrada').select('id,user_id,protocolo,loja_normalizada,criado_em,executado_em,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,comprovado,solicitante,venda_status,venda_numero,venda_confirmada_em,erro_executor,foto_codigo_status')
-    .order('criado_em',{ascending:false}).limit(40);
+  const vt=!!(U&&U.ve_tudo);
+  let qy=sb.from('ajuste_estoque_entrada').select('id,user_id,protocolo,loja_normalizada,criado_em,executado_em,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,comprovado,solicitante,venda_status,venda_numero,venda_confirmada_em,erro_executor,foto_codigo_status'+(vt?',origem,marca,custo_total,valor_ajuste_venda,cargo_seta':''))
+    .order('criado_em',{ascending:false}).limit(vt&&vtModo==='todos'?150:40);
+  if(vt){if(vtModo==='meus')qy=qy.eq('user_id',uid);else if(vtLoja)qy=qy.eq('loja_normalizada',+vtLoja)}
+  const r=await qy;
   if(r.error){if(!silent)$('lista').innerHTML='<div class="msg err">Não foi possível carregar.</div>';return}
-  const pend=r.data.filter(x=>x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA');
+  const pend=r.data.filter(x=>x.user_id===uid&&x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA');
   const a=$('pendVenda');if(pend.length){a.classList.remove('hidden');a.innerHTML='⚠️ '+pend.length+' ajuste(s) com venda por finalizar. <u style="cursor:pointer" id="irLista">Ver</u>';$('irLista').onclick=()=>aba('lista')}else a.classList.add('hidden');
   const sig=JSON.stringify(r.data);if($('lista')._sig===sig)return;$('lista')._sig=sig;   /* so redesenha se mudou: um toque em botao nao se perde no meio de uma atualizacao */
   $('lista').innerHTML=r.data.length?r.data.map(x=>`<div class="it"><div class="h"><div><div class="p">${esc(x.protocolo)}</div><div class="d">${fmtDH(x.criado_em)} · Loja ${x.loja_normalizada} · ${esc(x.solicitante)}</div></div><div>${pill(x)}</div></div>
     <div class="kv">Produto <b>${esc(x.codigo_produto)}</b> · +${x.quantidade}${x.estoque_novo!=null?' · Estoque '+num(x.estoque_anterior)+' → <b>'+num(x.estoque_novo)+'</b>':''}</div>
     <div class="kv">${pillFotoLista(x)} ${pillVenda(x)}</div>
+    ${vt&&vtModo==='todos'?`<div class="d">${x.origem==='WHATSAPP'?'💬 WhatsApp':'Link'}${x.marca?' · '+esc(x.marca):''}${x.custo_total!=null?' · custo R$ '+Number(x.custo_total).toLocaleString('pt-BR',{minimumFractionDigits:2}):''}${x.valor_ajuste_venda!=null?' · venda R$ '+Number(x.valor_ajuste_venda).toLocaleString('pt-BR',{minimumFractionDigits:2}):''}</div>`:''}
     ${x.venda_numero?`<div class="d" style="margin-top:4px">Venda nº ${esc(x.venda_numero)}</div>`:''}
-    ${x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA'?`<button class="btn ok mini" data-venda='${esc(JSON.stringify({id:x.id,protocolo:x.protocolo,codigo_produto:x.codigo_produto,modo:'venda'}))}'>Finalizar venda</button>`:''}
-    ${x.status==='CONCLUIDO'&&x.venda_status!=='AGUARDANDO_VENDA'&&!x.comprovado?`<button class="btn sec mini" data-venda='${esc(JSON.stringify({id:x.id,protocolo:x.protocolo,codigo_produto:x.codigo_produto,modo:'foto'}))}'>📷 Anexar foto do comprovante</button>`:''}
+    ${x.user_id===uid&&x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA'?`<button class="btn ok mini" data-venda='${esc(JSON.stringify({id:x.id,protocolo:x.protocolo,codigo_produto:x.codigo_produto,modo:'venda'}))}'>Finalizar venda</button>`:''}
+    ${x.user_id===uid&&x.status==='CONCLUIDO'&&x.venda_status!=='AGUARDANDO_VENDA'&&!x.comprovado?`<button class="btn sec mini" data-venda='${esc(JSON.stringify({id:x.id,protocolo:x.protocolo,codigo_produto:x.codigo_produto,modo:'foto'}))}'>📷 Anexar foto do comprovante</button>`:''}
     ${x.status==='PENDENTE'&&x.user_id===uid?`<button class="btn sec mini" data-cancelar="${x.id}">✕ Cancelar este pedido</button>`:''}
     ${(x.status==='ERRO')?`<div class="d" style="margin-top:6px">${esc(erroAmigavel(x.erro_executor))}</div>`:''}</div>`).join(''):'<div class="sub">Nenhum ajuste ainda.</div>';
   $('lista').querySelectorAll('[data-venda]').forEach(b=>b.onclick=()=>{const d=JSON.parse(b.dataset.venda);abrirVenda(d,d.modo)});
