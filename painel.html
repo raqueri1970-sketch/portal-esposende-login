@@ -39,7 +39,7 @@ button:hover{filter:brightness(1.15)}
 .hero.w{background:linear-gradient(135deg,rgba(250,178,25,.22),rgba(250,178,25,.04));border-color:var(--warn)}.hero.w .hv{color:#ffd166}
 .hero.n{background:linear-gradient(135deg,rgba(79,168,255,.22),rgba(79,168,255,.04));border-color:var(--neon)}.hero.n .hv{color:#8cc8ff}
 /* kpis */
-.kpis{display:grid;grid-template-columns:repeat(10,1fr);gap:8px}
+.kpis{display:grid;grid-template-columns:repeat(11,1fr);gap:8px}
 .kpi{background:linear-gradient(160deg,var(--surface),#191b29);border:1px solid var(--border);border-radius:12px;padding:8px 6px;text-align:center;min-width:0}
 .kpi .l{font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;font-weight:600;line-height:1.2;min-height:28px;display:flex;align-items:center;justify-content:center}
 .kpi .v{font-size:27px;font-weight:800;line-height:1.1}
@@ -149,6 +149,7 @@ const INTERVALO=5000;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=v=>v==null?'—':Number(v).toLocaleString('pt-BR');
+const brl=v=>v==null?'—':Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const COR={ok:'#17c964',warn:'#fab219',bad:'#f5455c',blue:'#4fa8ff',violet:'#9d6bff',aqua:'#22d3b6',gray:'#8b93b3',zap:'#25d366'};
 
 /* codigo secreto do link: vem depois do # (nao vai para o servidor nem para logs). Guardado so nesta aba. */
@@ -186,7 +187,7 @@ const ROBO_TXT={OCIOSO:['Aguardando pedidos','st-ok','🤖'],EXECUTANDO:['Ajusta
 
 function render(d){
   ULT=d;
-  const h=d.hoje||{},f=d.fila||{},r=d.robo||{},z=d.whatsapp||{},A=d.alertas||[],lei=d.leitor||{};
+  const h=d.hoje||{},f=d.fila||{},r=d.robo||{},z=d.whatsapp||{},A=d.alertas||[],lei=d.leitor||{},cu=d.custo||{},cuH=cu.hoje||{},cu7=cu.sete_dias||{};
   $('hojeTxt').textContent=new Date(d.agora).toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
   const idade=r.ultimo_sinal?(new Date(d.agora)-new Date(r.ultimo_sinal))/60000:null;
   const ajl=Math.max(0,(h.ajustados||0)-(h.wa_ajustes||0));   /* controle de venda so vale para pedidos do link */
@@ -197,7 +198,7 @@ function render(d){
   if(r.online){const t=ROBO_TXT[r.status]||[r.status||'Online','st-ok','🤖'];roboH=hero(t[1]==='st-ok'?'g':'b','Robô · online',t[2]+' '+t[0],'fila '+nf(f.pendentes)+' · ajustando '+nf(f.executando)+' · problemas '+nf(f.problemas)+' · sinal há '+dur(idade),1)}
   else roboH=hero('b','Robô · OFFLINE','🛑 Sem sinal',(r.ultimo_sinal?'há '+dur(idade)+' — ':'')+'pedidos ficam na fila ('+nf(f.pendentes)+' agora)',1);
   $('heroes').innerHTML=roboH+
-    hero('g','Ajustes concluídos hoje',nf(h.ajustados),nf(h.unidades)+' unidades incluídas · '+nf(h.lojas)+' loja(s)')+
+    hero('g','Ajustes concluídos hoje',nf(h.ajustados),nf(h.unidades)+' unidades incluídas · '+nf(h.lojas)+' loja(s)'+(d.custo?' · custo '+brl(cuH.total):''))+
     hero(ajl?(pct>=80?'g':(pct>=50?'w':'b')):'n','Vendas confirmadas',ajl?pct+'%':'—',nf(h.vendeu)+' de '+nf(ajl)+' ajustes do link · '+nf(h.aguardando)+' aguardando')+
     hero(alertas?'b':'g','Alertas de auditoria',nf(alertas),'sem foto, foto não confere, erros e espera > 24h');
   $('kpis').innerHTML=[
@@ -210,13 +211,14 @@ function render(d){
     kpi('Foto não confere',nf(h.foto_nao_confere),'código diferente',h.foto_nao_confere?'b':'n','k7'),
     kpi('Erros hoje',nf(h.erros),'precisam de análise',h.erros?'b':'n','k8'),
     (h.fora_cadastro!==undefined?kpi('Fora do cadastro',nf(h.fora_cadastro),'CPF não está no Seta',h.fora_cadastro?'w':'n','k9'):kpi('Na fila agora',nf(f.pendentes),nf(f.executando)+' ajustando',f.pendentes?'w':'n','k9')),
-    kpi('💬 WhatsApp',nf(z.hoje),nf(z.lojas_hoje)+' loja(s) hoje · '+nf(z.sete_dias)+' em 7 dias',z.hoje?'z':'n','k10')
+    kpi('💬 WhatsApp',nf(z.hoje),nf(z.lojas_hoje)+' loja(s) hoje · '+nf(z.sete_dias)+' em 7 dias',z.hoje?'z':'n','k10'),
+    (d.custo?kpi('💲 Custo dos ajustes',brl(cuH.total),'7 dias: '+brl(cu7.total)+(cuH.sem_custo?' · '+cuH.sem_custo+' sem custo':''),cuH.total?'g':'n','k11'):'')
   ].join('');
   const andam=Math.max(0,(h.pedidos||0)-(h.ajustados||0)-(h.erros||0));
   $('dSit').innerHTML=donut([{l:'Ajustado',v:h.ajustados||0,c:COR.ok},{l:'Na fila / ajustando',v:andam,c:COR.blue},{l:'Erro / divergência',v:h.erros||0,c:COR.bad}],'pedidos');
   $('dVenda').innerHTML=donut([{l:'Venda confirmada',v:h.vendeu||0,c:COR.ok},{l:'Aguardando',v:h.aguardando||0,c:COR.warn},{l:'Não vendeu',v:h.nao_vendeu||0,c:COR.bad}],'ajustes');
-  const dias=d.dias||[],hj=d.hoje_data;
-  $('chDias').innerHTML='<div class="cols">'+cols(dias.map(x=>{const p=x.dia.split('-');return{l:p[2]+'/'+p[1],v:x.pedidos,v2:x.ajustados,t:p[2]+'/'+p[1]+': '+x.pedidos+' pedido(s), '+x.ajustados+' ajustado(s)'}}),dias.findIndex(x=>x.dia===hj))+'</div>';
+  const dias=d.dias||[],hj=d.hoje_data,cuD={};(cu.dias||[]).forEach(x=>{cuD[x.dia]=x.total});
+  $('chDias').innerHTML='<div class="cols">'+cols(dias.map(x=>{const p=x.dia.split('-');return{l:p[2]+'/'+p[1],v:x.pedidos,v2:x.ajustados,t:p[2]+'/'+p[1]+': '+x.pedidos+' pedido(s), '+x.ajustados+' ajustado(s)'+(cuD[x.dia]!=null?' · custo '+brl(cuD[x.dia]):'')}}),dias.findIndex(x=>x.dia===hj))+'</div>';
   $('chHoras').innerHTML='<div class="cols">'+cols((d.horas||[]).map(x=>({l:String(x.h),v:x.pedidos,t:x.h+'h: '+x.pedidos+' pedido(s)'})),new Date().getHours())+'</div>';
   const F=d.feed||[];
   $('feed').innerHTML=F.length?'<table><tr><th>Hora</th><th>Loja</th><th>Produto</th><th>Situação</th></tr>'+F.map(x=>{
