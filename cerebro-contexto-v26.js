@@ -44,6 +44,16 @@
         else if(ativa){p.loja=ativa;p.lojas=[ativa];if(explicita)put({loja:ativa})}
         if(!p.mes&&c.mes)p.mes=c.mes;
         if(!p.ano&&c.ano)p.ano=c.ano;
+        // Regra global de fonte: o Cerebro deve responder com a base operacional que alimenta cada modulo.
+        // Interface, cards, cache, fotos e anexos sao apoio/evidencia, nunca a fonte primaria de numeros.
+        p.fonte_regra_global='base_operacional_do_modulo';
+        p.exigir_fonte_primaria=true;
+        p.ignorar_interface_como_fonte=true;
+        p.ignorar_cards_como_fonte=true;
+        p.ignorar_cache_como_fonte=true;
+        p.anexos_apenas_evidencia=true;
+        p.instrucoes_fonte=(p.instrucoes_fonte?String(p.instrucoes_fonte)+' | ':'')+
+          'REGRA GLOBAL: para qualquer modulo do Portal Esposende, consultar sempre a base operacional/original que alimenta o modulo e calcular a resposta a partir dela. Nao usar tela, card, cache, foto ou anexo como fonte primaria de quantidade, valor, status ou ranking. Se a base primaria nao estiver acessivel, informar indisponibilidade em vez de estimar ou trocar silenciosamente de fonte.';
         // Regra SACI: quantidade/estoque deve vir da base consolidada D1; fotos sao somente evidencia.
         if(/\bsaci\b/i.test(norm(q))){
           p.modulo='saci';
