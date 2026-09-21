@@ -6,6 +6,12 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#0b0c14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ajuste Expresso">
+<link rel="apple-touch-icon" href="ajuste-icon-192.png">
+<link rel="icon" href="ajuste-icon-192.png">
 <title>Ajuste Expresso ao vivo</title>
 <style>
 :root{--page:#0b0c14;--surface:#171927;--surface2:#202336;--border:rgba(255,255,255,.16);--neon:#4fa8ff;--violet:#9d6bff;--ok:#17c964;--warn:#fab219;--bad:#f5455c;--aqua:#22d3b6;--gray:#8b93b3}
@@ -155,7 +161,7 @@ body.tv{cursor:none}
 const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const INTERVALO=5000;
-const BUILD='20260921-203727';
+const BUILD='20260921-204222';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=v=>v==null?'—':Number(v).toLocaleString('pt-BR');
@@ -164,11 +170,12 @@ const COR={ok:'#17c964',warn:'#fab219',bad:'#f5455c',blue:'#4fa8ff',violet:'#9d6
 
 /* codigo secreto do link: vem depois do # (nao vai para o servidor nem para logs). Guardado so nesta aba. */
 function lerToken(){
+  /* o codigo vem depois do # e FICA na barra de enderecos: assim "Adicionar a Tela de Inicio" guarda o link completo.
+     Tambem fica guardado neste aparelho (localStorage) para abrir de novo sem o link. Nao vai para o servidor nem para logs. */
   let t=null;
   try{const m=location.hash.match(/[#&]t=([A-Za-z0-9_-]{20,80})/);if(m)t=m[1]}catch(e){}
-  let guardou=false;
-  try{if(t){sessionStorage.setItem('pnl_t',t);guardou=true}else t=sessionStorage.getItem('pnl_t')}catch(e){}
-  try{if(t&&guardou&&location.hash)history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+  try{if(t){sessionStorage.setItem('pnl_t',t);try{localStorage.setItem('pnl_t',t)}catch(e){}}else{t=sessionStorage.getItem('pnl_t');if(!t)t=localStorage.getItem('pnl_t')}}catch(e){}
+  try{if(t&&!/[#&]t=/.test(location.hash))history.replaceState(null,'',location.pathname+location.search+'#t='+t)}catch(e){}
   return t;
 }
 const TOKEN=lerToken();
