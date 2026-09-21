@@ -62,6 +62,8 @@
           p.saci_agregacao='direito+esquerdo';
           p.saci_chave_loja='loja_origem';
           p.saci_ignorar_fotos_como_fonte=true;
+          p.saci_fallback='base_operacional_modulo_saci';
+          p.saci_fallback_quando='campo_ausente_no_d1';
           p.saci_fallback='dados_operacionais_do_modulo_saci';
           p.saci_ordem_fontes=['saci_d1_consolidada','dados_operacionais_do_modulo_saci'];
           p.instrucoes_fonte=(p.instrucoes_fonte?String(p.instrucoes_fonte)+' | ':'')+
