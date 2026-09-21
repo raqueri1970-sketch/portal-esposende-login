@@ -230,7 +230,7 @@ function render(d){
     kpi('Erros hoje',nf(h.erros),'a analisar',h.erros?'b':'n','k8'),
     (h.fora_cadastro!==undefined?kpi('Fora do cadastro',nf(h.fora_cadastro),'CPF fora do Seta',h.fora_cadastro?'w':'n','k9'):kpi('Na fila agora',nf(f.pendentes),nf(f.executando)+' ajustando',f.pendentes?'w':'n','k9')),
     kpi('💬 WhatsApp',nf(z.hoje),nf(z.hoje)+' hoje · '+nf(z.sete_dias)+' em 7d',z.hoje?'z':'n','k10'),
-    (d.custo?kpi('💲 Custo dos ajustes',brl(cuH.total),'7 dias: '+brl(cu7.total),cuH.total?'g':'n','k11'):'')
+    (d.custo?kpi('💲 Custo dos ajustes',brl(cuH.total),(cuH.venda?'venda '+brl(cuH.venda):'7 dias: '+brl(cu7.total)),cuH.total?'g':'n','k11'):'')
   ].join('');
   const andam=Math.max(0,(h.pedidos||0)-(h.ajustados||0)-(h.erros||0));
   $('dSit').innerHTML=donut([{l:'Ajustado',v:h.ajustados||0,c:COR.ok},{l:'Na fila',v:andam,c:COR.blue},{l:'Erro',v:h.erros||0,c:COR.bad}],'pedidos');
