@@ -272,25 +272,10 @@ body{background:linear-gradient(180deg,#fff,#f2f7ff);color:var(--text)}
 
 <div class="wrap">
   <div class="intro">
-    <div style="font-size:12px;font-weight:900;letter-spacing:3px;opacity:.85;margin-bottom:8px">CENTRAL DE TREINAMENTOS</div>
-    <h2 style="font-size:clamp(30px,6vw,54px);line-height:1;margin-bottom:12px">ESPOSENDE</h2>
-    <p>Conhecimento que move grandes resultados. Escolha sua área e continue evoluindo.</p>
+    <h2>Central de Treinamentos Esposende</h2>
+    <p>Escolha sua área de treinamento. Operações de Estoque já está disponível.</p>
   </div>
-  <div id="areasHome">
-    <h2 style="margin:30px 0 6px">Nossos módulos de treinamento</h2>
-    <p style="margin:0 0 18px;color:var(--muted)">Selecione uma área para acessar os cursos.</p>
-    <div class="card" id="estoqueAreaCard" style="max-width:520px;--accent:#0787ff">
-      <div class="cover-wrap" style="background:linear-gradient(135deg,#041c3d,#0873d1);display:flex;align-items:flex-end;padding:26px">
-        <div style="position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(51,161,255,.35),transparent 38%)"></div>
-        <div style="position:relative;color:white"><div style="font-size:12px;letter-spacing:2px;font-weight:900;opacity:.8">MÓDULO DISPONÍVEL</div><div style="font-size:28px;font-weight:900;line-height:1.05;margin-top:8px">OPERAÇÕES DE<br>ESTOQUE</div><div style="font-size:13px;margin-top:10px;opacity:.9">Remanejo, transferência, notas fiscais, recebimento, defeitos e rotinas operacionais.</div></div>
-      </div>
-      <div class="info"><h3>Abrir treinamentos →</h3><p>6 cursos disponíveis</p></div>
-    </div>
-  </div>
-  <div id="cursosArea" style="display:none">
-    <button id="voltarAreas" style="margin:26px 0 16px;border:1px solid #b9cce6;background:#fff;color:#0b3f84;border-radius:10px;padding:10px 14px;font-weight:800">← Voltar aos módulos</button>
-    <div class="grid" id="grid"></div>
-  </div>
+  <div class="grid" id="grid"></div>
 </div>
 
 <div class="overlay" id="overlay">
@@ -330,9 +315,6 @@ const CURSOS_FALLBACK = [
 const CAPA_VERSAO = '2';
 function capaUrl(c){ return 'capas/' + (c.capa_path || (c.id + '.jpg')) + '?v=' + CAPA_VERSAO; }
 const grid = document.getElementById('grid');
-const areasHome=document.getElementById('areasHome'),cursosArea=document.getElementById('cursosArea');
-document.getElementById('estoqueAreaCard').addEventListener('click',()=>{areasHome.style.display='none';cursosArea.style.display='block';window.scrollTo({top:0,behavior:'smooth'});});
-document.getElementById('voltarAreas').addEventListener('click',()=>{cursosArea.style.display='none';areasHome.style.display='block';window.scrollTo({top:0,behavior:'smooth'});});
 
 function renderCatalogo(cursos){
   grid.innerHTML = '';
