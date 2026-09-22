@@ -294,40 +294,61 @@ const LOGO_B64 = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDB
 document.getElementById('brand-logo').src = "data:image/jpeg;base64," + LOGO_B64;
 document.getElementById('gate-logo').src = "data:image/jpeg;base64," + LOGO_B64;
 
-// -------- dados dos módulos --------
-const CURSOS = [
-  {ordem:1, id:'recebimento', nome:'Recebimento de Mercadoria', desc:'Conferência e entrada de mercadoria na loja/CD.', duracao:'11:19', accent:'#2dd4bf', path:'recebimento-v3.mp4'},
-  {ordem:2, id:'notas-fiscais', nome:'Notas Fiscais', desc:'Lançamento e conferência de notas fiscais.', duracao:'11:39', accent:'#38bdf8', path:'notas-fiscais-v3.mp4'},
-  {ordem:3, id:'fazer-etiquetas', nome:'Emitir Etiquetas', desc:'Geração e impressão de etiquetas de produto.', duracao:'06:09', accent:'#fb923c', path:'fazer-etiquetas-v3.mp4'},
-  {ordem:4, id:'fechamento-de-volumes', nome:'Fechamento de Volume', desc:'Fechamento e lacre de volumes para envio.', duracao:'13:10', accent:'#a78bfa', path:'fechamento-de-volumes-v3.mp4'},
-  {ordem:5, id:'defeito', nome:'Defeito', desc:'Identificação e tratamento de produto com defeito.', duracao:'08:43', accent:'#f87171', path:'defeito-v3.mp4'},
-  {ordem:6, id:'remanejo', nome:'Remanejo', desc:'Transferência de mercadoria entre lojas via CD.', duracao:'09:11', accent:'#4ade80', path:'remanejo-v3.mp4'},
+// -------- catálogo modular (áreas + submódulos) --------
+const CURSOS_FALLBACK = [
+  {ordem:1, id:'recebimento', nome:'Recebimento de Mercadoria', desc:'Conferência e entrada de mercadoria na loja/CD.', duracao:'11:19', accent:'#2dd4bf', path:'recebimento-v3.mp4', area_id:'operacoes-loja', area_nome:'Operações de Loja'},
+  {ordem:2, id:'notas-fiscais', nome:'Notas Fiscais', desc:'Lançamento e conferência de notas fiscais.', duracao:'11:39', accent:'#38bdf8', path:'notas-fiscais-v3.mp4', area_id:'operacoes-loja', area_nome:'Operações de Loja'},
+  {ordem:3, id:'fazer-etiquetas', nome:'Emitir Etiquetas', desc:'Geração e impressão de etiquetas de produto.', duracao:'06:09', accent:'#fb923c', path:'fazer-etiquetas-v3.mp4', area_id:'operacoes-loja', area_nome:'Operações de Loja'},
+  {ordem:4, id:'fechamento-de-volumes', nome:'Fechamento de Volume', desc:'Fechamento e lacre de volumes para envio.', duracao:'13:10', accent:'#a78bfa', path:'fechamento-de-volumes-v3.mp4', area_id:'operacoes-loja', area_nome:'Operações de Loja'},
+  {ordem:5, id:'defeito', nome:'Defeito', desc:'Identificação e tratamento de produto com defeito.', duracao:'08:43', accent:'#f87171', path:'defeito-v3.mp4', area_id:'operacoes-loja', area_nome:'Operações de Loja'},
+  {ordem:6, id:'remanejo', nome:'Remanejo', desc:'Transferência de mercadoria entre lojas via CD.', duracao:'09:11', accent:'#4ade80', path:'remanejo-v3.mp4', area_id:'operacoes-loja', area_nome:'Operações de Loja'}
 ];
-
-const CAPA_VERSAO = '1';
-function capaUrl(c){ return 'capas/' + c.id + '.jpg?v=' + CAPA_VERSAO; }
-
+const CAPA_VERSAO = '2';
+function capaUrl(c){ return 'capas/' + (c.capa_path || (c.id + '.jpg')) + '?v=' + CAPA_VERSAO; }
 const grid = document.getElementById('grid');
-CURSOS.forEach(c=>{
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.style.setProperty('--accent', c.accent);
-  card.innerHTML = `
-    <div class="cover-wrap">
-      <img src="${capaUrl(c)}" alt="Capa do módulo ${c.ordem}: ${c.nome}" decoding="async">
-      <div class="duration-pill">${c.duracao}</div>
-      <div class="play-badge"><div class="circle">
-        <svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
-      </div></div>
-    </div>
-    <div class="info">
-      <p class="modulo-tag" style="color:${c.accent}">Módulo ${c.ordem}</p>
-      <h3>${c.nome}</h3>
-      <p>${c.desc}</p>
-    </div>`;
-  card.addEventListener('click', ()=>openPlayer(c));
-  grid.appendChild(card);
-});
+
+function renderCatalogo(cursos){
+  grid.innerHTML = '';
+  const grupos = new Map();
+  cursos.forEach(c=>{
+    const k=c.area_id||'geral';
+    if(!grupos.has(k)) grupos.set(k,{nome:c.area_nome||'Treinamentos',descricao:c.area_descricao||'',ordem:c.area_ordem||100,cursos:[]});
+    grupos.get(k).cursos.push(c);
+  });
+  [...grupos.values()].sort((a,b)=>a.ordem-b.ordem).forEach(g=>{
+    const head=document.createElement('div');
+    head.style.gridColumn='1/-1';
+    head.style.marginTop='8px';
+    head.innerHTML='<h2 style="margin:0 0 4px;font-size:18px">'+escapeHtml(g.nome)+'</h2>'+(g.descricao?'<p style="margin:0;color:var(--muted);font-size:13px">'+escapeHtml(g.descricao)+'</p>':'');
+    grid.appendChild(head);
+    g.cursos.sort((a,b)=>a.ordem-b.ordem).forEach(c=>{
+      const card=document.createElement('div');
+      card.className='card'; card.style.setProperty('--accent',c.accent||'#38bdf8');
+      card.innerHTML=`
+        <div class="cover-wrap">
+          <img src="${capaUrl(c)}" alt="Capa: ${escapeHtml(c.nome)}" decoding="async">
+          <div class="duration-pill">${escapeHtml(c.duracao||'')}</div>
+          <div class="play-badge"><div class="circle"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div>
+        </div>
+        <div class="info">
+          <p class="modulo-tag" style="color:${c.accent||'#38bdf8'}">Submódulo ${c.ordem}</p>
+          <h3>${escapeHtml(c.nome)}</h3><p>${escapeHtml(c.desc||'')}</p>
+        </div>`;
+      card.addEventListener('click',()=>openPlayer(c));
+      grid.appendChild(card);
+    });
+  });
+}
+
+async function carregarCatalogo(){
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/rpc/curso_listar_catalogo`,{method:'POST',headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:'{}'});
+    if(!r.ok) throw new Error('catalogo');
+    const rows=await r.json();
+    const cursos=rows.map(x=>({id:x.id,nome:x.nome,desc:x.descricao,ordem:x.ordem,duracao:x.duracao,accent:x.accent,path:x.video_path,capa_path:x.capa_path,area_id:x.area_id,area_nome:x.area_nome,area_descricao:x.area_descricao,area_ordem:x.area_ordem}));
+    renderCatalogo(cursos.length?cursos:CURSOS_FALLBACK);
+  }catch(e){ renderCatalogo(CURSOS_FALLBACK); }
+}
 
 // -------- identificação (loja + nome) --------
 const SUPA_URL = 'https://rdztzurfesnobfkazgpm.supabase.co';
@@ -409,6 +430,7 @@ document.getElementById('gate-submit').addEventListener('click', ()=>{
   setIdentidade({loja, nome, cpf, cargo});
   hideGate();
   renderIdentityBadge();
+carregarCatalogo();
 });
 
 if(!getIdentidade()) showGate();
