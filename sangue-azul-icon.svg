@@ -1,24 +1,69 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#0a3a7a"/>
-      <stop offset="1" stop-color="#0a1f3d"/>
+    <style>@font-face{font-family:"SA Montserrat";font-weight:800;src:url(data:font/woff2;base64,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) format("woff2")}</style>
+    <radialGradient id="bg" cx="50%" cy="42%" r="75%">
+      <stop offset="0" stop-color="#1552b8"/>
+      <stop offset="0.55" stop-color="#0a2d66"/>
+      <stop offset="1" stop-color="#050f24"/>
+    </radialGradient>
+    <linearGradient id="gota" x1="0.25" y1="0" x2="0.75" y2="1">
+      <stop offset="0" stop-color="#8cc8ff"/>
+      <stop offset="0.45" stop-color="#2a7bf0"/>
+      <stop offset="1" stop-color="#0a3596"/>
     </linearGradient>
-    <linearGradient id="gota" x1="0.2" y1="0" x2="0.8" y2="1">
-      <stop offset="0" stop-color="#6fb3ff"/>
-      <stop offset="0.55" stop-color="#1f6fe5"/>
-      <stop offset="1" stop-color="#0b3fa8"/>
+    <radialGradient id="sombraInt" cx="62%" cy="72%" r="60%">
+      <stop offset="0.55" stop-color="#021a55" stop-opacity="0"/>
+      <stop offset="1" stop-color="#021a55" stop-opacity=".55"/>
+    </radialGradient>
+    <linearGradient id="brilho" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".85"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
     </linearGradient>
+    <linearGradient id="texto" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#9cc9ff"/>
+    </linearGradient>
+    <filter id="halo" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+    <filter id="neon" x="-20%" y="-60%" width="140%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="sombra" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000814" flood-opacity=".6"/>
+    </filter>
+    <path id="g" d="M256 58 C256 58 136 194 136 276 C136 344 190 396 256 396 C322 396 376 344 376 276 C376 194 256 58 256 58 Z"/>
+    <clipPath id="clipG"><use href="#g"/></clipPath>
   </defs>
+
   <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- ondas de pulso -->
+  <g fill="none" stroke="#5fa8ff" stroke-width="2">
+    <circle cx="256" cy="262" r="168" stroke-opacity=".16"/>
+    <circle cx="256" cy="262" r="206" stroke-opacity=".09"/>
+    <circle cx="256" cy="262" r="244" stroke-opacity=".05"/>
+  </g>
+  <!-- halo -->
+  <use href="#g" fill="#2f86ff" opacity=".55" filter="url(#halo)"/>
+
   <!-- gota -->
-  <path d="M256 70 C256 70 144 196 144 272 C144 336 194 384 256 384 C318 384 368 336 368 272 C368 196 256 70 256 70 Z"
-        fill="url(#gota)" stroke="#ffffff" stroke-width="10" stroke-linejoin="round"/>
-  <!-- brilho -->
-  <path d="M196 262 C196 226 220 190 238 166" fill="none" stroke="#ffffff" stroke-opacity=".55" stroke-width="12" stroke-linecap="round"/>
+  <g filter="url(#sombra)">
+    <use href="#g" fill="url(#gota)"/>
+    <use href="#g" fill="url(#sombraInt)"/>
+  </g>
+  <g clip-path="url(#clipG)">
+    <ellipse cx="206" cy="210" rx="34" ry="78" transform="rotate(28 206 210)" fill="url(#brilho)" opacity=".75"/>
+    <circle cx="300" cy="340" r="10" fill="#fff" opacity=".25"/>
+  </g>
+  <use href="#g" fill="none" stroke="#dcebff" stroke-width="7" stroke-opacity=".9"/>
+
   <!-- batimento -->
-  <polyline points="160,292 214,292 232,256 256,330 280,236 298,292 352,292"
-            fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="256" y="446" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif"
-        font-weight="800" font-size="46" letter-spacing="4" fill="#a8cdff">SANGUE AZUL</text>
+  <polyline points="116,300 196,300 216,262 240,338 268,226 290,300 396,300"
+            fill="none" stroke="#ffffff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" filter="url(#neon)"/>
+  <circle cx="396" cy="300" r="9" fill="#fff" filter="url(#neon)"/>
+
+  <!-- nome -->
+  <text x="256" y="458" text-anchor="middle" font-family="'SA Montserrat', Montserrat, 'Segoe UI', Arial, sans-serif"
+        font-weight="800" font-size="44" letter-spacing="5" fill="url(#texto)">SANGUE AZUL</text>
 </svg>
