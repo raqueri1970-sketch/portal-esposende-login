@@ -219,6 +219,14 @@
     .quiz{padding:24px 18px 22px;}
   }
 
+
+  .areas-view{display:none}.areas-view.open{display:block}.courses-view.hidden{display:none}
+  .areas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
+  .area-card{position:relative;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;min-height:145px;cursor:pointer;transition:.18s}
+  .area-card:hover{transform:translateY(-2px);border-color:#38bdf8}.area-card.locked{opacity:.58;cursor:not-allowed}
+  .area-card h3{margin:30px 0 5px;font-size:17px}.area-card p{margin:0;color:var(--muted);font-size:12px}
+  .lock{position:absolute;right:16px;top:14px;font-size:22px}.back-area{display:none;margin:0 0 18px;background:#17213b;color:var(--text);border:1px solid var(--border);border-radius:9px;padding:9px 14px;font-weight:800;cursor:pointer}
+  @media(max-width:520px){.areas-grid{grid-template-columns:1fr 1fr}.area-card{min-height:125px;padding:15px}.area-card h3{font-size:14px}}
 </style>
 </head>
 <body>
@@ -267,7 +275,8 @@
     <h2>Módulos de processo</h2>
     <p>Clique em um módulo para assistir o vídeo do processo. Assista na ordem sugerida se estiver começando agora.</p>
   </div>
-  <div class="grid" id="grid"></div>
+  <div class="areas-view" id="areasView"><div class="areas-grid" id="areasGrid"></div></div>
+  <div class="courses-view hidden" id="coursesView"><button class="back-area" id="backArea">← Departamentos</button><div class="grid" id="grid"></div></div>
 </div>
 
 <div class="overlay" id="overlay">
@@ -297,16 +306,27 @@ document.getElementById('gate-logo').src = "data:image/jpeg;base64," + LOGO_B64;
 
 // -------- catálogo modular (áreas + submódulos) --------
 const CURSOS_FALLBACK = [
-  {ordem:1, id:'recebimento', nome:'Recebimento de Mercadoria', desc:'Conferência e entrada de mercadoria na loja/CD.', duracao:'11:19', accent:'#2dd4bf', path:'recebimento-v3.mp4', area_id:'operacoes-loja', area_nome:'Operações de Loja'},
-  {ordem:2, id:'notas-fiscais', nome:'Notas Fiscais', desc:'Lançamento e conferência de notas fiscais.', duracao:'11:39', accent:'#38bdf8', path:'notas-fiscais-v3.mp4', area_id:'operacoes-loja', area_nome:'Operações de Loja'},
-  {ordem:3, id:'fazer-etiquetas', nome:'Emitir Etiquetas', desc:'Geração e impressão de etiquetas de produto.', duracao:'06:09', accent:'#fb923c', path:'fazer-etiquetas-v3.mp4', area_id:'operacoes-loja', area_nome:'Operações de Loja'},
-  {ordem:4, id:'fechamento-de-volumes', nome:'Fechamento de Volume', desc:'Fechamento e lacre de volumes para envio.', duracao:'13:10', accent:'#a78bfa', path:'fechamento-de-volumes-v3.mp4', area_id:'operacoes-loja', area_nome:'Operações de Loja'},
-  {ordem:5, id:'defeito', nome:'Defeito', desc:'Identificação e tratamento de produto com defeito.', duracao:'08:43', accent:'#f87171', path:'defeito-v3.mp4', area_id:'operacoes-loja', area_nome:'Operações de Loja'},
-  {ordem:6, id:'remanejo', nome:'Remanejo', desc:'Transferência de mercadoria entre lojas via CD.', duracao:'09:11', accent:'#4ade80', path:'remanejo-v3.mp4', area_id:'operacoes-loja', area_nome:'Operações de Loja'}
+  {ordem:1, id:'recebimento', nome:'Recebimento de Mercadoria', desc:'Conferência e entrada de mercadoria na loja/CD.', duracao:'11:19', accent:'#2dd4bf', path:'recebimento-v3.mp4', area_id:'estoque', area_nome:'Operações de Estoque'},
+  {ordem:2, id:'notas-fiscais', nome:'Notas Fiscais', desc:'Lançamento e conferência de notas fiscais.', duracao:'11:39', accent:'#38bdf8', path:'notas-fiscais-v3.mp4', area_id:'estoque', area_nome:'Operações de Estoque'},
+  {ordem:3, id:'fazer-etiquetas', nome:'Emitir Etiquetas', desc:'Geração e impressão de etiquetas de produto.', duracao:'06:09', accent:'#fb923c', path:'fazer-etiquetas-v3.mp4', area_id:'estoque', area_nome:'Operações de Estoque'},
+  {ordem:4, id:'fechamento-de-volumes', nome:'Fechamento de Volume', desc:'Fechamento e lacre de volumes para envio.', duracao:'13:10', accent:'#a78bfa', path:'fechamento-de-volumes-v3.mp4', area_id:'estoque', area_nome:'Operações de Estoque'},
+  {ordem:5, id:'defeito', nome:'Defeito', desc:'Identificação e tratamento de produto com defeito.', duracao:'08:43', accent:'#f87171', path:'defeito-v3.mp4', area_id:'estoque', area_nome:'Operações de Estoque'},
+  {ordem:6, id:'remanejo', nome:'Remanejo', desc:'Transferência de mercadoria entre lojas via CD.', duracao:'09:11', accent:'#4ade80', path:'remanejo-v3.mp4', area_id:'estoque', area_nome:'Operações de Estoque'}
 ];
 const CAPA_VERSAO = '2';
 function capaUrl(c){ return 'capas/' + (c.capa_path || (c.id + '.jpg')) + '?v=' + CAPA_VERSAO; }
 const grid = document.getElementById('grid');
+const AREAS=[['estoque','Operações de Estoque'],['comercial','Comercial'],['rh','Recursos Humanos'],['financeiro','Financeiro'],['auditoria','Auditoria / Controladoria'],['compras','Compras'],['logistica','Logística'],['marketing','Marketing'],['ti','TI e Sistemas'],['sac','SAC e Atendimento'],['lojas','Lojas'],['seguranca','Segurança'],['lideranca','Liderança']];
+let catalogoAtual=[];
+async function carregarAreas(){
+ const id=getIdentidade(); if(!id)return;
+ let perms={}; try{const rr=await fetch(SUPA_URL+'/rest/v1/rpc/curso_permissoes_publicas',{method:'POST',headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_cpf:id.cpf})});(await rr.json()).forEach(x=>perms[x.area_id]=!!x.permitido);}catch(e){}
+ const ag=document.getElementById('areasGrid'); ag.innerHTML='';
+ AREAS.forEach(([aid,nome])=>{const ok=!!perms[aid], el=document.createElement('div');el.className='area-card'+(ok?'':' locked');el.innerHTML='<span class="lock">'+(ok?'🔓':'🔒')+'</span><h3>'+escapeHtml(nome)+'</h3><p>'+(ok?'Acessar treinamentos':'Acesso restrito')+'</p>';if(ok)el.onclick=()=>abrirArea(aid,nome);ag.appendChild(el)});
+ document.getElementById('areasView').classList.add('open');document.getElementById('coursesView').classList.add('hidden');
+}
+function abrirArea(aid,nome){document.getElementById('areasView').classList.remove('open');document.getElementById('coursesView').classList.remove('hidden');document.getElementById('backArea').style.display='inline-block';const f=catalogoAtual.filter(x=>x.area_id===aid);renderCatalogo(f);document.querySelector('.intro h2').textContent=nome;}
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='backArea'){document.querySelector('.intro h2').textContent='Módulos de processo';carregarAreas();}});
 
 function renderCatalogo(cursos){
   grid.innerHTML = '';
@@ -347,8 +367,8 @@ async function carregarCatalogo(){
     if(!r.ok) throw new Error('catalogo');
     const rows=await r.json();
     const cursos=rows.map(x=>({id:x.id,nome:x.nome,desc:x.descricao,ordem:x.ordem,duracao:x.duracao,accent:x.accent,path:x.video_path,capa_path:x.capa_path,area_id:x.area_id,area_nome:x.area_nome,area_descricao:x.area_descricao,area_ordem:x.area_ordem}));
-    renderCatalogo(cursos.length?cursos:CURSOS_FALLBACK);
-  }catch(e){ renderCatalogo(CURSOS_FALLBACK); }
+    catalogoAtual=cursos.length?cursos:CURSOS_FALLBACK; carregarAreas();
+  }catch(e){ catalogoAtual=CURSOS_FALLBACK; carregarAreas(); }
 }
 
 // -------- identificação (loja + nome) --------
@@ -436,6 +456,7 @@ carregarCatalogo();
 
 if(!getIdentidade()) showGate();
 renderIdentityBadge();
+if(getIdentidade()) carregarCatalogo();
 
 async function logVisualizacao(c){
   const id = getIdentidade();
