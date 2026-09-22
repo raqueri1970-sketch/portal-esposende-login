@@ -51,7 +51,7 @@
         p.ignorar_interface_como_fonte=true;
         p.ignorar_cards_como_fonte=true;
         p.ignorar_cache_como_fonte=true;
-        p.anexos_apenas_evidencia=true;
+        p.anexos_apenas_evidencia=true;\n        p.base_mae_atual=true;\n        p.base_mae_regra='funcionario_loja_cargo_setor_regional_sempre_atual';
         p.instrucoes_fonte=(p.instrucoes_fonte?String(p.instrucoes_fonte)+' | ':'')+
           'REGRA GLOBAL: para qualquer modulo do Portal Esposende, consultar sempre a base operacional/original que alimenta o modulo e calcular a resposta a partir dela. Nao usar tela, card, cache, foto ou anexo como fonte primaria de quantidade, valor, status ou ranking. Se a base primaria nao estiver acessivel, informar indisponibilidade em vez de estimar ou trocar silenciosamente de fonte.';
         // Regra SACI: quantidade/estoque deve vir da base consolidada D1; fotos sao somente evidencia.
