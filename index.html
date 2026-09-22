@@ -271,6 +271,13 @@ const ORC_UNIFIED_PATCH=`
 // invalidar aquele acesso — URLs assinadas antigas ficam presas ao caminho, nao ao conteudo.
 var FILE_PATH='PORTAL_ESPOSENDE_V4_AUTH.html';
 
+/* Base Mãe v26: injeta o agente também dentro do shell principal carregado do Storage. */
+function instalarBaseMaeNoPortal(ifr){
+ function ligar(){try{var d=ifr.contentDocument;if(!d||d.__baseMaeLigada)return;d.__baseMaeLigada=true;var s=d.createElement('script');s.src=new URL('base-mae-agent.js',location.href).href;d.head.appendChild(s)}catch(e){}}
+ ifr.addEventListener('load',ligar);setTimeout(ligar,1200);
+}
+
+
 // Ponte externa: controla a Central pelo documento de login, acima do shell antigo.
 // Assim o módulo legado nunca precisa terminar de carregar para abrir a tela unificada.
 function abrirCentralUnicaExterna(){
