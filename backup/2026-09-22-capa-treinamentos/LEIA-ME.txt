@@ -1,0 +1,8 @@
+Backup feito antes da troca da capa do card "TREINAMENTOS E CURSOS" (22/09/2026).
+Estado copiado: commit 5c99ca2 (tag git: backup-antes-capa-treinamentos-20260922).
+
+- index.html            -> login/shell do Portal principal
+- curso/index.html      -> Central de Treinamentos (versão com departamentos e cadeados)
+- curso/permissoes.html -> painel de permissões (não foi alterado)
+
+Para restaurar: copie o arquivo daqui para o mesmo caminho na raiz do repositório.

@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Portal Esposende — Entrar</title>
+<link rel="icon" type="image/svg+xml" href="sangue-azul-mix-b.svg?v=1">
+<link rel="icon" type="image/png" sizes="192x192" href="sangue-azul-mix-b-192.png?v=1">
+<link rel="apple-touch-icon" sizes="180x180" href="sangue-azul-mix-b-180.png?v=1">
+<link rel="manifest" href="portal.webmanifest?v=1">
+<meta name="theme-color" content="#0a1f3d">
+<meta name="apple-mobile-web-app-title" content="Esposende">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:#02060d;color:#fff;font-family:Inter,Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
+.card{width:100%;max-width:340px;background:#080f1c;border:1px solid rgba(148,163,184,.12);border-radius:14px;padding:28px 24px}
+.ttl{font-size:18px;font-weight:800;margin-bottom:4px}
+.sub{font-size:12.5px;color:#6b88a8;margin-bottom:22px}
+label{display:block;font-size:11.5px;color:#a8bdd8;margin-bottom:6px;font-weight:600}
+input{width:100%;background:#0b1423;border:1px solid rgba(148,163,184,.24);color:#fff;border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:16px}
+input:focus{outline:none;border-color:#3b82f6}
+button{width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.6;cursor:default}
+#status{margin-top:14px;font-size:12.5px;color:#f59e0b;min-height:16px}
+#status.err{color:#ff3355}
+#status.ok{color:#10b981}
+#portalFrame{display:none;position:fixed;inset:0;width:100vw;height:100vh;border:none;z-index:9999;background:#02060d}
+#btnSairGestor{position:fixed;top:14px;right:16px;z-index:10000;width:auto;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:800;letter-spacing:.04em}
+#btnSairGestor:hover{background:rgba(255,255,255,.24)}
+body.portal-on{display:block;padding:0}
+body.portal-on .card{display:none}
+.link-esqueci{display:block;text-align:center;margin-top:14px;font-size:12px;color:#6b88a8;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0}
+.link-esqueci:hover{color:#93b3d9}
+.hidden{display:none !important}
+.voltar{background:none;border:none;color:#6b88a8;font-size:12px;text-decoration:underline;cursor:pointer;margin-top:14px;padding:0;width:auto;display:block;margin-left:auto;margin-right:auto}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="ttl">🏢 Portal Esposende</div>
+  <div class="sub">Central de Auditoria &amp; Controle</div>
+  <form id="loginForm">
+    <label for="email">E-mail</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="password">Senha</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <button id="btn" type="submit">Entrar</button>
+  </form>
+  <button id="linkEsqueci" class="link-esqueci" type="button">Esqueci minha senha</button>
+
+  <form id="formEsqueci" class="hidden">
+    <label for="emailRecup">E-mail cadastrado</label>
+    <input id="emailRecup" type="email" autocomplete="username" required>
+    <button id="btnEsqueci" type="submit">Enviar link de recuperação</button>
+    <button id="btnVoltarLogin" class="voltar" type="button">Voltar para o login</button>
+  </form>
+
+  <form id="formNovaSenha" class="hidden">
+    <label for="novaSenha">Nova senha</label>
+    <input id="novaSenha" type="password" autocomplete="new-password" minlength="6" required>
+    <button id="btnNovaSenha" type="submit">Salvar nova senha</button>
+  </form>
+
+  <div id="status"></div>
+</div>
+<iframe id="portalFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups allow-top-navigation-by-user-activation allow-popups-to-escape-sandbox"></iframe>
+<button id="btnSairGestor" class="hidden" type="button" onclick="sairGestor()">Sair</button>
+<script>
+var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
+var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
+var sb=supabase.createClient(SB_URL,SB_KEY);
+var BUCKET='portal-file';
+var ALMOX_MINIMO_PATCH=`<script id="patch-almox-minimo-seguranca-20260827">
+(function(){
+  var VERSAO='2026-08-27.1';
+  function instalarNoModulo(ifr){
+    try{
+      var w=ifr&&ifr.contentWindow;
+      if(!w||w.__almoxMinimoSegurancaVersao===VERSAO)return;
+      if(typeof w.atualizarPainelEstoque!=='function')return;
+
+      // O estoque mínimo exibido precisa representar toda a meta de segurança,
+      // e não apenas uma média mensal. Ex.: média 1.366,7 x 3 meses = 4.100.
+      var fonte=w.atualizarPainelEstoque.toString();
+      var corrigida=fonte.replace(
+        /const\\s+minimoPadrao\\s*=\\s*Math\\.ceil\\(media\\s*\\);/,
+        'const minimoPadrao = Math.ceil(media * METdaCOBERTURA);'
+      );
+      if(corrigida===fonte&&!/Math\\.ceil\\(media\\s*\\*\\s*METdaCOBERTURA\\)/.test(fonte)){
+        console.warn('[Almoxarifado] Regra de estoque mínimo não localizada; correção não aplicada.');
+        return;
+      }
+      if(corrigida!==fonte)w.eval('atualizarPainelEstoque = '+corrigida);
+
+      // Os mínimos gravados anteriormente foram calculados pela regra antiga e
+      // prevaleciam sobre a nova meta. A migração os remove uma única vez.
+      w.eval("estoqueMinOverrides = {}; try{localStorage.removeItem('almoxarifado_minimos_migrados_20260827');}catch(e){}");
+
+      // Ao mudar os meses de segurança, mínimos editados de uma meta anterior
+      // não podem continuar congelando a coluna EST. MÍNIMO.
+      if(typeof w.alterarMetaCobertura==='function'){
+        var original=w.alterarMetaCobertura;
+        w.alterarMetaCobertura=function(valor){
+          try{w.eval('estoqueMinOverrides = {}')}catch(e){}
+          return original.call(w,valor);
+        };
+      }
+
+      w.__almoxMinimoSegurancaVersao=VERSAO;
+      w.atualizarPainelEstoque();
+      if(typeof w.salvarCacheAlm==='function')w.salvarCacheAlm();
+      console.info('[Almoxarifado] Estoque mínimo sincronizado com os meses de segurança.');
+    }catch(e){console.error('[Almoxarifado] Falha ao aplicar correção do estoque mínimo:',e);}
+  }
+  function numeroPtBr(txt){
+    var m=String(txt||'').match(/[\d.]+(?:,\d{1,2})?/);
+    return m?Number(m[0].replace(/\./g,'').replace(',','.'))||0:0;
+  }
+  function dinheiroPtBr(n){
+    return 'R$ '+Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  function codigoLoja(txt){
+    var m=String(txt||'').trim().match(/^(\d+)/);
+    return m?String(parseInt(m[1],10)):String(txt||'').trim().toUpperCase();
+  }
+  function acharCard(doc,rotulo){
+    var alvo=rotulo.toUpperCase();
+    var els=Array.from(doc.querySelectorAll('*')).filter(function(el){
+      return el.children.length===0&&String(el.textContent||'').trim().toUpperCase()===alvo;
+    });
+    for(var i=0;i<els.length;i++){
+      var p=els[i];
+      for(var n=0;n<5&&p;n++,p=p.parentElement){
+        var candidatos=Array.from(p.querySelectorAll('*')).filter(function(x){
+          var t=String(x.textContent||'').trim();
+          return x.children.length===0&&(/R\$\s*[\d.]+,\d{2}/.test(t)||/^[\d.]+,\d{2}$/.test(t));
+        });
+        if(candidatos.length)return {box:p,value:candidatos[candidatos.length-1]};
+      }
+    }
+    return null;
+  }
+  function corrigirResumoFinanceiro(ifr){
+    try{
+      var w=ifr&&ifr.contentWindow,doc=w&&w.document;
+      if(!w||!doc||typeof w.eval!=='function')return;
+      var rows=w.eval("typeof dbConsumoRaw!=='undefined'?dbConsumoRaw:[]");
+      if(!rows||!rows.length)return;
+      var datas=Array.from(doc.querySelectorAll('input[type=date]'));
+      if(datas.length<2)return;
+      var ini=datas[0].value?new Date(datas[0].value+'T00:00:00'):null;
+      var fim=datas[1].value?new Date(datas[1].value+'T23:59:59.999'):null;
+      if(!ini&&!fim)return;
+
+      var selects=Array.from(doc.querySelectorAll('select'));
+      var selLoja=selects.find(function(s){return /TODAS AS LOJAS ATIVAS/i.test(s.textContent||'')});
+      var selGer=selects.find(function(s){return /TODOS OS GERENTES/i.test(s.textContent||'')});
+      var selIns=selects.find(function(s){return /TODOS OS INSUMOS/i.test(s.textContent||'')});
+      var lojasAtivas=null,lojaEscolhida='';
+      var cbsLoja=Array.from(doc.querySelectorAll('.cb-loja-item'));
+      var lojasMarcadas=cbsLoja.length?new Set(cbsLoja.filter(function(cb){return cb.checked}).map(function(cb){return codigoLoja(cb.value)})):null;
+      if(selLoja){
+        lojaEscolhida=String(selLoja.options[selLoja.selectedIndex]?.text||'');
+        if(/TODAS AS LOJAS ATIVAS/i.test(lojaEscolhida)){
+          lojasAtivas=new Set(Array.from(selLoja.options).slice(1).map(function(o){return codigoLoja(o.text||o.value)}).filter(Boolean));
+          if(!lojasAtivas.size)lojasAtivas=null;
+        }
+      }
+      var gerente=selGer?String(selGer.options[selGer.selectedIndex]?.text||''):'';
+      var insumo=selIns?String(selIns.options[selIns.selectedIndex]?.text||''):'';
+      var regMap=w.eval("typeof dbRegionaisMap!=='undefined'?dbRegionaisMap:{}");
+      var total=0;
+      rows.forEach(function(r){
+        var d=r['Data Solicitação']?new Date(r['Data Solicitação']):null;
+        if(!d||isNaN(d.getTime())||(ini&&d<ini)||(fim&&d>fim))return;
+        var loja=String(r['Empresa Solicitante']||'').trim(),cod=codigoLoja(loja);
+        if(lojasMarcadas&&!lojasMarcadas.has(cod))return;
+        if(selLoja){
+          if(lojasAtivas&&!lojasAtivas.has(cod))return;
+          if(!/TODAS AS LOJAS ATIVAS/i.test(lojaEscolhida)&&codigoLoja(lojaEscolhida)!==cod)return;
+        }
+        if(selGer&&!/TODOS OS GERENTES/i.test(gerente)&&String(regMap[cod]||'NÃO MAPEADO').toUpperCase()!==gerente.toUpperCase())return;
+        if(selIns&&!/TODOS OS INSUMOS/i.test(insumo)&&String(r['Insumo']||'').trim().toUpperCase()!==insumo.trim().toUpperCase())return;
+        var v=Number(r['Custo Atendido']);
+        if(Number.isFinite(v))total+=v;
+      });
+
+      var cardAlm=acharCard(doc,'ALMOXARIFADO');
+      var cardTi=acharCard(doc,'TI'),cardFort=acharCard(doc,'FORTPEL');
+      var cardGeral=acharCard(doc,'TOTAL GERAL');
+      if(!cardAlm||!cardGeral)return;
+      var antigo=numeroPtBr(cardAlm.value.textContent);
+      var totalGeral=total+(cardTi?numeroPtBr(cardTi.value.textContent):0)+(cardFort?numeroPtBr(cardFort.value.textContent):0);
+      cardAlm.value.textContent=dinheiroPtBr(total);
+      cardGeral.value.textContent=dinheiroPtBr(totalGeral);
+
+      // Atualiza os números textuais do gráfico existente sem mudar sua estrutura visual.
+      var secoes=Array.from(doc.querySelectorAll('*')).filter(function(el){return el.children.length===0&&/PARTICIPAÇÃO POR ESTOQUE/i.test(el.textContent||'')});
+      if(secoes.length){
+        var box=secoes[0];for(var j=0;j<4&&box.parentElement;j++)box=box.parentElement;
+        Array.from(box.querySelectorAll('*')).forEach(function(el){
+          if(el.children.length)return;
+          var t=String(el.textContent||'');
+          if(Math.abs(numeroPtBr(t)-antigo)<0.02||Math.abs(numeroPtBr(t)-Math.round(antigo))<0.02){
+            el.textContent=/,\d{2}/.test(t)?total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):Math.round(total).toLocaleString('pt-BR');
+          }
+        });
+      }
+      w.__almoxResumoPeriodo={inicio:datas[0].value,fim:datas[1].value,total:total};
+    }catch(e){console.error('[Almoxarifado] Falha ao corrigir total por período:',e);}
+  }
+  function acompanhar(){
+    var ifr=document.getElementById('ifr-alm');
+    if(!ifr)return;
+    instalarNoModulo(ifr);
+    corrigirResumoFinanceiro(ifr);
+    if(!ifr.__almoxPatchLoad){
+      ifr.__almoxPatchLoad=true;
+      ifr.addEventListener('load',function(){setTimeout(function(){instalarNoModulo(ifr)},150)});
+    }
+  }
+  new MutationObserver(acompanhar).observe(document.documentElement,{childList:true,subtree:true});
+  setInterval(acompanhar,1000);
+  acompanhar();
+})();
+<\/script>`;
+// Substitui a navegação do módulo antigo pela Central de Compras em tela única.
+// O shell continua no Storage; a interface do módulo fica versionada no GitHub Pages.
+const ORC_UNIFIED_PATCH=`
+<script>
+(function(){
+  var ORC_URL='/portal-esposende-login/orcamento-compras.html?v=central-cerebro-16';
+  function abrirCentralCompras(){
+    var antigo=document.getElementById('orc-central-unica');
+    if(antigo){antigo.style.display='flex';return}
+    var box=document.createElement('div');
+    box.id='orc-central-unica';
+    box.style.cssText='position:fixed;inset:0;z-index:2147483000;background:#07111f;display:flex;flex-direction:column';
+    box.innerHTML='<div style="height:52px;flex:0 0 52px;background:#081421;border-bottom:1px solid #20334b;display:flex;align-items:center;padding:0 14px;gap:10px;font-family:Arial,sans-serif">'
+      +'<button id="orc-central-voltar" style="background:#132a43;color:#fff;border:1px solid #315170;border-radius:8px;padding:8px 13px;font-weight:700;cursor:pointer">← Voltar ao Portal</button>'
+      +'<strong style="color:#edf4fb">Central de Compras</strong>'
+      +'<span style="color:#8ca4bf;font-size:12px">Solicitação e cotação em uma tela</span></div>'
+      +'<iframe id="orc-central-frame" title="Central de Compras" style="width:100%;height:calc(100vh - 52px);border:0;background:#07111f"></iframe>';
+    document.body.appendChild(box);
+    var frame=box.querySelector('#orc-central-frame');
+    if(window.__ORC_UNIFIED_HTML){frame.srcdoc=window.__ORC_UNIFIED_HTML}else{frame.src=ORC_URL}
+    box.querySelector('#orc-central-voltar').onclick=function(){box.style.display='none'};
+  }
+  window.abrirCentralCompras=abrirCentralCompras;
+  function moduloAntigoVisivel(){
+    var botoes=[].slice.call(document.querySelectorAll('button,[role="button"],a'));
+    function tem(txt){return botoes.some(function(b){return (b.textContent||'').replace(/\s+/g,' ').trim().toLowerCase()===txt})}
+    return tem('painel')&&tem('por departamento')&&tem('solicitações')&&tem('cotações')&&tem('conta-corrente');
+  }
+  function acompanharModulo(){
+    if(moduloAntigoVisivel()&&!document.getElementById('orc-central-unica'))abrirCentralCompras();
+  }
+  document.addEventListener('click',function(ev){
+    var alvo=ev.target&&ev.target.closest&&ev.target.closest('button,a,[onclick]');
+    if(!alvo)return;
+    var texto=(alvo.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+    if(texto.indexOf('orçamento & com')>=0||texto.indexOf('orcamento & com')>=0){
+      ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+      abrirCentralCompras();
+    }
+  },true);
+  new MutationObserver(acompanharModulo).observe(document.documentElement,{childList:true,subtree:true});
+  setInterval(acompanharModulo,700);
+  acompanharModulo();
+})();
+<\/script>`;
+// Caminho novo (2026-08-19): o antigo 'PORTAL_ESPOSENDE_V4.html' tinha uma URL assinada de
+// 10 anos publica no historico do repo GitHub Pages, que continuaria funcionando pra sempre
+// mesmo com o login de volta. Trocado de caminho (e o objeto antigo removido do Storage) pra
+// invalidar aquele acesso — URLs assinadas antigas ficam presas ao caminho, nao ao conteudo.
+var FILE_PATH='PORTAL_ESPOSENDE_V4_AUTH.html';
+
+/* Base Mãe v26: injeta o agente também dentro do shell principal carregado do Storage. */
+function instalarBaseMaeNoPortal(ifr){
+ function ligar(){try{var d=ifr.contentDocument;if(!d||d.__baseMaeLigada)return;d.__baseMaeLigada=true;var s=d.createElement('script');s.src=new URL('base-mae-agent.js',location.href).href;d.head.appendChild(s)}catch(e){}}
+ ifr.addEventListener('load',ligar);setTimeout(ligar,1200);
+}
+
+
+// Ponte externa: controla a Central pelo documento de login, acima do shell antigo.
+// Assim o módulo legado nunca precisa terminar de carregar para abrir a tela unificada.
+function abrirCentralUnicaExterna(){
+  var old=document.getElementById('orc-central-externa');
+  if(old){old.style.display='flex';return}
+  var box=document.createElement('div');
+  box.id='orc-central-externa';
+  box.style.cssText='position:fixed;inset:0;z-index:2147483646;background:#07111f;display:flex;flex-direction:column';
+  box.innerHTML='<div style="height:52px;flex:0 0 52px;background:#081421;border-bottom:1px solid #20334b;display:flex;align-items:center;padding:0 14px;gap:10px;font-family:Arial,sans-serif">'
+    +'<button id="orc-central-externa-voltar" style="width:auto;background:#132a43;color:#fff;border:1px solid #315170;border-radius:8px;padding:8px 13px;font-weight:700;cursor:pointer">← Voltar ao Portal</button>'
+    +'<strong style="color:#edf4fb">Central de Compras</strong><span style="color:#8ca4bf;font-size:12px">Solicitação e cotação em uma tela</span></div>'
+    +'<iframe id="orc-central-externa-frame" title="Central de Compras" style="width:100%;height:calc(100vh - 52px);border:0;background:#07111f"></iframe>';
+  document.body.appendChild(box);
+  var frame=box.querySelector('#orc-central-externa-frame');
+  if(window.__ORC_PAGE_HTML)frame.srcdoc=window.__ORC_PAGE_HTML;
+  else frame.src='orcamento-compras.html?v=central-cerebro-16';
+  box.querySelector('#orc-central-externa-voltar').onclick=function(){box.style.display='none'};
+}
+
+
+/* Encaminha as perguntas do novo Orçamento ao módulo versionado no GitHub. */
+function instalarCerebroCentral(ifr){
+ function ligar(){
+  var d;try{d=ifr.contentDocument}catch(e){return}
+  if(!d||d.__cerebroCentral15)return;
+  d.__cerebroCentral15=true;
+  function encaminhar(ev){
+   var input=d.getElementById('brain-quick-input'),ask=d.getElementById('brain-quick-ask');
+   if(!input||!ask)return;
+   if(ev.type==='click'&&!ask.contains(ev.target))return;
+   if(ev.type==='keydown'&&(ev.target!==input||ev.key!=='Enter'||ev.isComposing))return;
+   var pergunta=input.value.trim();
+   var q=pergunta.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+   if(!/\borcamento\b|\bbudget\b|central de compras|(?:saldo|verba|realizado|gasto|numeros).*(?:compras)|(?:compras).*(?:saldo|verba|realizado|gasto|numeros)/.test(q))return;
+   ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+   abrirCentralUnicaExterna();
+   var frame=document.getElementById('orc-central-externa-frame'),tentativas=0;
+   var voice=d.getElementById('bq-voz-toggle');
+   function abrir(){
+    try{
+     var api=frame.contentWindow.OrcCerebro;
+     if(api){api.ask(pergunta,{reset:true,speak:voice?voice.checked:true});return true}
+    }catch(e){}
+    return false;
+   }
+   if(abrir())return;
+   var timer=setInterval(function(){
+    if(abrir()){clearInterval(timer);return}
+    if(++tentativas>=200){
+     clearInterval(timer);
+     var answer=d.getElementById('brain-quick-answer');
+     if(answer){answer.textContent='Não foi possível carregar o Cérebro da Central. Atualize o portal e tente novamente.';answer.classList.add('on')}
+     var box=document.getElementById('orc-central-externa');if(box)box.style.display='none';
+    }
+   },100);
+  }
+  d.addEventListener('click',encaminhar,true);
+  d.addEventListener('keydown',encaminhar,true);
+ }
+ ifr.addEventListener('load',ligar);
+ ligar();
+}
+
+function instalarPonteCentral(ifr){
+  function doc(){try{return ifr.contentDocument}catch(e){return null}}
+  function texto(el){return (el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase()}
+  function moduloAntigoAberto(){
+    var d=doc();if(!d)return false;
+    var ts=[].slice.call(d.querySelectorAll('button,[role="button"],a')).map(texto);
+    return ts.includes('painel')&&ts.includes('por departamento')&&ts.includes('solicitações')&&ts.includes('cotações')&&ts.includes('conta-corrente');
+  }
+  function observar(){if(moduloAntigoAberto()&&!document.getElementById('orc-central-externa'))abrirCentralUnicaExterna()}
+  function ligar(){
+    var d=doc();if(!d||d.__orcCentralLigada)return;
+    d.__orcCentralLigada=true;
+    d.addEventListener('click',function(ev){
+      var el=ev.target&&ev.target.closest&&ev.target.closest('button,a,[onclick]');if(!el)return;
+      var t=texto(el);
+      if(t.indexOf('orçamento & com')>=0||t.indexOf('orcamento & com')>=0){
+        ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();abrirCentralUnicaExterna();
+      }
+    },true);
+  }
+  ifr.addEventListener('load',function(){setTimeout(function(){ligar();observar()},100)});
+  setInterval(function(){ligar();observar()},500);
+}
+
+
+// Módulo Ajuste Expresso de Estoque — exclusivamente ENTRADA.
+function abrirAjusteEstoqueEntrada(){
+  var old=document.getElementById('ajuste-entrada-externa');
+  if(old){old.style.display='flex';return}
+  var box=document.createElement('div');
+  box.id='ajuste-entrada-externa';
+  box.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#06101c;display:flex;flex-direction:column';
+  box.innerHTML='<div style="height:52px;flex:0 0 52px;background:#081421;border-bottom:1px solid #20334b;display:flex;align-items:center;padding:0 14px;gap:10px;font-family:Arial,sans-serif">'
+    +'<button id="ajuste-entrada-voltar" style="width:auto;background:#132a43;color:#fff;border:1px solid #315170;border-radius:8px;padding:8px 13px;font-weight:700;cursor:pointer">← Voltar ao Portal</button>'
+    +'<strong style="color:#edf4fb">Ajuste Expresso de Estoque</strong><span style="color:#34d399;font-size:12px;font-weight:800">SOMENTE ENTRADA</span></div>'
+    +'<iframe src="ajuste-estoque-entrada.html?v=5" title="Ajuste Expresso de Estoque" style="width:100%;height:calc(100vh - 52px);border:0;background:#06101c"></iframe>';
+  document.body.appendChild(box);
+  box.querySelector('#ajuste-entrada-voltar').onclick=function(){box.style.display='none'};
+}
+function instalarAjusteEntrada(ifr){
+  function ligar(){
+    var d;try{d=ifr.contentDocument}catch(e){return}
+    if(!d||d.__ajusteEntradaLigado)return; d.__ajusteEntradaLigado=true;
+    var btn=d.createElement('button');
+    btn.id='btn-ajuste-estoque-entrada';
+    btn.type='button';
+    btn.textContent='＋ Ajuste de Estoque';
+    btn.title='Registrar entrada de estoque';
+    btn.style.cssText='position:fixed;right:18px;bottom:18px;z-index:2147482000;border:0;border-radius:999px;padding:12px 16px;background:#2563eb;color:white;font:800 13px Arial;box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer';
+    btn.onclick=function(){abrirAjusteEstoqueEntrada()};
+    d.body.appendChild(btn);
+  }
+  ifr.addEventListener('load',function(){setTimeout(ligar,300)});
+  setTimeout(ligar,500);
+}
+
+function setStatus(msg,cls){
+  var el=document.getElementById('status');
+  el.textContent=msg;el.className=cls||'';
+}
+
+// O Supabase Storage força Content-Type text/plain + CSP sandbox em qualquer
+// arquivo (proteção deles contra hospedar HTML executável direto). Por isso
+// buscamos o conteúdo via fetch() autenticado e montamos um Blob local — o
+// mesmo truque que o próprio portal já usa pros módulos (getBlobUrl/execMod).
+// Gestor de área: entra DIRETO na Central de Compras (só a área dele), sem o portal de auditoria.
+async function abrirSomenteOrcamento(session){
+  setStatus('Abrindo a Central de Compras...','ok');
+  var sp={
+    access_token:session.access_token, refresh_token:session.refresh_token||'',
+    email:(session.user&&session.user.email)||null, uid:(session.user&&session.user.id)||null
+  };
+  var r=await fetch('orcamento-compras.html?v=central-cerebro-16',{cache:'no-store'});
+  if(!r.ok){ setStatus('Erro ao abrir a Central de Compras (status '+r.status+')','err'); return; }
+  var html=await r.text();
+  var inj='<scr'+'ipt>window.__PORTAL_SESSION='+JSON.stringify(sp)+';</scr'+'ipt>';
+  html=html.replace(/<\/head>/i,inj+'</head>');
+  var blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  var ifr=document.getElementById('portalFrame');
+  ifr.src=URL.createObjectURL(blob);
+  ifr.style.display='block';
+  document.getElementById('btnSairGestor').classList.remove('hidden');
+  document.body.classList.add('portal-on');
+  setStatus('','');
+}
+async function sairGestor(){
+  try{ await sb.auth.signOut(); }catch(e){}
+  location.reload();
+}
+
+async function openPortal(){
+  setStatus('Abrindo o portal...','ok');
+  // Perfil gestor_departamento -> só a Central de Compras da área dele
+  try{
+    var _s0=(await sb.auth.getSession()).data.session;
+    if(_s0){
+      var _pf=await sb.from('orc_perfis').select('perfil').eq('user_id',_s0.user.id).eq('ativo',true).maybeSingle();
+      if(_pf.data && _pf.data.perfil==='gestor_departamento'){ return abrirSomenteOrcamento(_s0); }
+    }
+  }catch(e){ console.warn('checagem de perfil gestor falhou',e); }
+  var res=await sb.storage.from(BUCKET).createSignedUrl(FILE_PATH,3600);
+  if(res.error){ setStatus('Erro ao abrir o portal: '+res.error.message,'err'); return; }
+  var fileRes=await fetch(res.data.signedUrl);
+  if(!fileRes.ok){ setStatus('Erro ao baixar o portal (status '+fileRes.status+')','err'); return; }
+  var html=await fileRes.text();
+  // Identidade do usuário logado para os módulos (ex.: Orçamento & Compras — só o
+  // Administrador altera a verba). Injeta a sessão Auth ANTES de qualquer script do
+  // shell rodar. Nenhum dado sai daqui; fica só no iframe do portal, mesma origem.
+  var _sessionPayload=null;
+  try{
+    var _s=(await sb.auth.getSession()).data.session;
+    if(_s&&_s.access_token){
+      _sessionPayload={
+        access_token:_s.access_token, refresh_token:_s.refresh_token||'',
+        email:(_s.user&&_s.user.email)||null, uid:(_s.user&&_s.user.id)||null
+      };
+      var _inj='<scr'+'ipt>window.__PORTAL_SESSION='+JSON.stringify(_sessionPayload)+';</scr'+'ipt>';
+      html=html.replace(/<\/head>/i,_inj+'</head>');
+    }
+  }catch(e){ console.warn('injeção da sessão falhou',e); }
+  // Pré-carrega a Central no mesmo documento do Portal. Isso evita que navegadores
+  // bloqueiem o iframe interno e garante que a sessão chegue antes do primeiro script.
+  try{
+    var _orcRes=await fetch('orcamento-compras.html?v=central-cerebro-16',{cache:'no-store'});
+    if(!_orcRes.ok)throw new Error('status '+_orcRes.status);
+    var _orcHtml=await _orcRes.text();
+    if(_sessionPayload){
+      var _orcSession='<scr'+'ipt>window.__PORTAL_SESSION='+JSON.stringify(_sessionPayload)+';</scr'+'ipt>';
+      _orcHtml=_orcHtml.replace(/<\/head>/i,_orcSession+'</head>');
+    }
+    window.__ORC_PAGE_HTML=_orcHtml;
+    var _orcJson=JSON.stringify(_orcHtml).replace(/<\/script/gi,'<\\/script');
+    var _orcInj='<scr'+'ipt>window.__ORC_UNIFIED_HTML='+_orcJson+';</scr'+'ipt>';
+    html=html.replace(/<\/head>/i,_orcInj+'</head>');
+  }catch(e){ console.warn('pré-carga da Central falhou',e); }
+  // Ao clicar no módulo Orçamento & Compras, abre a interface unificada no próprio Portal.
+  html=html.replace(/<\/body>/i,ORC_UNIFIED_PATCH+'</body>');
+  // Correção isolada da regra do Almoxarifado. Não altera HTML, cards ou gráficos.
+  html=html.replace(/<\/body>/i,ALMOX_MINIMO_PATCH+'</body>');
+  var blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  var blobUrl=URL.createObjectURL(blob);
+  var ifr=document.getElementById('portalFrame');
+  ifr.src=blobUrl;
+  instalarPonteCentral(ifr);
+  instalarCerebroCentral(ifr);
+  instalarBaseMaeNoPortal(ifr);
+  // instalarAjusteEntrada(ifr); // desativado: o Ajuste Expresso agora tem modulo proprio no Portal (Acerto de Estoque Lojas) e link separado para gerentes
+  ifr.style.display='block';
+  document.body.classList.add('portal-on');
+}
+
+async function tryAutoLogin(){
+  var res=await sb.auth.getSession();
+  if(res.data&&res.data.session){ openPortal(); return true; }
+  return false;
+}
+
+document.getElementById('loginForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  var email=document.getElementById('email').value.trim().toLowerCase();
+  var password=document.getElementById('password').value;
+  var btn=document.getElementById('btn');
+  btn.disabled=true;
+  setStatus('Entrando...','');
+  var res=await sb.auth.signInWithPassword({email:email,password:password});
+  if(res.error){
+    var _m=res.error.message||'';
+    var _amigavel=/invalid login credentials/i.test(_m) ? 'E-mail ou senha incorretos. Verifique se digitou o e-mail exato (sem espaços) e a senha respeitando maiúsculas.'
+      : /email not confirmed/i.test(_m) ? 'Conta ainda não confirmada. Avise a Controladoria.'
+      : 'Não foi possível entrar: '+_m;
+    setStatus(_amigavel,'err'); btn.disabled=false; return;
+  }
+  await openPortal();
+});
+
+/* ---------- Esqueci minha senha ---------- */
+// Fluxo padrao do Supabase Auth: o usuario pede o link, recebe um e-mail no endereco
+// JA CADASTRADO (nunca cria conta nova nem aceita e-mail arbitrario), clica no link e volta
+// pra esta mesma pagina com um token de recuperacao na URL - o evento PASSWORD_RECOVERY abaixo
+// detecta isso e mostra o formulario de nova senha. Nao existe senha padrao/fixa nesse fluxo:
+// quem define a senha nova e sempre o usuario, no formulario, depois de provar que tem acesso
+// aquele e-mail.
+var formLogin=document.getElementById('loginForm');
+var linkEsqueci=document.getElementById('linkEsqueci');
+var formEsqueci=document.getElementById('formEsqueci');
+var formNovaSenha=document.getElementById('formNovaSenha');
+
+function mostrarTela(tela){
+  formLogin.classList.toggle('hidden', tela!=='login');
+  linkEsqueci.classList.toggle('hidden', tela!=='login');
+  formEsqueci.classList.toggle('hidden', tela!=='esqueci');
+  formNovaSenha.classList.toggle('hidden', tela!=='novaSenha');
+  setStatus('');
+}
+
+linkEsqueci.addEventListener('click',function(){
+  document.getElementById('emailRecup').value=document.getElementById('email').value||'';
+  mostrarTela('esqueci');
+});
+document.getElementById('btnVoltarLogin').addEventListener('click',function(){ mostrarTela('login'); });
+
+formEsqueci.addEventListener('submit',async function(e){
+  e.preventDefault();
+  var email=document.getElementById('emailRecup').value;
+  var btn=document.getElementById('btnEsqueci');
+  btn.disabled=true;
+  setStatus('Enviando...','');
+  var res=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+  btn.disabled=false;
+  if(res.error){ setStatus('Erro: '+res.error.message,'err'); return; }
+  // Resposta identica exista ou nao o e-mail (padrao do Supabase) - evita confirmar pra quem
+  // esta tentando adivinhar e-mails cadastrados se o servico realmente enviou ou nao.
+  setStatus('Se esse e-mail estiver cadastrado, um link de recuperação foi enviado.','ok');
+});
+
+formNovaSenha.addEventListener('submit',async function(e){
+  e.preventDefault();
+  var novaSenha=document.getElementById('novaSenha').value;
+  var btn=document.getElementById('btnNovaSenha');
+  btn.disabled=true;
+  setStatus('Salvando...','');
+  var res=await sb.auth.updateUser({password:novaSenha});
+  if(res.error){ setStatus('Erro ao salvar: '+res.error.message,'err'); btn.disabled=false; return; }
+  setStatus('Senha alterada com sucesso! Entrando...','ok');
+  await openPortal();
+});
+
+sb.auth.onAuthStateChange(function(event){
+  if(event==='PASSWORD_RECOVERY') mostrarTela('novaSenha');
+});
+
+tryAutoLogin();
+</script>
+</body>
+</html>
