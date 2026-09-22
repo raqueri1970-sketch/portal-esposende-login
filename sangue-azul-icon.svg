@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a3a7a"/>
+      <stop offset="1" stop-color="#0a1f3d"/>
+    </linearGradient>
+    <linearGradient id="gota" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#6fb3ff"/>
+      <stop offset="0.55" stop-color="#1f6fe5"/>
+      <stop offset="1" stop-color="#0b3fa8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- gota -->
+  <path d="M256 70 C256 70 144 196 144 272 C144 336 194 384 256 384 C318 384 368 336 368 272 C368 196 256 70 256 70 Z"
+        fill="url(#gota)" stroke="#ffffff" stroke-width="10" stroke-linejoin="round"/>
+  <!-- brilho -->
+  <path d="M196 262 C196 226 220 190 238 166" fill="none" stroke="#ffffff" stroke-opacity=".55" stroke-width="12" stroke-linecap="round"/>
+  <!-- batimento -->
+  <polyline points="160,292 214,292 232,256 256,330 280,236 298,292 352,292"
+            fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="256" y="446" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif"
+        font-weight="800" font-size="46" letter-spacing="4" fill="#a8cdff">SANGUE AZUL</text>
+</svg>
