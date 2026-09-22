@@ -48,7 +48,7 @@ button:hover{filter:brightness(1.15)}
 .kpis{display:grid;grid-template-columns:repeat(11,1fr);gap:8px}
 .kpi{background:linear-gradient(160deg,var(--surface),#191b29);border:1px solid var(--border);border-radius:12px;padding:8px 6px;text-align:center;min-width:0}
 .kpi .l{font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;font-weight:600;line-height:1.2;min-height:28px;display:flex;align-items:center;justify-content:center}
-.kpi .v{font-size:27px;font-weight:800;line-height:1.1}
+.kpi .v{font-size:27px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kpi .v.long{font-size:20px;line-height:1.35}
 .kpi .n{font-size:12px;margin-top:2px;line-height:1.2;color:#e6eaf8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kpi .n.q{white-space:normal}
@@ -165,7 +165,7 @@ const BUILD='20260921-204222';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=v=>v==null?'—':Number(v).toLocaleString('pt-BR');
-const brl=v=>v==null?'—':Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const brl=v=>v==null?'—':Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0,maximumFractionDigits:0});
 const COR={ok:'#17c964',warn:'#fab219',bad:'#f5455c',blue:'#4fa8ff',violet:'#9d6bff',aqua:'#22d3b6',gray:'#8b93b3',zap:'#25d366'};
 
 /* codigo secreto do link: vem depois do # (nao vai para o servidor nem para logs). Guardado so nesta aba. */
