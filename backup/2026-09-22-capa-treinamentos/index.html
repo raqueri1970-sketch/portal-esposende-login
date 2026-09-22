@@ -277,97 +277,6 @@ const ORC_UNIFIED_PATCH=`
 // invalidar aquele acesso — URLs assinadas antigas ficam presas ao caminho, nao ao conteudo.
 var FILE_PATH='PORTAL_ESPOSENDE_V4_AUTH.html';
 
-// Capa do card "TREINAMENTOS E CURSOS" no Portal principal (2026-09-22).
-// Troca SOMENTE a imagem do card; link, clique, tamanho e layout do card continuam os do shell.
-// A função é serializada com toString() para não haver tag de script literal dentro deste script.
-var TREINAMENTOS_CAPA_URL=new URL('treinamentos-cursos-capa.jpg?v=1',location.href).href;
-function capaTreinamentosNoShell(CAPA){
-  var ALVO='TREINAMENTOS E CURSOS';
-  function norm(t){return String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/&/g,' E ').replace(/\s+/g,' ').trim().toUpperCase()}
-  function grande(el){var r=el.getBoundingClientRect();return r.width>=80&&r.height>=60}
-  function urlFundo(el){var b=getComputedStyle(el).backgroundImage;return b&&b.indexOf('url(')>=0?b:''}
-  function titulos(){
-    var achados=[],w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),n;
-    while((n=w.nextNode())){
-      if(norm(n.nodeValue).indexOf('TREINAMENTO')<0)continue;
-      var el=n.parentElement;
-      for(var i=0;i<3&&el;i++,el=el.parentElement){
-        if(norm(el.textContent).indexOf(ALVO)>=0){if(achados.indexOf(el)<0)achados.push(el);break}
-      }
-    }
-    return achados;
-  }
-  // Itens de menu com o mesmo nome não são o card: não podem levar a trocar logo/ícones do menu.
-  var MENU='nav,aside,header,[role="navigation"],[role="menu"],[class*="sidebar" i],[class*="menu" i],[id*="sidebar" i],[id*="menu" i]';
-  function clicavel(el){
-    return /^(A|BUTTON)$/.test(el.tagName)||el.getAttribute('role')==='button'||el.hasAttribute('onclick')||typeof el.onclick==='function'||getComputedStyle(el).cursor==='pointer';
-  }
-  function imagemEm(el){
-    var melhor=null,area=0;
-    [].slice.call(el.querySelectorAll('img')).forEach(function(img){
-      if(!grande(img))return;
-      var r=img.getBoundingClientRect();
-      if(r.width*r.height>area){area=r.width*r.height;melhor={tipo:'img',el:img}}
-    });
-    if(melhor)return melhor;
-    var fundos=[el].concat([].slice.call(el.querySelectorAll('*')));
-    for(var i=0;i<fundos.length;i++){
-      if(urlFundo(fundos[i])&&grande(fundos[i]))return {tipo:'fundo',el:fundos[i]};
-    }
-    return null;
-  }
-  function capaDoCard(titulo){
-    if(titulo.closest(MENU))return null;
-    var el=titulo;
-    for(var nivel=0;nivel<7&&el&&el!==document.body;nivel++,el=el.parentElement){
-      if(norm(el.textContent).length>400)return null;
-      // O card é o elemento clicável que contém o título: a capa é procurada só dentro dele.
-      if(clicavel(el))return imagemEm(el);
-      var achada=imagemEm(el);
-      if(achada)return achada;
-    }
-    return null;
-  }
-  function aplicar(alvo){
-    var el=alvo.el;
-    if(el.getAttribute('data-capa-treinamentos')===CAPA)return;
-    if(alvo.tipo==='img'){
-      var antes=el.getBoundingClientRect();
-      var pic=el.parentElement&&el.parentElement.tagName==='PICTURE'?el.parentElement:null;
-      if(pic)[].slice.call(pic.querySelectorAll('source')).forEach(function(s){s.setAttribute('srcset',CAPA)});
-      el.removeAttribute('srcset');el.removeAttribute('sizes');
-      el.style.objectFit='cover';el.style.objectPosition='center top';
-      el.addEventListener('load',function(){
-        var depois=el.getBoundingClientRect();
-        // Mantém a proporção original do card se a nova imagem alterar a altura.
-        if(antes.height&&Math.abs(depois.height-antes.height)>2){el.style.aspectRatio=antes.width+' / '+antes.height;el.style.height='auto'}
-      },{once:true});
-      el.src=CAPA;
-    }else{
-      el.style.backgroundImage=urlFundo(el).replace(/url\([^)]*\)/,'url("'+CAPA+'")');
-      el.style.backgroundPosition='center top';
-      if(getComputedStyle(el).backgroundSize==='auto')el.style.backgroundSize='cover';
-    }
-    el.setAttribute('data-capa-treinamentos',CAPA);
-  }
-  var agendado=null;
-  function varrer(){
-    agendado=null;
-    try{titulos().forEach(function(t){var c=capaDoCard(t);if(c)aplicar(c)})}
-    catch(e){console.error('[Portal] Falha ao aplicar a capa de Treinamentos e Cursos:',e)}
-  }
-  function agendar(){if(!agendado)agendado=setTimeout(varrer,250)}
-  new MutationObserver(agendar).observe(document.documentElement,{childList:true,subtree:true});
-  setInterval(agendar,2000);
-  agendar();
-}
-var TREINAMENTOS_CAPA_PATCH='<scr'+'ipt id="patch-capa-treinamentos-20260922">('+capaTreinamentosNoShell.toString()+')('+JSON.stringify(TREINAMENTOS_CAPA_URL)+');</scr'+'ipt>';
-function inserirAntesDoFimDoBody(html,trecho){
-  // Usa o ÚLTIMO </body>: o HTML da Central de Compras pré-carregada contém outro </body> dentro de uma string JS.
-  var i=html.toLowerCase().lastIndexOf('</body>');
-  return i<0?html+trecho:html.slice(0,i)+trecho+html.slice(i);
-}
-
 /* Base Mãe v26: injeta o agente também dentro do shell principal carregado do Storage. */
 function instalarBaseMaeNoPortal(ifr){
  function ligar(){try{var d=ifr.contentDocument;if(!d||d.__baseMaeLigada)return;d.__baseMaeLigada=true;var s=d.createElement('script');s.src=new URL('base-mae-agent.js',location.href).href;d.head.appendChild(s)}catch(e){}}
@@ -577,8 +486,6 @@ async function openPortal(){
   html=html.replace(/<\/body>/i,ORC_UNIFIED_PATCH+'</body>');
   // Correção isolada da regra do Almoxarifado. Não altera HTML, cards ou gráficos.
   html=html.replace(/<\/body>/i,ALMOX_MINIMO_PATCH+'</body>');
-  // Nova capa do card "TREINAMENTOS E CURSOS". Só troca a imagem do card.
-  html=inserirAntesDoFimDoBody(html,TREINAMENTOS_CAPA_PATCH);
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
