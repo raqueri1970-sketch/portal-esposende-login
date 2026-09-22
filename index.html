@@ -477,8 +477,7 @@ async function openPortal(){
     html=html.replace(/<\/head>/i,_orcInj+'</head>');
   }catch(e){ console.warn('pré-carga da Central falhou',e); }
   // Ao clicar no módulo Orçamento & Compras, abre a interface unificada no próprio Portal.
-  html=html.replace(/<\/body>/i,ORC_UNIFIED_PATCH+'</script>
-</body>');
+  html=html.replace(/<\/body>/i,ORC_UNIFIED_PATCH+'</body>');
   // Correção isolada da regra do Almoxarifado. Não altera HTML, cards ou gráficos.
   html=html.replace(/<\/body>/i,ALMOX_MINIMO_PATCH+'</body>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
