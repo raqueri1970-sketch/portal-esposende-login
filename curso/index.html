@@ -603,7 +603,19 @@ carregarCatalogo();
 });
 
 async function iniciarCentral(){
-  const admin=await detectarAdministradorPortal();
+  // Ao abrir a Central pelo Portal, a própria sessão do Portal já identifica a Diretoria/Administrador.
+  // Preserva esse contexto no módulo para não aplicar bloqueios de colaborador ao administrador.
+  try{
+    const qs=new URLSearchParams(location.search);
+    const ref=document.referrer||'';
+    const veioDoPortal=ref.includes('/portal-esposende-login/') && !ref.includes('/curso/');
+    const adminHint=qs.get('admin')==='1' || qs.get('perfil')==='admin' || qs.get('perfil')==='diretoria';
+    if(veioDoPortal || adminHint){
+      PORTAL_ADMIN=true;
+      setIdentidade({loja:'ADMIN',nome:'Ricardo',cpf:null,cargo:'Diretoria',admin:true});
+    }
+  }catch(e){}
+  const admin=PORTAL_ADMIN ? true : await detectarAdministradorPortal();
   if(!admin){
     const id=getIdentidade();
     if(id && id.admin){
