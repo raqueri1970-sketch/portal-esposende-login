@@ -403,13 +403,18 @@ const AREAS=[
 let catalogoAtual=[];
 
 function voltarAoPortal(){
+  // Retorna ao último ponto válido do Portal sem encerrar a sessão.
+  // Evita voltar para login, splash ou páginas externas do navegador.
   try{
-    if(window.top && window.top!==window.self){
-      window.top.location.href='../';
+    const ref=document.referrer||'';
+    const origemPortal=ref.includes('/portal-esposende-login/') && !/login|index\.html(?:$|[?#])/i.test(ref);
+    if(history.length>1 && origemPortal){
+      history.back();
       return;
     }
   }catch(e){}
-  location.href='../';
+  // Fallback seguro: tela principal de módulos, mantendo a autenticação existente.
+  window.location.href='../painel.html';
 }
 
 async function getPerms(){
