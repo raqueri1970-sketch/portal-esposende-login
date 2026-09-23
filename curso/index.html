@@ -219,6 +219,65 @@
     .quiz{padding:24px 18px 22px;}
   }
 
+  /* Capa da Central + setores (padrão azul Esposende) */
+  body{background:linear-gradient(180deg,#071631 0,#06112a 480px,#050d20 100%);}
+  .topbar{background:linear-gradient(180deg,#071631f2,#071631e6);border-bottom-color:#1a2d52;}
+  .admin-link{display:none;margin-left:10px;color:#7cc4ff;font-size:12px;font-weight:800;text-decoration:none;border:1px solid #28508a;border-radius:8px;padding:5px 9px;white-space:nowrap;}
+  .admin-link:hover{background:#0f2a55;}
+  .hero{position:relative;border-radius:18px;overflow:hidden;border:1px solid #1d3563;box-shadow:0 18px 44px rgba(0,0,0,.35);margin-bottom:26px;background:#08204a;}
+  .hero img{display:block;width:100%;height:auto;}
+  .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px 20px;flex-wrap:wrap;margin:0 0 16px;}
+  .sec-head h2{margin:0;font-size:22px;font-weight:900;letter-spacing:.3px;text-transform:uppercase;}
+  .sec-head p{margin:4px 0 0;color:var(--muted);font-size:14px;}
+  .busca{position:relative;flex:0 1 330px;min-width:220px;}
+  .busca svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:#93a0bf;pointer-events:none;}
+  .busca input{width:100%;background:#0a1938;border:1px solid #28406f;border-radius:10px;color:var(--text);font-family:inherit;font-size:14px;padding:11px 12px 11px 38px;}
+  .busca input:focus{outline:none;border-color:#38bdf8;}
+  .setores{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start;}
+  .setor{position:relative;display:block;padding:0;margin:0;width:100%;background:#0b1a38;border:1px solid #20386a;border-radius:12px;overflow:hidden;cursor:pointer;font-family:inherit;color:inherit;text-align:left;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;}
+  .setor:hover{transform:translateY(-3px);border-color:#3b82f6;box-shadow:0 10px 28px rgba(0,0,0,.4);}
+  .setor:focus-visible{outline:2px solid #38bdf8;outline-offset:2px;}
+  .setor>img{display:block;width:100%;height:auto;}
+  .setor .fallback{aspect-ratio:3/2;display:flex;flex-direction:column;justify-content:flex-end;padding:16px 18px;background:radial-gradient(circle at 80% 15%,#1d4f9a 0,transparent 55%),linear-gradient(160deg,#0c2552,#081733);}
+  .setor .fallback .ic{width:46px;height:46px;border-radius:50%;background:#1565d8;border:2px solid #5aa2ff;display:flex;align-items:center;justify-content:center;margin-bottom:10px;}
+  .setor .fallback b{font-size:18px;font-weight:900;text-transform:uppercase;line-height:1.1;}
+  .setor .fallback span{font-size:13px;color:#c9d6ee;margin-top:5px;}
+  .setor.locked{cursor:not-allowed;}
+  .setor.locked:hover{transform:none;border-color:#20386a;box-shadow:none;}
+  .setor.locked>img,.setor.locked .fallback{filter:grayscale(.55) brightness(.5);}
+  .cadeado{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:9%;gap:8px;background:rgba(4,10,24,.35);}
+  .setor.locked .cadeado{display:flex;}
+  .cadeado .cir{width:58px;height:58px;border-radius:50%;background:rgba(8,18,40,.88);border:2px solid #f5c542;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.5);}
+  .cadeado .txt{background:rgba(8,18,40,.9);border:1px solid #f5c54288;color:#fde68a;font-size:12px;font-weight:800;letter-spacing:.4px;padding:4px 10px;border-radius:999px;}
+  .qtd-cursos{position:absolute;top:10px;right:10px;background:rgba(4,12,30,.85);border:1px solid #2f5ea8;color:#bfdbfe;font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:999px;}
+  .vazio-busca{display:none;color:var(--muted);padding:30px 0;text-align:center;}
+  .area-view{display:none;}
+  body.na-area .home-view{display:none;}
+  body.na-area .area-view{display:block;}
+  .voltar-setores{display:inline-flex;align-items:center;gap:6px;background:#0f2146;color:#dbeafe;border:1px solid #2a4a82;border-radius:10px;padding:9px 14px;font-family:inherit;font-weight:800;font-size:13.5px;cursor:pointer;margin-bottom:16px;}
+  .voltar-setores:hover{background:#15305f;}
+  .area-banner{position:relative;border-radius:16px;overflow:hidden;border:1px solid #1d3563;margin-bottom:22px;min-height:150px;display:flex;align-items:flex-end;background:#0b1a38 center/cover no-repeat;}
+  .area-banner::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,13,32,.96) 0,rgba(5,13,32,.8) 45%,rgba(5,13,32,.35) 100%);}
+  .area-banner div{position:relative;padding:22px 24px;}
+  .area-banner small{display:block;font-size:11.5px;font-weight:900;letter-spacing:2.5px;color:#7cc4ff;text-transform:uppercase;}
+  .area-banner h2{margin:6px 0 6px;font-size:26px;font-weight:900;text-transform:uppercase;}
+  .area-banner p{margin:0;color:#c9d6ee;font-size:14px;max-width:620px;}
+  .area-vazia{display:none;text-align:center;color:var(--muted);background:#0b1a38;border:1px dashed #28406f;border-radius:14px;padding:40px 20px;}
+  .aviso{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;background:#0f2146;border:1px solid #f5c54288;color:#fde68a;font-weight:800;font-size:13.5px;padding:11px 16px;border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.5);transition:.2s;z-index:150;max-width:calc(100% - 32px);text-align:center;}
+  .aviso.on{opacity:1;transform:translateX(-50%) translateY(0);}
+  .rodape{margin-top:36px;padding:18px 0 0;border-top:1px solid #1a2d52;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#8fa3c8;font-size:11.5px;letter-spacing:2px;text-transform:uppercase;}
+  .rodape b{color:#fff;font-size:18px;letter-spacing:.5px;}
+  @media (max-width:900px){.setores{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media (max-width:560px){
+    .setores{grid-template-columns:1fr;}
+    .hero{border-radius:12px;margin-bottom:20px;}
+    .sec-head h2{font-size:18px;}
+    .busca{flex-basis:100%;}
+    .area-banner h2{font-size:21px;}
+    .rodape{justify-content:center;text-align:center;}
+    .admin-link{margin-left:0;}
+  }
+
 </style>
 </head>
 <body>
@@ -256,19 +315,40 @@
 <div class="topbar">
   <img id="brand-logo" alt="Esposende">
   <div>
-    <h1>Central de Treinamento</h1>
-    <p>Esposende Calçados · Processos operacionais</p>
+    <h1>Central de Treinamentos</h1>
+    <p>Esposende · Mais passos para você</p>
   </div>
   <div class="identity" id="identity-badge"></div>
+  <a class="admin-link" id="admin-link" href="permissoes.html">🔐 Autorizações</a>
 </div>
 
 <div class="wrap">
-  <div class="intro">
-    <h2>Módulos de processo</h2>
-    <p>Clique em um módulo para assistir o vídeo do processo. Assista na ordem sugerida se estiver começando agora.</p>
+  <div class="home-view">
+    <div class="hero"><img src="setores/capa-central.jpg?v=1" alt="Central de Treinamentos Esposende — Conhecimento que move grandes resultados" width="1024" height="330"></div>
+    <div class="sec-head">
+      <div>
+        <h2>Nossos módulos de treinamento</h2>
+        <p>Escolha a área, acesse os cursos e continue evoluindo.</p>
+      </div>
+      <label class="busca">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+        <input id="busca" type="search" placeholder="Buscar treinamentos..." autocomplete="off" aria-label="Buscar treinamentos">
+      </label>
+    </div>
+    <div class="setores" id="setores"></div>
+    <p class="vazio-busca" id="vazio-busca">Nenhum setor ou curso encontrado para essa busca.</p>
   </div>
-  <div class="grid" id="grid"></div>
+
+  <div class="area-view">
+    <button class="voltar-setores" id="voltar-setores" type="button">← Todos os setores</button>
+    <div class="area-banner" id="area-banner"><div><small>Central de Treinamentos</small><h2 id="area-titulo">—</h2><p id="area-desc"></p></div></div>
+    <div class="grid" id="grid"></div>
+    <div class="area-vazia" id="area-vazia">Os cursos deste setor serão publicados em breve.</div>
+  </div>
+
+  <div class="rodape"><b>ESPOSENDE</b><span>Pessoas bem treinadas fazem a nossa história crescer.</span></div>
 </div>
+<div class="aviso" id="aviso" role="status"></div>
 
 <div class="overlay" id="overlay">
   <div class="player-box">
@@ -317,11 +397,6 @@ function renderCatalogo(cursos){
     grupos.get(k).cursos.push(c);
   });
   [...grupos.values()].sort((a,b)=>a.ordem-b.ordem).forEach(g=>{
-    const head=document.createElement('div');
-    head.style.gridColumn='1/-1';
-    head.style.marginTop='8px';
-    head.innerHTML='<h2 style="margin:0 0 4px;font-size:18px">'+escapeHtml(g.nome)+'</h2>'+(g.descricao?'<p style="margin:0;color:var(--muted);font-size:13px">'+escapeHtml(g.descricao)+'</p>':'');
-    grid.appendChild(head);
     g.cursos.sort((a,b)=>a.ordem-b.ordem).forEach(c=>{
       const card=document.createElement('div');
       card.className='card'; card.style.setProperty('--accent',c.accent||'#38bdf8');
@@ -347,8 +422,160 @@ async function carregarCatalogo(){
     if(!r.ok) throw new Error('catalogo');
     const rows=await r.json();
     const cursos=rows.map(x=>({id:x.id,nome:x.nome,desc:x.descricao,ordem:x.ordem,duracao:x.duracao,accent:x.accent,path:x.video_path,capa_path:x.capa_path,area_id:x.area_id,area_nome:x.area_nome,area_descricao:x.area_descricao,area_ordem:x.area_ordem}));
-    renderCatalogo(cursos.length?cursos:CURSOS_FALLBACK);
-  }catch(e){ renderCatalogo(CURSOS_FALLBACK); }
+    catalogo = cursos.length ? cursos : CURSOS_FALLBACK;
+  }catch(e){ catalogo = CURSOS_FALLBACK; }
+}
+
+// -------- setores (capa da Central) --------
+// Ordem e fotos seguem a arte da Central; áreas ativas no banco sem foto entram no fim com um card padrão.
+const SETORES = [
+  {id:'estoque',    nome:'Operações de Estoque', desc:'Remanejo, transferência, emissão de notas, recebimento, defeitos e muito mais.'},
+  {id:'comercial',  nome:'Comercial',            desc:'Vendas, metas, produtos e atendimento de excelência.'},
+  {id:'rh',         nome:'Recursos Humanos',     desc:'Pessoas, cultura, rotinas e políticas.'},
+  {id:'compras',    nome:'Compras',              desc:'Processos, cotações, fornecedores e gestão.'},
+  {id:'financeiro', nome:'Financeiro',           desc:'Controles, processos e boas práticas.'},
+  {id:'ti',         nome:'TI e Sistemas',        desc:'Ferramentas, sistemas e segurança da informação.'},
+  {id:'logistica',  nome:'Logística',            desc:'Transportes, entregas e distribuição.'},
+  {id:'marketing',  nome:'Marketing',            desc:'Comunicação, campanhas e identidade da marca.'},
+  {id:'sac',        nome:'SAC e Atendimento',    desc:'Qualidade no atendimento e experiência do cliente.'},
+  {id:'lojas',      nome:'Lojas',                desc:'Rotinas, padrões e operação de loja.'},
+  {id:'seguranca',  nome:'Segurança',            desc:'Prevenção, normas e boas práticas.'},
+  {id:'lideranca',  nome:'Liderança',            desc:'Gestão, equipe e resultados.'}
+].map(s=>({...s, img:'setores/'+s.id+'.jpg?v=1'}));
+const LOCK_SVG = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#f5c542" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>';
+
+let catalogo = [];      // cursos publicados
+let areasBanco = null;  // áreas ativas no banco (null = não foi possível ler)
+let permissoes = {};    // area_id -> true/false, pela caixa de autorização (CPF, cargo, gestão)
+let acessoTotal = false; // administrador do Portal: todos os setores liberados
+
+function normBusca(t){ return String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+function temAcesso(id){ return acessoTotal || permissoes[id] === true; }
+function cursosDe(id){ return catalogo.filter(c=>c.area_id===id).sort((a,b)=>a.ordem-b.ordem); }
+function setoresVisiveis(){
+  const lista = SETORES.filter(s=>!areasBanco || areasBanco.some(a=>a.id===s.id) || cursosDe(s.id).length);
+  (areasBanco||[]).forEach(a=>{ if(!lista.some(s=>s.id===a.id)) lista.push({id:a.id, nome:a.nome, desc:a.descricao||'', img:null}); });
+  return lista;
+}
+
+function renderSetores(){
+  const box = document.getElementById('setores');
+  box.innerHTML = '';
+  setoresVisiveis().forEach(s=>{
+    const ok = temAcesso(s.id), cs = cursosDe(s.id);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'setor' + (ok ? '' : ' locked');
+    b.dataset.id = s.id;
+    b.dataset.busca = normBusca(s.nome+' '+s.desc+' '+cs.map(c=>c.nome+' '+(c.desc||'')).join(' '));
+    b.setAttribute('aria-label', s.nome + (ok ? '' : ' — acesso restrito'));
+    b.innerHTML = (s.img
+        ? `<img src="${s.img}" alt="" decoding="async">`
+        : `<div class="fallback"><div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5z"/><path d="M6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg></div><b>${escapeHtml(s.nome)}</b><span>${escapeHtml(s.desc)}</span></div>`)
+      + (ok && cs.length ? `<span class="qtd-cursos">${cs.length} ${cs.length===1?'curso':'cursos'}</span>` : '')
+      + `<div class="cadeado"><div class="cir">${LOCK_SVG}</div><span class="txt">Acesso restrito</span></div>`;
+    b.addEventListener('click', ()=>abrirSetor(s));
+    box.appendChild(b);
+  });
+  filtrarSetores();
+}
+
+function filtrarSetores(){
+  const q = normBusca(document.getElementById('busca').value.trim());
+  let visiveis = 0;
+  document.querySelectorAll('#setores .setor').forEach(b=>{
+    const mostra = !q || b.dataset.busca.includes(q);
+    b.style.display = mostra ? '' : 'none';
+    if(mostra) visiveis++;
+  });
+  document.getElementById('vazio-busca').style.display = visiveis ? 'none' : 'block';
+}
+document.getElementById('busca').addEventListener('input', filtrarSetores);
+
+let avisoTimer = null;
+function avisar(msg){
+  const el = document.getElementById('aviso');
+  el.textContent = msg; el.classList.add('on');
+  clearTimeout(avisoTimer); avisoTimer = setTimeout(()=>el.classList.remove('on'), 3200);
+}
+
+function abrirSetor(s, semHistorico){
+  if(!temAcesso(s.id)){
+    if(!getIdentidade()){ showGate(); return; }
+    avisar('🔒 '+s.nome+': acesso restrito. Solicite a liberação ao seu gestor.');
+    return;
+  }
+  const cs = cursosDe(s.id);
+  document.getElementById('area-titulo').textContent = s.nome;
+  document.getElementById('area-desc').textContent = s.desc;
+  document.getElementById('area-banner').style.backgroundImage = s.img ? `url("${s.img}")` : '';
+  renderCatalogo(cs);
+  document.getElementById('area-vazia').style.display = cs.length ? 'none' : 'block';
+  document.body.classList.add('na-area');
+  if(!semHistorico) history.pushState({setor:s.id}, '', '#'+s.id);
+  window.scrollTo(0,0);
+}
+function mostrarSetores(){
+  document.body.classList.remove('na-area');
+  grid.innerHTML = '';
+}
+document.getElementById('voltar-setores').addEventListener('click', ()=>{
+  if(history.state && history.state.setor) history.back(); // o popstate volta para os setores
+  else { history.replaceState(null, '', location.pathname + location.search); mostrarSetores(); }
+});
+function abrirPeloEndereco(){
+  const id = decodeURIComponent(location.hash.slice(1));
+  const s = id && setoresVisiveis().find(x=>x.id===id);
+  if(s && temAcesso(s.id)) abrirSetor(s, true); else mostrarSetores();
+}
+window.addEventListener('popstate', abrirPeloEndereco);
+
+async function carregarAreasBanco(){
+  try{
+    const r = await fetch(`${SUPA_URL}/rest/v1/curso_areas?select=id,nome,descricao,ordem&ativo=eq.true&order=ordem`, {headers:{apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY}});
+    if(!r.ok) throw new Error('areas');
+    areasBanco = await r.json();
+  }catch(e){ areasBanco = null; }
+}
+// Sessão do Portal (mesmo site). Só lê o token salvo pelo login do Portal; nunca o renova aqui.
+function sessaoPortal(){
+  try{
+    const s = JSON.parse(localStorage.getItem('sb-rdztzurfesnobfkazgpm-auth-token'));
+    if(s && s.access_token && s.user && s.user.id && (!s.expires_at || s.expires_at*1000 > Date.now()+30000)) return s;
+  }catch(e){}
+  return null;
+}
+async function verificarAcessoTotal(){
+  const s = sessaoPortal();
+  if(!s) return false;
+  try{
+    const r = await fetch(`${SUPA_URL}/rest/v1/orc_perfis?select=perfil&user_id=eq.${encodeURIComponent(s.user.id)}&ativo=eq.true&perfil=eq.administrador`, {headers:{apikey:SUPA_KEY, Authorization:'Bearer '+s.access_token}});
+    return r.ok && (await r.json()).length > 0;
+  }catch(e){ return false; }
+}
+async function carregarPermissoes(){
+  const mapa = {};
+  const id = getIdentidade();
+  if(id && id.cpf){
+    try{
+      const r = await fetch(`${SUPA_URL}/rest/v1/rpc/curso_permissoes_publicas`, {method:'POST', headers:{apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY, 'Content-Type':'application/json'}, body:JSON.stringify({p_cpf:id.cpf})});
+      if(r.ok) (await r.json()).forEach(x=>{ mapa[x.area_id] = !!x.permitido; });
+    }catch(e){}
+  }
+  permissoes = mapa;
+}
+async function iniciarCentral(){
+  const total = verificarAcessoTotal();
+  await Promise.all([carregarCatalogo(), carregarAreasBanco(), carregarPermissoes()]);
+  acessoTotal = await total;
+  document.getElementById('admin-link').style.display = acessoTotal ? 'inline-block' : 'none';
+  renderSetores();
+  abrirPeloEndereco();
+}
+async function atualizarPermissoes(){
+  await carregarPermissoes();
+  renderSetores();
+  abrirPeloEndereco();
 }
 
 // -------- identificação (loja + nome) --------
@@ -431,12 +658,13 @@ document.getElementById('gate-submit').addEventListener('click', ()=>{
   setIdentidade({loja, nome, cpf, cargo});
   hideGate();
   renderIdentityBadge();
+  atualizarPermissoes();
 });
 
 if(!getIdentidade()) showGate();
 renderIdentityBadge();
-// Os cards dos cursos aparecem ao abrir a página, com ou sem identificação (o player exige identificação).
-carregarCatalogo();
+// Os setores aparecem ao abrir a página; os cadeados seguem a caixa de autorização (o player exige identificação).
+iniciarCentral();
 
 async function logVisualizacao(c){
   const id = getIdentidade();
