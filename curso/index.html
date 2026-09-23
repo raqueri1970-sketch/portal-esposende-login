@@ -472,7 +472,7 @@ function renderCursos(cursos){
     const d=document.createElement('div');
     d.className='card';
     d.style.setProperty('--accent',c.accent||'#38bdf8');
-    d.innerHTML=`<div class="cover-wrap"><img src="${capaUrl(c)}" alt="Capa: ${escapeHtml(c.nome)}" decoding="async"><div class="duration-pill">${escapeHtml(c.duracao||'')}</div><div class="play-badge"><div class="circle"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div></div><div class="info"><p class="modulo-tag" style="color:${c.accent||'#38bdf8'}">Submódulo ${c.ordem}</p><h3>${escapeHtml(c.nome)}</h3><p>${escapeHtml(c.desc||'')}</p></div>`;
+    d.innerHTML=`<div class="cover-wrap"><img src="${capaUrl(c)}" alt="Capa: ${escapeHtml(c.nome)}" decoding="async"><div class="duration-pill">${escapeHtml(c.duracao||'')}</div><div class="play-badge"><div class="circle"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div></div><div class="info"><h3>${escapeHtml(c.nome)}</h3><p>${escapeHtml(c.desc||'')}</p></div>`;
     d.addEventListener('click',()=>openPlayer(c));
     grid.appendChild(d);
   });
