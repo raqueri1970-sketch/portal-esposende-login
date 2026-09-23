@@ -185,10 +185,10 @@ function normalizarRegionais(raw){
   raw.forEach((r,i)=>{
     const original=num(pick(r,['numero_loja','loja','codigo_loja','cod_loja']));
     if(original==null){erros.push('Linha '+(i+2)+': loja inválida');return}
+    if(original===10||original===910){avisos.push('Linha '+(i+2)+': loja 10 ignorada por regra (sem regional)');iguais++;return}
     const codigo=lojaResolvida(original);
     const atual=lojas.get(codigo);
     if(!atual){erros.push('Linha '+(i+2)+': loja '+original+' não existe na Base Mãe');return}
-    if(original===10||codigo===910){out.push({...atual,regional_id:null,atualizado_em:new Date().toISOString()});if(atual.regional_id==null)iguais++;else alterados++;return}
     const rg=txt(pick(r,['regional','nome_regional','gestor_regional','gestor']));
     const reg=regMap.get(norm(rg));
     if(!reg){erros.push('Linha '+(i+2)+': regional não reconhecida ('+rg+')');return}
@@ -208,7 +208,6 @@ function normalizarSetores(raw){
     if(!codigo||!nome){erros.push('Linha '+(i+2)+': código e nome são obrigatórios');return}
     const atual=atuais.get(norm(codigo))||null;
     const row={codigo,nome,gestor:txt(pick(r,['gestor','responsavel','responsável']))||atual?.gestor||null,ativo:bool(pick(r,['ativo']),atual?.ativo??true),atualizado_em:new Date().toISOString()};
-    if(atual)row.id=atual.id;
     out.push(row);
     if(!atual)novos++;else if(eq(row,atual,['codigo','nome','gestor','ativo']))iguais++;else alterados++;
   });
