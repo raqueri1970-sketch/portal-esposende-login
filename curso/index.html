@@ -385,6 +385,7 @@ const CURSOS_FALLBACK = [
 const CAPA_VERSAO = '2';
 function capaUrl(c){ return 'capas/' + (c.capa_path || (c.id + '.jpg')) + '?v=' + CAPA_VERSAO; }
 const grid = document.getElementById('grid');
+const INSTITUCIONAL_URL='institucional.html';
 const AREAS=[
   {id:'estoque',nome:'Operações de Estoque',pos:'5.7% 38.4%'},
   {id:'comercial',nome:'Comercial',pos:'50.5% 38.4%'},
@@ -445,6 +446,16 @@ async function carregarAreas(){
   const perms=await getPerms();
   const ag=document.getElementById('areasGrid');
   ag.innerHTML='';
+  // Módulo institucional abre a jornada antes dos setores operacionais.
+  const inst=document.createElement('div');
+  inst.className='area-card institutional-card';
+  inst.style.backgroundImage="linear-gradient(180deg,rgba(2,13,29,.02) 25%,rgba(3,15,32,.92) 100%),url('https://lojasesposende.com.br/wp-content/uploads/2025/06/WhatsApp-Image-2025-05-13-at-16.57.18-1024x576.jpeg')";
+  inst.style.backgroundSize='cover';
+  inst.style.backgroundPosition='center';
+  inst.innerHTML='<span class="lock">→</span><div class="area-copy"><h3>Bem-vindo à Esposende</h3><p>Nossa história, missão, visão e valores</p></div>';
+  inst.addEventListener('click',()=>{window.location.href=INSTITUCIONAL_URL});
+  ag.appendChild(inst);
+
   AREAS.forEach(a=>{
     const p=perms[a.id]||{};
     const ok=PORTAL_ADMIN||!!p.permitido;
