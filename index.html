@@ -35,6 +35,15 @@ body.portal-on .card{display:none}
 .link-esqueci:hover{color:#93b3d9}
 .hidden{display:none !important}
 .voltar{background:none;border:none;color:#6b88a8;font-size:12px;text-decoration:underline;cursor:pointer;margin-top:14px;padding:0;width:auto;display:block;margin-left:auto;margin-right:auto}
+#btnBaseMae{position:fixed;right:16px;bottom:18px;z-index:2147483600;width:auto;background:#0f8bff;color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:11px 15px;font-size:12.5px;font-weight:900;box-shadow:0 8px 28px rgba(0,0,0,.38)}
+#btnBaseMae:hover{background:#2b9cff}
+#baseMaeOverlay{position:fixed;inset:0;z-index:2147483646;background:#06101c;display:none;flex-direction:column}
+#baseMaeOverlay.open{display:flex}
+#baseMaeTop{height:54px;flex:0 0 54px;background:#081421;border-bottom:1px solid #20334b;display:flex;align-items:center;padding:0 13px;gap:10px;font-family:Arial,sans-serif}
+#baseMaeTop button{width:auto;background:#132a43;color:#fff;border:1px solid #315170;border-radius:8px;padding:8px 12px;font-weight:800}
+#baseMaeTop strong{font-size:14px}#baseMaeTop span{font-size:11px;color:#9eb0c7}
+#baseMaeFrame{width:100%;height:calc(100vh - 54px);border:0;background:#07111f}
+@media(max-width:600px){#btnBaseMae{right:10px;bottom:12px;padding:10px 13px;font-size:11.5px}#baseMaeTop span{display:none}}
 </style>
 </head>
 <body>
@@ -67,6 +76,11 @@ body.portal-on .card{display:none}
 </div>
 <iframe id="portalFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups allow-top-navigation-by-user-activation allow-popups-to-escape-sandbox"></iframe>
 <button id="btnSairGestor" class="hidden" type="button" onclick="sairGestor()">Sair</button>
+<button id="btnBaseMae" class="hidden" type="button" onclick="abrirBaseMae()">📥 Base Mãe · Carregar arquivos</button>
+<div id="baseMaeOverlay" aria-hidden="true">
+  <div id="baseMaeTop"><button type="button" onclick="fecharBaseMae()">← Voltar ao Portal</button><strong>Base Mãe</strong><span>Carregamento oficial de funcionários, lojas, regionais e setores</span></div>
+  <iframe id="baseMaeFrame" title="Base Mãe do Portal"></iframe>
+</div>
 <script>
 var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -275,7 +289,72 @@ const ORC_UNIFIED_PATCH=`
 // 10 anos publica no historico do repo GitHub Pages, que continuaria funcionando pra sempre
 // mesmo com o login de volta. Trocado de caminho (e o objeto antigo removido do Storage) pra
 // invalidar aquele acesso — URLs assinadas antigas ficam presas ao caminho, nao ao conteudo.
+
 var FILE_PATH='PORTAL_ESPOSENDE_V4_AUTH.html';
+
+// Capa do card "TREINAMENTOS E CURSOS" no Portal principal.
+var TREINAMENTOS_CAPA_URL=new URL('treinamentos-cursos-capa.jpg?v=2',location.href).href;
+function capaTreinamentosNoShell(CAPA){
+  var ALVO='TREINAMENTOS E CURSOS';
+  function norm(t){return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/&/g,' E ').replace(/\s+/g,' ').trim().toUpperCase()}
+  function grande(el){var r=el.getBoundingClientRect();return r.width>=80&&r.height>=60}
+  function urlFundo(el){var b=getComputedStyle(el).backgroundImage;return b&&b.indexOf('url(')>=0?b:''}
+  function titulos(){
+    var achados=[],w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),n;
+    while((n=w.nextNode())){
+      if(norm(n.nodeValue).indexOf('TREINAMENTO')<0)continue;
+      var el=n.parentElement;
+      for(var i=0;i<3&&el;i++,el=el.parentElement){
+        if(norm(el.textContent).indexOf(ALVO)>=0){if(achados.indexOf(el)<0)achados.push(el);break}
+      }
+    }
+    return achados;
+  }
+  var MENU='nav,aside,header,[role="navigation"],[role="menu"],[class*="sidebar" i],[class*="menu" i],[id*="sidebar" i],[id*="menu" i]';
+  function clicavel(el){return /^(A|BUTTON)$/.test(el.tagName)||el.getAttribute('role')==='button'||el.hasAttribute('onclick')||typeof el.onclick==='function'||getComputedStyle(el).cursor==='pointer'}
+  function imagemEm(el){
+    var melhor=null,area=0;
+    [].slice.call(el.querySelectorAll('img')).forEach(function(img){
+      if(!grande(img))return;
+      var r=img.getBoundingClientRect();
+      if(r.width*r.height>area){area=r.width*r.height;melhor={tipo:'img',el:img}}
+    });
+    if(melhor)return melhor;
+    var fundos=[el].concat([].slice.call(el.querySelectorAll('*')));
+    for(var i=0;i<fundos.length;i++)if(urlFundo(fundos[i])&&grande(fundos[i]))return {tipo:'fundo',el:fundos[i]};
+    return null;
+  }
+  function capaDoCard(titulo){
+    if(titulo.closest(MENU))return null;
+    var el=titulo;
+    for(var nivel=0;nivel<7&&el&&el!==document.body;nivel++,el=el.parentElement){
+      if(norm(el.textContent).length>400)return null;
+      if(clicavel(el))return imagemEm(el);
+      var achada=imagemEm(el);if(achada)return achada;
+    }
+    return null;
+  }
+  function aplicar(alvo){
+    var el=alvo.el;if(el.getAttribute('data-capa-treinamentos')===CAPA)return;
+    if(alvo.tipo==='img'){
+      var pic=el.parentElement&&el.parentElement.tagName==='PICTURE'?el.parentElement:null;
+      if(pic)[].slice.call(pic.querySelectorAll('source')).forEach(function(x){x.setAttribute('srcset',CAPA)});
+      el.removeAttribute('srcset');el.removeAttribute('sizes');el.style.objectFit='cover';el.style.objectPosition='center top';el.src=CAPA;
+    }else{
+      el.style.backgroundImage=urlFundo(el).replace(/url\([^)]*\)/,'url("'+CAPA+'")');
+      el.style.backgroundPosition='center top';el.style.backgroundSize='cover';
+    }
+    el.setAttribute('data-capa-treinamentos',CAPA);
+  }
+  var agendado=null;
+  function varrer(){agendado=null;try{titulos().forEach(function(t){var c=capaDoCard(t);if(c)aplicar(c)})}catch(e){console.warn('[Portal] capa Treinamentos:',e)}}
+  function agendar(){if(!agendado)agendado=setTimeout(varrer,250)}
+  new MutationObserver(agendar).observe(document.documentElement,{childList:true,subtree:true});
+  setInterval(agendar,2500);agendar();
+}
+var TREINAMENTOS_CAPA_PATCH='<scr'+'ipt id="patch-capa-treinamentos-20260922">('+capaTreinamentosNoShell.toString()+')('+JSON.stringify(TREINAMENTOS_CAPA_URL)+');</scr'+'ipt>';
+function inserirAntesDoFimDoBody(html,trecho){var i=html.toLowerCase().lastIndexOf('</body>');return i<0?html+trecho:html.slice(0,i)+trecho+html.slice(i)}
+
 
 /* Base Mãe v26: injeta o agente também dentro do shell principal carregado do Storage. */
 function instalarBaseMaeNoPortal(ifr){
@@ -437,6 +516,31 @@ async function sairGestor(){
   location.reload();
 }
 
+async function usuarioEhAdministrador(session){
+  if(!session||!session.user)return false;
+  try{
+    var r=await sb.from('orc_perfis').select('perfil').eq('user_id',session.user.id).eq('ativo',true).maybeSingle();
+    return !!(r.data&&r.data.perfil==='administrador');
+  }catch(e){return false}
+}
+async function atualizarBotaoBaseMae(session){
+  var ok=await usuarioEhAdministrador(session);
+  var b=document.getElementById('btnBaseMae');
+  if(b)b.classList.toggle('hidden',!ok);
+  return ok;
+}
+function abrirBaseMae(){
+  var o=document.getElementById('baseMaeOverlay'),f=document.getElementById('baseMaeFrame');
+  if(!o||!f)return;
+  f.src='base-mae.html?v=20260922-2';
+  o.classList.add('open');o.setAttribute('aria-hidden','false');
+}
+function fecharBaseMae(){
+  var o=document.getElementById('baseMaeOverlay'),f=document.getElementById('baseMaeFrame');
+  if(!o||!f)return;
+  o.classList.remove('open');o.setAttribute('aria-hidden','true');f.src='about:blank';
+}
+
 async function openPortal(){
   setStatus('Abrindo o portal...','ok');
   // Perfil gestor_departamento -> só a Central de Compras da área dele
@@ -444,7 +548,7 @@ async function openPortal(){
     var _s0=(await sb.auth.getSession()).data.session;
     if(_s0){
       var _pf=await sb.from('orc_perfis').select('perfil').eq('user_id',_s0.user.id).eq('ativo',true).maybeSingle();
-      if(_pf.data && _pf.data.perfil==='gestor_departamento'){ return abrirSomenteOrcamento(_s0); }
+      if(_pf.data && _pf.data.perfil==='gestor_departamento'){ var _bb=document.getElementById('btnBaseMae');if(_bb)_bb.classList.add('hidden'); return abrirSomenteOrcamento(_s0); }
     }
   }catch(e){ console.warn('checagem de perfil gestor falhou',e); }
   var res=await sb.storage.from(BUCKET).createSignedUrl(FILE_PATH,3600);
@@ -458,6 +562,7 @@ async function openPortal(){
   var _sessionPayload=null;
   try{
     var _s=(await sb.auth.getSession()).data.session;
+    await atualizarBotaoBaseMae(_s);
     if(_s&&_s.access_token){
       _sessionPayload={
         access_token:_s.access_token, refresh_token:_s.refresh_token||'',
@@ -486,6 +591,8 @@ async function openPortal(){
   html=html.replace(/<\/body>/i,ORC_UNIFIED_PATCH+'</body>');
   // Correção isolada da regra do Almoxarifado. Não altera HTML, cards ou gráficos.
   html=html.replace(/<\/body>/i,ALMOX_MINIMO_PATCH+'</body>');
+  // Capa oficial do card Treinamentos e Cursos.
+  html=inserirAntesDoFimDoBody(html,TREINAMENTOS_CAPA_PATCH);
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
