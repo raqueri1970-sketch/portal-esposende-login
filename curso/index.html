@@ -348,7 +348,8 @@ async function carregarCatalogo(){
 // -------- identificação (loja + nome) --------
 const SUPA_URL = 'https://rdztzurfesnobfkazgpm.supabase.co';
 const SUPA_KEY = 'sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
-const ID_KEY = 'curso_identidade_v1';
+try{ localStorage.removeItem('curso_identidade_v1'); }catch(e){}
+const ID_KEY = 'curso_identidade_v2';
 
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
