@@ -1,15 +1,285 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Base Mãe · Esposende</title><style>
-:root{--bg:#07111f;--card:#101c2d;--line:#24364d;--blue:#2188ff;--ok:#21c77a;--txt:#f4f7fb;--mut:#9eb0c7}*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#07111f,#0b1525);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,sans-serif}.wrap{max-width:1120px;margin:auto;padding:24px}header{display:flex;gap:14px;align-items:center;margin-bottom:22px}.logo{font-size:28px;font-weight:900}.logo b{color:var(--blue)}h1{font-size:24px;margin:0}.sub{color:var(--mut);font-size:14px}.stats,.grid{display:grid;gap:14px}.stats{grid-template-columns:repeat(4,1fr);margin-bottom:18px}.stat,.card{background:rgba(16,28,45,.95);border:1px solid var(--line);border-radius:16px;padding:18px}.stat strong{display:block;font-size:30px}.stat span{color:var(--mut);font-size:13px}.grid{grid-template-columns:repeat(3,1fr)}.card h2{margin:0 0 7px;font-size:18px}.card p{color:var(--mut);min-height:58px}.drop{border:1px dashed #46627f;border-radius:12px;padding:18px;text-align:center}input{width:100%}button{margin-top:12px;width:100%;border:0;border-radius:10px;padding:11px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer}.note{margin-top:18px;padding:14px;border:1px solid var(--line);border-radius:12px;color:var(--mut)}#msg{margin-top:14px;color:var(--ok);font-weight:700}@media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}</style></head><body><div class="wrap"><header><div class="logo">ESPOSENDE<b>•</b></div><div><h1>Base Mãe do Portal</h1><div class="sub">Cadastro central de funcionários, lojas, regionais e setores</div></div></header>
-<div class="stats"><div class="stat"><strong id="nf">—</strong><span>Funcionários</span></div><div class="stat"><strong id="nl">—</strong><span>Lojas</span></div><div class="stat"><strong id="nr">—</strong><span>Regionais</span></div><div class="stat"><strong id="ns">—</strong><span>Setores</span></div></div>
-<div class="grid"><section class="card"><h2>Funcionários</h2><p>Atualize CPF, nome, cargo, loja e situação.</p><div class="drop"><input type="file" id="func" accept=".csv"></div><button onclick="validar('funcionarios','func')">Validar arquivo</button></section>
-<section class="card"><h2>Lojas</h2><p>Atualize código, nome, cidade, UF e estrutura da loja.</p><div class="drop"><input type="file" id="lojas" accept=".csv"></div><button onclick="validar('lojas','lojas')">Validar arquivo</button></section>
-<section class="card"><h2>Regionais</h2><p>Atualize a relação loja → regional. A loja 10 permanece sem regional.</p><div class="drop"><input type="file" id="reg" accept=".csv"></div><button onclick="validar('regionais','reg')">Validar arquivo</button></section></div>
-<div class="note">Segurança: esta tela exige sessão autenticada do Portal e perfil staff. O arquivo é validado antes de qualquer alteração na Base Mãe.</div><div id="msg"></div></div>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Base Mãe · Esposende</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#07111f;--card:#101c2d;--line:#24364d;--blue:#2188ff;--ok:#21c77a;--warn:#f5b942;--bad:#ff6374;--txt:#f4f7fb;--mut:#9eb0c7}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(145deg,#07111f,#0b1525);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{max-width:1180px;margin:auto;padding:22px}
+header{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px}
+.brand{display:flex;gap:14px;align-items:center}.logo{font-size:27px;font-weight:900}.logo b{color:var(--blue)}
+h1{font-size:23px;margin:0}.sub{color:var(--mut);font-size:13px;margin-top:3px}
+.admin{display:none;padding:9px 12px;border-radius:10px;background:rgba(33,199,122,.12);border:1px solid rgba(33,199,122,.42);font-size:12px;font-weight:800;color:#9af0c6}
+.stats,.grid{display:grid;gap:14px}.stats{grid-template-columns:repeat(4,1fr);margin-bottom:16px}.grid{grid-template-columns:repeat(2,1fr)}
+.stat,.card{background:rgba(16,28,45,.96);border:1px solid var(--line);border-radius:16px;padding:17px}
+.stat strong{display:block;font-size:29px}.stat span{color:var(--mut);font-size:12px}
+.card h2{margin:0 0 5px;font-size:18px}.card p{color:var(--mut);margin:0 0 13px;font-size:13px;line-height:1.45}
+.drop{border:1.5px dashed #46627f;border-radius:13px;padding:18px;text-align:center;background:#0a1626;position:relative}
+.drop strong{display:block;color:#fff;font-size:14px}.drop span{display:block;color:var(--mut);font-size:11px;margin:4px 0 10px}
+.drop input{width:100%;color:var(--mut);font-size:12px}
+.actions{display:flex;gap:8px;margin-top:10px}.actions button{flex:1}
+button{border:0;border-radius:10px;padding:11px 12px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer}
+button.secondary{background:#1b2b41;border:1px solid #35506d}button.apply{background:var(--ok);color:#052819}button:disabled{opacity:.45;cursor:not-allowed}
+.result{min-height:44px;margin-top:10px;padding:10px 12px;border-radius:10px;background:#0a1626;border:1px solid #1e3148;color:var(--mut);font-size:12px;line-height:1.45}
+.result.ok{color:#a6f2cb;border-color:rgba(33,199,122,.4)}.result.bad{color:#ffabb5;border-color:rgba(255,99,116,.45)}.result.warn{color:#ffd98a;border-color:rgba(245,185,66,.42)}
+.note{margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:12px;color:var(--mut);font-size:12px;line-height:1.5}
+.history{margin-top:16px}.history h3{font-size:15px;margin:0 0 8px}.hist-item{padding:9px 11px;border-top:1px solid var(--line);font-size:12px;color:var(--mut)}.hist-item b{color:var(--txt)}
+#fatal{display:none;margin:40px auto;max-width:680px;padding:22px;border:1px solid rgba(255,99,116,.45);border-radius:14px;background:#25121a;color:#ffd9df;text-align:center}
+@media(max-width:820px){.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.wrap{padding:15px}.actions{flex-direction:column}.brand{align-items:flex-start}h1{font-size:20px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+<header>
+  <div class="brand"><div class="logo">ESPOSENDE<b>•</b></div><div><h1>Base Mãe do Portal</h1><div class="sub">Ponto oficial para carregar funcionários, lojas, regionais e setores</div></div></div>
+  <div class="admin" id="adminBadge">✓ Administrador reconhecido pelo Portal</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><strong id="nf">—</strong><span>Funcionários</span></div>
+  <div class="stat"><strong id="nl">—</strong><span>Lojas</span></div>
+  <div class="stat"><strong id="nr">—</strong><span>Regionais</span></div>
+  <div class="stat"><strong id="ns">—</strong><span>Setores</span></div>
+</div>
+
+<div class="grid">
+  <section class="card" data-tipo="funcionarios">
+    <h2>1. Funcionários</h2>
+    <p>CPF, nome, cargo, loja e situação. Ausências no arquivo não apagam registros antigos automaticamente.</p>
+    <div class="drop"><strong>CARREGUE O ARQUIVO MÃE AQUI</strong><span>XLSX, XLS ou CSV</span><input type="file" id="func" accept=".xlsx,.xls,.csv"></div>
+    <div class="actions"><button class="secondary" onclick="validarArquivo('funcionarios','func')">Validar</button><button class="apply" id="apply-funcionarios" disabled onclick="aplicarArquivo('funcionarios')">Aplicar na Base Mãe</button></div>
+    <div class="result" id="res-funcionarios">Selecione o arquivo de funcionários.</div>
+  </section>
+
+  <section class="card" data-tipo="lojas">
+    <h2>2. Lojas</h2>
+    <p>Código, nome, cidade, UF e status. O vínculo regional existente é preservado se não vier no arquivo.</p>
+    <div class="drop"><strong>CARREGUE O ARQUIVO MÃE AQUI</strong><span>XLSX, XLS ou CSV</span><input type="file" id="lojas" accept=".xlsx,.xls,.csv"></div>
+    <div class="actions"><button class="secondary" onclick="validarArquivo('lojas','lojas')">Validar</button><button class="apply" id="apply-lojas" disabled onclick="aplicarArquivo('lojas')">Aplicar na Base Mãe</button></div>
+    <div class="result" id="res-lojas">Selecione o arquivo de lojas.</div>
+  </section>
+
+  <section class="card" data-tipo="regionais">
+    <h2>3. Regionais por loja</h2>
+    <p>Relação loja → regional. A loja 10 continua sem regional por regra do Portal.</p>
+    <div class="drop"><strong>CARREGUE O ARQUIVO MÃE AQUI</strong><span>XLSX, XLS ou CSV</span><input type="file" id="reg" accept=".xlsx,.xls,.csv"></div>
+    <div class="actions"><button class="secondary" onclick="validarArquivo('regionais','reg')">Validar</button><button class="apply" id="apply-regionais" disabled onclick="aplicarArquivo('regionais')">Aplicar na Base Mãe</button></div>
+    <div class="result" id="res-regionais">Selecione o arquivo loja → regional.</div>
+  </section>
+
+  <section class="card" data-tipo="setores">
+    <h2>4. Setores</h2>
+    <p>Código, nome e gestor. Use somente quando houver alteração na estrutura dos departamentos.</p>
+    <div class="drop"><strong>CARREGUE O ARQUIVO MÃE AQUI</strong><span>XLSX, XLS ou CSV</span><input type="file" id="set" accept=".xlsx,.xls,.csv"></div>
+    <div class="actions"><button class="secondary" onclick="validarArquivo('setores','set')">Validar</button><button class="apply" id="apply-setores" disabled onclick="aplicarArquivo('setores')">Aplicar na Base Mãe</button></div>
+    <div class="result" id="res-setores">Selecione o arquivo de setores.</div>
+  </section>
+</div>
+
+<div class="note"><b>Como usar:</b> carregue o arquivo no quadro correto, toque em <b>Validar</b> e confira o resumo. Somente depois o botão <b>Aplicar na Base Mãe</b> é liberado. Nenhum arquivo é aplicado automaticamente. Cada aplicação fica registrada no histórico.</div>
+
+<div class="history"><h3>Últimas importações</h3><div id="historyList" class="result">Carregando histórico…</div></div>
+</div>
+<div id="fatal"></div>
+
 <script>
-const U='https://rdztzurfesnobfkazgpm.supabase.co',K='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
-const tok=()=>{try{return JSON.parse(localStorage.getItem('sb-rdztzurfesnobfkazgpm-auth-token')||'{}').access_token||''}catch(e){return''}};
-async function api(path){const t=tok();if(!t)throw Error('Entre no Portal com seu usuário antes de abrir a Base Mãe.');const r=await fetch(U+'/rest/v1/'+path,{headers:{apikey:K,Authorization:'Bearer '+t}});if(!r.ok)throw Error('Acesso não autorizado.');return r.json()}
-async function init(){try{const [f,l,r,s]=await Promise.all([api('portal_funcionarios?select=cpf'),api('portal_lojas?select=codigo'),api('portal_regionais?select=id'),api('portal_setores?select=id')]);nf.textContent=f.length;nl.textContent=l.length;nr.textContent=r.length;ns.textContent=s.length}catch(e){msg.textContent=e.message}}
-function parseCSV(t){const ls=t.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);const h=ls.shift().split(',').map(x=>x.trim().toLowerCase());return {h,rows:ls.map(x=>x.split(',').map(y=>y.trim()))}}
-async function validar(tipo,id){msg.textContent='';const f=document.getElementById(id).files[0];if(!f){msg.textContent='Selecione um arquivo CSV.';return}const d=parseCSV(await f.text());let req=tipo==='regionais'?['regional','numero_loja']:tipo==='funcionarios'?['cpf','nome','cargo']:['codigo','nome'];const miss=req.filter(x=>!d.h.includes(x));if(miss.length){msg.textContent='Arquivo não reconhecido. Faltam: '+miss.join(', ');return}if(tipo==='regionais'){const ix=d.h.indexOf('numero_loja'),ir=d.h.indexOf('regional');const dez=d.rows.find(x=>Number(x[ix])===10&&x[ir]);if(dez){msg.textContent='Bloqueado: a loja 10 não pode ter regional.';return}}msg.textContent='Arquivo válido: '+d.rows.length+' linhas. A validação está pronta; a aplicação definitiva será liberada somente com confirmação para evitar substituição acidental.'}
-init();</script></body></html>
+const U='https://rdztzurfesnobfkazgpm.supabase.co';
+const K='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
+const sb=supabase.createClient(U,K);
+const estado={funcionarios:null,lojas:null,regionais:null,setores:null};
+const refs={funcionarios:[],lojas:[],regionais:[],setores:[]};
+
+function norm(s){return String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')}
+function txt(v){return String(v??'').trim()}
+function dig(v){return txt(v).replace(/\D/g,'')}
+function num(v){const d=txt(v).match(/\d+/);return d?Number(d[0]):null}
+function pick(o,ks){for(const k of ks){const v=o[norm(k)];if(v!==undefined&&txt(v)!=='')return v}return ''}
+function bool(v,def=null){const z=norm(v);if(['1','sim','s','true','ativo','ativa'].includes(z))return true;if(['0','nao','n','false','inativo','inativa','desligado','demitido'].includes(z))return false;return def}
+function mapRows(raw){return raw.map(r=>Object.fromEntries(Object.entries(r).map(([k,v])=>[norm(k),v])))}
+function eq(a,b,keys){return keys.every(k=>String(a?.[k]??'')===String(b?.[k]??''))}
+function chunk(a,n=250){const out=[];for(let i=0;i<a.length;i+=n)out.push(a.slice(i,i+n));return out}
+function byLower(arr){const m=new Map();arr.forEach(x=>{[x.codigo,x.nome,x.gestor].filter(Boolean).forEach(v=>{const k=norm(v);if(!m.has(k)||Number(x.id)<Number(m.get(k).id))m.set(k,x)})});return m}
+function lojaResolvida(v){
+  const n=num(v);if(n==null)return null;
+  const exact=refs.lojas.find(x=>Number(x.codigo)===n);if(exact)return n;
+  if(n<100){const c=900+n;if(refs.lojas.some(x=>Number(x.codigo)===c))return c}
+  return n;
+}
+function setResult(tipo,text,classe=''){
+  const el=document.getElementById('res-'+tipo);el.className='result '+classe;el.textContent=text;
+}
+function enableApply(tipo,on){document.getElementById('apply-'+tipo).disabled=!on}
+
+async function lerPlanilha(file){
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf,{type:'array',cellDates:false});
+  if(!wb.SheetNames.length)throw Error('Planilha sem abas.');
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  return mapRows(XLSX.utils.sheet_to_json(ws,{defval:'',raw:false}));
+}
+
+async function carregarRefs(){
+  const [f,l,r,s]=await Promise.all([
+    sb.from('portal_funcionarios').select('cpf,nome,cargo,loja_codigo,setor_id,regional_id,situacao,ativo,fonte'),
+    sb.from('portal_lojas').select('codigo,nome,cidade,uf,regional_id,ativo'),
+    sb.from('portal_regionais').select('id,codigo,nome,gestor,ativo').order('id'),
+    sb.from('portal_setores').select('id,codigo,nome,gestor,ativo').order('id')
+  ]);
+  for(const x of [f,l,r,s])if(x.error)throw x.error;
+  refs.funcionarios=f.data||[];refs.lojas=l.data||[];refs.regionais=r.data||[];refs.setores=s.data||[];
+  nf.textContent=refs.funcionarios.length;nl.textContent=refs.lojas.length;nr.textContent=refs.regionais.length;ns.textContent=refs.setores.length;
+}
+
+function normalizarFuncionarios(raw){
+  const atuais=new Map(refs.funcionarios.map(x=>[dig(x.cpf),x]));
+  const setores=byLower(refs.setores);
+  const lojas=new Map(refs.lojas.map(x=>[Number(x.codigo),x]));
+  const erros=[],avisos=[],out=[];let novos=0,alterados=0,iguais=0;
+  raw.forEach((r,i)=>{
+    const cpf=dig(pick(r,['cpf','cpf_funcionario','documento']));
+    const nome=txt(pick(r,['nome','nome_funcionario','funcionario','colaborador']));
+    if(cpf.length!==11){erros.push('Linha '+(i+2)+': CPF inválido');return}
+    if(!nome){erros.push('Linha '+(i+2)+': nome vazio');return}
+    const atual=atuais.get(cpf)||null;
+    const lj=lojaResolvida(pick(r,['loja_codigo','loja','codigo_loja','cod_loja','numero_loja','loja_origem']));
+    const cargo=txt(pick(r,['cargo','funcao','função']))||atual?.cargo||null;
+    const situacao=txt(pick(r,['situacao','situação','status']))||atual?.situacao||null;
+    const setorTxt=txt(pick(r,['setor','departamento','area','área']));
+    let setorId=atual?.setor_id??null;
+    if(setorTxt){const sx=setores.get(norm(setorTxt));if(sx)setorId=sx.id;else avisos.push('Linha '+(i+2)+': setor não reconhecido ('+setorTxt+')')}
+    const expAtivo=pick(r,['ativo']);
+    let ativo=bool(expAtivo,null);
+    if(ativo===null&&situacao)ativo=!['inativo','desligado','demitido','demitida'].includes(norm(situacao));
+    if(ativo===null)ativo=atual?.ativo??true;
+    const regionalId=lj!=null&&lojas.get(lj)?lojas.get(lj).regional_id:(atual?.regional_id??null);
+    const row={cpf,nome,cargo,loja_codigo:lj??atual?.loja_codigo??null,setor_id:setorId,regional_id:regionalId,situacao,ativo,fonte:'arquivo_base_mae',fonte_atualizada_em:new Date().toISOString(),atualizado_em:new Date().toISOString()};
+    out.push(row);
+    if(!atual)novos++;else if(eq(row,atual,['nome','cargo','loja_codigo','setor_id','regional_id','situacao','ativo']))iguais++;else alterados++;
+  });
+  return {rows:out,erros,avisos,novos,alterados,iguais};
+}
+
+function normalizarLojas(raw){
+  const atuais=new Map(refs.lojas.map(x=>[Number(x.codigo),x]));
+  const erros=[],avisos=[],out=[];let novos=0,alterados=0,iguais=0;
+  raw.forEach((r,i)=>{
+    const codigo=num(pick(r,['codigo','codigo_loja','cod_loja','numero_loja','loja']));
+    const nome=txt(pick(r,['nome','nome_loja','loja_nome','cidade']));
+    if(codigo==null){erros.push('Linha '+(i+2)+': código da loja inválido');return}
+    const atual=atuais.get(codigo)||null;
+    const row={codigo,nome:nome||atual?.nome||null,cidade:txt(pick(r,['cidade','municipio','município']))||atual?.cidade||null,uf:txt(pick(r,['uf','estado']))||atual?.uf||null,regional_id:atual?.regional_id??null,ativo:bool(pick(r,['ativo']),atual?.ativo??true),atualizado_em:new Date().toISOString()};
+    out.push(row);
+    if(!atual)novos++;else if(eq(row,atual,['nome','cidade','uf','regional_id','ativo']))iguais++;else alterados++;
+  });
+  return {rows:out,erros,avisos,novos,alterados,iguais};
+}
+
+function normalizarRegionais(raw){
+  const regMap=byLower(refs.regionais),lojas=new Map(refs.lojas.map(x=>[Number(x.codigo),x]));
+  const erros=[],avisos=[],out=[];let novos=0,alterados=0,iguais=0;
+  raw.forEach((r,i)=>{
+    const original=num(pick(r,['numero_loja','loja','codigo_loja','cod_loja']));
+    if(original==null){erros.push('Linha '+(i+2)+': loja inválida');return}
+    const codigo=lojaResolvida(original);
+    const atual=lojas.get(codigo);
+    if(!atual){erros.push('Linha '+(i+2)+': loja '+original+' não existe na Base Mãe');return}
+    if(original===10||codigo===910){out.push({...atual,regional_id:null,atualizado_em:new Date().toISOString()});if(atual.regional_id==null)iguais++;else alterados++;return}
+    const rg=txt(pick(r,['regional','nome_regional','gestor_regional','gestor']));
+    const reg=regMap.get(norm(rg));
+    if(!reg){erros.push('Linha '+(i+2)+': regional não reconhecida ('+rg+')');return}
+    const row={...atual,regional_id:reg.id,atualizado_em:new Date().toISOString()};
+    out.push(row);
+    if(Number(atual.regional_id)===Number(reg.id))iguais++;else alterados++;
+  });
+  return {rows:out,erros,avisos,novos,alterados,iguais};
+}
+
+function normalizarSetores(raw){
+  const atuais=new Map(refs.setores.map(x=>[norm(x.codigo),x]));
+  const erros=[],avisos=[],out=[];let novos=0,alterados=0,iguais=0;
+  raw.forEach((r,i)=>{
+    const codigo=txt(pick(r,['codigo','codigo_setor','sigla'])).toUpperCase();
+    const nome=txt(pick(r,['nome','setor','departamento','area','área']));
+    if(!codigo||!nome){erros.push('Linha '+(i+2)+': código e nome são obrigatórios');return}
+    const atual=atuais.get(norm(codigo))||null;
+    const row={codigo,nome,gestor:txt(pick(r,['gestor','responsavel','responsável']))||atual?.gestor||null,ativo:bool(pick(r,['ativo']),atual?.ativo??true),atualizado_em:new Date().toISOString()};
+    if(atual)row.id=atual.id;
+    out.push(row);
+    if(!atual)novos++;else if(eq(row,atual,['codigo','nome','gestor','ativo']))iguais++;else alterados++;
+  });
+  return {rows:out,erros,avisos,novos,alterados,iguais};
+}
+
+async function validarArquivo(tipo,inputId){
+  enableApply(tipo,false);estado[tipo]=null;setResult(tipo,'Lendo e validando…');
+  try{
+    const file=document.getElementById(inputId).files[0];if(!file)throw Error('Selecione um arquivo primeiro.');
+    const raw=await lerPlanilha(file);if(!raw.length)throw Error('O arquivo não possui linhas de dados.');
+    const fn={funcionarios:normalizarFuncionarios,lojas:normalizarLojas,regionais:normalizarRegionais,setores:normalizarSetores}[tipo];
+    const v=fn(raw);v.file=file.name;v.total=raw.length;
+    if(v.erros.length){setResult(tipo,'Bloqueado: '+v.erros.slice(0,5).join(' | ')+(v.erros.length>5?' | +'+(v.erros.length-5)+' erros':''),'bad');return}
+    estado[tipo]=v;enableApply(tipo,true);
+    const av=v.avisos.length?' Avisos: '+v.avisos.slice(0,3).join(' | '):'';
+    setResult(tipo,'Arquivo válido. '+v.rows.length+' linhas · '+v.novos+' novos · '+v.alterados+' alterações · '+v.iguais+' sem mudança.'+av,v.avisos.length?'warn':'ok');
+  }catch(e){setResult(tipo,e.message||String(e),'bad')}
+}
+
+async function registrarImportacao(tipo,v,status='aplicado',extra={}){
+  const {error}=await sb.from('portal_base_mae_importacoes').insert({tipo,arquivo_nome:v.file,total_linhas:v.rows.length,status,resumo:{novos:v.novos,alterados:v.alterados,iguais:v.iguais,avisos:v.avisos.length,...extra}});
+  if(error)throw error;
+}
+
+async function upsertChunks(table,rows,onConflict){
+  for(const parte of chunk(rows)){
+    const {error}=await sb.from(table).upsert(parte,{onConflict});
+    if(error)throw error;
+  }
+}
+
+async function aplicarArquivo(tipo){
+  const v=estado[tipo];if(!v)return;
+  if(!confirm('Aplicar '+v.rows.length+' linhas na Base Mãe? Esta ação ficará registrada no histórico.'))return;
+  enableApply(tipo,false);setResult(tipo,'Aplicando…');
+  try{
+    if(tipo==='funcionarios')await upsertChunks('portal_funcionarios',v.rows,'cpf');
+    if(tipo==='lojas'||tipo==='regionais')await upsertChunks('portal_lojas',v.rows,'codigo');
+    if(tipo==='setores')await upsertChunks('portal_setores',v.rows,'codigo');
+    await registrarImportacao(tipo,v);
+    setResult(tipo,'Concluído: '+v.rows.length+' linhas aplicadas com segurança.','ok');
+    estado[tipo]=null;
+    await carregarRefs();await carregarHistorico();
+  }catch(e){
+    setResult(tipo,'Falha ao aplicar: '+(e.message||e),'bad');
+    enableApply(tipo,true);
+  }
+}
+
+async function carregarHistorico(){
+  const {data,error}=await sb.from('portal_base_mae_importacoes').select('tipo,arquivo_nome,total_linhas,status,criado_em,resumo').order('criado_em',{ascending:false}).limit(8);
+  if(error){historyList.textContent='Histórico indisponível.';return}
+  if(!data?.length){historyList.textContent='Nenhuma importação registrada ainda.';return}
+  historyList.innerHTML=data.map(x=>'<div class="hist-item"><b>'+String(x.tipo).toUpperCase()+'</b> · '+x.arquivo_nome+' · '+x.total_linhas+' linhas · '+new Date(x.criado_em).toLocaleString('pt-BR')+'</div>').join('');
+}
+
+async function init(){
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session)throw Error('Entre no Portal com sua conta de administrador antes de abrir a Base Mãe.');
+    const {data:isAdmin,error:admErr}=await sb.rpc('portal_is_admin');
+    if(admErr||isAdmin!==true)throw Error('A Base Mãe é exclusiva do administrador do Portal.');
+    adminBadge.style.display='block';
+    await carregarRefs();
+    await carregarHistorico();
+  }catch(e){
+    app.style.display='none';fatal.style.display='block';fatal.textContent=e.message||String(e);
+  }
+}
+init();
+</script>
+</body>
+</html>
