@@ -222,23 +222,74 @@
 
 
   .areas-view{display:none}.areas-view.open{display:block}.courses-view.hidden{display:none}
-  .areas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
-  .area-card{position:relative;background:#0d1528;border:1px solid #1d5f94;border-radius:16px;min-height:210px;cursor:pointer;transition:transform .18s,border-color .18s,filter .18s;overflow:hidden;background-size:cover;background-position:center}.area-card:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,13,29,.05) 18%,rgba(3,15,32,.55) 52%,rgba(3,15,32,.97) 100%)}.area-card>*{position:relative;z-index:1}.area-card .area-copy{position:absolute;left:16px;right:52px;bottom:14px}.area-card .area-icon{position:absolute;left:14px;top:14px;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#0879c9;border:2px solid #21a7ff;font-size:22px;box-shadow:0 5px 18px #001a33aa}.area-card h3{margin:0 0 5px;font-size:17px;line-height:1.1;text-transform:uppercase}.area-card p{margin:0;color:#d5e2ef;font-size:12.5px}.area-card .lock{position:absolute;right:14px;top:14px;font-size:20px;background:#07162bcc;border:1px solid #2a78aa;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center}
-  .area-card:hover{transform:translateY(-2px);border-color:#38bdf8}
-  .area-card.locked{opacity:.56;cursor:not-allowed;filter:saturate(.45)}
-  .area-icon{line-height:1}
-  .area-card h3{font-weight:900}
-  .area-card p{line-height:1.3}
-  .lock{}
+  .areas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .area-card{
+    position:relative;
+    border:1px solid #168fe5;
+    border-radius:16px;
+    aspect-ratio:2.20/1;
+    min-height:0;
+    cursor:pointer;
+    overflow:hidden;
+    background-color:#0d1528;
+    background-image:url('../treinamentos-cursos-capa.jpg?v=3');
+    background-repeat:no-repeat;
+    background-size:333.5% auto;
+    background-position:var(--atlas-pos,5.7% 38.4%);
+    transition:transform .18s,border-color .18s,filter .18s,box-shadow .18s;
+    box-shadow:0 8px 24px rgba(0,0,0,.22);
+  }
+  .area-card:before{
+    content:"";
+    position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(2,13,29,.02) 28%,rgba(3,15,32,.22) 54%,rgba(3,15,32,.94) 100%);
+  }
+  .area-card>*{position:relative;z-index:1}
+  .area-card:hover{transform:translateY(-2px);border-color:#5fc9fb;box-shadow:0 12px 28px rgba(0,0,0,.3)}
+  .area-card.locked{filter:saturate(.35) brightness(.7);cursor:not-allowed}
+  .area-card .area-copy{position:absolute;left:15px;right:58px;bottom:12px}
+  .area-card h3{margin:0 0 4px;font-size:17px;line-height:1.08;font-weight:900;text-transform:none;text-shadow:0 2px 8px #000}
+  .area-card p{margin:0;color:#d5e2ef;font-size:12px;line-height:1.2;text-shadow:0 2px 8px #000}
+  .area-card .lock{
+    position:absolute;right:12px;bottom:12px;top:auto;
+    width:40px;height:40px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;font-weight:900;color:#fff;
+    background:#06284dcc;border:2px solid #159ff5;
+    box-shadow:0 5px 18px #001a33aa;
+  }
+  .area-card.locked .lock{
+    top:12px;bottom:auto;border:1px solid #6f7e91;background:#07162bcc;font-size:20px;
+  }
   .back-area{display:none;margin:0 0 18px;background:#17213b;color:var(--text);border:1px solid var(--border);border-radius:9px;padding:9px 14px;font-weight:800;cursor:pointer}
   .empty-course{grid-column:1/-1;border:1px dashed var(--border);border-radius:14px;padding:34px;text-align:center;color:var(--muted);background:#0d1428}
-  @media(max-width:520px){
+  .portal-back{
+    width:auto!important;
+    margin-left:10px;
+    background:#0c2948!important;
+    color:#fff!important;
+    border:1px solid #2aa7ff!important;
+    border-radius:10px!important;
+    padding:9px 13px!important;
+    font:800 12px Nunito,sans-serif!important;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .portal-back:hover{background:#104270!important}
+  @media(max-width:760px){
     .areas-grid{grid-template-columns:1fr 1fr;gap:12px}
-    .area-card{min-height:145px;padding:15px}
-    .area-card h3{font-size:14px;margin-right:30px}
-    .area-card p{font-size:11.5px}
-    .area-icon{font-size:22px;margin-bottom:18px}
-    .lock{font-size:20px;right:12px;top:11px}
+    .area-card{aspect-ratio:1.72/1}
+    .area-card .area-copy{left:12px;right:44px;bottom:11px}
+    .area-card h3{font-size:14px}
+    .area-card p{font-size:10.5px}
+    .area-card .lock{width:34px;height:34px;font-size:18px;right:9px;bottom:9px}
+    .area-card.locked .lock{top:9px;bottom:auto}
+    .portal-back{order:4;flex-basis:auto;margin-left:0;margin-top:8px}
+  }
+  @media(max-width:390px){
+    .areas-grid{gap:10px}
+    .area-card h3{font-size:13px}
+    .area-card p{font-size:10px}
   }
 </style>
 </head>
@@ -280,7 +331,7 @@
     <h1>Central de Treinamento</h1>
     <p>Esposende Calçados · Processos operacionais</p>
   </div>
-  <div class="identity" id="identity-badge"></div><button id="voltarPortal" onclick="location.href='../painel.html'" style="background:#0b75bd;color:white;border:1px solid #2aa7ff;border-radius:10px;padding:9px 13px;font:800 12px Nunito;cursor:pointer">← Voltar ao Portal</button>
+  <div class="identity" id="identity-badge"></div><button id="voltarPortal" class="portal-back" type="button" onclick="voltarAoPortal()">← Voltar ao Portal</button>
 </div>
 
 <div class="wrap">
@@ -335,22 +386,31 @@ const CAPA_VERSAO = '2';
 function capaUrl(c){ return 'capas/' + (c.capa_path || (c.id + '.jpg')) + '?v=' + CAPA_VERSAO; }
 const grid = document.getElementById('grid');
 const AREAS=[
-  {id:'estoque',nome:'Operações de Estoque',icone:'📦'},
-  {id:'comercial',nome:'Comercial',icone:'🛒'},
-  {id:'rh',nome:'Recursos Humanos',icone:'👥'},
-  {id:'financeiro',nome:'Financeiro',icone:'📊'},
-  {id:'auditoria',nome:'Auditoria / Controladoria',icone:'🛡️'},
-  {id:'compras',nome:'Compras',icone:'🧾'},
-  {id:'logistica',nome:'Logística',icone:'🚚'},
-  {id:'marketing',nome:'Marketing',icone:'📣'},
-  {id:'ti',nome:'TI e Sistemas',icone:'💻'},
-  {id:'sac',nome:'SAC e Atendimento',icone:'🎧'},
-  {id:'lojas',nome:'Lojas',icone:'🏬'},
-  {id:'seguranca',nome:'Segurança',icone:'🔐'},
-  {id:'lideranca',nome:'Liderança',icone:'⭐'}
+  {id:'estoque',nome:'Operações de Estoque',pos:'5.7% 38.4%'},
+  {id:'comercial',nome:'Comercial',pos:'50.5% 38.4%'},
+  {id:'rh',nome:'Recursos Humanos',pos:'94.6% 38.4%'},
+  {id:'financeiro',nome:'Financeiro',pos:'50.5% 57.3%'},
+  {id:'auditoria',nome:'Auditoria / Controladoria',pos:'50.5% 86.8%'},
+  {id:'compras',nome:'Compras',pos:'5.7% 57.3%'},
+  {id:'logistica',nome:'Logística',pos:'5.7% 72.9%'},
+  {id:'marketing',nome:'Marketing',pos:'50.5% 72.9%'},
+  {id:'ti',nome:'TI e Sistemas',pos:'94.6% 57.3%'},
+  {id:'sac',nome:'SAC e Atendimento',pos:'94.6% 72.9%'},
+  {id:'lojas',nome:'Lojas',pos:'5.7% 86.8%'},
+  {id:'seguranca',nome:'Segurança',pos:'50.5% 86.8%'},
+  {id:'lideranca',nome:'Liderança',pos:'94.6% 86.8%'}
 ];
 let catalogoAtual=[];
-const AREA_FOTOS={estoque:'capas/recebimento.jpg',comercial:'capas/fazer-etiquetas.jpg',rh:'capas/defeito.jpg',compras:'capas/notas-fiscais.jpg',financeiro:'capas/fazer-etiquetas.jpg',ti:'capas/fechamento-de-volumes.jpg',logistica:'capas/remanejo.jpg',marketing:'capas/fazer-etiquetas.jpg',sac:'capas/defeito.jpg',lojas:'capas/recebimento.jpg',seguranca:'capas/fechamento-de-volumes.jpg',lideranca:'capas/notas-fiscais.jpg'};
+
+function voltarAoPortal(){
+  try{
+    if(window.top && window.top!==window.self){
+      window.top.location.href='../';
+      return;
+    }
+  }catch(e){}
+  location.href='../';
+}
 
 async function getPerms(){
   const id=getIdentidade();
@@ -386,8 +446,8 @@ async function carregarAreas(){
     const el=document.createElement('div');
     el.className='area-card'+(ok?'':' locked');
     el.setAttribute('data-area',a.id);
-    el.style.backgroundImage='url("'+(AREA_FOTOS[a.id]||'capas/recebimento.jpg')+'")';
-    el.innerHTML='<span class="area-icon">'+a.icone+'</span><span class="lock">'+(ok?'→':'🔒')+'</span><div class="area-copy"><h3>'+escapeHtml(a.nome)+'</h3><p>'+(ok?(PORTAL_ADMIN?'Acesso administrador':'Acessar treinamentos'):'Acesso restrito')+'</p></div>';
+    el.style.setProperty('--atlas-pos',a.pos);
+    el.innerHTML='<span class="lock">'+(ok?'→':'🔒')+'</span><div class="area-copy"><h3>'+escapeHtml(a.nome)+'</h3><p>'+(ok?(PORTAL_ADMIN?'Acesso administrador':'Acessar treinamentos'):'Acesso restrito')+'</p></div>';
     if(ok)el.addEventListener('click',()=>abrirArea(a.id,a.nome));
     ag.appendChild(el);
   });
