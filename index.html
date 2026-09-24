@@ -556,6 +556,13 @@ function fecharBaseMae(){
   o.classList.remove('open');o.setAttribute('aria-hidden','true');f.src='about:blank';
 }
 
+async function negarAcesso(){
+  // scope local: não derruba a mesma pessoa em outros apps (ex.: Acerto de Estoque no celular da loja).
+  try{ await sb.auth.signOut({scope:'local'}); }catch(e){}
+  var b=document.getElementById('btn'); if(b)b.disabled=false;
+  setStatus('Seu usuário não tem acesso ao Portal. Fale com o administrador.','err');
+}
+
 async function openPortal(){
   setStatus('Abrindo o portal...','ok');
   // Perfil gestor_departamento -> só a Central de Compras da área dele
@@ -563,6 +570,8 @@ async function openPortal(){
     var _s0=(await sb.auth.getSession()).data.session;
     if(_s0){
       var _pf=await sb.from('orc_perfis').select('perfil').eq('user_id',_s0.user.id).eq('ativo',true).maybeSingle();
+      // Sem perfil ativo (conta de robô, login de loja, usuário desativado) -> não entra no Portal.
+      if(!_pf.error && !_pf.data){ return negarAcesso(); }
       if(_pf.data && _pf.data.perfil==='gestor_departamento'){ var _bb=document.getElementById('btnBaseMae');if(_bb)_bb.classList.add('hidden'); var _bu=document.getElementById('btnUsuarios');if(_bu)_bu.classList.add('hidden'); return abrirSomenteOrcamento(_s0); }
     }
   }catch(e){ console.warn('checagem de perfil gestor falhou',e); }
@@ -638,6 +647,7 @@ document.getElementById('loginForm').addEventListener('submit',async function(e)
     var _m=res.error.message||'';
     var _amigavel=/invalid login credentials/i.test(_m) ? 'E-mail ou senha incorretos. Verifique se digitou o e-mail exato (sem espaços) e a senha respeitando maiúsculas.'
       : /email not confirmed/i.test(_m) ? 'Conta ainda não confirmada. Avise a Controladoria.'
+      : /banned/i.test(_m) ? 'Seu acesso ao Portal foi desativado. Fale com o administrador.'
       : 'Não foi possível entrar: '+_m;
     setStatus(_amigavel,'err'); btn.disabled=false; return;
   }
