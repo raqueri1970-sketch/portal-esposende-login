@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Usuários · Esposende</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#07111f;--card:#101c2d;--line:#24364d;--blue:#2188ff;--ok:#21c77a;--warn:#f5b942;--bad:#ff6374;--txt:#f4f7fb;--mut:#9eb0c7}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(145deg,#07111f,#0b1525);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+.wrap{max-width:1180px;margin:auto;padding:22px}
+header{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px}
+.brand{display:flex;gap:14px;align-items:center}.logo{font-size:27px;font-weight:900}.logo b{color:var(--blue)}
+h1{font-size:23px;margin:0}.sub{color:var(--mut);font-size:13px;margin-top:3px}
+.admin{display:none;padding:9px 12px;border-radius:10px;background:rgba(33,199,122,.12);border:1px solid rgba(33,199,122,.42);font-size:12px;font-weight:800;color:#9af0c6}
+.stats{display:grid;gap:14px;grid-template-columns:repeat(4,1fr);margin-bottom:16px}
+.stat,.card{background:rgba(16,28,45,.96);border:1px solid var(--line);border-radius:16px;padding:17px}
+.stat strong{display:block;font-size:29px}.stat span{color:var(--mut);font-size:12px}
+.card{margin-bottom:16px}.card h2{margin:0 0 5px;font-size:18px}.card>p{color:var(--mut);margin:0 0 14px;font-size:13px;line-height:1.45}
+.form{display:grid;grid-template-columns:1.4fr 1fr 1.2fr 1fr auto;gap:10px;align-items:end}
+label{display:block;font-size:11.5px;color:#a8bdd8;margin-bottom:6px;font-weight:700}
+input,select{width:100%;background:#0a1626;border:1px solid #35506d;color:var(--txt);border-radius:10px;padding:10px 11px;font-size:14px;font-family:inherit}
+input:focus,select:focus{outline:none;border-color:var(--blue)}
+.pw{display:flex;gap:6px}.pw input{flex:1;min-width:0;font-family:ui-monospace,Consolas,monospace}
+button{border:0;border-radius:10px;padding:10px 13px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer;font-family:inherit;font-size:13px;white-space:nowrap}
+button.secondary{background:#1b2b41;border:1px solid #35506d}
+button.danger{background:rgba(255,99,116,.14);border:1px solid rgba(255,99,116,.5);color:#ffb3bd}
+button.okb{background:var(--ok);color:#052819}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.sm{padding:6px 9px;font-size:12px;border-radius:8px}
+.hint{margin-top:9px;color:var(--mut);font-size:12px;line-height:1.45}
+.msg{margin-top:12px;padding:10px 12px;border-radius:10px;font-size:13px;display:none}
+.msg.ok{display:block;color:#a6f2cb;background:rgba(33,199,122,.08);border:1px solid rgba(33,199,122,.4)}
+.msg.bad{display:block;color:#ffabb5;background:rgba(255,99,116,.08);border:1px solid rgba(255,99,116,.45)}
+.convite{display:none;margin-top:14px;padding:14px;border-radius:12px;background:#0a1626;border:1px solid rgba(33,136,255,.45)}
+.convite.on{display:block}
+.convite pre{margin:8px 0 10px;white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.55;color:var(--txt)}
+.convite .acts{display:flex;gap:8px;flex-wrap:wrap}
+.convite small{display:block;color:var(--warn);font-size:12px;margin-top:8px}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.toolbar input{max-width:320px}
+.toolbar .chk{display:flex;gap:6px;align-items:center;color:var(--mut);font-size:12.5px;cursor:pointer}
+.toolbar .chk input{width:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--mut);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:10px;border-bottom:1px solid rgba(36,54,77,.6);vertical-align:middle}
+tr:hover td{background:rgba(33,136,255,.04)}
+td.email{font-weight:700;word-break:break-all}
+td.acoes{text-align:right;white-space:nowrap}td.acoes button{margin-left:4px}
+.tag{display:inline-block;padding:3px 8px;border-radius:999px;font-size:11.5px;font-weight:800;border:1px solid}
+.t-on{color:#9af0c6;border-color:rgba(33,199,122,.45);background:rgba(33,199,122,.1)}
+.t-off{color:#ffb3bd;border-color:rgba(255,99,116,.45);background:rgba(255,99,116,.1)}
+.t-warn{color:#ffd98a;border-color:rgba(245,185,66,.45);background:rgba(245,185,66,.1)}
+.t-tec{color:var(--mut);border-color:#35506d;background:#0a1626}
+.muted{color:var(--mut);font-size:12px}
+.vazio{padding:18px;text-align:center;color:var(--mut)}
+dialog{background:#0d1929;color:var(--txt);border:1px solid var(--line);border-radius:16px;padding:20px;width:min(440px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(2,6,13,.72)}
+dialog h3{margin:0 0 4px;font-size:17px}dialog .muted{margin-bottom:14px;word-break:break-all}
+dialog .campo{margin-bottom:12px}
+dialog .rodape{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+#fatal{display:none;margin:40px auto;max-width:680px;padding:22px;border:1px solid rgba(255,99,116,.45);border-radius:14px;background:#25121a;color:#ffd9df;text-align:center}
+@media(max-width:900px){.form{grid-template-columns:1fr 1fr}.form .full{grid-column:1/-1}}
+@media(max-width:820px){.stats{grid-template-columns:repeat(2,1fr)}.wrap{padding:15px}h1{font-size:20px}
+ table,thead,tbody,tr,td{display:block}thead{display:none}
+ tr{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;padding:6px 4px}
+ td{border:0;padding:5px 10px}td.acoes{text-align:left;white-space:normal}td.acoes button{margin:4px 4px 0 0}
+ td[data-l]::before{content:attr(data-l);display:block;color:var(--mut);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em}}
+@media(max-width:520px){.form{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+<header>
+  <div class="brand"><div class="logo">ESPOSENDE<b>•</b></div><div><h1>Usuários do Portal</h1><div class="sub">Crie acessos, defina o que cada pessoa vê e bloqueie quem saiu</div></div></div>
+  <div class="admin" id="adminBadge">✓ Administrador reconhecido pelo Portal</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><strong id="stTotal">–</strong><span>Usuários (pessoas)</span></div>
+  <div class="stat"><strong id="stAtivos">–</strong><span>Ativos</span></div>
+  <div class="stat"><strong id="stGestores">–</strong><span>Gestores de departamento</span></div>
+  <div class="stat"><strong id="stBloq">–</strong><span>Desativados</span></div>
+</div>
+
+<section class="card">
+  <h2>Novo usuário</h2>
+  <p>A pessoa entra pelo link do Portal com o e-mail e a senha abaixo. Depois ela pode trocar a senha em “Esqueci minha senha”.</p>
+  <form id="formNovo" class="form" autocomplete="off">
+    <div class="full"><label for="nEmail">E-mail</label><input id="nEmail" type="email" placeholder="nome@lojasesposende.com.br" required></div>
+    <div><label for="nSenha">Senha provisória</label><div class="pw"><input id="nSenha" type="text" minlength="8" required><button type="button" class="secondary" id="btnGerar" title="Gerar outra senha">↻</button></div></div>
+    <div><label for="nPerfil">Perfil</label><select id="nPerfil" required></select></div>
+    <div><label for="nDep">Departamento</label><select id="nDep"></select></div>
+    <div><button id="btnCriar" type="submit">+ Criar usuário</button></div>
+  </form>
+  <div class="hint" id="nHint"></div>
+  <div class="msg" id="nMsg"></div>
+  <div class="convite" id="convite">
+    <strong>Mensagem pronta para enviar</strong>
+    <pre id="conviteTxt"></pre>
+    <div class="acts"><button type="button" id="btnCopiar">📋 Copiar mensagem</button><a id="btnZap" target="_blank" rel="noopener"><button type="button" class="okb">WhatsApp</button></a></div>
+    <small>Por segurança, esta senha não aparece de novo depois que você fechar a tela.</small>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Quem tem acesso</h2>
+  <div class="toolbar">
+    <input id="busca" type="search" placeholder="Buscar por e-mail, perfil ou departamento">
+    <label class="chk"><input type="checkbox" id="verTec"> Mostrar contas técnicas (robôs e logins de loja)</label>
+    <button type="button" class="secondary sm" id="btnRecarregar">↻ Atualizar</button>
+  </div>
+  <table>
+    <thead><tr><th>E-mail</th><th>Perfil</th><th>Departamento</th><th>Situação</th><th>Último acesso</th><th></th></tr></thead>
+    <tbody id="lista"><tr><td colspan="6" class="vazio">Carregando…</td></tr></tbody>
+  </table>
+  <div class="msg" id="lMsg"></div>
+</section>
+</div>
+<div id="fatal"></div>
+
+<dialog id="dlgEditar">
+  <form method="dialog" id="formEditar">
+    <h3>Editar acesso</h3><div class="muted" id="eEmail"></div>
+    <div class="campo"><label for="ePerfil">Perfil</label><select id="ePerfil"></select></div>
+    <div class="campo"><label for="eDep">Departamento</label><select id="eDep"></select></div>
+    <div class="hint" id="eHint"></div>
+    <div class="msg" id="eMsg"></div>
+    <div class="rodape"><button type="button" class="secondary" data-fechar>Cancelar</button><button type="submit" id="btnSalvar">Salvar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgSenha">
+  <form method="dialog" id="formSenha">
+    <h3>Nova senha</h3><div class="muted" id="sEmail"></div>
+    <div class="campo"><label for="sSenha">Nova senha provisória</label><div class="pw"><input id="sSenha" type="text" minlength="8" required><button type="button" class="secondary" id="btnGerar2" title="Gerar outra senha">↻</button></div></div>
+    <div class="msg" id="sMsg"></div>
+    <div class="rodape"><button type="button" class="secondary" data-fechar>Cancelar</button><button type="submit" id="btnSalvarSenha">Definir senha</button></div>
+  </form>
+</dialog>
+
+<script>
+const U='https://rdztzurfesnobfkazgpm.supabase.co';
+const K='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
+const sb=supabase.createClient(U,K);
+const LINK_PORTAL=new URL('./',location.href).href;
+
+// O que cada perfil enxerga hoje no Portal (index.html + Central de Compras).
+const PERFIS=[
+  {v:'gestor_departamento',n:'Gestor de Departamento',d:'Vê SOMENTE a Central de Compras do departamento dele. Não vê os módulos de auditoria.',dep:'obrigatorio'},
+  {v:'comprador',n:'Comprador',d:'Portal completo + cotações na Central de Compras.'},
+  {v:'gestor_compras',n:'Gestor de Compras',d:'Portal completo + cotações, aprova cotações e verba de compras.'},
+  {v:'controladoria',n:'Controladoria',d:'Portal completo + aprova áreas e cotações.'},
+  {v:'diretoria',n:'Diretoria',d:'Portal completo + aprova áreas e cotações.'},
+  {v:'administrador',n:'Administrador',d:'Acesso total, incluindo Base Mãe e esta tela de Usuários.'}
+];
+const NOME_PERFIL=Object.fromEntries(PERFIS.map(p=>[p.v,p.n]));
+let DEPS=[],USERS=[],EU=null,editando=null;
+
+const $=id=>document.getElementById(id);
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function msg(el,texto,tipo){el.className='msg'+(texto?' '+tipo:'');el.textContent=texto||''}
+function dataBR(s){return s?new Date(s).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'Nunca entrou'}
+function gerarSenha(){
+  const a='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  const r=crypto.getRandomValues(new Uint32Array(10));
+  let s='';for(const x of r)s+=a[x%a.length];
+  return s.slice(0,4)+'-'+s.slice(4,8)+s.slice(8);
+}
+
+async function api(body){
+  const {data,error}=await sb.functions.invoke('portal-usuarios',{body});
+  if(error){
+    let m=error.message;
+    try{const j=await error.context.json();if(j&&j.error)m=j.error}catch(e){}
+    throw new Error(m);
+  }
+  if(data&&data.error)throw new Error(data.error);
+  return data;
+}
+
+function preencherPerfis(sel){sel.innerHTML=PERFIS.map(p=>'<option value="'+p.v+'">'+esc(p.n)+'</option>').join('')}
+function preencherDeps(sel){sel.innerHTML='<option value="">— Nenhum —</option>'+DEPS.map(d=>'<option value="'+d.id+'">'+esc(d.nome)+'</option>').join('')}
+function ajustarDica(selPerfil,selDep,hint){
+  const p=PERFIS.find(x=>x.v===selPerfil.value);
+  hint.textContent=p?('ℹ️ '+p.n+': '+p.d):'';
+  const obrig=p&&p.dep==='obrigatorio';
+  selDep.required=!!obrig;
+  selDep.options[0].textContent=obrig?'— Escolha o departamento —':'— Nenhum —';
+}
+
+function render(){
+  const q=$('busca').value.trim().toLowerCase();
+  const verTec=$('verTec').checked;
+  const depNome=Object.fromEntries(DEPS.map(d=>[d.id,d.nome]));
+  const pessoas=USERS.filter(u=>!u.tecnica);
+  $('stTotal').textContent=pessoas.length;
+  $('stAtivos').textContent=pessoas.filter(u=>u.ativo&&!u.bloqueado).length;
+  $('stGestores').textContent=pessoas.filter(u=>u.perfil==='gestor_departamento'&&u.ativo).length;
+  $('stBloq').textContent=pessoas.filter(u=>u.ativo===false||u.bloqueado).length;
+  const linhas=USERS.filter(u=>verTec||!u.tecnica).filter(u=>{
+    if(!q)return true;
+    return [u.email,NOME_PERFIL[u.perfil],depNome[u.departamento_id]].join(' ').toLowerCase().includes(q);
+  });
+  if(!linhas.length){$('lista').innerHTML='<tr><td colspan="6" class="vazio">Nenhum usuário encontrado.</td></tr>';return}
+  $('lista').innerHTML=linhas.map(u=>{
+    let sit;
+    if(u.tecnica)sit='<span class="tag t-tec">Conta técnica</span>';
+    else if(u.ativo===false||u.bloqueado)sit='<span class="tag t-off">Desativado</span>';
+    else if(!u.perfil)sit='<span class="tag t-warn">Sem perfil</span>';
+    else sit='<span class="tag t-on">Ativo</span>';
+    const eu=u.id===EU;
+    let ac='';
+    if(!u.tecnica){
+      ac+='<button class="secondary sm" data-a="editar" data-id="'+u.id+'">Editar</button>';
+      ac+='<button class="secondary sm" data-a="senha" data-id="'+u.id+'">Senha</button>';
+      if(!eu){
+        ac+=(u.ativo===false||u.bloqueado)
+          ?'<button class="okb sm" data-a="ativar" data-id="'+u.id+'">Reativar</button>'
+          :'<button class="danger sm" data-a="desativar" data-id="'+u.id+'">Desativar</button>';
+        ac+='<button class="danger sm" data-a="excluir" data-id="'+u.id+'" title="Excluir definitivamente">🗑</button>';
+      }
+    }
+    return '<tr>'+
+      '<td class="email" data-l="E-mail">'+esc(u.email)+(eu?' <span class="muted">(você)</span>':'')+'</td>'+
+      '<td data-l="Perfil">'+(u.perfil?esc(NOME_PERFIL[u.perfil]||u.perfil):'<span class="muted">—</span>')+'</td>'+
+      '<td data-l="Departamento">'+(u.departamento_id?esc(depNome[u.departamento_id]||'?'):'<span class="muted">—</span>')+'</td>'+
+      '<td data-l="Situação">'+sit+'</td>'+
+      '<td data-l="Último acesso" class="muted">'+dataBR(u.ultimo_acesso)+'</td>'+
+      '<td class="acoes">'+ac+'</td></tr>';
+  }).join('');
+}
+
+async function carregar(){
+  try{
+    const r=await api({acao:'listar'});
+    DEPS=r.departamentos||[];USERS=r.usuarios||[];
+    const nd=$('nDep').value;preencherDeps($('nDep'));$('nDep').value=nd;
+    preencherDeps($('eDep'));
+    ajustarDica($('nPerfil'),$('nDep'),$('nHint'));
+    render();
+  }catch(e){msg($('lMsg'),'Erro ao carregar: '+e.message,'bad');$('lista').innerHTML='<tr><td colspan="6" class="vazio">—</td></tr>'}
+}
+
+$('formNovo').addEventListener('submit',async ev=>{
+  ev.preventDefault();
+  const email=$('nEmail').value.trim().toLowerCase(),senha=$('nSenha').value,perfil=$('nPerfil').value,dep=$('nDep').value||null;
+  msg($('nMsg'),'');$('convite').classList.remove('on');
+  $('btnCriar').disabled=true;$('btnCriar').textContent='Criando…';
+  try{
+    await api({acao:'criar',email,senha,perfil,departamento_id:dep});
+    msg($('nMsg'),'✓ Usuário '+email+' criado.','ok');
+    mostrarConvite(email,senha);
+    $('nEmail').value='';$('nSenha').value=gerarSenha();
+    await carregar();
+  }catch(e){msg($('nMsg'),e.message,'bad')}
+  finally{$('btnCriar').disabled=false;$('btnCriar').textContent='+ Criar usuário'}
+});
+
+function mostrarConvite(email,senha){
+  const t='Olá! Seu acesso ao Portal Esposende — Central de Auditoria & Controle foi criado.\n\n'+
+    '🔗 Link: '+LINK_PORTAL+'\n📧 E-mail: '+email+'\n🔑 Senha provisória: '+senha+'\n\n'+
+    'Recomendo trocar a senha no primeiro acesso: na tela de login, clique em "Esqueci minha senha".';
+  $('conviteTxt').textContent=t;
+  $('btnZap').href='https://wa.me/?text='+encodeURIComponent(t);
+  $('convite').classList.add('on');
+}
+$('btnCopiar').addEventListener('click',async()=>{
+  try{await navigator.clipboard.writeText($('conviteTxt').textContent);$('btnCopiar').textContent='✓ Copiado'}
+  catch(e){const r=document.createRange();r.selectNodeContents($('conviteTxt'));const s=getSelection();s.removeAllRanges();s.addRange(r);document.execCommand('copy');$('btnCopiar').textContent='✓ Copiado'}
+  setTimeout(()=>$('btnCopiar').textContent='📋 Copiar mensagem',1800);
+});
+
+$('lista').addEventListener('click',async ev=>{
+  const b=ev.target.closest('button[data-a]');if(!b)return;
+  const u=USERS.find(x=>x.id===b.dataset.id);if(!u)return;
+  const a=b.dataset.a;
+  if(a==='editar'){
+    editando=u;$('eEmail').textContent=u.email;
+    $('ePerfil').value=u.perfil||'comprador';$('eDep').value=u.departamento_id||'';
+    ajustarDica($('ePerfil'),$('eDep'),$('eHint'));msg($('eMsg'),'');
+    $('dlgEditar').showModal();return;
+  }
+  if(a==='senha'){
+    editando=u;$('sEmail').textContent=u.email;$('sSenha').value=gerarSenha();msg($('sMsg'),'');
+    $('dlgSenha').showModal();return;
+  }
+  if(a==='desativar'||a==='ativar'){
+    if(!u.perfil){msg($('lMsg'),'Defina um perfil para '+u.email+' antes (botão Editar).','bad');return}
+    const ativar=a==='ativar';
+    if(!ativar&&!confirm('Desativar '+u.email+'?\n\nA pessoa não consegue mais entrar no Portal. Você pode reativar depois.'))return;
+    b.disabled=true;
+    try{await api({acao:'atualizar',user_id:u.id,perfil:u.perfil,departamento_id:u.departamento_id,ativo:ativar});
+      msg($('lMsg'),'✓ '+u.email+(ativar?' reativado.':' desativado.'),'ok');await carregar()}
+    catch(e){msg($('lMsg'),e.message,'bad');b.disabled=false}
+    return;
+  }
+  if(a==='excluir'){
+    if(!confirm('EXCLUIR DEFINITIVAMENTE '+u.email+'?\n\nIsso não pode ser desfeito. Se for só um afastamento, use "Desativar".'))return;
+    b.disabled=true;
+    try{await api({acao:'excluir',user_id:u.id});msg($('lMsg'),'✓ '+u.email+' excluído.','ok');await carregar()}
+    catch(e){msg($('lMsg'),e.message,'bad');b.disabled=false}
+  }
+});
+
+$('formEditar').addEventListener('submit',async ev=>{
+  ev.preventDefault();if(!editando)return;
+  $('btnSalvar').disabled=true;
+  try{
+    await api({acao:'atualizar',user_id:editando.id,perfil:$('ePerfil').value,departamento_id:$('eDep').value||null,ativo:editando.ativo!==false&&!editando.bloqueado});
+    $('dlgEditar').close();msg($('lMsg'),'✓ Acesso de '+editando.email+' atualizado.','ok');await carregar();
+  }catch(e){msg($('eMsg'),e.message,'bad')}
+  finally{$('btnSalvar').disabled=false}
+});
+$('formSenha').addEventListener('submit',async ev=>{
+  ev.preventDefault();if(!editando)return;
+  const senha=$('sSenha').value;
+  $('btnSalvarSenha').disabled=true;
+  try{
+    await api({acao:'senha',user_id:editando.id,senha});
+    $('dlgSenha').close();msg($('lMsg'),'✓ Senha de '+editando.email+' alterada.','ok');
+    mostrarConvite(editando.email,senha);$('convite').scrollIntoView({behavior:'smooth',block:'center'});
+  }catch(e){msg($('sMsg'),e.message,'bad')}
+  finally{$('btnSalvarSenha').disabled=false}
+});
+document.querySelectorAll('[data-fechar]').forEach(b=>b.addEventListener('click',()=>b.closest('dialog').close()));
+$('nPerfil').addEventListener('change',()=>ajustarDica($('nPerfil'),$('nDep'),$('nHint')));
+$('ePerfil').addEventListener('change',()=>ajustarDica($('ePerfil'),$('eDep'),$('eHint')));
+$('btnGerar').addEventListener('click',()=>$('nSenha').value=gerarSenha());
+$('btnGerar2').addEventListener('click',()=>$('sSenha').value=gerarSenha());
+$('busca').addEventListener('input',render);
+$('verTec').addEventListener('change',render);
+$('btnRecarregar').addEventListener('click',()=>{msg($('lMsg'),'');carregar()});
+
+async function init(){
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session)throw Error('Entre no Portal com sua conta de administrador antes de abrir Usuários.');
+    EU=session.user.id;
+    const {data:pf}=await sb.from('orc_perfis').select('perfil').eq('user_id',EU).eq('ativo',true).maybeSingle();
+    if(!pf||pf.perfil!=='administrador')throw Error('A tela de Usuários é exclusiva do administrador do Portal.');
+    $('adminBadge').style.display='block';
+    preencherPerfis($('nPerfil'));preencherPerfis($('ePerfil'));
+    preencherDeps($('nDep'));preencherDeps($('eDep'));
+    $('nSenha').value=gerarSenha();
+    ajustarDica($('nPerfil'),$('nDep'),$('nHint'));
+    await carregar();
+  }catch(e){$('app').style.display='none';$('fatal').style.display='block';$('fatal').textContent=e.message||String(e)}
+}
+init();
+</script>
+</body>
+</html>
