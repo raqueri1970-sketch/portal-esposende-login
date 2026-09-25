@@ -45,7 +45,7 @@ button:hover{filter:brightness(1.15)}
 .hero.w{background:linear-gradient(135deg,rgba(250,178,25,.22),rgba(250,178,25,.04));border-color:var(--warn)}.hero.w .hv{color:#ffd166}
 .hero.n{background:linear-gradient(135deg,rgba(79,168,255,.22),rgba(79,168,255,.04));border-color:var(--neon)}.hero.n .hv{color:#8cc8ff}
 /* kpis */
-.kpis{display:grid;grid-template-columns:repeat(11,1fr);gap:8px}
+.kpis{display:grid;grid-template-columns:repeat(12,1fr);gap:8px}
 .kpi{background:linear-gradient(160deg,var(--surface),#191b29);border:1px solid var(--border);border-radius:12px;padding:8px 6px;text-align:center;min-width:0}
 .kpi .l{font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;font-weight:600;line-height:1.2;min-height:28px;display:flex;align-items:center;justify-content:center}
 .kpi .v{font-size:27px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -161,7 +161,7 @@ body.tv{cursor:none}
 const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const INTERVALO=5000;
-const BUILD='20260925-101742';
+const BUILD='20260925-203636';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=v=>v==null?'—':Number(v).toLocaleString('pt-BR');
@@ -229,7 +229,9 @@ function render(d){
     hero('g','Ajustes concluídos hoje',nf(h.ajustados),nf(h.unidades)+' unidades incluídas · '+nf(h.lojas)+' loja(s)')+
     hero(ajl?(pct>=80?'g':(pct>=50?'w':'b')):'n','Vendas confirmadas',ajl?pct+'%':'—',nf(h.vendeu)+' de '+nf(ajl)+' ajustes · '+nf(h.aguardando)+' aguardando o cupom')+
     hero(alertas?'b':'g','Alertas de auditoria',nf(alertas),'sem foto, foto não confere, erros e espera > 24h');
+  const sa=d.sangue_azul||{};
   $('kpis').innerHTML=[
+    kpi('🤖 Sangue Azul',nf(sa.feitos||0),nf(sa.unidades||0)+' un · '+(sa.tempo_medio_seg?'média '+sa.tempo_medio_seg+' s':'—')+(sa.erros?' · '+nf(sa.erros)+' erro(s)':''),sa.feitos?'g':'n','k0'),
     kpi('Pedidos hoje',nf(h.pedidos),'solicitações','n','k1'),
     kpi('Lojas atendidas',nf(h.lojas),'com ajuste','n','k2'),
     kpi('💬 Ajustes pelo WhatsApp',nf(h.wa_ajustes),nf(h.wa_confirmados)+' feitos · '+(lei.configurado?(lei.online?'leitor ON':'leitor OFF'):'sem leitor'),h.wa_ajustes?'z':(lei.configurado&&!lei.online?'w':'n'),'k3'),
@@ -249,10 +251,10 @@ function render(d){
   $('chDias').innerHTML='<div class="cols">'+cols(dias.map(x=>{const p=x.dia.split('-');return{l:p[2]+'/'+p[1],v:x.pedidos,v2:x.ajustados,t:p[2]+'/'+p[1]+': '+x.pedidos+' pedido(s), '+x.ajustados+' ajustado(s)'+(cuD[x.dia]!=null?' · custo '+brl(cuD[x.dia]):'')}}),dias.findIndex(x=>x.dia===hj))+'</div>';
   $('chHoras').innerHTML='<div class="cols">'+cols((d.horas||[]).map(x=>({l:String(x.h),v:x.pedidos,t:x.h+'h: '+x.pedidos+' pedido(s)'})),new Date().getHours())+'</div>';
   const F=d.feed||[];
-  $('feed').innerHTML=F.length?'<table><tr><th>Hora</th><th>Loja</th><th>Produto</th><th>Situação</th></tr>'+F.map(x=>{
+  $('feed').innerHTML=F.length?'<table><tr><th>Hora</th><th>Loja</th><th>Produto</th><th>Marca</th><th>Situação</th></tr>'+F.map(x=>{
     const st=ST_TXT[x.status]||[x.status,'p-g'],wa=x.origem==='WHATSAPP',vd=!wa&&x.status==='CONCLUIDO'&&VD_TXT[x.venda]?VD_TXT[x.venda]:null;
     const chave=x.id+'|'+x.status+'|'+x.venda,novo=!primeira&&!vistos.has(chave);
-    return '<tr class="'+(novo?'flash':'')+'"><td>'+horaMin(x.quando)+'</td><td>'+esc(x.loja||'')+' <span class="small">'+esc((x.nome||'').slice(0,18))+'</span></td><td>'+esc(x.produto)+' <b>+'+esc(x.qtd)+'</b></td><td><span class="pill '+st[1]+'">'+esc(st[0])+'</span>'+(wa?' <span class="pill p-ok">💬 WhatsApp</span>'+(x.wa_ok?' <span class="pill p-ok">✔ feito</span>':''):'')+(vd?' <span class="pill '+vd[1]+'">'+esc(vd[0])+'</span>':'')+(!wa&&x.status==='CONCLUIDO'&&!x.foto?' <span class="pill p-bad">sem foto</span>':'')+'</td></tr>'}).join('')+'</table>':'<div class="empty">Nenhum movimento ainda.</div>';
+    return '<tr class="'+(novo?'flash':'')+'"><td>'+horaMin(x.quando)+'</td><td>'+esc(x.loja||'')+' <span class="small">'+esc((x.nome||'').slice(0,18))+'</span></td><td>'+esc(x.produto)+' <b>+'+esc(x.qtd)+'</b></td><td class="small">'+esc((x.marca||'—').slice(0,14))+'</td><td><span class="pill '+st[1]+'">'+esc(st[0])+'</span>'+(!wa&&x.status==='CONCLUIDO'?' <span class="pill p-ok">🤖 Sangue Azul</span>':'')+(wa?' <span class="pill p-ok">💬 WhatsApp</span>'+(x.wa_ok?' <span class="pill p-ok">✔ feito</span>':''):'')+(vd?' <span class="pill '+vd[1]+'">'+esc(vd[0])+'</span>':'')+(!wa&&x.status==='CONCLUIDO'&&!x.foto?' <span class="pill p-bad">sem foto</span>':'')+'</td></tr>'}).join('')+'</table>':'<div class="empty">Nenhum movimento ainda.</div>';
   vistos=new Set(F.map(x=>x.id+'|'+x.status+'|'+x.venda));
   $('alertas').innerHTML=A.length?'<table><tr><th>Loja</th><th>Produto</th><th class="c">Espera</th><th class="c">Foto</th></tr>'+A.map(x=>'<tr><td>'+esc(x.loja||'')+' <span class="small">'+esc((x.nome||'').slice(0,16))+'</span></td><td>'+esc(x.produto)+' <b>+'+esc(x.qtd)+'</b></td><td class="c"><span class="pill '+(x.horas>=24?'p-bad':(x.horas>=4?'p-warn':'p-n'))+'">'+dur(x.horas*60)+'</span></td><td class="c">'+(x.foto?'<span class="pill p-ok">com</span>':'<span class="pill p-bad">sem</span>')+'</td></tr>').join('')+'</table>':'<div class="empty">✅ Nenhum ajuste aguardando venda.</div>';
   $('chLojas').innerHTML=hbars((d.lojas||[]).map(x=>({l:(x.loja||'')+' '+(x.nome||''),v:x.pedidos,c:COR.blue,t:x.pedidos+(x.ajustados!==x.pedidos?' ('+x.ajustados+' aj.)':'')})));
