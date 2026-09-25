@@ -161,7 +161,7 @@ body.tv{cursor:none}
 const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const INTERVALO=5000;
-const BUILD='20260922-000000';
+const BUILD='20260925-101742';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=v=>v==null?'—':Number(v).toLocaleString('pt-BR');
@@ -223,8 +223,8 @@ function render(d){
   const a24=A.filter(x=>x.horas>=24).length;
   const alertas=(h.sem_foto||0)+(h.foto_nao_confere||0)+(h.erros||0)+a24;
   let roboH;
-  if(r.online){const t=ROBO_TXT[r.status]||[r.status||'Online','st-ok','🤖'];roboH=hero(t[1]==='st-ok'?'g':'b','Robô · online',t[2]+' '+t[0],'fila '+nf(f.pendentes)+' · ajustando '+nf(f.executando)+' · problemas '+nf(f.problemas)+' · sinal há '+dur(idade),1)}
-  else roboH=hero('b','Robô · OFFLINE','🛑 Sem sinal',(r.ultimo_sinal?'há '+dur(idade)+' — ':'')+'pedidos ficam na fila ('+nf(f.pendentes)+' agora)',1);
+  if(r.online){const t=ROBO_TXT[r.status]||[r.status||'Online','st-ok','🤖'];roboH=hero(t[1]==='st-ok'?'g':'b','Sangue Azul · online',t[2]+' '+t[0],'fila '+nf(f.pendentes)+' · ajustando '+nf(f.executando)+' · problemas '+nf(f.problemas)+' · sinal há '+dur(idade),1)}
+  else roboH=hero('b','Sangue Azul · OFFLINE','🛑 Sem sinal',(r.ultimo_sinal?'há '+dur(idade)+' — ':'')+'pedidos ficam na fila ('+nf(f.pendentes)+' agora)',1);
   $('heroes').innerHTML=roboH+
     hero('g','Ajustes concluídos hoje',nf(h.ajustados),nf(h.unidades)+' unidades incluídas · '+nf(h.lojas)+' loja(s)')+
     hero(ajl?(pct>=80?'g':(pct>=50?'w':'b')):'n','Vendas confirmadas',ajl?pct+'%':'—',nf(h.vendeu)+' de '+nf(ajl)+' ajustes · '+nf(h.aguardando)+' aguardando o cupom')+
