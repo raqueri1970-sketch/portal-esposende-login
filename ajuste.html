@@ -153,9 +153,9 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
   <div class="seg" id="mvSeg"><button type="button" id="mvSim" class="ok">✅ Vendi</button><button type="button" id="mvNao" class="bad">❌ Não vendi</button></div>
   <div id="mvFotoBox" class="hidden">
     <label>Foto do comprovante da venda (cupom)</label>
-    <div class="photo"><div id="mvPhEmpty"><label class="pbtn" for="mvFoto" style="margin:0">📷 Tirar foto do comprovante</label><div class="sub" style="margin:8px 0 0">A foto precisa mostrar o <b>código do produto</b>. Sem a foto, a venda fica <b>NÃO COMPROVADA</b> e é sinalizada para a auditoria.</div></div>
+    <div class="photo"><div id="mvPhEmpty"><label class="pbtn" for="mvFoto" style="margin:0">📷 Tirar foto do comprovante</label> <label class="pbtn" for="mvGal" style="margin:0;background:#5b6f8a">🖼️ Escolher da galeria</label><div class="sub" style="margin:8px 0 0">A foto precisa mostrar o <b>código do produto</b>. Sem a foto, a venda fica <b>NÃO COMPROVADA</b> e é sinalizada para a auditoria.</div></div>
       <div id="mvPhOk" class="hidden"><img id="mvImg" alt="Comprovante"><div id="mvChip" class="msg info" style="text-align:left"></div><label class="pbtn" for="mvFoto" style="background:#5b6f8a">Trocar foto</label> <button type="button" class="pbtn" id="mvPhDel" style="background:#b3261e;border:0">Remover</button></div>
-      <input id="mvFoto" type="file" accept="image/*" capture="environment" class="hidden"></div>
+      <input id="mvFoto" type="file" accept="image/*" capture="environment" class="hidden"><input id="mvGal" type="file" accept="image/*" class="hidden"></div>
   </div>
   <div id="mvNumBox" class="hidden"><label for="mvNum">Nº do cupom / venda (opcional se enviar a foto)</label><input id="mvNum" type="text" placeholder="Número da venda no Seta" autocomplete="off"></div>
   <div id="mvNaoBox" class="hidden"><label for="mvObs">Por que a venda não foi realizada?</label><textarea id="mvObs" placeholder="Ex.: cliente desistiu, produto não serviu…"></textarea></div>
@@ -168,7 +168,7 @@ const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
 const WHATS='5581989087348';
-const BUILD='20260921-201033';
+const BUILD='20260926-083208';
 /* se o navegador guardou uma versao antiga desta pagina, busca a nova e recarrega (uma vez por versao) */
 (async()=>{try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);
   if(m&&m[1]!==BUILD&&m[1].indexOf('@@')<0){let k='';try{k=sessionStorage.getItem('ae_build')||''}catch(e){}if(k!==m[1]){try{sessionStorage.setItem('ae_build',m[1])}catch(e){}location.reload()}}}catch(e){}})();
@@ -407,16 +407,27 @@ async function carregarLista(silent){
     $('lista')._sig='';carregarLista(true)})}
 
 // ---------- finalizar venda + foto do comprovante (SEMPRE depois do ajuste) ----------
+const PEND='ae_venda_pend';
+function salvarPend(){try{if(!vendaRef)return;safeStorage.setItem(PEND,JSON.stringify({id:vendaRef,protocolo:($('mvRef').textContent.match(/Protocolo (\S+)/)||[])[1]||'',codigo_produto:vendaCod,modo:vendaModo,st:vendaSt,num:$('mvNum').value,obs:$('mvObs').value,uid:uid,t:Date.now()}))}catch(e){}}
+function limparPend(){try{safeStorage.removeItem(PEND)}catch(e){}}
+/* se a pagina recarregou quando a camera abriu, reabre a mesma tela de venda */
+function retomarVenda(){let p=null;try{p=JSON.parse(safeStorage.getItem(PEND)||'null')}catch(e){}
+  if(!p||p.uid!==uid||Date.now()-p.t>60*60*1000){limparPend();return}
+  abrirVenda(p,p.modo);if(p.st==='VENDA_CONFIRMADA')$('mvSim').click();else if(p.st==='VENDA_NAO_REALIZADA')$('mvNao').click();
+  $('mvNum').value=p.num||'';$('mvObs').value=p.obs||'';
+  msg('mvMsg','O celular recarregou a página ao abrir a câmera. Tire a foto de novo. Se acontecer outra vez: tire a foto com a câmera normal do celular e toque em “Escolher da galeria”.','info')}
 function abrirVenda(x,modo){vendaRef=x.id;vendaCod=x.codigo_produto;vendaModo=modo||'venda';vendaSt=null;vendaBlob=null;vendaOcr=null;
   $('mvTitulo').textContent=vendaModo==='foto'?'Foto do comprovante da venda':'Como ficou a venda?';$('mvRef').textContent='Protocolo '+x.protocolo+' · produto '+x.codigo_produto;
   $('mvSeg').classList.toggle('hidden',vendaModo==='foto');['mvNumBox','mvNaoBox'].forEach(i=>$(i).classList.add('hidden'));$('mvFotoBox').classList.toggle('hidden',vendaModo!=='foto');
   ['mvSim','mvNao'].forEach(i=>$(i).classList.remove('on'));$('mvNum').value='';$('mvObs').value='';$('mvMsg').innerHTML='';
-  $('mvPhOk').classList.add('hidden');$('mvPhEmpty').classList.remove('hidden');$('mvFoto').value='';$('mvEnviar').disabled=vendaModo!=='foto';$('mvEnviar').textContent=vendaModo==='foto'?'Enviar foto':'Confirmar';$('mVenda').classList.remove('hidden')}
-$('mvSim').onclick=()=>{vendaSt='VENDA_CONFIRMADA';$('mvSim').classList.add('on');$('mvNao').classList.remove('on');$('mvFotoBox').classList.remove('hidden');$('mvNumBox').classList.remove('hidden');$('mvNaoBox').classList.add('hidden');$('mvEnviar').disabled=false};
-$('mvNao').onclick=()=>{vendaSt='VENDA_NAO_REALIZADA';$('mvNao').classList.add('on');$('mvSim').classList.remove('on');$('mvNaoBox').classList.remove('hidden');$('mvFotoBox').classList.add('hidden');$('mvNumBox').classList.add('hidden');$('mvEnviar').disabled=false};
-$('mvCancelar').onclick=()=>$('mVenda').classList.add('hidden');
+  $('mvPhOk').classList.add('hidden');$('mvPhEmpty').classList.remove('hidden');$('mvFoto').value='';$('mvEnviar').disabled=vendaModo!=='foto';$('mvEnviar').textContent=vendaModo==='foto'?'Enviar foto':'Confirmar';$('mVenda').classList.remove('hidden');salvarPend()}
+$('mvFotoBox').addEventListener('click',salvarPend,true);['mvNum','mvObs'].forEach(i=>$(i).addEventListener('input',salvarPend));
+$('mvSim').onclick=()=>{vendaSt='VENDA_CONFIRMADA';$('mvSim').classList.add('on');$('mvNao').classList.remove('on');$('mvFotoBox').classList.remove('hidden');$('mvNumBox').classList.remove('hidden');$('mvNaoBox').classList.add('hidden');$('mvEnviar').disabled=false;salvarPend()};
+$('mvNao').onclick=()=>{vendaSt='VENDA_NAO_REALIZADA';$('mvNao').classList.add('on');$('mvSim').classList.remove('on');$('mvNaoBox').classList.remove('hidden');$('mvFotoBox').classList.add('hidden');$('mvNumBox').classList.add('hidden');$('mvEnviar').disabled=false;salvarPend()};
+$('mvCancelar').onclick=()=>{$('mVenda').classList.add('hidden');limparPend()};
 $('mvFoto').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{vendaBlob=await comprimir(f);$('mvImg').src=URL.createObjectURL(vendaBlob);$('mvPhEmpty').classList.add('hidden');$('mvPhOk').classList.remove('hidden');vendaOcr=lerFoto(vendaBlob,atualizarChipFoto);atualizarChipFoto()}catch(err){msg('mvMsg',err.message)}};
-$('mvPhDel').onclick=()=>{vendaBlob=null;vendaOcr=null;$('mvFoto').value='';$('mvPhOk').classList.add('hidden');$('mvPhEmpty').classList.remove('hidden')};
+$('mvGal').onchange=$('mvFoto').onchange;
+$('mvPhDel').onclick=()=>{vendaBlob=null;vendaOcr=null;$('mvFoto').value='';$('mvGal').value='';$('mvPhOk').classList.add('hidden');$('mvPhEmpty').classList.remove('hidden')};
 $('mvEnviar').onclick=async()=>{msg('mvMsg','');const b=$('mvEnviar');const rotulo=b.textContent;
   const numV=$('mvNum').value.trim(),obs=$('mvObs').value.trim();
   if(vendaModo==='foto'&&!vendaBlob){msg('mvMsg','Tire a foto do comprovante.');return}
@@ -436,14 +447,14 @@ $('mvEnviar').onclick=async()=>{msg('mvMsg','');const b=$('mvEnviar');const rotu
     if(vendaModo==='foto')r=await sb.rpc('ajuste_anexar_comprovante',{p_id:vendaRef,p_path:path,p_nome:path.split('/').pop(),p_foto_status:stF||'NAO_VERIFICADO',p_foto_texto:txt});
     else r=await sb.rpc('ajuste_confirmar_venda',{p_id:vendaRef,p_status:vendaSt,p_numero:numV||null,p_path:path,p_obs:obs||null,p_foto_status:stF||'NAO_VERIFICADO',p_foto_texto:txt});
     if(r.error)throw new Error(r.error.message.replace(/^.*?:\s*/,''));
-    $('mVenda').classList.add('hidden');$('cAcomp').classList.add('hidden');$('cForm').classList.remove('hidden');carregarLista(true);aba('lista')}
+    $('mVenda').classList.add('hidden');limparPend();$('cAcomp').classList.add('hidden');$('cForm').classList.remove('hidden');carregarLista(true);aba('lista')}
   catch(err){msg('mvMsg',err.message)}finally{b.disabled=false;b.textContent=rotulo}};
 
 // ---------- inicio ----------
 (async()=>{
   const s=await sb.auth.getSession();
   if(s.data.session){uid=s.data.session.user.id;const p=await sb.rpc('ajuste_meu_perfil');
-    if(!p.error&&p.data&&p.data.ok){U=p.data;lojaSel=lojaInicial();entrar();return}
+    if(!p.error&&p.data&&p.data.ok){U=p.data;lojaSel=lojaInicial();entrar();try{retomarVenda()}catch(e){}return}
     await sb.auth.signOut()}
   show('vLogin')})();
 </script>
