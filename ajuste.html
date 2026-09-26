@@ -169,7 +169,7 @@ const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
 const WHATS='5581989087348';
-const BUILD='20260926-120339';
+const BUILD='20260926-120623';
 /* se o navegador guardou uma versao antiga desta pagina, busca a nova e recarrega (uma vez por versao) */
 (async()=>{try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);
   if(m&&m[1]!==BUILD&&m[1].indexOf('@@')<0){let k='';try{k=sessionStorage.getItem('ae_build')||''}catch(e){}if(k!==m[1]){try{sessionStorage.setItem('ae_build',m[1])}catch(e){}location.reload()}}}catch(e){}})();
@@ -318,8 +318,11 @@ function montarApp(){show('vApp');$('who').classList.remove('hidden');
   if($('aLoja'))$('aLoja').onchange=e=>{lojaSel=parseInt(e.target.value,10)||null;$('whoLoja').textContent=nomeLoja();atualizarZap();carregarLista()};
   atualizarZap();aba('novo');carregarLista();verRobo();clearInterval(listaT);listaT=setInterval(()=>{if(!document.hidden&&!$('vApp').classList.contains('hidden')){carregarLista(true);verRobo()}},15000)}
 /* aviso automatico: robo parado (PC desligado, Seta fechado...) -> gerente sabe antes de pedir. Some sozinho quando o robo volta. */
-async function verRobo(){try{const r=await sb.rpc('ajuste_robo_status');const a=$('roboAviso');if(r.error||!r.data){a.classList.add('hidden');return}
-  if(r.data.online){a.classList.add('hidden');return}
+let roboOff=false;
+function travarEnvio(){const b=$('btnEnviar');if(!b||b.querySelector('.spin'))return;b.disabled=roboOff;b.textContent=roboOff?'Sistema em manutenção':'Solicitar ajuste'}
+async function verRobo(){try{const r=await sb.rpc('ajuste_robo_status');const a=$('roboAviso');if(r.error||!r.data){a.classList.add('hidden');roboOff=false;travarEnvio();return}
+  roboOff=!r.data.online;travarEnvio();
+  if(!roboOff){a.classList.add('hidden');return}
   a.innerHTML='⚠️ Sistema <b>em manutenção</b>. <b>Faça o pedido pelo WhatsApp.</b>';a.classList.remove('hidden')}catch(e){}}
 function aba(x){$('tabNovo').classList.toggle('on',x==='novo');$('tabLista').classList.toggle('on',x==='lista');$('pNovo').classList.toggle('hidden',x!=='novo');$('pLista').classList.toggle('hidden',x!=='lista')}
 $('vtMeus').onclick=()=>{vtModo='meus';montarVtBar();$('lista')._sig='';carregarLista()};$('vtTodos').onclick=()=>{vtModo='todos';montarVtBar();$('lista')._sig='';carregarLista()};$('vtLoja').onchange=()=>{vtLoja=$('vtLoja').value;$('lista')._sig='';carregarLista()};
@@ -337,6 +340,7 @@ $('fAjuste').onsubmit=async e=>{e.preventDefault();msg('aMsg','');
   if(!$('aQtd').value.trim()){msg('aMsg','Informe a quantidade de unidades (mínimo 1).');$('aQtd').focus();return}
   if(!Number.isInteger(q)||q<1||q>50){msg('aMsg','Quantidade inválida (1 a 50).');return}
   if(!$('aDecl').checked){msg('aMsg','Marque a declaração de venda para continuar.');return}
+  if(roboOff){msg('aMsg','Sistema em manutenção. Faça o pedido pelo WhatsApp.');return}
   const b=$('btnEnviar');b.disabled=true;b.innerHTML='<span class="spin"></span>Enviando…';
   try{
     let fotoProd=null;if(fpBlob){try{fotoProd=await subirFoto(fpBlob)}catch(err){throw new Error('Não consegui enviar a foto do produto. Tente de novo ou toque em Remover para pedir sem a foto.')}}
@@ -344,7 +348,7 @@ $('fAjuste').onsubmit=async e=>{e.preventDefault();msg('aMsg','');
       motivo:'AJUSTE PARA VENDA - SOLICITADO PELO GERENTE',foto_produto_path:fotoProd,comprovado:false,declaracao_venda:true,operacao:'ENTRADA',finalidade:'VENDA'}).select('id,protocolo').single();
     if(r.error)throw new Error(r.error.message.replace(/^(PEDIDO_DUPLICADO|LIMITE_DIARIO|LINK_PAUSADO|SEGURANCA):\s*/,''));
     $('fAjuste').reset();$('aQtd').value=1;fpLimpar();acompanhar(r.data.id);carregarLista(true);
-  }catch(err){msg('aMsg',err.message)}finally{b.disabled=false;b.textContent='Solicitar ajuste'}};
+  }catch(err){msg('aMsg',err.message);if(/manuten/i.test(err.message))verRobo()}finally{b.disabled=false;b.textContent='Solicitar ajuste';travarEnvio()}};
 
 // ---------- acompanhamento em tempo real do pedido ----------
 function acompanhar(id){$('cForm').classList.add('hidden');const c=$('cAcomp');c.classList.remove('hidden');c._h=null;c.innerHTML='<div class="sub">Enviando…</div>';clearInterval(poll);
