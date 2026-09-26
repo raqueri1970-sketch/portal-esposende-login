@@ -168,7 +168,7 @@ const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
 const WHATS='5581989087348';
-const BUILD='20260926-083208';
+const BUILD='20260926-114408';
 /* se o navegador guardou uma versao antiga desta pagina, busca a nova e recarrega (uma vez por versao) */
 (async()=>{try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);
   if(m&&m[1]!==BUILD&&m[1].indexOf('@@')<0){let k='';try{k=sessionStorage.getItem('ae_build')||''}catch(e){}if(k!==m[1]){try{sessionStorage.setItem('ae_build',m[1])}catch(e){}location.reload()}}}catch(e){}})();
@@ -380,7 +380,7 @@ function montarVtBar(){
 }
 async function carregarLista(silent){
   const vt=!!(U&&U.ve_tudo);
-  let qy=sb.from('ajuste_estoque_entrada').select('id,user_id,protocolo,loja_normalizada,criado_em,executado_em,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,comprovado,solicitante,venda_status,venda_numero,venda_confirmada_em,erro_executor,foto_codigo_status'+(vt?',origem,marca,custo_total,valor_ajuste_venda,cargo_seta':''))
+  let qy=sb.from('ajuste_estoque_entrada').select('id,user_id,protocolo,loja_normalizada,criado_em,executado_em,status,etapa_executor,codigo_produto,quantidade,estoque_anterior,estoque_novo,comprovado,solicitante,venda_status,venda_numero,venda_confirmada_em,erro_executor,foto_codigo_status,comprovante_path,venda_comprovante_path'+(vt?',origem,marca,custo_total,valor_ajuste_venda,cargo_seta':''))
     .order('criado_em',{ascending:false}).limit(vt&&vtModo==='todos'?150:40);
   if(vt){if(vtModo==='meus')qy=qy.eq('user_id',uid);else if(vtLoja)qy=qy.eq('loja_normalizada',+vtLoja)}
   const r=await qy;
@@ -391,6 +391,7 @@ async function carregarLista(silent){
   $('lista').innerHTML=r.data.length?r.data.map(x=>`<div class="it"><div class="h"><div><div class="p">${esc(x.protocolo)}</div><div class="d">${fmtDH(x.criado_em)} · Loja ${x.loja_normalizada} · ${esc(x.solicitante)}</div></div><div>${pill(x)}</div></div>
     <div class="kv">Produto <b>${esc(x.codigo_produto)}</b> · +${x.quantidade}${x.estoque_novo!=null?' · Estoque '+num(x.estoque_anterior)+' → <b>'+num(x.estoque_novo)+'</b>':''}</div>
     <div class="kv">${pillFotoLista(x)} ${pillVenda(x)}</div>
+    ${(x.comprovante_path||x.venda_comprovante_path)?`<button class="btn sec mini" data-foto="${esc(x.comprovante_path||x.venda_comprovante_path)}">🧾 Ver foto da venda</button>`:''}
     ${vt&&vtModo==='todos'?`<div class="d">${x.origem==='WHATSAPP'?'💬 WhatsApp':'Link'}${x.marca?' · '+esc(x.marca):''}${x.custo_total!=null?' · custo R$ '+Number(x.custo_total).toLocaleString('pt-BR',{minimumFractionDigits:2}):''}${x.valor_ajuste_venda!=null?' · venda R$ '+Number(x.valor_ajuste_venda).toLocaleString('pt-BR',{minimumFractionDigits:2}):''}</div>`:''}
     ${x.venda_numero?`<div class="d" style="margin-top:4px">Venda nº ${esc(x.venda_numero)}</div>`:''}
     ${x.user_id===uid&&x.status==='CONCLUIDO'&&x.venda_status==='AGUARDANDO_VENDA'?`<button class="btn ok mini" data-venda='${esc(JSON.stringify({id:x.id,protocolo:x.protocolo,codigo_produto:x.codigo_produto,modo:'venda'}))}'>Finalizar venda</button>`:''}
@@ -398,6 +399,7 @@ async function carregarLista(silent){
     ${x.status==='PENDENTE'&&x.user_id===uid?`<button class="btn sec mini" data-cancelar="${x.id}">✕ Cancelar este pedido</button>`:''}
     ${(x.status==='ERRO')?`<div class="d" style="margin-top:6px">${esc(erroAmigavel(x.erro_executor))}</div>`:''}</div>`).join(''):'<div class="sub">Nenhum ajuste ainda.</div>';
   $('lista').querySelectorAll('[data-venda]').forEach(b=>b.onclick=()=>{const d=JSON.parse(b.dataset.venda);abrirVenda(d,d.modo)});
+  $('lista').querySelectorAll('[data-foto]').forEach(b=>b.onclick=()=>verFotoVenda(b));
   $('lista').querySelectorAll('[data-cancelar]').forEach(b=>b.onclick=async()=>{
     if(!confirm('Cancelar este pedido? Ele sai da fila e o estoque não será ajustado.'))return;
     b.disabled=true;b.textContent='Cancelando…';
@@ -405,6 +407,15 @@ async function carregarLista(silent){
     if(cr.error){b.disabled=false;b.textContent='✕ Cancelar este pedido';alert('Não foi possível cancelar: '+cr.error.message.replace(/^.*?:\s*/,''));return}
     if(!(cr.data&&cr.data.ok))alert('O robô já começou a lançar este pedido e ele não pode mais ser cancelado. Aguarde o resultado.');
     $('lista')._sig='';carregarLista(true)})}
+
+// ---------- ver a foto da venda (dono do pedido ou administrador com "ve tudo") ----------
+async function verFotoVenda(b){const t=b.textContent;b.disabled=true;b.textContent='Abrindo…';
+  try{const r=await sb.storage.from(BUCKET).createSignedUrl(b.dataset.foto,600);if(r.error||!r.data)throw new Error('sem acesso');
+    let o=$('fotoOver');if(!o){o=document.createElement('div');o.id='fotoOver';o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px';
+      o.innerHTML='<img id="fotoOverImg" alt="Foto da venda" style="max-width:100%;max-height:82vh;border-radius:10px;background:#fff"><button class="btn" type="button" style="margin-top:12px;max-width:320px">Fechar</button>';
+      o.onclick=()=>{o.style.display='none';$('fotoOverImg').src=''};document.body.appendChild(o)}
+    $('fotoOverImg').src=r.data.signedUrl;o.style.display='flex'}
+  catch(e){alert('Não foi possível abrir a foto da venda.')}finally{b.disabled=false;b.textContent=t}}
 
 // ---------- finalizar venda + foto do comprovante (SEMPRE depois do ajuste) ----------
 const PEND='ae_venda_pend';
