@@ -90,7 +90,7 @@ button:hover{filter:brightness(1.15)}
 .hb.d1{gap:3px}.hb.d1 .hbl,.hb.d1 .hbv{font-size:12.5px}.hb.d1 .hbt{height:11px}
 .hb.d2{gap:2px}.hb.d2 .hbl,.hb.d2 .hbv{font-size:11.5px}.hb.d2 .hbt{height:9px}
 /* tabelas */
-.tw{position:absolute;inset:0;overflow:hidden}
+.tw{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
 table{border-collapse:collapse;width:100%;font-size:13.5px}
 th{background:#1c1f33;text-align:left;padding:6px 8px;white-space:nowrap;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
 td{padding:5px 8px;border-top:1px solid var(--border);vertical-align:middle}
@@ -161,7 +161,7 @@ body.tv{cursor:none}
 const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const INTERVALO=5000;
-const BUILD='20260925-224255';
+const BUILD='20260926-154600';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=v=>v==null?'—':Number(v).toLocaleString('pt-BR');
@@ -196,9 +196,12 @@ function donut(items,centro){
   const leg=items.map(i=>'<div class="lg"><i style="background:'+i.c+'"></i><span>'+esc(i.l)+'</span><b>'+i.v+'</b><em>'+Math.round(i.v/tot*100)+'%</em></div>').join('');
   return '<div class="donut"><svg viewBox="0 0 180 180"><circle cx="90" cy="90" r="'+R+'" fill="none" stroke="rgba(128,128,160,.25)" stroke-width="26"/>'+segs+'<text x="90" y="92" text-anchor="middle" class="dc1">'+tot+'</text><text x="90" y="112" text-anchor="middle" class="dc2">'+esc(centro)+'</text></svg><div class="leg">'+leg+'</div></div>';
 }
-/* tira as linhas que nao cabem, para nunca aparecer linha cortada nem barra de rolagem */
+/* na TV de verdade (tela cheia) nunca aparece linha cortada nem barra de rolagem; numa janela normal
+   (notebook, mesmo tela grande) mantem todas as linhas e deixa rolar, pra dar pra ver mais lojas e
+   rolar ate o fim quando der problema */
 function ajustar(el){
-  if(getComputedStyle(el).position!=='absolute')return;   /* em tela pequena rola: nao corta nada */
+  if(!document.body.classList.contains('tv'))return;   /* fora do modo TV de verdade: nao corta nada, so rola */
+  if(getComputedStyle(el).position!=='absolute')return;
   const t=el.querySelector('table');
   if(t){const rows=t.querySelectorAll('tr');for(let i=rows.length-1;i>1&&t.offsetHeight>el.clientHeight;i--)rows[i].remove();return}
   const hb=el.querySelector('.hb');if(hb){const r=hb.querySelectorAll('.hbr');for(let i=r.length-1;i>2&&hb.offsetHeight>el.clientHeight;i--)r[i].remove()}
