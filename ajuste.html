@@ -192,7 +192,7 @@ function erroAmigavel(e){e=String(e||'');
   if(/AVISO_DO_SETA|nao encontrado|inexistente|Inv.lido/i.test(e))return 'O código do produto não foi encontrado no sistema. Confira o código e faça um novo pedido.';
   if(/LOJA/i.test(e))return 'Não consegui acessar a loja no sistema. A auditoria foi avisada.';
   if(/SETA_NAO_LOCALIZADO|SETA_SEM_FOCO|TELA_BLOQUEADA/i.test(e))return 'O robô de ajustes está indisponível no momento. Fale com o suporte.';
-  return 'Não foi possível ajustar automaticamente. Fale com o suporte e informe o protocolo.';}
+  return 'Não foi possível ajustar automaticamente. Verifique se o código do produto está correto e igual ao do Seta. Se estiver, fale com a auditoria.';}
 const fmtDH=d=>d?new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
 const num=v=>v==null?'—':Number(v).toLocaleString('pt-BR');
 function show(v){['vLogin','vSenha','vApp'].forEach(x=>$(x).classList.toggle('hidden',x!==v));$('who').classList.toggle('hidden',v==='vLogin'||!U)}
