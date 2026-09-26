@@ -404,18 +404,30 @@ const AREAS=[
 let catalogoAtual=[];
 
 function voltarAoPortal(){
-  // Retorna ao último ponto válido do Portal sem encerrar a sessão.
-  // Evita voltar para login, splash ou páginas externas do navegador.
+  // Volta para a tela de MÓDULOS do Portal, sem encerrar a sessão e sem passar pelo login.
+  const portal=new URL('../', location.href).href;
+  // 1) Aberto dentro do Portal (iframe): o index.html reabre os módulos no próprio iframe, sem recarregar.
   try{
-    const ref=document.referrer||'';
-    const origemPortal=ref.includes('/portal-esposende-login/') && !/login|index\.html(?:$|[?#])/i.test(ref);
-    if(history.length>1 && origemPortal){
-      history.back();
+    const topo=window.top;
+    if(topo && topo!==window && typeof topo.voltarAosModulosPortal==='function' && topo.voltarAosModulosPortal()) return;
+  }catch(e){}
+  // 2) Aberto em outra aba/janela a partir do Portal: reabre os módulos lá e fecha esta aba.
+  try{
+    const op=window.opener && !window.opener.closed ? window.opener.top : null;
+    if(op && typeof op.voltarAosModulosPortal==='function' && op.voltarAosModulosPortal()){
+      try{ op.focus(); }catch(e){}
+      window.close();
+      setTimeout(()=>{ if(!window.closed) window.location.href=portal; },400);
       return;
     }
   }catch(e){}
-  // Fallback: tela do Portal (entra direto se o login estiver salvo). NUNCA o painel.html (Painel da TV, que exige codigo e mostrava "Link incompleto").
-  const portal=new URL('../', location.href).href;
+  // 3) Veio de outra página do Portal (não login/index): volta no histórico.
+  try{
+    const ref=document.referrer||'';
+    const origemPortal=ref.includes('/portal-esposende-login/') && !/login|index\.html(?:$|[?#])|\/portal-esposende-login\/(?:$|[?#])/i.test(ref);
+    if(history.length>1 && origemPortal){ history.back(); return; }
+  }catch(e){}
+  // 4) Fallback: abre o Portal (entra direto nos módulos se o login estiver salvo). NUNCA o painel.html (Painel da TV).
   try{ if(window.top && window.top!==window){ window.top.location.href=portal; return; } }catch(e){}
   window.location.href=portal;
 }
