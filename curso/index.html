@@ -414,8 +414,10 @@ function voltarAoPortal(){
       return;
     }
   }catch(e){}
-  // Fallback seguro: tela principal de módulos, mantendo a autenticação existente.
-  window.location.href='../painel.html';
+  // Fallback: tela do Portal (entra direto se o login estiver salvo). NUNCA o painel.html (Painel da TV, que exige codigo e mostrava "Link incompleto").
+  const portal=new URL('../', location.href).href;
+  try{ if(window.top && window.top!==window){ window.top.location.href=portal; return; } }catch(e){}
+  window.location.href=portal;
 }
 
 async function getPerms(){
