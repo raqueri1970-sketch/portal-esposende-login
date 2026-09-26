@@ -116,6 +116,7 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
 
 <!-- APP -->
 <section id="vApp" class="hidden">
+  <div id="roboAviso" class="msg warn hidden" style="font-weight:600"></div>
   <div id="pendVenda" class="alert hidden"></div>
   <div class="tabs"><button id="tabNovo" class="on">Novo ajuste</button><button id="tabLista">Meus ajustes</button></div>
 
@@ -168,7 +169,7 @@ const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
 const WHATS='5581989087348';
-const BUILD='20260926-114408';
+const BUILD='20260926-115447';
 /* se o navegador guardou uma versao antiga desta pagina, busca a nova e recarrega (uma vez por versao) */
 (async()=>{try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);
   if(m&&m[1]!==BUILD&&m[1].indexOf('@@')<0){let k='';try{k=sessionStorage.getItem('ae_build')||''}catch(e){}if(k!==m[1]){try{sessionStorage.setItem('ae_build',m[1])}catch(e){}location.reload()}}}catch(e){}})();
@@ -315,7 +316,11 @@ function montarApp(){show('vApp');$('who').classList.remove('hidden');
     ?`<label for="aLoja">Loja deste pedido</label><select id="aLoja">${lojaSel?'':'<option value="">Selecione a loja…</option>'}${lojas.map(l=>`<option value="${l.loja}" ${l.loja===lojaSel?'selected':''}>${l.loja} · ${esc(l.nome||'')}</option>`).join('')}</select>`
     :`<div class="msg info" style="margin-top:0">Loja <b>${lojas[0].loja}${lojas[0].nome?' · '+esc(lojas[0].nome):''}</b></div>`;
   if($('aLoja'))$('aLoja').onchange=e=>{lojaSel=parseInt(e.target.value,10)||null;$('whoLoja').textContent=nomeLoja();atualizarZap();carregarLista()};
-  atualizarZap();aba('novo');carregarLista();clearInterval(listaT);listaT=setInterval(()=>{if(!document.hidden&&!$('vApp').classList.contains('hidden'))carregarLista(true)},15000)}
+  atualizarZap();aba('novo');carregarLista();verRobo();clearInterval(listaT);listaT=setInterval(()=>{if(!document.hidden&&!$('vApp').classList.contains('hidden')){carregarLista(true);verRobo()}},15000)}
+/* aviso automatico: robo parado (PC desligado, Seta fechado...) -> gerente sabe antes de pedir. Some sozinho quando o robo volta. */
+async function verRobo(){try{const r=await sb.rpc('ajuste_robo_status');const a=$('roboAviso');if(r.error||!r.data){a.classList.add('hidden');return}
+  if(r.data.online){a.classList.add('hidden');return}
+  a.innerHTML='⚠️ O robô de ajustes está <b>em manutenção</b> agora. Seu pedido fica guardado na fila e só será lançado quando ele voltar'+(r.data.fila?' ('+r.data.fila+' pedido(s) esperando)':'')+'. <b>Se for urgente, peça o ajuste manual à Controladoria.</b>';a.classList.remove('hidden')}catch(e){}}
 function aba(x){$('tabNovo').classList.toggle('on',x==='novo');$('tabLista').classList.toggle('on',x==='lista');$('pNovo').classList.toggle('hidden',x!=='novo');$('pLista').classList.toggle('hidden',x!=='lista')}
 $('vtMeus').onclick=()=>{vtModo='meus';montarVtBar();$('lista')._sig='';carregarLista()};$('vtTodos').onclick=()=>{vtModo='todos';montarVtBar();$('lista')._sig='';carregarLista()};$('vtLoja').onchange=()=>{vtLoja=$('vtLoja').value;$('lista')._sig='';carregarLista()};
 $('tabNovo').onclick=()=>aba('novo');$('tabLista').onclick=()=>{aba('lista');carregarLista()};
