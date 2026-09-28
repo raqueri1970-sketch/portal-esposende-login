@@ -52,6 +52,27 @@
         p.ignorar_cards_como_fonte=true;
         p.ignorar_cache_como_fonte=true;
         p.anexos_apenas_evidencia=true;
+        // Skills Esposende: roteamento especializado do Cerebro/Auditor.
+        p.skills_esposende_ativas=true;
+        p.skill_auditor_mestre='skills-esposende/auditor-mestre.md';
+        p.skills_catalogo={
+          ajuste:'skills-esposende/ajuste-express.md',
+          inventario:'skills-esposende/inventario.md',
+          saci:'skills-esposende/saci.md',
+          comercial:'skills-esposende/comercial.md',
+          rh:'skills-esposende/rh-folha.md',
+          folha:'skills-esposende/rh-folha.md',
+          comissao:'skills-esposende/comissao.md',
+          compras:'skills-esposende/compras.md',
+          financeiro:'skills-esposende/financeiro.md',
+          contas_a_pagar:'skills-esposende/financeiro.md',
+          notas_fiscais:'skills-esposende/notas-fiscais.md',
+          almoxarifado:'skills-esposende/almoxarifado.md',
+          recebimento:'skills-esposende/cd-recebimento.md',
+          transportadora:'skills-esposende/transportadora.md',
+          cruzamentos:'skills-esposende/cruzamentos.md'
+        };
+        p.instrucoes_skills='Usar o Auditor Mestre como orquestrador; selecionar a skill especializada pelo assunto; consultar a fonte operacional real; chamar cruzamentos quando houver chave confiavel; nunca inventar dado; separar fato, divergencia, alerta e dado insuficiente; retornar resultado primeiro com periodo e evidencia.';
         p.base_mae_atual=true;
         p.base_mae_regra='funcionario_loja_cargo_setor_regional_sempre_atual';
         p.instrucoes_fonte=(p.instrucoes_fonte?String(p.instrucoes_fonte)+' | ':'')+
