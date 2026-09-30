@@ -645,7 +645,7 @@ function renderPainelAdmin(){
   el.innerHTML=`<div class="prog-top"><div><b>👑 Visão do administrador</b><br><span>Como administrador você entra sem CPF, então o seu progresso não conta. Veja abaixo exatamente o que o colaborador vê no final.</span></div></div>
     <div class="adm-botoes">
       <button id="admParabens">🎉 Tela de parabéns (fim do curso)</button>
-      <button id="admAssinar">✍️ Tela de assinatura</button>
+      <button id="admAssinar">✍️ Tela de emissão (declaração)</button>
       <button id="admCert">🎓 Certificado de exemplo</button>
       <button id="admLista">📋 Quem concluiu / certificados emitidos</button>
     </div>`;
@@ -679,7 +679,7 @@ function renderProgPanel(){
   const id=getIdentidade()||{};
   let msg, acao='';
   if(concluidos>=total){
-    msg=`🎓 Parabéns, ${escapeHtml(primeiroNome(id.nome))}! Você concluiu todos os módulos. `+(certificado?'Seu certificado já foi emitido e assinado.':'Assine para emitir seu certificado com a carga horária.');
+    msg=`🎓 Parabéns, ${escapeHtml(primeiroNome(id.nome))}! Você concluiu todos os módulos. `+(certificado?'Seu certificado já foi emitido pela Auditoria Esposende.':'Confirme a declaração para emitir seu certificado com a carga horária.');
     acao=certificado?`<button class="cert-btn" id="btnVerCert">🎓 Ver meu certificado</button>`:`<button class="cert-btn" id="btnEmitirCert">🎓 Emitir meu certificado</button>`;
   }else{
     msg=`Assista cada vídeo até o fim e responda a pergunta do módulo. Faltam <b>${total-concluidos}</b> módulo(s) para liberar o seu certificado.`;
@@ -1199,7 +1199,7 @@ function closePlayer(){
   atualizarProgressoUI();
 }
 
-// -------- certificado: declaração + assinatura na tela --------
+// -------- certificado: declaração de conclusão (certificado assinado pela Auditoria) --------
 const certOv=document.getElementById('certOv');
 document.getElementById('certClose').addEventListener('click',()=>certOv.classList.remove('open'));
 async function abrirCertificado(){
@@ -1220,34 +1220,20 @@ async function abrirCertificado(){
     <table><tr><th>Módulo</th><th>Concluído em</th><th>Nota</th></tr>${mods.map(m=>`<tr><td>${m.ordem}. ${escapeHtml(m.modulo_nome)}</td><td>${fmtData(m.concluido_em)}</td><td>${m.nota!=null?Math.round(m.nota):'-'}</td></tr>`).join('')}</table>
     <p class="cert-decl" id="certDecl">${escapeHtml(decl)}</p>
     <label class="cert-check"><input type="checkbox" id="certAceite"> Li e concordo com a declaração acima.</label>
-    <div style="font-size:12px;font-weight:800;color:var(--muted);margin:0 0 6px">Assine com o dedo (ou mouse) no quadro:</div>
-    <div class="sig-wrap"><canvas id="sigCanvas"></canvas><div class="linha"></div><div class="ph" id="sigPh">✍️ Assine aqui</div></div>
-    <div class="cert-acoes"><button class="btn-sec" id="sigLimpar">Limpar assinatura</button><button class="cert-btn" id="sigEmitir">Assinar e emitir</button></div>
+    <div class="cert-acoes"><button class="cert-btn" id="sigEmitir">✅ Confirmar e emitir meu certificado</button></div>
     <p class="cert-err" id="certErr"></p>`;
   certOv.classList.add('open');
-  const cv=document.getElementById('sigCanvas'), ph=document.getElementById('sigPh');
-  const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
-  const w=cv.clientWidth, hh=cv.clientHeight;
-  cv.width=Math.round(w*dpr); cv.height=Math.round(hh*dpr);
-  const ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
-  ctx.lineWidth=2.4; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#0b1f4d';
-  let desenhando=false, ult=null, traco=0;
-  const pos=e=>{const r=cv.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};};
-  cv.addEventListener('pointerdown',e=>{desenhando=true;ult=pos(e);cv.setPointerCapture(e.pointerId);ph.style.display='none';e.preventDefault();});
-  cv.addEventListener('pointermove',e=>{if(!desenhando)return;const p=pos(e);ctx.beginPath();ctx.moveTo(ult.x,ult.y);ctx.lineTo(p.x,p.y);ctx.stroke();traco+=Math.hypot(p.x-ult.x,p.y-ult.y);ult=p;e.preventDefault();});
-  ['pointerup','pointercancel','pointerleave'].forEach(t=>cv.addEventListener(t,()=>{desenhando=false;}));
-  document.getElementById('sigLimpar').addEventListener('click',()=>{ctx.clearRect(0,0,cv.width,cv.height);traco=0;ph.style.display='flex';});
   const errEl=document.getElementById('certErr');
+  document.getElementById('certAceite').addEventListener('change',()=>errEl.classList.remove('show'));
   document.getElementById('sigEmitir').addEventListener('click',async ev=>{
     errEl.classList.remove('show');
     if(!document.getElementById('certAceite').checked){errEl.textContent='Marque que você leu e concorda com a declaração.';errEl.classList.add('show');return;}
-    if(traco<120){errEl.textContent='Faça a sua assinatura no quadro branco.';errEl.classList.add('show');return;}
-    if(demo){ salvarDemoEIr(cv.toDataURL('image/png')); return; }
+    if(demo){ salvarDemoEIr(null); return; }
     ev.target.disabled=true; ev.target.textContent='Emitindo…';
     try{
-      const codigo=await rpcJson('curso_emitir_certificado_assinado',{p_cpf:soDigitos(id.cpf),p_area_id:areaAtual||'estoque',p_assinatura:cv.toDataURL('image/png'),p_aceite:true,p_aceite_texto:decl,p_user_agent:navigator.userAgent,p_loja:id.loja||null});
+      const codigo=await rpcJson('curso_emitir_certificado_assinado',{p_cpf:soDigitos(id.cpf),p_area_id:areaAtual||'estoque',p_assinatura:null,p_aceite:true,p_aceite_texto:decl,p_user_agent:navigator.userAgent,p_loja:id.loja||null});
       location.href='certificado.html?c='+encodeURIComponent(codigo);
-    }catch(e){ errEl.textContent=e.message; errEl.classList.add('show'); ev.target.disabled=false; ev.target.textContent='Assinar e emitir'; }
+    }catch(e){ errEl.textContent=e.message; errEl.classList.add('show'); ev.target.disabled=false; ev.target.textContent='✅ Confirmar e emitir meu certificado'; }
   });
 }
 document.getElementById('closeBtn').addEventListener('click', attemptClose);

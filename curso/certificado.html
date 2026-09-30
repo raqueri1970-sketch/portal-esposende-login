@@ -37,7 +37,7 @@
   .f-data{text-align:right;color:var(--campo);font-family:Calibri,Carlito,"Liberation Sans",Arial,sans-serif}
   .f-data .ponto{color:#000}
   .f-ass{position:absolute;left:83.8mm;top:176.4mm;width:141.5mm;text-align:center;font-family:"Times New Roman","Liberation Serif",serif;font-size:19.4pt;line-height:1.15}
-  .f-ass-img{position:absolute;left:50%;transform:translateX(-50%);top:163mm;height:22mm;max-width:95mm;object-fit:contain}
+  .f-ass-img{position:absolute;left:50%;transform:translateX(-50%);top:160mm;height:23mm;max-width:100mm;object-fit:contain}
 
   /* ---------- VERSO ---------- */
   .v-tab{position:absolute;left:7.1mm;top:6.7mm;width:282.8mm;height:192.1mm;border:1px solid #000;display:grid;grid-template-columns:217.2mm 1fr}
@@ -52,7 +52,7 @@
   .v-lista li:before{content:"➢";position:absolute;left:0;color:#000;font-size:8pt}
   .v-lista .tot{margin-top:2.4mm;color:#000;font-weight:bold}
   .v-prog{position:absolute;left:0;right:0;top:131mm;text-align:center;font-family:Calibri,Carlito,Arial,sans-serif;font-size:13pt}
-  .v-ass-img{position:absolute;left:89mm;top:152mm;width:58mm;height:17mm;object-fit:contain}
+  .v-ass-img{position:absolute;left:88mm;top:150mm;width:66mm;height:19mm;object-fit:contain}
   .v-seta{position:absolute;left:43mm;top:152mm;width:48mm;height:20mm;overflow:visible}
   .v-ass-txt{position:absolute;left:62mm;width:112mm;top:171mm;text-align:center;font-size:6.4pt;line-height:1.35;color:#333}
   .v-qr{position:absolute;left:4mm;top:161mm;width:24mm;height:24mm}
@@ -153,8 +153,8 @@ function montar(d){
       <p>&nbsp;</p>
       <p class="f-data">Recife/PE, ${esc(dataExtenso(d.emitido_em))}<span class="ponto">.</span></p>
     </div>
-    ${d.assinatura?`<img class="f-ass-img" src="${d.assinatura}" alt="Assinatura">`:''}
-    <div class="f-ass">________________________<br>${esc(d.nome||'Nome do Colaborador')}</div>
+    <img class="f-ass-img" src="cert/assinatura-auditoria.png" alt="Assinatura Auditoria Esposende">
+    <div class="f-ass">________________________<br>Auditoria Interna – Esposende Calçados</div>
   </div>`;
   const verso=`
   <div class="pagina" id="pg2">
@@ -169,8 +169,8 @@ function montar(d){
         </div>
         <div class="v-prog">Este treinamento, faz parte do Programa de Treinamento &amp; Desenvolvimento da ESPOSENDE Calçados.</div>
         <svg class="v-seta" viewBox="0 0 48 20"><line x1="1" y1="17" x2="44" y2="10.5" stroke="#FF0000" stroke-width=".45"/><polygon points="45.8,10.2 42.4,9.2 42.9,12.3" fill="#FF0000"/></svg>
-        ${d.assinatura?`<img class="v-ass-img" src="${d.assinatura}" alt="Assinatura do colaborador">`:''}
-        <div class="v-ass-txt">Assinado eletronicamente por <b>${esc(d.nome)}</b> · CPF ${esc(fmtCpf(d.cpf))}<br>em ${esc(fmtDH(assinado))}${d.ip?' · IP '+esc(d.ip):''} · com aceite da declaração de conclusão</div>
+        <img class="v-ass-img" src="cert/assinatura-auditoria.png" alt="Assinatura Auditoria Esposende">
+        <div class="v-ass-txt">Certificado emitido e assinado pela <b>Auditoria Interna – Esposende Calçados</b><br>Conclusão confirmada por ${esc(d.nome)} · CPF ${esc(fmtCpf(d.cpf))} em ${esc(fmtDH(assinado))}${d.ip?' · IP '+esc(d.ip):''}</div>
         <div class="v-qr" id="qr"></div>
         <div class="v-qr-txt">Código <b>${esc(d.codigo)}</b> · valide pelo QR Code</div>
         <div class="v-hash">Autenticação SHA-256<br>${esc(String(d.hash||'').slice(0,32))}<br>${esc(String(d.hash||'').slice(32))}</div>
@@ -185,7 +185,7 @@ function montar(d){
   document.getElementById('escala').innerHTML=frente+verso;
   const pn=String(d.nome||'').trim().split(/\s+/)[0]||''; const primeiro=pn.charAt(0)+pn.slice(1).toLowerCase();
   const fe=document.getElementById('festa');
-  fe.innerHTML=`<div class="e">🏆🎓</div><div class="t">Parabéns, ${esc(primeiro)}!</div><div class="s">Você concluiu os ${mods.length} módulos do <b>${esc(nomeTreinamento(d.area_nome))}</b> da Esposende Calçados, com carga horária de <b>${esc(carga(d.carga_min))}</b>.<br>Este é o seu certificado, assinado por você. Toque em <b>“Baixar PDF”</b> para guardar.</div>`;
+  fe.innerHTML=`<div class="e">🏆🎓</div><div class="t">Parabéns, ${esc(primeiro)}!</div><div class="s">Você concluiu os ${mods.length} módulos do <b>${esc(nomeTreinamento(d.area_nome))}</b> da Esposende Calçados, com carga horária de <b>${esc(carga(d.carga_min))}</b>.<br>Este é o seu certificado, emitido pela Auditoria Esposende. Toque em <b>“Baixar PDF”</b> para guardar.</div>`;
   fe.classList.add('show');
   try{ new QRCode(document.getElementById('qr'),{text:validar,width:180,height:180,correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
   estado.style.display='none';
