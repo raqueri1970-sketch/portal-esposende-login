@@ -28,20 +28,6 @@ jobs:
           curl -fsSL -o v.mp4 "https://rdztzurfesnobfkazgpm.supabase.co/storage/v1/object/public/curso-videos/${{ matrix.mod }}-v3.mp4"
           mkdir -p out
           ffprobe -v error -show_format -show_streams -of json v.mp4 > out/${{ matrix.mod }}.probe.json
-      - name: Transcrever narracao
-        run: |
-          ffmpeg -v error -i v.mp4 -ac 1 -ar 16000 -af "loudnorm" a.wav
-          python - <<'PY'
-          import json
-          from faster_whisper import WhisperModel
-          m = WhisperModel("medium", device="cpu", compute_type="int8")
-          segs, info = m.transcribe("a.wav", language="pt", beam_size=5, vad_filter=True)
-          out = [{"start": round(s.start, 2), "end": round(s.end, 2), "text": s.text.strip()} for s in segs]
-          json.dump(out, open("out/${{ matrix.mod }}.transcricao.json", "w"), ensure_ascii=False, indent=1)
-          with open("out/${{ matrix.mod }}.transcricao.txt", "w") as f:
-              for s in out:
-                  f.write(f"[{int(s['start']//60):02d}:{int(s['start']%60):02d}] {s['text']}\n")
-          PY
       - name: Copia leve para prints
         run: |
           for crf in 24 30 36; do
@@ -49,7 +35,24 @@ jobs:
             [ $(stat -c%s out/${{ matrix.mod }}.2fps.mp4) -lt 90000000 ] && break
           done
           ls -la out
+      - name: Transcrever narracao
+        run: |
+          ffmpeg -v error -i v.mp4 -ac 1 -ar 16000 -af "loudnorm" -f f32le a.raw
+          python - <<'PY'
+          import json
+          import numpy as np
+          from faster_whisper import WhisperModel
+          audio = np.fromfile("a.raw", dtype=np.float32)
+          m = WhisperModel("medium", device="cpu", compute_type="int8")
+          segs, info = m.transcribe(audio, language="pt", beam_size=5, vad_filter=True)
+          out = [{"start": round(s.start, 2), "end": round(s.end, 2), "text": s.text.strip()} for s in segs]
+          json.dump(out, open("out/${{ matrix.mod }}.transcricao.json", "w"), ensure_ascii=False, indent=1)
+          with open("out/${{ matrix.mod }}.transcricao.txt", "w") as f:
+              for s in out:
+                  f.write(f"[{int(s['start']//60):02d}:{int(s['start']%60):02d}] {s['text']}\n")
+          PY
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: midia-${{ matrix.mod }}
           path: out/
