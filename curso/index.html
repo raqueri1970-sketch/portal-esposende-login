@@ -591,9 +591,13 @@ function renderCursos(cursos){
       else if(pg.percentual){ selo=`<span class="prog-badge meio">▶ Em andamento · ${Math.round(pg.percentual)}%</span>`; }
       else { selo=`<span class="prog-badge">○ Não iniciado</span>`; }
     }
+    const ultimo=cursos.reduce((m,x)=>Math.max(m,x.ordem),0);
+    if(ehAdmin() && c.ordem===ultimo) selo+=`<button type="button" class="aval-btn adm-cert-btn" style="background:#7c5cff;color:#fff">👑 Ver o certificado (só administrador)</button>`;
     d.innerHTML=`<div class="cover-wrap"><img src="${capaUrl(c)}" alt="Capa: ${escapeHtml(c.nome)}" decoding="async"><div class="duration-pill">${escapeHtml(c.duracao||'')}</div><div class="play-badge"><div class="circle"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div></div><div class="info"><h3>${escapeHtml(c.nome)}</h3><p>${escapeHtml(c.desc||'')}</p>${selo}</div>`;
     d.addEventListener('click',()=>openPlayer(c));
-    const ab=d.querySelector('.aval-btn');
+    const acb=d.querySelector('.adm-cert-btn');
+    if(acb) acb.addEventListener('click',ev=>{ev.stopPropagation();demoParabens(c);});
+    const ab=d.querySelector('.aval-btn:not(.adm-cert-btn)');
     if(ab) ab.addEventListener('click',ev=>{ev.stopPropagation();abrirSoAvaliacao(c,ab.dataset.ref);});
     grid.appendChild(d);
   });
@@ -661,6 +665,16 @@ function renderPainelAdmin(){
   document.getElementById('admCert').onclick=()=>{ carregarDemo(); salvarDemoEIr(null); };
   document.getElementById('admLista').onclick=()=>{ location.href='certificados.html?area='+encodeURIComponent(areaAtual||'estoque'); };
 }
+function demoParabens(c){
+  const mods=carregarDemo();
+  const feitos=mods.filter(m=>m.ordem<=c.ordem).length;
+  PROG_RESUMO={total:mods.length,concluidos:feitos,certificado:null};
+  if(!overlay.classList.contains('open')){
+    overlay.classList.add('open'); playerBody.innerHTML=quizHtml(); document.querySelector('.player-box').classList.add('quiz-only');
+  }
+  playerTitle.textContent=c.nome; playerSub.textContent=`Módulo ${c.ordem} · pré-visualização do administrador`;
+  quizResolved=true; wireQuiz(null); mostrarParabens(c,100);
+}
 function salvarDemoEIr(assinatura){
   const mods=Object.values(PROGRESSO).sort((a,b)=>a.ordem-b.ordem);
   const carga=Math.ceil(mods.reduce((s,m)=>s+durSeg(m.duracao),0)/60);
@@ -680,7 +694,7 @@ function renderProgPanel(){
   let msg, acao='';
   if(concluidos>=total){
     msg=`🎓 Parabéns, ${escapeHtml(primeiroNome(id.nome))}! Você concluiu todos os módulos. `+(certificado?'Seu certificado já foi emitido pela Auditoria Esposende.':'Confirme a declaração para emitir seu certificado com a carga horária.');
-    acao=certificado?`<button class="cert-btn" id="btnVerCert">🎓 Ver meu certificado</button>`:`<button class="cert-btn" id="btnEmitirCert">🎓 Emitir meu certificado</button>`;
+    acao=certificado?`<button class="cert-btn" id="btnVerCert">🎓 Ver / imprimir meu certificado</button>`:`<button class="cert-btn" id="btnEmitirCert">🎓 Emitir meu certificado</button>`;
   }else{
     msg=`Assista cada vídeo até o fim e responda a pergunta do módulo. Faltam <b>${total-concluidos}</b> módulo(s) para liberar o seu certificado.`;
   }
@@ -908,9 +922,10 @@ function startWatchTracking(videoEl, viewId){
     }
   });
   videoEl.addEventListener('seeking', ()=>{
+    if(ehAdmin()){ ws.maxWatched=Math.max(ws.maxWatched,videoEl.currentTime); ws.lastT=videoEl.currentTime; return; } // administrador pode adiantar
     if(videoEl.currentTime > ws.maxWatched + 1.5){ videoEl.currentTime = ws.maxWatched; ws.lastT = ws.maxWatched; avisoPulo(); }
   });
-  videoEl.addEventListener('ratechange', ()=>{ if(videoEl.playbackRate > 1){ videoEl.playbackRate = 1; avisoPulo(); } });
+  videoEl.addEventListener('ratechange', ()=>{ if(!ehAdmin() && videoEl.playbackRate > 1){ videoEl.playbackRate = 1; avisoPulo(); } });
   videoEl.addEventListener('ended', ()=>{
     if(ws.duration && ws.maxWatched >= ws.duration - 3) ws.maxWatched = ws.duration;
     if(!ws.nearEndFired){ ws.nearEndFired = true; concluirVideo(); } else sendWatchProgress(true);
@@ -995,7 +1010,8 @@ async function concluirVideo(){
   const id=getIdentidade()||{};
   for(let i=0;i<20 && watchState && !watchState.viewId;i++) await new Promise(r=>setTimeout(r,250));
   await sendWatchProgress(true);
-  if(!watchState || !watchState.viewId || !id.cpf || PORTAL_ADMIN || id.admin){ showQuiz(); return; }
+  if(ehAdmin() && cursoAtual){ demoParabens(cursoAtual); return; }
+  if(!watchState || !watchState.viewId || !id.cpf){ showQuiz(); return; }
   mostrarAvaliacao(watchState.viewId, cursoAtual);
 }
 
@@ -1052,7 +1068,7 @@ function mostrarParabens(c,nota){
     ${R.total?`<div class="prog-bar"><i style="width:${pct}%"></i></div><p class="sub">${R.concluidos} de ${R.total} módulos concluídos</p>`:''}
     ${tudo?`<p><b>Você concluiu todo o Treinamento de ${escapeHtml(areaAtualNome||'Estoque')}!</b><br>Seu certificado com a carga horária já está liberado.</p>`:(R.total?`<p class="sub">Faltam ${R.total-R.concluidos} módulo(s) para o seu certificado.</p>`:'')}
     <div class="acoes">
-      ${tudo?(R.certificado?'<button class="cert-btn" id="pbCert">🎓 Ver meu certificado</button>':'<button class="cert-btn" id="pbCert">🎓 Emitir meu certificado</button>'):''}
+      ${tudo?(R.certificado?'<button class="cert-btn" id="pbCert">🎓 Ver / imprimir meu certificado</button>':'<button class="cert-btn" id="pbCert">🎓 Emitir meu certificado</button>'):''}
       <button class="quiz-submit" id="pbAvaliar">Dar minha opinião sobre o módulo</button>
       <button class="btn-sec" id="pbFechar">${tudo?'Fechar':'Continuar para o próximo módulo'}</button>
     </div>`;

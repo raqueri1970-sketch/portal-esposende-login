@@ -85,7 +85,7 @@
 <body>
 <div class="barra" id="barra" style="display:none">
   <button class="pri" id="btPdf">⬇️ Baixar PDF</button>
-  <button id="btImp">🖨️ Imprimir</button>
+  <button id="btImp">🖨️ Imprimir certificado</button>
   <a id="btVoltar" href="./?area=estoque">← Voltar ao treinamento</a>
   <span id="barraInfo"></span>
 </div>
@@ -185,7 +185,7 @@ function montar(d){
   document.getElementById('escala').innerHTML=frente+verso;
   const pn=String(d.nome||'').trim().split(/\s+/)[0]||''; const primeiro=pn.charAt(0)+pn.slice(1).toLowerCase();
   const fe=document.getElementById('festa');
-  fe.innerHTML=`<div class="e">🏆🎓</div><div class="t">Parabéns, ${esc(primeiro)}!</div><div class="s">Você concluiu os ${mods.length} módulos do <b>${esc(nomeTreinamento(d.area_nome))}</b> da Esposende Calçados, com carga horária de <b>${esc(carga(d.carga_min))}</b>.<br>Este é o seu certificado, emitido pela Auditoria Esposende. Toque em <b>“Baixar PDF”</b> para guardar.</div>`;
+  fe.innerHTML=`<div class="e">🏆🎓</div><div class="t">Parabéns, ${esc(primeiro)}!</div><div class="s">Você concluiu os ${mods.length} módulos do <b>${esc(nomeTreinamento(d.area_nome))}</b> da Esposende Calçados, com carga horária de <b>${esc(carga(d.carga_min))}</b>.<br>Este é o seu certificado, emitido pela Auditoria Esposende. Toque em <b>“Baixar PDF”</b> para guardar ou em <b>“Imprimir certificado”</b> para imprimir.</div>`;
   fe.classList.add('show');
   try{ new QRCode(document.getElementById('qr'),{text:validar,width:180,height:180,correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
   estado.style.display='none';
