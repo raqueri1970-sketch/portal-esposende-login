@@ -88,6 +88,7 @@
   <button class="pri" id="btPdf">⬇️ Baixar PDF</button>
   <button id="btImp">🖨️ Imprimir certificado</button>
   <a id="btVoltar" href="./?area=estoque">← Voltar ao treinamento</a>
+  <a id="btApostila" href="apostila.html" style="display:none">📘 Apostila completa</a>
   <span id="barraInfo"></span>
 </div>
 <div class="festa" id="festa"></div>
@@ -191,6 +192,7 @@ function montar(d){
   estado.style.display='none';
   document.getElementById('palco').style.display='block';
   document.getElementById('barra').style.display='flex';
+  if(/estoque/i.test(d.area_id||d.area_nome||'')) document.getElementById('btApostila').style.display='';
   document.getElementById('barraInfo').textContent=(d.valido===false?'⚠️ CERTIFICADO REVOGADO · ':'')+'Certificado '+d.codigo+' · emitido em '+fmtDH(d.emitido_em);
   document.title='Certificado '+d.nome+' — Esposende';
   window._cert=d;

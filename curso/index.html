@@ -321,6 +321,11 @@
   .parabens p{margin:0 0 10px;font-size:14px;color:var(--text);line-height:1.5}
   .parabens .sub{color:var(--muted);font-size:13px}
   .parabens .acoes{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+  .apostila-btn,a.apostila-cta{display:block;text-align:center;text-decoration:none;box-sizing:border-box}
+  .apostila-btn{background:#1d4ed8;color:#fff}
+  .apostila-btn:hover{background:#2563eb}
+  .prog-acoes{display:flex;gap:10px;flex-wrap:wrap}
+  .prog-top a.apostila-cta{display:inline-block;background:#38bdf8;color:#04121f;box-shadow:0 6px 18px #38bdf833}
   .btn-sec{background:#17213b;color:var(--text);border:1px solid var(--border);border-radius:10px;font:800 13px Nunito,sans-serif;padding:11px;cursor:pointer}
   .player-box.quiz-only #playerBody{grid-template-columns:minmax(0,1fr)!important;background:#0d1327}
   .player-box.quiz-only .quiz-side{display:flex;flex-direction:column;border:0}
@@ -570,7 +575,7 @@ function renderCursos(cursos){
     const pg=PROGRESSO[c.id];
     let selo='';
     if(pg){
-      if(pg.aprovado){ d.classList.add('feito'); selo=`<span class="prog-badge ok">✓ Concluído${pg.nota!=null?' · nota '+Math.round(pg.nota):''}${pg.concluido_em?' · '+fmtData(pg.concluido_em):''}</span>`; }
+      if(pg.aprovado){ d.classList.add('feito'); selo=`<span class="prog-badge ok">✓ Concluído${pg.nota!=null?' · nota '+Math.round(pg.nota):''}${pg.concluido_em?' · '+fmtData(pg.concluido_em):''}</span>${APOSTILA_AREAS.includes(c.area_id)?`<a class="aval-btn apostila-btn" href="${apostilaUrl(c.id)}">📘 Apostila deste módulo</a>`:''}`; }
       else if(pg.ref_avaliar){ selo=`<span class="prog-badge aval">⚠ Vídeo assistido · falta a avaliação</span><button type="button" class="aval-btn" data-ref="${pg.ref_avaliar}">Responder avaliação agora</button>`; }
       else if(pg.percentual){ selo=`<span class="prog-badge meio">▶ Em andamento · ${Math.round(pg.percentual)}%</span>`; }
       else { selo=`<span class="prog-badge">○ Não iniciado</span>`; }
@@ -581,7 +586,9 @@ function renderCursos(cursos){
     d.addEventListener('click',()=>openPlayer(c));
     const acb=d.querySelector('.adm-cert-btn');
     if(acb) acb.addEventListener('click',ev=>{ev.stopPropagation();demoParabens(c);});
-    const ab=d.querySelector('.aval-btn:not(.adm-cert-btn)');
+    const apb=d.querySelector('.apostila-btn');
+    if(apb) apb.addEventListener('click',ev=>ev.stopPropagation());
+    const ab=d.querySelector('.aval-btn:not(.adm-cert-btn):not(.apostila-btn)');
     if(ab) ab.addEventListener('click',ev=>{ev.stopPropagation();abrirSoAvaliacao(c,ab.dataset.ref);});
     grid.appendChild(d);
   });
@@ -626,6 +633,9 @@ function carregarDemo(){
   PROG_RESUMO={total:mods.length,concluidos:mods.length,certificado:null};
   return mods;
 }
+// Apostila de apoio (curso/apostila.html): capítulo liberado por módulo concluído, completa junto com o certificado.
+const APOSTILA_AREAS=['estoque'];
+function apostilaUrl(modId){ return 'apostila.html'+(modId?'?modulo='+encodeURIComponent(modId):''); }
 function durSeg(d){const p=String(d||'').split(':').map(Number);return p.length===3?p[0]*3600+p[1]*60+p[2]:p.length===2?p[0]*60+p[1]:0;}
 function renderPainelAdmin(){
   const el=document.getElementById('progPanel');
@@ -636,6 +646,7 @@ function renderPainelAdmin(){
       <button id="admAssinar">✍️ Tela de emissão (declaração)</button>
       <button id="admCert">🎓 Certificado de exemplo</button>
       <button id="admLista">📋 Quem concluiu / certificados emitidos</button>
+      ${APOSTILA_AREAS.includes(areaAtual)?'<button id="admApostila">📘 Apostila completa</button>':''}
     </div>`;
   document.getElementById('admParabens').onclick=()=>{
     const mods=carregarDemo(); const c=mods[mods.length-1]; if(!c) return;
@@ -648,6 +659,7 @@ function renderPainelAdmin(){
   document.getElementById('admAssinar').onclick=()=>{ carregarDemo(); abrirCertificado(); };
   document.getElementById('admCert').onclick=()=>{ carregarDemo(); salvarDemoEIr(null); };
   document.getElementById('admLista').onclick=()=>{ location.href='certificados.html?area='+encodeURIComponent(areaAtual||'estoque'); };
+  const apA=document.getElementById('admApostila'); if(apA) apA.onclick=()=>{ location.href=apostilaUrl(); };
 }
 function demoParabens(c){
   const mods=carregarDemo();
@@ -678,11 +690,11 @@ function renderProgPanel(){
   let msg, acao='';
   if(concluidos>=total){
     msg=`🎓 Parabéns, ${escapeHtml(primeiroNome(id.nome))}! Você concluiu todos os módulos. `+(certificado?'Seu certificado já foi emitido pela Auditoria Esposende.':'Confirme a declaração para emitir seu certificado com a carga horária.');
-    acao=certificado?`<button class="cert-btn" id="btnVerCert">🎓 Ver / imprimir meu certificado</button>`:`<button class="cert-btn" id="btnEmitirCert">🎓 Emitir meu certificado</button>`;
+    acao=(certificado?`<button class="cert-btn" id="btnVerCert">🎓 Ver / imprimir meu certificado</button>`:`<button class="cert-btn" id="btnEmitirCert">🎓 Emitir meu certificado</button>`)+(APOSTILA_AREAS.includes(areaAtual)?`<a class="cert-btn apostila-cta" href="${apostilaUrl()}">📘 Apostila completa</a>`:'');
   }else{
     msg=`Assista cada vídeo até o fim e responda a pergunta do módulo. Faltam <b>${total-concluidos}</b> módulo(s) para liberar o seu certificado.`;
   }
-  el.innerHTML=`<div class="prog-top"><div><b>Seu progresso no treinamento</b><br><span>${concluidos} de ${total} módulos concluídos · ${pct}%</span></div>${acao}</div><div class="prog-bar"><i style="width:${pct}%"></i></div><p class="prog-msg">${msg}</p>`;
+  el.innerHTML=`<div class="prog-top"><div><b>Seu progresso no treinamento</b><br><span>${concluidos} de ${total} módulos concluídos · ${pct}%</span></div>${acao?`<div class="prog-acoes">${acao}</div>`:''}</div><div class="prog-bar"><i style="width:${pct}%"></i></div><p class="prog-msg">${msg}</p>`;
   el.classList.add('show');
   const b1=document.getElementById('btnEmitirCert'); if(b1) b1.addEventListener('click',abrirCertificado);
   const b2=document.getElementById('btnVerCert'); if(b2) b2.addEventListener('click',()=>{location.href='certificado.html?c='+encodeURIComponent(certificado);});
@@ -1043,6 +1055,7 @@ function mostrarParabens(c,nota){
     ${tudo?`<p><b>Você concluiu todo o Treinamento de ${escapeHtml(areaAtualNome||'Estoque')}!</b><br>Seu certificado com a carga horária já está liberado.</p>`:(R.total?`<p class="sub">Faltam ${R.total-R.concluidos} módulo(s) para o seu certificado.</p>`:'')}
     <div class="acoes">
       ${tudo?(R.certificado?'<button class="cert-btn" id="pbCert">🎓 Ver / imprimir meu certificado</button>':'<button class="cert-btn" id="pbCert">🎓 Emitir meu certificado</button>'):''}
+      ${APOSTILA_AREAS.includes(areaAtual||'estoque')?`<a class="btn-sec apostila-cta" href="${apostilaUrl(tudo?null:c.id)}">📘 ${tudo?'Abrir a apostila completa':'Abrir a apostila deste módulo'}</a>`:''}
       <button class="quiz-submit" id="pbAvaliar">Dar minha opinião sobre o módulo</button>
       <button class="btn-sec" id="pbFechar">${tudo?'Fechar':'Continuar para o próximo módulo'}</button>
     </div>`;

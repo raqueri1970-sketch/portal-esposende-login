@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apostila — Operações de Estoque — Esposende</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="apostila/conteudo.js?v=1"></script>
+<style>
+  /* Apostila de apoio às videoaulas. Tela: páginas A4 sobre fundo escuro. Impressão: A4 retrato. */
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#2b3345;font-family:Arial,"Liberation Sans",Helvetica,sans-serif;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .barra{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:10px 12px;background:#0a0f1e;border-bottom:1px solid #232d4a}
+  .barra button,.barra a{font:800 13px Arial,sans-serif;border-radius:9px;padding:10px 14px;cursor:pointer;text-decoration:none;border:1px solid #2aa7ff;background:#0c2948;color:#fff}
+  .barra .pri{background:#facc15;border-color:#facc15;color:#1a1300}
+  .barra select{font:700 13px Arial,sans-serif;border-radius:9px;padding:9px 10px;background:#0c2948;color:#fff;border:1px solid #2aa7ff;max-width:100%}
+  .barra span{color:#93a0bf;font:700 12px Arial,sans-serif;flex-basis:100%;text-align:center}
+  #estado{color:#eef1f8;font:700 15px Arial,sans-serif;text-align:center;padding:60px 20px;line-height:1.6}
+  #estado a{color:#38bdf8}
+  #doc{padding:16px 16px 48px}
+
+  .pagina{width:210mm;min-height:297mm;margin:0 auto 18px;background:#fff;box-shadow:0 10px 40px #0008;padding:16mm 15mm 18mm;position:relative}
+  .rodape{position:absolute;left:15mm;right:15mm;bottom:8mm;display:flex;justify-content:space-between;font-size:8pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:2mm}
+
+  /* capa */
+  .capa{display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(160deg,#0a1a3a 0%,#0c2948 55%,#123a66 100%);color:#fff}
+  .capa .logo{width:34mm;height:34mm;border-radius:50%;object-fit:cover;background:#fff}
+  .capa .kicker{font:800 11pt Arial;letter-spacing:2px;text-transform:uppercase;color:#facc15;margin:18mm 0 4mm}
+  .capa h1{font:900 34pt/1.05 Arial;margin:0 0 6mm}
+  .capa .sub{font:400 13pt/1.5 Arial;color:#cbd5e1;max-width:150mm}
+  .capa ol{margin:10mm 0 0;padding:0;list-style:none;display:grid;gap:3mm}
+  .capa ol li{display:flex;align-items:center;gap:4mm;font:700 12pt Arial}
+  .capa ol li i{width:9mm;height:9mm;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:900 11pt Arial;color:#0a1a3a;font-style:normal}
+  .capa .pe{font:400 9.5pt/1.5 Arial;color:#93a0bf;border-top:1px solid #ffffff22;padding-top:4mm}
+  .capa .pe b{color:#fff}
+
+  /* como usar + sumário */
+  h2.sec{font:900 18pt Arial;margin:0 0 4mm;color:#0c2948}
+  .guia p,.guia li{font-size:10.5pt;line-height:1.55}
+  .guia ul{padding-left:5mm}
+  .sumario{width:100%;border-collapse:collapse;margin-top:6mm;font-size:10.5pt}
+  .sumario td{padding:3mm 2mm;border-bottom:1px solid #e2e8f0}
+  .sumario td.n{width:10mm;font-weight:900}
+  .sumario td.d{width:24mm;text-align:right;color:#64748b}
+  .sumario a{color:#0c2948;text-decoration:none;font-weight:700}
+  .sumario .bloq{color:#94a3b8}
+
+  /* abertura de capítulo */
+  .cap-topo{border-radius:4mm;padding:7mm 8mm;color:#fff;margin-bottom:6mm;background:var(--c)}
+  .cap-topo .num{font:800 10pt Arial;letter-spacing:1.6px;text-transform:uppercase;opacity:.9}
+  .cap-topo h2{font:900 24pt/1.1 Arial;margin:1.5mm 0 2mm}
+  .cap-topo .meta{font:700 10pt Arial;opacity:.92}
+  .cap-topo{background:linear-gradient(135deg,#0c2948 0%,#0c2948 45%,var(--c) 140%)}
+  .bloco{margin:0 0 5mm}
+  .bloco h3{font:900 12.5pt Arial;margin:0 0 2mm;color:#0c2948;display:flex;align-items:center;gap:2mm}
+  .bloco p,.bloco li{font-size:10.5pt;line-height:1.55;margin:0 0 1.5mm}
+  .bloco ul{margin:0;padding-left:5mm}
+  .atencao,.check,.objetivo{break-inside:avoid;page-break-inside:avoid}
+  .bloco h3{break-after:avoid;page-break-after:avoid}
+  .objetivo{border-left:1.2mm solid var(--c);background:#f8fafc;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0}
+  .telas{display:grid;grid-template-columns:1fr 1fr;gap:2mm 6mm}
+
+  /* passos */
+  .passo{break-inside:avoid;page-break-inside:avoid;margin:0 0 6mm;border:1px solid #e2e8f0;border-radius:3mm;overflow:hidden}
+  .passo-cab{display:flex;align-items:flex-start;gap:3.5mm;padding:3.5mm 4mm 2.5mm}
+  .passo-n{flex:0 0 auto;width:9mm;height:9mm;border-radius:50%;background:var(--c);color:#fff;font:900 12pt Arial;display:flex;align-items:center;justify-content:center}
+  .passo-txt{flex:1}
+  .passo-txt h4{font:900 11.5pt Arial;margin:1mm 0 1mm;color:#0f172a}
+  .passo-txt p{font-size:10.2pt;line-height:1.5;margin:0 0 1mm;color:#334155}
+  .passo-txt p b{color:#0f172a}
+  .tempo{flex:0 0 auto;font:800 8.5pt Arial;color:#0c2948;background:#e0f2fe;border-radius:99px;padding:1.2mm 2.6mm;white-space:nowrap;margin-top:1mm}
+  .prints{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:3mm;margin:0 4mm 4mm;align-items:start;justify-items:center}
+  .prints.fotos{max-width:calc(var(--n) * 44mm);margin-left:auto;margin-right:auto}
+  .print{position:relative;border:1px solid #cbd5e1;border-radius:2mm;overflow:hidden;background:#0f172a;width:fit-content;max-width:100%;line-height:0}
+  .print img{display:block;max-width:100%;width:auto;height:auto;max-height:118mm}
+  .prints[style*="--n:1"] .print img{max-height:92mm}
+  .print .hl{position:absolute;border:0.7mm solid #ef4444;border-radius:1.2mm;box-shadow:0 0 0 0.5mm rgba(255,255,255,.85)}
+  .print .hl b{position:absolute;top:-4.6mm;left:-0.7mm;background:#ef4444;color:#fff;font:900 7.5pt/1.2 Arial;padding:.5mm 1.4mm;border-radius:1mm;white-space:nowrap}
+  .print .hl.baixo b{top:auto;bottom:-4.6mm}
+  .dica{margin:0 4mm 4mm;font-size:9.6pt;line-height:1.45;background:#fefce8;border:1px solid #fde68a;border-radius:2mm;padding:2.5mm 3.5mm;color:#713f12}
+
+  /* atenção + checklist */
+  .atencao{background:#fef2f2;border:1px solid #fecaca;border-radius:3mm;padding:4mm 5mm}
+  .atencao h3{color:#b91c1c}
+  .atencao li{color:#7f1d1d}
+  .check{border:1px solid #cbd5e1;border-radius:3mm;padding:4mm 5mm}
+  .check ul{list-style:none;padding:0}
+  .check li{display:flex;gap:3mm;align-items:flex-start;padding:1.6mm 0;border-bottom:1px dashed #e2e8f0}
+  .check li:last-child{border-bottom:0}
+  .check li:before{content:"";flex:0 0 auto;width:4.2mm;height:4.2mm;border:0.45mm solid #0c2948;border-radius:1mm;margin-top:.4mm}
+  .rever{font-size:9.5pt;color:#64748b;margin-top:3mm}
+
+  .fim{text-align:center;display:flex;flex-direction:column;justify-content:center}
+  .fim h2{font:900 22pt Arial;color:#0c2948;margin:0 0 4mm}
+  .fim p{font-size:11pt;line-height:1.6;color:#334155;max-width:150mm;margin:0 auto 3mm}
+
+  .bloqueado{max-width:560px;margin:24px auto;background:#0f1730;border:1px solid #232d4a;border-radius:14px;color:#cbd5e1;padding:18px 20px;font:700 14px/1.55 Arial}
+  .bloqueado b{color:#fff}
+  .bloqueado ul{margin:8px 0 0;padding-left:18px}
+
+  @media (max-width:840px){
+    #doc{padding:10px 0 40px}
+    .pagina{width:auto;min-height:0;margin:0 8px 12px;padding:18px 16px 40px}
+    .rodape{left:16px;right:16px;bottom:10px}
+    .capa h1{font-size:26pt}
+    .telas{grid-template-columns:1fr}
+    .cap-topo h2{font-size:19pt}
+  }
+  @page{size:A4 portrait;margin:12mm 0 12mm}
+  @page:first{margin:0}
+  @media print{
+    body{background:#fff}
+    .barra,#estado,.bloqueado{display:none!important}
+    #doc{padding:0}
+    .pagina{box-shadow:none;margin:0;width:210mm;min-height:273mm;padding-top:4mm;page-break-after:always;break-after:page}
+    .pagina.capa{min-height:297mm;padding-top:16mm}
+    .pagina .rodape{display:none}
+    .pagina:last-child{page-break-after:auto;break-after:auto}
+    .pagina.fluxo{min-height:0}
+  }
+</style>
+</head>
+<body>
+<div class="barra" id="barra" style="display:none">
+  <button class="pri" id="btImp">🖨️ Imprimir / salvar PDF</button>
+  <select id="selCap" aria-label="Ir para o capítulo"></select>
+  <a href="./?area=estoque">← Voltar ao treinamento</a>
+  <span id="barraInfo"></span>
+</div>
+<div id="estado">Carregando apostila…</div>
+<div id="doc"></div>
+
+<script>
+const SUPA_URL='https://rdztzurfesnobfkazgpm.supabase.co';
+const SUPA_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
+const sb=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPA_URL,SUPA_KEY):null;
+const AP=window.APOSTILA;
+const AP_VERSAO='1';
+const qs=new URLSearchParams(location.search);
+const MOD=(qs.get('modulo')||'').trim();
+const estado=document.getElementById('estado');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const dig=s=>String(s||'').replace(/\D/g,'');
+// Texto dos passos aceita **negrito**; o restante é escapado.
+const fmt=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+function segParaTempo(s){s=Math.max(0,Math.round(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+
+async function rpc(nome,params){
+  const r=await fetch(`${SUPA_URL}/rest/v1/rpc/${nome}`,{method:'POST',headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(params)});
+  const t=await r.json().catch(()=>null); if(!r.ok) throw new Error((t&&t.message)||'Falha'); return t;
+}
+async function ehAdmin(){
+  if(!sb) return false;
+  try{ const {data:{session}}=await sb.auth.getSession(); if(!session) return false; const {data}=await sb.rpc('portal_is_admin'); return data===true; }catch(e){ return false; }
+}
+function identidade(){ try{ return JSON.parse(localStorage.getItem('curso_identidade_v2')||'null'); }catch(e){ return null; } }
+
+// Quais capítulos a pessoa pode ver: cada módulo aprovado libera o seu capítulo;
+// todos aprovados (certificado liberado) liberam a apostila completa.
+async function liberacao(){
+  if(await ehAdmin()) return {admin:true,ok:new Set(AP.modulos.map(m=>m.id)),completa:true,nome:'Administrador'};
+  const id=identidade();
+  if(!id||!id.cpf) return null;
+  const rows=await rpc('curso_progresso',{p_cpf:dig(id.cpf),p_area_id:AP.area_id});
+  const ok=new Set((rows||[]).filter(r=>r.aprovado).map(r=>r.modulo_id));
+  const completa=AP.modulos.every(m=>ok.has(m.id));
+  return {admin:false,ok,completa,nome:id.nome||''};
+}
+
+function rodape(txt){return `<div class="rodape"><span>Esposende Calçados · Apostila ${esc(AP.area_nome)}</span><span>${esc(txt||'')}</span></div>`;}
+
+function htmlCapa(lib){
+  return `<section class="pagina capa" id="capa">
+    <div>
+      <img class="logo" src="apostila/logo.jpg" alt="Esposende">
+      <p class="kicker">Central de Treinamento · Material de apoio</p>
+      <h1>Apostila<br>${esc(AP.area_nome)}</h1>
+      <p class="sub">Passo a passo ilustrado de cada videoaula, para consultar no dia a dia da loja depois do treinamento.</p>
+      <ol>${AP.modulos.map(m=>`<li><i style="background:${m.accent}">${m.ordem}</i>${esc(m.nome)}</li>`).join('')}</ol>
+    </div>
+    <div class="pe">${lib&&lib.nome&&!lib.admin?`Material de <b>${esc(lib.nome)}</b> · `:''}Esposende Calçados · Auditoria Interna<br>Uso interno. Os prints foram tirados das videoaulas do treinamento; em caso de dúvida, reveja o vídeo no minuto indicado em cada passo.</div>
+  </section>`;
+}
+
+function htmlGuia(lib){
+  return `<section class="pagina guia" id="sumario">
+    <h2 class="sec">Como usar esta apostila</h2>
+    <ul>
+      <li>Cada capítulo corresponde a um módulo do treinamento, na mesma ordem das videoaulas.</li>
+      <li>Os passos estão numerados na ordem em que são feitos no sistema. O <b>quadro vermelho</b> no print mostra onde clicar ou o que conferir.</li>
+      <li>O selo <b>▶ mm:ss</b> indica o minuto do vídeo em que o passo aparece. Na dúvida, volte ao vídeo nesse ponto.</li>
+      <li>No fim de cada capítulo há os <b>pontos de atenção</b> (o que a Auditoria confere) e um <b>checklist</b> para imprimir e usar na rotina.</li>
+    </ul>
+    <h2 class="sec" style="margin-top:9mm">Sumário</h2>
+    <table class="sumario">${AP.modulos.map(m=>{
+      const ok=lib.ok.has(m.id);
+      return `<tr><td class="n" style="color:${m.accent}">${m.ordem}</td><td>${ok?`<a href="#cap-${m.id}">${esc(m.nome)}</a>`:`<span class="bloq">🔒 ${esc(m.nome)} — conclua o módulo para liberar</span>`}</td><td class="d">vídeo ${esc(m.duracao)}</td></tr>`;
+    }).join('')}</table>
+    ${rodape('Sumário')}
+  </section>`;
+}
+
+function htmlPrint(m,im,i,k){
+  const hls=(im.destaques||[]).map(h=>`<div class="hl${h.y<12?' baixo':''}" style="left:${h.x}%;top:${h.y}%;width:${h.w}%;height:${h.h}%">${h.rotulo?`<b>${esc(h.rotulo)}</b>`:''}</div>`).join('');
+  return `<div class="print${im.retrato?' retrato':''}"><img src="apostila/${m.id}/${im.arq}?v=${AP_VERSAO}" alt="Passo ${i+1}, imagem ${k+1}" loading="lazy">${hls}</div>`;
+}
+function htmlPasso(m,p,i){
+  const imgs=p.imgs||[];
+  const n=Math.min(imgs.length,4), retrato=imgs.length&&imgs.every(x=>x.retrato);
+  return `<div class="passo">
+    <div class="passo-cab">
+      <div class="passo-n">${i+1}</div>
+      <div class="passo-txt"><h4>${fmt(p.titulo)}</h4>${(Array.isArray(p.texto)?p.texto:[p.texto]).map(t=>`<p>${fmt(t)}</p>`).join('')}</div>
+      <div class="tempo" title="Minuto da videoaula">▶ ${segParaTempo(p.t)}</div>
+    </div>
+    ${imgs.length?`<div class="prints${retrato?' fotos':''}" style="--n:${retrato?Math.max(n,2):n}">${imgs.map((im,k)=>htmlPrint(m,im,i,k)).join('')}</div>`:''}
+    ${p.dica?`<div class="dica">💡 ${fmt(p.dica)}</div>`:''}
+  </div>`;
+}
+
+function htmlCapitulo(m){
+  const cab=`<div class="cap-topo" style="--c:${m.accent}">
+      <div class="num">Módulo ${m.ordem} de ${AP.modulos.length}</div>
+      <h2>${esc(m.nome)}</h2>
+      <div class="meta">Videoaula de ${esc(m.duracao)} · ${m.passos.length} passos</div>
+    </div>`;
+  return `<section class="pagina fluxo" id="cap-${m.id}" style="--c:${m.accent}">
+    ${cab}
+    <div class="bloco objetivo"><h3>🎯 Objetivo</h3><p>${fmt(m.objetivo)}</p></div>
+    ${m.quando&&m.quando.length?`<div class="bloco"><h3>📌 Quando usar</h3><ul>${m.quando.map(x=>`<li>${fmt(x)}</li>`).join('')}</ul></div>`:''}
+    ${m.antes&&m.antes.length?`<div class="bloco"><h3>🧰 Antes de começar</h3><ul>${m.antes.map(x=>`<li>${fmt(x)}</li>`).join('')}</ul></div>`:''}
+    <div class="bloco"><h3>🪜 Passo a passo</h3></div>
+    ${m.passos.map((p,i)=>htmlPasso(m,p,i)).join('')}
+    <div class="bloco atencao"><h3>⚠️ Pontos de atenção</h3><ul>${m.atencao.map(x=>`<li>${fmt(x)}</li>`).join('')}</ul></div>
+    <div class="bloco check"><h3>✅ Checklist — ${esc(m.nome)}</h3><ul>${m.checklist.map(x=>`<li><span>${fmt(x)}</span></li>`).join('')}</ul>
+      <p class="rever">Ficou alguma dúvida? Reveja a videoaula “${esc(m.nome)}” na Central de Treinamento.</p></div>
+  </section>`;
+}
+
+function htmlFim(lib){
+  return `<section class="pagina fim" id="fim">
+    <img src="apostila/logo.jpg" alt="Esposende" style="width:26mm;height:26mm;border-radius:50%;margin:0 auto 6mm">
+    <h2>Parabéns por concluir o treinamento!</h2>
+    <p>Esta apostila acompanha o seu certificado do Treinamento de ${esc(AP.area_nome)}. Guarde-a por perto: ela resume, passo a passo, tudo o que foi mostrado nas videoaulas.</p>
+    <p>Os procedimentos são conferidos pela Auditoria Interna. Seguir cada passo evita divergência de estoque, nota fiscal pendente e retrabalho entre loja e CD.</p>
+    ${rodape('Encerramento')}
+  </section>`;
+}
+
+function montar(lib){
+  const doc=document.getElementById('doc');
+  const sel=document.getElementById('selCap');
+  let lista=AP.modulos.filter(m=>lib.ok.has(m.id));
+  let partes=[];
+  if(MOD){
+    const m=AP.modulos.find(x=>x.id===MOD);
+    if(!m){ estado.textContent='Capítulo não encontrado.'; return; }
+    if(!lib.ok.has(m.id)){ estado.innerHTML=`🔒 O capítulo <b>${esc(m.nome)}</b> é liberado quando você conclui o módulo (vídeo completo + avaliação).<br><a href="./?area=${esc(AP.area_id)}">Voltar ao treinamento</a>`; return; }
+    partes.push(htmlCapitulo(m));
+    document.title=`Apostila — ${m.nome} — Esposende`;
+    document.getElementById('barraInfo').textContent=`Capítulo ${m.ordem} · ${m.nome}`+(lib.completa?' · a apostila completa também está liberada':'');
+    sel.innerHTML=`<option value="">Capítulo ${m.ordem} · ${esc(m.nome)}</option>`+(lib.completa?`<option value="*">📘 Abrir a apostila completa</option>`:'');
+  }else{
+    if(!lista.length){ estado.innerHTML=`🔒 A apostila é liberada conforme você conclui os módulos do treinamento.<br>Conclua o primeiro módulo (vídeo completo + avaliação) para liberar o capítulo 1.<br><a href="./?area=${esc(AP.area_id)}">Voltar ao treinamento</a>`; return; }
+    partes.push(htmlCapa(lib),htmlGuia(lib));
+    lista.forEach(m=>partes.push(htmlCapitulo(m)));
+    if(lib.completa) partes.push(htmlFim(lib));
+    document.getElementById('barraInfo').textContent=lib.completa?(lib.admin?'Visão do administrador · apostila completa':'Apostila completa · liberada com o certificado'):`${lista.length} de ${AP.modulos.length} capítulos liberados · a apostila completa sai junto com o certificado`;
+    sel.innerHTML='<option value="">Ir para o capítulo…</option>'+lista.map(m=>`<option value="#cap-${m.id}">${m.ordem}. ${esc(m.nome)}</option>`).join('');
+  }
+  doc.innerHTML=partes.join('');
+  if(!MOD && !lib.completa){
+    const falta=AP.modulos.filter(m=>!lib.ok.has(m.id));
+    doc.insertAdjacentHTML('afterbegin',`<div class="bloqueado">📘 Você já liberou <b>${lista.length} de ${AP.modulos.length}</b> capítulos. Faltam:<ul>${falta.map(m=>`<li>${m.ordem}. ${esc(m.nome)}</li>`).join('')}</ul></div>`);
+  }
+  sel.onchange=()=>{
+    const v=sel.value; if(!v) return;
+    if(v==='*'){ location.href='apostila.html'; return; }
+    const el=document.querySelector(v); if(el) el.scrollIntoView({behavior:'smooth'}); sel.value='';
+  };
+  estado.style.display='none';
+  document.getElementById('barra').style.display='flex';
+  if(location.hash){ const el=document.querySelector(location.hash); if(el) setTimeout(()=>el.scrollIntoView(),50); }
+}
+
+document.getElementById('btImp').onclick=()=>{
+  // Garante que todos os prints estejam carregados antes de abrir a impressão.
+  const imgs=[...document.querySelectorAll('#doc img')];
+  imgs.forEach(i=>i.loading='eager');
+  Promise.all(imgs.map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r;}))).then(()=>window.print());
+};
+
+(async function(){
+  if(!AP){ estado.textContent='Conteúdo da apostila indisponível.'; return; }
+  let lib=null;
+  try{ lib=await liberacao(); }catch(e){ estado.textContent='Não foi possível verificar o seu progresso: '+e.message; return; }
+  if(!lib){ estado.innerHTML=`Para abrir a apostila, entre primeiro na Central de Treinamento com a sua loja, nome e CPF.<br><a href="./?area=estoque">Ir para o treinamento</a>`; return; }
+  montar(lib);
+})();
+</script>
+</body>
+</html>
