@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mod: [recebimento, notas-fiscais, fazer-etiquetas, fechamento-de-volumes, defeito, remanejo]
+        mod: [fazer-etiquetas]
     steps:
       - name: Dependencias
         run: |
@@ -30,6 +30,7 @@ jobs:
           ffprobe -v error -show_format -show_streams -of json v.mp4 > out/${{ matrix.mod }}.probe.json
       - name: Copia leve para prints
         run: |
+          ffmpeg -v error -i v.mp4 -af volumedetect -f null - 2>&1 | grep -E "mean_volume|max_volume" | tee out/${{ matrix.mod }}.volume.txt || true
           for crf in 24 30 36; do
             ffmpeg -v error -y -i v.mp4 -an -vf "fps=2,scale='min(1920,iw)':-2" -c:v libx264 -preset slow -crf $crf -pix_fmt yuv420p out/${{ matrix.mod }}.2fps.mp4
             [ $(stat -c%s out/${{ matrix.mod }}.2fps.mp4) -lt 90000000 ] && break
@@ -37,14 +38,14 @@ jobs:
           ls -la out
       - name: Transcrever narracao
         run: |
-          ffmpeg -v error -i v.mp4 -ac 1 -ar 16000 -af "loudnorm" -f f32le a.raw
+          ffmpeg -v error -i v.mp4 -ac 1 -ar 16000 -af "volume=30dB,alimiter=limit=0.9,loudnorm" -f f32le a.raw
           python - <<'PY'
           import json
           import numpy as np
           from faster_whisper import WhisperModel
           audio = np.fromfile("a.raw", dtype=np.float32)
           m = WhisperModel("medium", device="cpu", compute_type="int8")
-          segs, info = m.transcribe(audio, language="pt", beam_size=5, vad_filter=True)
+          segs, info = m.transcribe(audio, language="pt", beam_size=5, vad_filter=False)
           out = [{"start": round(s.start, 2), "end": round(s.end, 2), "text": s.text.strip()} for s in segs]
           json.dump(out, open("out/${{ matrix.mod }}.transcricao.json", "w"), ensure_ascii=False, indent=1)
           with open("out/${{ matrix.mod }}.transcricao.txt", "w") as f:
