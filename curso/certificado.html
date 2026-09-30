@@ -22,7 +22,7 @@
   #estado{color:#eef1f8;font:700 15px Arial,sans-serif;text-align:center;padding:60px 20px;line-height:1.5}
   #estado input{font:700 16px Arial;padding:10px 12px;border-radius:8px;border:1px solid #93a0bf;width:220px;margin:10px 6px 0 0}
   #estado button{font:800 14px Arial;padding:10px 16px;border-radius:8px;border:0;background:#38bdf8;cursor:pointer}
-  .palco{padding:16px 0 40px;display:flex;flex-direction:column;align-items:center;gap:18px}
+  .palco{padding:16px 0 40px;display:block;overflow:hidden}
   .escala{transform-origin:top left}
   .pagina{position:relative;width:297mm;height:205.6mm;background:#fff;overflow:hidden;box-shadow:0 10px 40px #0008}
   .pagina + .pagina{margin-top:18px}
@@ -66,12 +66,17 @@
   .v-inst{position:absolute;left:0;right:0;top:121mm}
   .v-inst h5{font-size:8.6pt}
 
+  .festa{display:none;width:calc(100% - 24px);max-width:980px;margin:14px auto 0;padding:18px 20px;border-radius:14px;background:linear-gradient(135deg,#14532d,#166534 55%,#15803d);color:#fff;text-align:center;box-shadow:0 10px 30px #0006}
+  .festa.show{display:block}
+  .festa .t{font:900 24px Arial,sans-serif;margin:4px 0 6px}
+  .festa .s{font:700 14.5px Arial,sans-serif;line-height:1.5;color:#dcfce7}
+  .festa .e{font-size:40px;line-height:1}
   @page{size:A4 landscape;margin:0}
   @media print{
     body{background:#fff}
-    .barra,#estado{display:none!important}
+    .barra,#estado,.festa{display:none!important}
     .palco{padding:0;gap:0;display:block}
-    .escala{transform:none!important;width:auto!important;height:auto!important}
+    .escala{transform:none!important;width:auto!important;height:auto!important;margin-left:0!important}
     .pagina{box-shadow:none;page-break-after:always;break-after:page;margin:0!important}
     .pagina:last-child{page-break-after:auto;break-after:auto}
   }
@@ -84,6 +89,7 @@
   <a id="btVoltar" href="./?area=estoque">← Voltar ao treinamento</a>
   <span id="barraInfo"></span>
 </div>
+<div class="festa" id="festa"></div>
 <div id="estado">Carregando certificado…</div>
 <div class="palco" id="palco" style="display:none"><div class="escala" id="escala"></div></div>
 
@@ -177,9 +183,13 @@ function montar(d){
     </div>
   </div>`;
   document.getElementById('escala').innerHTML=frente+verso;
+  const pn=String(d.nome||'').trim().split(/\s+/)[0]||''; const primeiro=pn.charAt(0)+pn.slice(1).toLowerCase();
+  const fe=document.getElementById('festa');
+  fe.innerHTML=`<div class="e">🏆🎓</div><div class="t">Parabéns, ${esc(primeiro)}!</div><div class="s">Você concluiu os ${mods.length} módulos do <b>${esc(nomeTreinamento(d.area_nome))}</b> da Esposende Calçados, com carga horária de <b>${esc(carga(d.carga_min))}</b>.<br>Este é o seu certificado, assinado por você. Toque em <b>“Baixar PDF”</b> para guardar.</div>`;
+  fe.classList.add('show');
   try{ new QRCode(document.getElementById('qr'),{text:validar,width:180,height:180,correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
   estado.style.display='none';
-  document.getElementById('palco').style.display='flex';
+  document.getElementById('palco').style.display='block';
   document.getElementById('barra').style.display='flex';
   document.getElementById('barraInfo').textContent=(d.valido===false?'⚠️ CERTIFICADO REVOGADO · ':'')+'Certificado '+d.codigo+' · emitido em '+fmtDH(d.emitido_em);
   document.title='Certificado '+d.nome+' — Esposende';
@@ -191,7 +201,7 @@ function ajustarEscala(){
   const e=document.getElementById('escala'); const pg=e.querySelector('.pagina'); if(!pg) return;
   const larg=pg.offsetWidth, alt=e.scrollHeight;
   const s=Math.min(1,(window.innerWidth-24)/larg);
-  e.style.transform=`scale(${s})`; e.style.width=larg+'px';
+  e.style.transform=`scale(${s})`; e.style.width=larg+'px'; e.style.marginLeft=Math.max(0,(window.innerWidth-larg*s)/2)+'px';
   e.parentElement.style.height=(alt*s+60)+'px';
 }
 
