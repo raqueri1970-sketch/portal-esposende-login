@@ -1,0 +1,379 @@
+[00:00] lá pessoal o módulo de recebimento quando chega o volume na loja de vocês
+[00:05] e aí vocês vão receber esses produtos que chegou do caminhão
+[00:08] como é que a gente faz quando vocês abrirem o bta de vocês vão se deparar com essa tela aqui
+[00:13] e aí como é que a gente faz a gente vai receber a expedição
+[00:16] a gente vai vir aqui nessa parte de expedição clica aqui
+[00:20] e aqui tem outra telinha com parte de receber como é que eu faço para receber
+[00:24] clico aqui em receber ele vai abrir essa tela aqui e eu tenho que pipar a expedição
+[00:29] antes da comunidade no recebimento dos produtos
+[00:34] qual é a expedição? a expedição é esse aqui
+[00:36] é esse papelzinho que vocês vão estar na mão na hora que vocês estiverem recebendo
+[00:40] a mercadoria de vocês
+[00:43] e o que é que eu faço com esse papel? eu vou pipar aqui
+[00:46] aqui está a numeração da expedição e aqui está esse código aqui que é onde vocês vão pipar
+[00:51] para abrir lá
+[00:52] a quantidade de volume que vocês estão vendo aqui, todos os volumes
+[00:56] aqui quantidade, quantidade de intas, a nota que eu vou abrir só vai ter um volume só
+[01:00] para vocês terem uma noção de como é que funciona
+[01:02] mas geralmente as notas vêm assim
+[01:03] aqui vai estar a origem que é do cd para longe de vocês
+[01:06] ou também pode ser remanejo
+[01:08] e remanejo é o mesmo procedimento, vai vir essa mesma tela aqui
+[01:12] mas pode ser diferente a questão dos volumes dentro da caixa
+[01:16] deixa eu mostrar a vocês
+[01:18] aí vai vir aqui vocês vão pipar
+[01:21] a expedição, para conservar a expedição
+[01:25] ele vai abrir aqui a quantidade de volume que existe dentro dessa expedição
+[01:29] é o que eu faço
+[01:30] aqui vai estar vários, como eu disse vocês vão abrir só com um
+[01:33] ele vai estar aqui vermelho
+[01:34] mas vai ter vários aqui do lado dele em vermelho
+[01:37] ah, qual é esse volume aqui, onde é que eu acho?
+[01:40] você vai achar na caixa que vai chegar na sua loja
+[01:45] a foto estou aqui, é esse tipo de etiqueta aqui
+[01:50] ela tem outras cores, ela tem a amarela também
+[01:53] e vocês podem pipar, para que saia aqui vai estar a numeração
+[01:57] como vocês podem ver ao final 340
+[01:59] e se eu vim aqui, ele vai estar aqui também
+[02:02] deixa eu fechar aqui
+[02:03] ele vai estar aqui também, 340
+[02:05] aí você vai olhar todos, separar
+[02:07] e pipar um a um para poder fazer o recebimento
+[02:10] como é que eu faço?
+[02:11] quando eu pipar esse volume
+[02:13] ele vai abrir para mim os produtos que tem dentro dessa caixa
+[02:17] pipei aqui, essa nota ela é de democrata
+[02:20] deixa eu abrir aqui
+[02:21] só democrata, como vocês podem ver
+[02:22] 37, 38, 39, tem vários tamanhos
+[02:25] aqui tem a quantidade
+[02:27] que é para ter dentro da caixa que você recebeu
+[02:29] e aqui tem a quantidade lida que é a quantidade que você vai pipar
+[02:32] então isso tem que bater
+[02:33] na hora que você pipar dentro da caixa
+[02:34] ele tem que bater a quantidade aqui
+[02:35] e a quantidade desse lado aqui também
+[02:37] aqui a diferença é para vocês terem o controle
+[02:39] se está tudo batendo certo
+[02:41] o que é que eu vou fazer?
+[02:42] eu vou pipar todos os democratas agora
+[02:44] para você ver que vai dar tudo ok
+[02:46] os tamanhos tudo certo
+[02:56] pode ver que aqui ele mostrou que deu um ok
+[02:59] e aqui eu vou receber o total
+[03:02] aqui deu tudo ok
+[03:04] mas pode acontecer também de dar erro
+[03:06] e aí como é que eu faço se caso não ir?
+[03:07] deixa eu mostrar a vocês
+[03:09] aqui a gente está aqui na parte de adicionar
+[03:11] mas se eu vim e der um F7
+[03:13] ele vai ficar em retirar
+[03:14] eu vou retirar o tamanho 40
+[03:15] ele deu esse erro aqui
+[03:17] mas eu vou tirar o tamanho 40
+[03:18] aqui vocês podem ver
+[03:20] que eu tirei o tamanho 40
+[03:21] ele está menos 1
+[03:22] e vou adicionar um tamanho 41 a mais
+[03:28] vou adicionar um tamanho 41 a mais
+[03:30] vocês podem ver que aqui já está diferente
+[03:32] a quantidade que era para ter
+[03:33] dentro da caixa que eu vou receber é 2
+[03:36] só que a quantidade que eu li é 3
+[03:39] então antes de fazer todo o procedimento
+[03:41] eu tenho que conferir se minha caixa está tudo ok
+[03:44] eu não posso implementar
+[03:45] deu errado, eu vou gerar aqui a falta
+[03:47] o erro aqui que é o motivo
+[03:48] que eu vou mostrar a vocês
+[03:49] e fechar, eu não posso fazer isso
+[03:51] eu tenho que primeiro identificar
+[03:52] se realmente foi isso que aconteceu
+[03:54] eu posso pipar um a mais
+[03:55] eu posso fazer um erro
+[03:55] e aí eu não vou conseguir identificar
+[03:59] se realmente aconteceu um erro
+[04:00] então eu tenho que parar, olhar direitinho
+[04:02] tudo
+[04:02] como vocês têm esse sistema de poder retirar
+[04:05] o produto caso você pipou errado
+[04:07] você consegue retirar e colocar o que você não pipou
+[04:10] então isso é muito importante
+[04:12] e aqui é sobre a parte de motivo
+[04:15] aqui esse produto
+[04:17] esse volume
+[04:19] veio tudo certinho aí, democrata
+[04:21] eu tive esse erro aqui e o sistema vai ajustar
+[04:23] porque não veio 40 e veio 41
+[04:26] e aí o sistema vai ajustar no estoque de vocês
+[04:29] que o tamanho não veio e ajusta com o outro
+[04:32] aí eu vou colocar aqui
+[04:33] que esse produto como está menos 1 aqui
+[04:36] ele é uma falta
+[04:37] eu vou gerar aqui como falta
+[04:38] então esse produto faltou
+[04:40] e esse aqui está vermelho mas está 1
+[04:42] é porque é um produto a mais, é uma sobra
+[04:45] e aí eu venho e coloco sobra
+[04:47] pronto, aqui eu fiz ok
+[04:49] mas vamos ver outro cenário
+[04:50] vamos dizer que dentro desse volume
+[04:52] isso aqui é um remanejo
+[04:53] e aí dentro desse remanejo chegou um produto a mais
+[04:57] ele vai mostrar aqui
+[04:57] quando você pipar o produto que veio a mais dentro da caixa
+[05:00] que isso vai acontecer algumas vezes
+[05:02] que é que vai mostrar
+[05:03] não é permitido digitar cadê bp leitor do código de bp
+[05:09] ele foi um erro
+[05:10] mas vamos dizer, vou pipar aqui
+[05:11] ele vai gerar aqui o erro
+[05:13] o erro é esse aqui
+[05:14] o produto não deveria estar no volume
+[05:16] esse produto ele não deveria estar dentro dessa caixa
+[05:19] então ele é um intruso
+[05:20] o que aconteceu?
+[05:21] veio um produto a mais pra vocês
+[05:23] e o que que eu faço?
+[05:24] eu dou ok
+[05:25] então se atendem a isso
+[05:27] porque tipo se eu pipar
+[05:28] como eu vi que aqui dá alguns erros
+[05:29] quando eu faço uma mudança aqui
+[05:31] aí ele mostra que não pode digitar
+[05:33] porque vocês não conseguem digitar o código de bp
+[05:35] vocês têm que pipar
+[05:36] então se atendem a isso também
+[05:38] mas ele deu esse erro aqui
+[05:39] que o produto não deveria estar no volume
+[05:41] o que que eu faço?
+[05:41] eu não vou continuar pipando
+[05:43] se eu pipar outro produto
+[05:44] ele vai fechar essa tela
+[05:45] e aquele produto que eu pipei
+[05:46] ele não vai computar
+[05:47] então aí vai gerar dois erros
+[05:49] então o que você faz?
+[05:50] você vem no ok
+[05:51] e aí ele vai aparecer com um intruso aqui embaixo
+[05:53] esse produto não era pra estar no volume
+[05:55] aqui é um outro tipo de democrata
+[05:57] e aí o que que eu faço?
+[05:58] vou me identificar
+[06:00] realmente se esse produto veio sobrando
+[06:03] fazer a mesma contagem como eu falei aqui em cima
+[06:05] olhar direitinho
+[06:06] só que isso aqui é um pouquinho diferente
+[06:08] aqui eu consigo ajustar o estoque
+[06:10] já que não
+[06:10] aqui veio uma coisa a mais
+[06:11] então a lógica que veio pra vocês
+[06:13] vamos colocar um cenário que aqui é um remanejo
+[06:15] a lógica que veio pra você envia um produto a mais
+[06:17] então tem que passar pro meu gestor
+[06:19] e tem que passar pro pessoal da controladoria
+[06:20] da auditoria pra que seja verificado
+[06:24] o que que aconteceu com esse produto
+[06:25] chegar a mais na minha loja
+[06:26] ou também a menos
+[06:27] aqui eu coloquei menos
+[06:28] aqui deu o ok
+[06:30] porque esse produto veio a mais
+[06:31] e aí ele ajusta com outro
+[06:32] mas vamos dizer que o cenário fosse só uma falta
+[06:34] então o produto não veio dentro da caixa
+[06:35] caixa do volume
+[06:36] ela pra vir 12
+[06:37] se ela vinha assim 11
+[06:38] eu tenho que saber o que que aconteceu com esse 12º produto
+[06:42] e vamos ver outro cenário
+[06:43] vamos dizer que esse democrata 37 aqui
+[06:46] ele veio trocado
+[06:49] que é a questão como a gente entra lá
+[06:50] num remanejo novamente
+[06:52] o produto da democrata veio sujo
+[06:54] ou veio trocado
+[06:54] ou veio com defeito
+[06:56] e aí então meu produto veio com defeito
+[06:58] só que eu bipei
+[06:59] e vim aqui na parte de motivo
+[07:01] e coloquei um motivo
+[07:02] então quando eu faço isso
+[07:03] vamos dizer que esse produto veio trocado
+[07:04] coloquei aqui que veio trocado
+[07:05] só que eu bipei
+[07:06] a diferença aqui tá todo ok
+[07:08] e aí eu vou lá e finalizo
+[07:10] o que que vai acontecer aqui?
+[07:11] nada
+[07:12] porque se eu bipei o produto
+[07:14] o sistema vai entender que deu ok
+[07:15] mesmo que eu coloque motivo
+[07:17] então primeiro eu tenho que gerar um vermelhinho aqui
+[07:19] um erro
+[07:20] para que eu consiga fazer isso
+[07:21] então o remanejo é muito importante
+[07:23] para que quando você estiver bipando
+[07:25] vocês tem que ter essa noção
+[07:26] se veio tudo certo
+[07:27] então eu bico o volume
+[07:29] confiro os pés
+[07:30] e depois eu dou baixa
+[07:31] não posso simplesmente bipar
+[07:33] fechar a tela
+[07:34] dar ok na minha nota fiscal
+[07:36] no meu volume
+[07:37] e depois que eu terminar a nota
+[07:38] que fechar tudo
+[07:39] eu vou conferir
+[07:40] se veio tudo certo
+[07:41] aí eu tô fazendo um procedimento errado
+[07:43] então primeiro eu confiro os pés
+[07:44] ver se tá tudo ok
+[07:45] e depois eu venho aqui
+[07:47] e aí se veio tudo certo
+[07:48] eu não vou colocar nada
+[07:49] vai ficar tudo certo como tava aqui o ok
+[07:52] e eu vou e recebo
+[07:53] mas se ver um erro
+[07:54] eu não bico
+[07:55] por isso que vocês têm essa ferramenta de retirar
+[07:57] se caso eu bipei
+[07:58] e depois eu vi que tá errado
+[07:59] na hora que eu tô conferindo
+[08:00] eu vou lá, retiro
+[08:01] gera inconsistência aqui
+[08:03] e aí
+[08:04] eu vou e finalizo com inconsistência
+[08:07] eu vou finalizar essa nota com inconsistência
+[08:09] para você ver como é que funciona
+[08:11] aqui tá todo o processo
+[08:12] como eu disse, isso aqui não vai valer de nada
+[08:13] você colocar só o motivo
+[08:14] e bipar o produto
+[08:16] aqui ele vai fazer o ajuste no sistema
+[08:18] porque como eu disse
+[08:19] é uma caixa fechada
+[08:20] tudo certinho
+[08:21] o mesmo código ele vai gerar
+[08:22] e aqui é uma sobra
+[08:24] e aí essa sobra a gente tem que saber
+[08:25] o que aconteceu
+[08:26] porque o produto veio a mais pra minha loja
+[08:28] e aquela outra situação do produto
+[08:30] pode vir faltando
+[08:31] vamos dizer que esse 41 veio só os dois
+[08:33] aqui tá tudo certo
+[08:34] só que esse aqui
+[08:35] veio menos um
+[08:37] caso veio faltando
+[08:38] eu vou gerar a falta normal
+[08:39] mas eu vou tentar identificar o que aconteceu com esse produto
+[08:41] e aí passa pro gestor
+[08:43] e passa pra gente da auditoria
+[08:45] vamos dizer que o produto chegou desse formato aqui
+[08:47] aqui eu não ia colocar nada
+[08:49] porque tá tudo ok
+[08:50] mas vamos dizer que chegou assim
+[08:51] vou gerar a falta de sobra aqui
+[08:53] e aqui eu vou gerar uma sobra
+[08:54] e aí eu vou receber parcial
+[08:56] quando eu recebo parcial
+[08:57] ele vai mostrar aqui esse coisinha aqui
+[09:00] prosseguir o recebimento parcial
+[09:01] selecionando o motivo
+[09:03] dando a divergência
+[09:03] a gente já colocou aqui tudo certo
+[09:06] esse aqui faltou
+[09:07] aí eu coloco não
+[09:08] esse aqui faltou
+[09:09] se esse aqui é uma sobra
+[09:10] eu tenho que vir e colocar a sobra
+[09:11] então aqui ó
+[09:12] agora tá ok
+[09:13] esse aqui eu botei sem divergência
+[09:14] porque não deu erro nenhum
+[09:15] e aí eu vou receber
+[09:16] ele vai perguntar do mesmo jeito
+[09:17] eu coloco sim
+[09:19] e aí ele vai perguntar
+[09:20] se eu quero imprimir
+[09:20] esse etiqueta hola
+[09:21] que é os códigos do produto
+[09:23] eu vou colocar aqui não
+[09:24] mas vocês na loja de vocês coloca sim
+[09:26] porque vai sair lá
+[09:27] na Argoxin
+[09:28] ou na Eugim
+[09:29] os códigos pra você selar
+[09:31] os produtos que chegou
+[09:32] né
+[09:32] remaneja a gente não tira
+[09:33] porque realmente de loja já vem pronto
+[09:35] aí eu vou colocar aqui não
+[09:37] e aí ele vai ficar nessa cozinha aqui ó
+[09:39] amarelada aqui que é o produto
+[09:41] que tá com divergência
+[09:42] só que eu vou organizar ele
+[09:45] pra que vocês entendam
+[09:45] quando ele tá ok
+[09:47] eu vou pipar novamente o volume
+[09:50] vou pipar aqui o volume novamente
+[09:52] pra abrir ele
+[09:54] deixa eu pipar
+[09:55] botei
+[09:56] ele vai abrir o volume
+[09:57] e aqui eu vou agora ajustar ele
+[09:59] o que é que eu faço?
+[10:00] eu venho aqui do F7
+[10:03] vou retirar o democrata
+[10:04] meu bip aqui
+[10:05] tem que o bip ele mostra
+[10:06] como se eu estivesse digitando
+[10:07] mas não é isso
+[10:09] porque dá esse erro
+[10:11] sempre que eu faço a mudança lá em cima
+[10:13] e aí o bip novamente ele vai sair
+[10:14] pode ver que o democrata aqui embaixo
+[10:16] ele zerou
+[10:17] mesmo que ele tá aqui embaixo em vermelho
+[10:19] mas como aqui nessa parte
+[10:20] de quantidade lida e quantidade normal
+[10:21] tá tudo zerado
+[10:22] ele tá ok
+[10:23] então eu fiz certo
+[10:25] tá em retirar
+[10:26] eu vou retirar o tamanho 41 agora
+[10:29] tirei o 41 ele saiu
+[10:30] e agora eu vou dar o F7
+[10:33] pra colocar o 40
+[10:34] que foi que eu não limpei
+[10:36] coloquei o tamanho 40
+[10:37] ele vai mostrar aqui
+[10:38] o erro
+[10:39] aperto ok
+[10:41] 40
+[10:42] e aí ele cheirou aquele vezinho lá
+[10:43] tá vendo tudo ok
+[10:44] aqui eu não mostrei
+[10:45] mas aqui vai estar sempre apagada
+[10:47] porque eu fiz os ajustes lá
+[10:50] as mudanças aí ele não saiu
+[10:51] mas daqui vai estar tudo apagado
+[10:52] porque não teve nenhum erro
+[10:55] e aqui eu vou receber total
+[10:57] quando eu recebo total
+[10:58] é porque deu tudo certo
+[10:59] e aí ele vai estar mostrando aqui
+[11:00] que deu tudo certo
+[11:01] quando eu apertar
+[11:03] ele vai perguntar novamente
+[11:04] se eu quero imprimir os códigos
+[11:06] tudo certinho
+[11:07] eu vou colocar aqui não
+[11:08] e aí ele vai ficar verdinho assim
+[11:10] e aí a parte de finalizar
+[11:12] eu finalizo
+[11:12] e fecho a nota
+[11:13] e aí ela vai ser recebida
+[11:15] na loja de vocês

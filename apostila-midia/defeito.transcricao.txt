@@ -1,0 +1,237 @@
+[00:00] pessoal vamos lá, esse é o módulo de defeito, como é que a gente faz um defeito?
+[00:04] primeiro a gente tem que entender como é que é gerado esse defeito
+[00:07] o cliente chega em loja com o defeito, fala com o vendedor, o vendedor faz todo o processo junto ao gerente
+[00:13] e esse defeito chega na mão da gente que é o estoquista
+[00:16] como é que a gente faz esse procedimento?
+[00:19] a gente está com um defeito em mãos e a gente tem que criar esse volume, o que é que a gente faz?
+[00:23] a gente abre aqui o BTA, você vai abrir nessa tela aqui
+[00:26] o módulo anterior a gente estava aqui em remanejo
+[00:29] a gente só vai vir ao lado onde tem defeito, você vê que o remanejo tem vários procedimentos aqui
+[00:33] mas o defeito, ele só tem aqui dois
+[00:37] que é criar defeito e checkout e dispedição
+[00:40] no caso para gerar o checkout como a gente fez no módulo anterior
+[00:43] como é que eu crio esse defeito?
+[00:45] mesmo procedimento do remanejo, criar volume
+[00:49] a mesma coisa, aperta em criar volume
+[00:51] aqui ele vai mostrar a minha loja de origem, estou aqui na loja 20 novamente
+[00:55] aqui o destino, vocês vê que muda um pouco
+[00:58] o destino do remanejo é o R1, ele é remanejo
+[01:01] e o do defeito ele vem direto para o CD
+[01:04] então vocês vão ver aqui que está 001 e você não muda isso porque você já está na tela de defeito
+[01:08] então aqui já está tudo ok, vocês só vão ver lá
+[01:11] mesmo procedimento, tamanho da caixa, os defeitos tudo certinho
+[01:14] sem espaço demais, tudo certinho
+[01:17] a caixa fechadinha, vai dar certo a quantidade de defeito que você tem
+[01:20] e aí você aperta em iniciar, clicou aqui em iniciar
+[01:24] ele vai mostrar aquela mesma telinha do módulo anterior que é
+[01:27] a questão dele
+[01:29] se você confirma que é, aumento para o CD que você vai enviar
+[01:32] e aqui você só vai confirmar que sim
+[01:34] e ele já vem para essa parte de código de barra
+[01:36] e aí você vai bipar a quantidade de defeito que você tem
+[01:39] e aí quando você for bipando os defeitos
+[01:41] mesma coisa de remanejo, ele vai aparecer aqui embaixo
+[01:44] e aí vocês vão ver a quantidade total
+[01:47] a quantidade total dos defeitos que você tem
+[01:51] apareceu aqui embaixo
+[01:53] ok, só finalizar e fazer a expedição
+[01:55] só que no defeito tem um processo um pouquinho diferente
+[01:58] quando chega o defeito na loja
+[02:00] o vendedor pode simplesmente só fazer uma troca
+[02:03] você também pode ter um defeito que não foi vendido
+[02:06] um produto que está aí e gerou um defeito nele
+[02:08] porque é um produto que viu defeito de fábrica
+[02:10] ou outro procedimento que está em loja com defeito
+[02:12] e aí é um pouquinho diferente o remanejante
+[02:14] o remanejante só olha se está tudo ok e manda
+[02:16] já o defeito pode não estar mostrando na tela do defeito
+[02:18] e então se eu bipar, ele não vai mostrar
+[02:21] então o que eu vou fazer? vou bipar um produto aqui
+[02:23] e aí vocês vão ver que ele vai dar um erro
+[02:25] eu bico o produto, ele vai mostrar aqui
+[02:27] nenhum produto constata
+[02:29] na loja foi encontrado no controle de defeitos
+[02:32] então essa questão é o defeito não consta
+[02:35] a quantidade do defeito provavelmente ele vai dar no estoque 1
+[02:37] que é o estoque que vocês fazem na venda
+[02:39] então ele não está no estoque de defeito, ele não entra aqui
+[02:42] já que a gente faz esse procedimento
+[02:44] aí a gente já não trabalha aqui no BDA
+[02:46] primeiro a gente vai fazer o tratamento desse produto
+[02:48] para que ele chegue no defeito
+[02:50] e aí a gente consiga bipar e ele entre aqui normal
+[02:52] procedimento normal
+[02:54] antes de gerar a expedição
+[02:56] no caso o volume
+[02:58] eu vou mostrar para vocês como fazer esse procedimento
+[03:00] quando vocês abrirem um seta de vocês
+[03:02] ele vai abrindo essa telinha aqui
+[03:04] a loja de vocês que vocês podem ver aqui
+[03:06] a loja 20 que eu estou aqui jogado
+[03:08] aqui de vocês tem um pouco diferente
+[03:10] mas vocês trabalham mais aqui na parte da retaguarda
+[03:12] então eu vou clicar no retaguarda
+[03:14] ele vai abrir essa tela aqui
+[03:16] com várias informações
+[03:18] vocês vão estar passando
+[03:20] e olhando todos esses processos aqui
+[03:22] mas como é que eu faço para incluir esse defeito?
+[03:24] eu estou com um defeito em loja
+[03:26] é um defeito que eu não consigo mandar
+[03:28] o que é que eu faço?
+[03:30] eu venho na parte aqui de estoque
+[03:32] eu venho aqui embaixo
+[03:34] onde tem devolução ao fornecedor
+[03:36] eu clico aqui
+[03:38] e ele vai abrir essa telinha perguntando
+[03:40] deseja a tela de bipar produtos com defeito
+[03:42] você bota aqui sim
+[03:44] ele vai abrir essa tela aqui
+[03:46] eu venho nessa parte de marcar
+[03:48] o que eu vou fazer?
+[03:50] vou marcar um defeito para que esse defeito continue
+[03:52] no meu stock de defeito
+[03:54] e ai eu consiga bipar lá
+[03:56] e o sistema entender que aquele produto é um defeito
+[03:58] ai eu perto aqui
+[04:00] ele vai aparecer aqui
+[04:02] essa tela
+[04:04] e ai eu vou colocar o código do produto
+[04:06] que eu quero transferir
+[04:08] ele para a tela de defeito
+[04:10] vou colocar um código aqui no produto
+[04:12] só para vocês lá vocês vão ter o código do produto
+[04:14] ai vai ver o tamanho tudo certinho
+[04:16] vou colocar um produto aqui
+[04:18] coloquei o produto
+[04:20] coloco só o código
+[04:22] não preciso botar o tamanho
+[04:24] ele vai aparecer os tamanhos aqui
+[04:26] e aqui a gente está vendo que tem um democrata
+[04:28] na loja 20
+[04:30] que é a loja que eu estou trabalhando
+[04:32] ele consta todos esses produtos
+[04:34] primeiro eu vou olhar qual o tamanho do produto
+[04:36] que eu preciso fazer o defeito
+[04:38] e o que é que eu faço?
+[04:40] vamos dizer que o produto é um 37
+[04:42] como vocês estão vendo é um 37
+[04:44] vocês tem que se atentar a isso antes de fazer
+[04:46] as vezes a gente está ocupado fazendo as coisas rápido
+[04:48] e pode fazer o procedimento errado
+[04:50] na primeira vez que eu bipar aqui no 37
+[04:52] o próprio sistema ele joga para baixo
+[04:54] então se atentem a isso
+[04:56] quando clicar no 37 ele vai para o 38
+[04:58] e ai eu só faço voltar para o 37
+[05:00] o que é que eu faço?
+[05:02] eu seleciono um 1
+[05:04] procedimento para que ele vá para a tela de defeito
+[05:06] que é o stock da loja de venda
+[05:08] tamanhos e aqui é defeito
+[05:10] eu quero jogar esse produto aqui do stock
+[05:12] para o defeito
+[05:14] depois que eu faço isso
+[05:16] o que é que eu vou colocar?
+[05:18] aqui tem todas as observações de defeito
+[05:20] no caso todos os processos de defeito
+[05:22] vocês vão pesquisar aqui
+[05:24] vocês vão ver o que é que o produto
+[05:26] que vocês tem de defeito para vocês
+[05:28] colocar aqui
+[05:30] vamos dizer que eu estou com um produto
+[05:32] que está descolando
+[05:34] coloco descolamento
+[05:36] aqui abaixo vai estar uma observação
+[05:38] que o pé direito
+[05:40] que é o que está descolando
+[05:42] é o que é o pé esquerdo
+[05:44] ou se for do tipo de defeito
+[05:46] que está descosturando
+[05:48] eu coloco que está descosturando no pé direito
+[05:50] para que fique melhor aqui para o pessoal do CD
+[05:52] identificar melhor
+[05:54] esse defeito
+[05:56] depois que eu fizer esse procedimento que eu colocar a observação
+[05:58] eu venho aqui marcar
+[06:00] defeito
+[06:02] ai eu já joguei esse produto
+[06:04] para a tela de defeito
+[06:06] não vou fazer aqui para não errar
+[06:08] a loja 20
+[06:10] ai você
+[06:12] apertou aqui marcar defeito, deu ok
+[06:14] ai você vai fechar
+[06:16] e a gente vai lá para aquela tela novamente
+[06:18] para finalizar para vocês verem como funciona
+[06:20] e aqui você vai pipar e realmente o produto vai aparecer aqui embaixo
+[06:22] e ai depois que eu fizer esse procedimento
+[06:24] eu vou finalizar
+[06:26] e ai entra naquela mesma situação
+[06:28] do remanejo, finalizar
+[06:30] ele vai gerar o rótulo
+[06:32] que é esse daqui
+[06:34] a loja de defeito, a loja de vocês
+[06:36] aqui o código que vai seguir para o CD
+[06:38] direto para o CD, porque é um defeito
+[06:40] não tem outro local para ele vir direto para o CD
+[06:42] e ai vocês vão imprimir
+[06:44] a quantidade que vocês vão precisar
+[06:46] para colar na caixa
+[06:48] vou colar na caixa o rótulo
+[06:50] o volume
+[06:52] só isso mesmo, não tenho mais nenhuma placa assim
+[06:54] a nova placa que é a placa de defeito
+[06:56] essa placa nova que tem lojas que tem
+[06:58] a placa antiga
+[07:00] e essa é a nova
+[07:02] o procedimento do remanejo
+[07:04] defeito, aqui o visto do gerente
+[07:06] ou do subgerente aqui
+[07:08] aqui a origem que é a loja de vocês
+[07:10] o CD já vai estar aqui salvo
+[07:12] a nota fiscal que é o mesmo procedimento
+[07:14] já em outro módulo que a gente vai mostrar
+[07:16] como imprimir o nosso fiscal
+[07:18] aqui o volume, quantidade, aqui a data
+[07:20] que vai seguir esse produto
+[07:22] para o CD quando o caminhão for buscar
+[07:24] e essa placa eu vou imprimir, colar os rótulos aqui
+[07:26] colar o rótulo aqui e os outros ao lado da caixa
+[07:28] e aqui eu já finalizo
+[07:30] finalizo assim
+[07:32] finalizo o processo
+[07:34] e ele vai sair daqui
+[07:36] depois que eu fizer isso
+[07:38] eu tenho que gerar o checkout
+[07:40] como é que eu gero o checkout, mesmo procedimento
+[07:42] checkout de expedição
+[07:44] clico aqui, ele vai abrir aqui a minha loja
+[07:46] vocês podem ver aqui que já fica salvo o CD
+[07:48] porque esse é um defeito, ele vai seguir direto pro CD
+[07:50] então não tem como mudar
+[07:52] aqui a loja de vocês, não se mexe nisso aqui
+[07:54] iniciar, ele vai fazer aquela mesma pergunta
+[07:56] se está tudo ok, se é para o CD
+[07:58] você coloca aqui sim
+[08:00] bip a quantidade de volume, mesmo procedimento
+[08:02] quantidade de defeito que vocês fizeram
+[08:04] não a quantidade de caixa, a quantidade de volume
+[08:06] então você vai bipar
+[08:08] e aí quando você gerar, vai mostrar aqui a quantidade de volume
+[08:10] e aqui vai mostrar a quantidade de intas
+[08:12] de defeito que você colocou
+[08:14] dentro das caixas
+[08:16] finaliza e ele vai gerar aquela mesma notinha
+[08:18] aquele mesmo
+[08:20] papel que eu mostrei a vocês, que é esse daqui
+[08:22] com a expedição, só que sendo
+[08:24] pro CD, da loja de vocês
+[08:26] para o CD, que é só uma foto
+[08:28] com essas coisas aqui
+[08:30] com a quantidade de defeito
+[08:32] no caso, defeito sempre é pouco, é um ou dois
+[08:34] que vocês vão gerar
+[08:36] e aqui vocês imprimem, e aí no próximo módulo
+[08:38] eu vou mostrar a questão de nota fiscal
+[08:40] para que a gente feche isso

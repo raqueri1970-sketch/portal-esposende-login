@@ -1,0 +1,112 @@
+[00:00] Pessoal, esse aqui é o módulo remanejo. O que é que eu vou passar no módulo remanejo
+[00:04] para vocês? Toda a situação e todo o processo que vocês vão fazer para tirar aquele remanejo
+[00:09] da sua loja que apareceu na tela para você enviar para uma loja. Quando vocês abrem
+[00:13] o BTA de vocês, vocês vão se deparar com essa tela aqui. O que é que vocês
+[00:17] vão fazer? Primeiramente a gente, antes de enviar o remanejo, a gente tem que saber
+[00:20] o que a loja está pedindo e onde é que a gente vai. Primeiro a gente aperta
+[00:23] aqui nessa parte de pedido de TRF em aberto, a gente clica aqui, ele vai abrir uma nova
+[00:29] tela e ele vai abrir a tela com todos os remanejos que minha loja está sendo
+[00:33] pedido para eu enviar para alguma loja. Aqui está. Vou enviar um cinto para
+[00:38] Camarajib, a loja 8 também está pedindo, o B26 eu estou aqui aberto na loja 20
+[00:43] para fazer esse comparativo para vocês olharem. E aqui vai estar todos os
+[00:47] produtos. O que é que eu faço? Depois que eu abrir essa tela, eu vou na parte de
+[00:50] imprimir. Ele vai abrir essa tela aqui para eu imprimir, apertando aqui, para
+[00:56] fazer esse papel e aí eu consigo procurar pelas lojas. Aqui loja 5, loja 8, loja 14, todos os
+[01:02] produtos. E onde é que eu identifico isso? Produto, é o código do produto,
+[01:07] descrição, o acor e aqui o saldo. O saldo é a quantidade que está sendo pedido
+[01:13] na minha loja. Então tem que pensar que é o papel com todas as lojas que está pedindo
+[01:18] para que eu envie e olhe uma por uma. Mas eu queria só olhar uma loja só. Como é que eu faço?
+[01:22] Eu abro essa tela do meu jeito aqui, eu posso até voltar, mas abro essa tela novamente aqui,
+[01:27] pedido. E aqui em cima, nessa parte de cima, onde está o destino, a gente vai
+[01:32] pesquisar a loja que a gente quer. Olha, agora assim, essa tela é muito
+[01:35] importante porque aqui eu vou saber qual é a loja que está pedindo, que a partir do
+[01:38] momento que eu aperto aqui, ele mostra todas as lojas. Então eu tenho que saber qual é a loja que
+[01:41] está sendo pedido, o remanescente, para eu poder pesquisar só ela. Então, vamos ver que a 48 tem
+[01:46] várias. Vou na 48 aqui, no destino filtro, e aí vai aparecer só produtos que vai ser enviado
+[01:53] para 48. O que eu faço? Posso imprimir, vou abrir aquela mesma coisa. Como esse papel sai?
+[01:58] Do mesmo jeito que está aqui. Vou mostrar aqui para vocês. Você vai vir, cadê? Deixa eu mostrar.
+[02:03] Ele vai sair assim. Esse é o papel com todos os remanescentes que estão sendo pedidos. Aqui vocês
+[02:10] podem ver que tem duas páginas. Se eu fechar aqui, eu vou mostrar outro. Esse é de uma loja
+[02:16] só, como eu fiz lá, da 48. A página comum, uma folha só, da loja 48 para poder enviar esses remanescentes.
+[02:24] Finalizando isso, vou separar a loja que eu vou enviar. Depois que eu separar, o que eu faço?
+[02:31] Antes de você mandar o remanescente, fazer a criação do remanescente, vocês têm que se atentar
+[02:36] que eu não posso simplesmente pegar, entrar em uma loja como a 48 que está pedindo vários
+[02:40] produtos e simplesmente só enviar. Eu primeiro pego um volume, que é uma caixa,
+[02:44] coloco a quantidade de produtos que ela vai suportar para poder enviar. Depois eu faço a criação.
+[02:50] Primeiro, eu olho os pés se está tudo ok, se não está sujo, se não está trocado,
+[02:54] não está com defeito. Faço todo o procedimento se o produto tem condição de venda para a
+[02:59] loja que estou enviando. Depois que eu finalizar todo esse processo, eu vou vir aqui na parte de criar.
+[03:04] Como é que eu faço para criar o volume? Clica aqui na parte de criar volume. Ele vai abrir essa tela,
+[03:09] você vai apresentar a sua loja de origem, que é a loja que vocês vão juntar. Aqui é o destino,
+[03:13] que é o r1cd, sempre r1cd, ele já fica fixo aqui. E aí, esse produto passa pelo cd,
+[03:20] no caso os volumes que vocês vão criar, e ele passa em passagem pelo cd para depois
+[03:24] ele seguir para as lojas que vai receber esse produto do remanescente que vocês mandaram.
+[03:27] Então o que é que eu faço? Estou separado lá com a loja 48, aqui não aparece nada.
+[03:32] Eu vou aqui na lupinha, pesquiso a loja 48, clico nela e exporto. Depois que eu exportar,
+[03:38] o r1cd está aqui em cima. E aí, como é que eu faço para começar esse remanejo? Eu vou na
+[03:43] parte de iniciar. Pertei iniciar, ele vai abrir essa tela aqui, só para confirmar que a loja que
+[03:48] eu coloquei é certa. Então eu mostro aqui para a confirmação que é a loja 48. Se é ok,
+[03:53] eu dou um sim, e aí ele vem para essa parte de código de barras, e aí a gente entra naquela
+[03:58] mesma situação. Os produtos que eu separei estão tudo certinho na caixa, a quantidade
+[04:01] dá certo. Eu consigo fechar a caixa numa boa, eu bipo os produtos, e aí eu tenho que ter um
+[04:05] que é que eu estou bipando, com a quantidade aqui em cima. Então se minha caixa cabe 12 produtos,
+[04:11] eu bipo os 12, vejo aqui se está batendo, a quantidade dele é 12. Aqui é íntens, então
+[04:16] tipo o produto pode ser o mesmo código, mas ele vai contar aqui um produto menos produto,
+[04:21] porque é o mesmo. E aí a quantidade total da caixa vai estar aqui embaixo. Depois que eu
+[04:26] fizer esse procedimento, bipar tudo está tudo certinho, eu venho aqui em finalizar.
+[04:30] Quando eu clicar em finalizar, o que vai acontecer? Ele vai gerar para vocês um rótulo,
+[04:34] que vai aparecer lá para vocês imprimirem na impressora de vocês. Ela pode ser Oshin,
+[04:39] ou pode ser Darbox, e ele vai sair nesse formato aqui. Aí vocês tiram a quantidade
+[04:44] que vocês vão precisar para colar na caixa, depois que eu retirar isso aqui, o meu volume
+[04:50] já está finalizado. Mas o volume só colou isso? Não, vocês têm uma placa, que é a placa
+[04:56] de remanejo para que vocês colam aonde coloca o rótulo aqui. E as especificações da placa,
+[05:03] o remanejo, que é da Luiz Pozende, a assinatura do gerente de vocês, então eles vão conferir,
+[05:10] está tudo ok, os produtos do remanejo que vocês estão fazendo. Aqui a origem é a loja
+[05:14] de vocês, aqui o destino, é o destino da loja que vai seguir, no caso a 48, se fosse fazer
+[05:20] aquele. A nota fiscal aí já é mais à frente, a gente deixa em off até fazer a nota fiscal,
+[05:25] e aí já é outro modo. Aqui a quantidade de volume, isso aí eu só consigo colocar aqui
+[05:29] e eu vou finalizar a quantidade de volumes que eu vou mandar naquela expressão que eu vou
+[05:34] mostrar para vocês daqui a pouco. E aqui eu deixo em off esses dois, não coloco nada.
+[05:38] Aqui a data também vai ser a data que vai seguir esse volume quando o caminhão chegar na
+[05:43] loja de vocês para enviar. Isso aqui vocês não colocam nada, porque isso aqui é destinado
+[05:47] ao CD. Então essa aqui é a questão da placa de vocês, vocês vão imprimir e vão colar essa
+[05:51] paquinha na determinada da caixa, e aí eu vou mostrar para vocês depois sobre essa
+[05:56] parte aqui que vocês colam essa placa, mas aqui é o procedimento de fazer o volume. Pronto,
+[06:01] fiz o volume. E aí, está tudo pronto, o que é que eu faço? Finalizei aqui, fechei,
+[06:06] e aí eu venho para essa parte de baixo, que é checar, eu vou checar o produto. Só que
+[06:11] antes de checar eu quero mostrar uma situação para vocês. Pode acontecer de você estar com
+[06:17] isso aqui em mãos e acabar perdendo, ou às vezes ele saiu, não está dando para bipar,
+[06:22] aconteceu uma situação de você não conseguir bipar. O que é que você vai fazer? Você vai
+[06:27] vir nessa telinha aqui de volumes em aberto. Agora a observação, eu só consigo reimprimir
+[06:32] aquele papel se eu não gerar checkout. Então tipo, tenham atenção a isso. Primeiro eu faço
+[06:37] total o meu volume para depois eu gerar a expedição. Então tipo, eu só consigo reimprimir
+[06:43] um rótulo se eu não tiver gerado a expedição feito o checkout. E aí eu venho na parte de
+[06:48] aberto, se caso eu precisar. Aqui, o destino, no caso você coloca a loja que foi o que
+[06:54] deu erro, no caso é 48, eu vou aqui pesquisar. Vou lá na loja 48, pesquiso depois que
+[07:00] eu tiver feito o volume. Filtro, ele vai aparecer os volumes que foram feitos para
+[07:03] a loja 48, e aí eu escolho aquele que eu vou precisar, e aqui eu venho em etiquetas
+[07:08] e aí eu consigo reimprimir aquela etiqueta que eu vou precisar. Fechando aqui, aí
+[07:14] a gente vem para a parte de checkout. O que é que eu faço no checkout? Clico checkout,
+[07:19] ele vai abrir uma outra tela, deixa eu abrir aqui para vocês verem direitinho, aqui,
+[07:22] e ele vai estar na parte destino, ele vai estar CD, isso aqui a gente não deixa.
+[07:27] A gente tem que vir aqui e botar o R1, que o R1 é onde a gente envia o nosso remunizio.
+[07:32] E aqui ele vai abrir aquela mesma telinha que eu passei para vocês, que é só
+[07:36] para ter um controle de que você colocou o correto aonde você vai mandar o destino,
+[07:41] e você coloca aqui, ok, e sim, e ele vai abrir essa parte do código do volume.
+[07:46] O que eu faço aqui? Eu bipo, deixa eu fechar, eu bipo aquela telinha que eu mandei para vocês,
+[07:51] vou bipar isso aqui, de cada volume que eu fizer. E o que eu quero passar para vocês?
+[07:56] Vocês não precisam só vir aqui, bipar um e fechar e finalizar, não, vocês
+[08:01] bipam a quantidade de volume que vocês fizeram, e aqui ele vai mostrar o total
+[08:05] de volumes que vocês fizeram, vocês biparam aqui, ele vai ficar um abaixo do outro aqui
+[08:09] Aqui a quantidade de íntes que tem dentro dos volumes, ele vai somar tudo,
+[08:13] depois que você finalizar, tipo eu tenho 5 volumes, ele vai mostrar que é 5 volumes,
+[08:18] dentro desses volumes, contando tudo, tem 30, ele vai mostrar aqui que tem 30 íntes,
+[08:22] e aí eu finalizo. Quando eu finalizar, ele vai aparecer outra coisa para a gente imprimir,
+[08:29] que é a expedição, aqui eu estou gerando a expedição, vocês podem vir aqui, deixa eu fechar,
+[08:33] para vocês verem novamente, check out da expedição, estou gerando uma expedição,
+[08:37] quando eu clicar aqui, que eu fizer todo esse processo como eu mostrei, colocar aqui o R1,
+[08:41] não se esqueça, colocar o R1, o sim, bipou, fez a quantidade total, finaliza,
+[08:48] e aí ele vai aparecer para vocês essa outra telinha aqui, ele vai abrir sim,
+[08:53] e aí vocês vão imprimir, vocês imprimem, isso aqui vai sair na impressora da loja,
+[08:58] e aqui a gente termina o módulo da gente de remanejo, isso é o procedimento total
+[09:05] de fazer um remanejo. Chegou aqui, já fez a expedição, próxima gente vai gerar a questão da nota fiscal.

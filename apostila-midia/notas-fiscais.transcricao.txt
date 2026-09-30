@@ -1,0 +1,137 @@
+[00:00] vamos lá. Esse é o módulo de impressão de nota fiscal. Como é que vocês fazem para
+[00:05] gerar uma nota aqui no set? Como vocês fazem para gerar nota fiscal? Depois que eu finalizar
+[00:10] o meu volume, depois que eu imprimir os rótulos, depois que eu fazer a expedição, eu vou
+[00:16] ter que imprimir a nota fiscal. O que é a expedição? O que é o rótulo? É
+[00:20] o que eu mostrei no módulo anterior, que é esse aqui. Esse aqui é o volume,
+[00:24] no caso é o rótulo que vocês vão imprimir para colar no volume que vocês fizerem.
+[00:28] Vai ser isso aqui, várias quantidades, colar na placa tudo certinho. E a expedição é depois,
+[00:34] depois isso, né? Vocês vão fazer a expedição, que é essa daqui. E aí vocês vão ter a
+[00:39] expedição, que é aqui o número da expedição. Aqui é a quantidade de volumes que vocês
+[00:43] geraram, a quantidade de volumes que vocês fizeram, tudo aqui certinho. A quantidade de
+[00:47] itens que tem dentro dos volumes total. Vocês vão estar com isso em mãos. E aí
+[00:51] eu preciso imprimir a nota fiscal, como é que eu faço? Eu vou abrir o set, tá? Você
+[00:57] vai fazer os usuários sem aqui a loja de vocês, né? Que vai estar tudo certo com vocês
+[01:01] abrindo a loja de vocês. E ele vai abrir assim. E aí vocês vêm nessa parte de reta guarda, né?
+[01:07] Vocês vêm na parte de reta guarda. Ele vai abrir dessa forma aqui. Aqui vai ter um pouco
+[01:12] menos de informações, né? Um pouquinho diferente. Mas aqui vocês vão ver esse aqui, ó, o TR.
+[01:16] É aqui onde vocês vão pesquisar a nota fiscal de vocês, onde vocês vão conseguir
+[01:21] fazer a impressão dessa nota, né? Finalizar a nota fiscal. Como é que eu faço? Eu venho TR,
+[01:26] tenho aqui TR, vou abrir essa outra tela aqui. E aí eu venho em pesquisar, né? Primeiro eu vou
+[01:32] pesquisar pra ver a nota que eu fiz pra depois eu conseguir finalizar ela. Depois que eu apertar
+[01:38] em pesquisar, ele vai mostrar essa tela aqui, ó. E aqui tem transferências enviadas e tem
+[01:42] transferências recebidas. O que eu vou procurar é a enviada. Já vai estar selecionado aqui,
+[01:48] já vai estar selecionado o status de dependente. Aqui é se caso eu quiser gerar a nota
+[01:53] mas se caso eu tô com uma nota lá que chegou faz um tempo, eu já recebi ou então eu já enviei e
+[01:59] aí eu quero saber qual é o procedimento que aconteceu com essa nota aí eu só vou mudar
+[02:02] aqui embaixo. Ou se caso eu quiser saber de uma nota que eu já recebi eu venho aqui ou uma nota
+[02:07] que eu já enviei eu quero saber o que aconteceu com ela se já foi recebido ou não eu vou
+[02:10] vir recebidas pra ter a certeza. Dependentes é porque a nota ainda vai estar pendente, né?
+[02:15] Então vocês vão deixar tudo ok aqui, ó, enviadas e pendentes. Então aí você vai pesquisar a
+[02:21] nota de vocês aí vocês vem filtrar. Clicou em Filtrar ele vai aparecer aqui ó. Eu fiz essa
+[02:26] nota, essas duas notas hoje pra mostrar o que vocês vão fazer, o procedimento mais à frente,
+[02:31] né? Mas vamos dizer que essa nota aqui foi a nota que eu fiz hoje e eu quero enviar. Ela vai
+[02:35] estar aqui em branco. Toda vez que você fizer uma nota fiscal ela vai estar aqui em branco. Ela
+[02:39] não vai ter nada de nota fiscal aqui. Eu vou ter que gerar essa nota. Como é que eu faço?
+[02:43] Depois que eu abrir essa tela eu clico duas vezes na nota. Ele vai aparecer qual o produto,
+[02:49] né? Os produtos que eu fiz, aqui só tem dois, mas os produtos, né? Vai aparecer aqui e eu vou
+[02:56] ver lá embaixo aquela expedição. Lembra da expedição que eu mostrei mais cedo? Isso aqui ó.
+[02:59] Esse número aqui ele tem que estar aqui. Parte de expedição. Então se o número que tá lá
+[03:06] vai estar aqui não é o mesmo que a outra foto lá, né? Não tem mãos. Se tá aqui ó, bateu
+[03:12] tudo certo eu vou conseguir identificar e vou conseguir fazer o envio desse produto. Aqui é
+[03:18] tudo de vingança, uma coisa diferente, mas o procedimento é o mesmo. Aqui vai estar a loja
+[03:21] de vocês, o destino que vai ser enviado, que vocês não mexem. Na hora que vocês fizeram
+[03:26] todo aquele processo do começo lá de expedição, de rótulos, já vai estar tudo o que aqui? Vocês
+[03:31] só vão se atentar à mercadoria que tá sendo enviada. Geralmente é muitas. A expedição que
+[03:36] aí vocês têm a certeza que vocês enviaram, né? Que é a expedição certa que vocês vão conseguir
+[03:41] fazer no fiscal, né? Quantidade de produtos. E aí vocês vão vir aqui ó, enviar. Aí eu vou
+[03:47] começar a gerar a nota, né? Perto em enviar ele vai pedir a minha senha novamente e o usuário
+[03:54] e senha, né? Aqui eu coloco usuário e senha. Depois que eu colocar ele vai começar a gerar
+[04:02] essa nota e aí demora um pouco. Vai pedir pra guardar, pode ser um pouco mais ou um pouco menos.
+[04:08] E aí ele vai aparecer novamente o produto, os produtos, né? Vai estar tudo aqui abaixo,
+[04:14] né? Que eu gerei. Aqui ele tá gerando a nota fiscal. E aí? Apertei pra enviar, botei minha senha
+[04:21] vir pra cá. Já vem aqui emitir? Não. Não vem direto aqui. Se atentem a isso. A gente quando
+[04:27] gera uma nota, quando vai gerar uma nota, a gente tem uma transportadora pra que a gente
+[04:31] possa mudar e aí ela vá do jeito correto, né? Pra outra loja ou pro CD ou pra qualquer
+[04:38] outro lugar, né? Até fora, loja fora, a gente tem que ter esse cuidado. Então o que eu quero
+[04:42] passar pra vocês, tenham cuidado nessa questão de enviar nota fiscal, porque toda vez que
+[04:47] você chegar nessa tela aqui, você já não vem aqui na parte de emitir não. Você vem
+[04:50] primeiro aqui à parte de baixo, ó. Transportador. Primeiro clica aqui, ele vai aparecer a
+[04:55] transportadora. Eu não vou ter essa transportadora aqui, um momento pra mostrar vocês, mas vou
+[05:00] não é difícil pra vocês achar a transportadora certa. É o que vocês vão fazer, vocês
+[05:05] vão apertar só RL, não esqueçam, RL. Não tem erro. Apertou RL e dá um enter.
+[05:11] E aí aqui abaixo ele vai mostrar a transportadora correta. Só tem ela, não vai ter outra
+[05:16] pra você selecionar. Eu não tenho aqui porque esse não tá atualizado, mas é
+[05:19] isso. Ele vai aparecer, você clica aqui, dá um enter, ele vai aparecer a transportadora
+[05:23] aqui. A transportadora da empresa, acerta. Tem várias transportador, vou mostrar pra
+[05:29] vocês. Tem várias aqui, ó. Várias, várias, várias. Só que aqui você tem que colocar
+[05:34] RL, não esqueça, RL. Coloca o RL, entra novamente, ela vai já dar o que? Todas
+[05:40] as notas que vocês forem enviar. Tanto devolução, tanto defeito, tanto remanejo,
+[05:45] tanto... É que seja uma devolução pra outra loja que mudou errado, ou uma devolução
+[05:52] de loja, que caso vocês estão devolvendo, pra loja de origem isso aqui. E aqui embaixo,
+[05:56] quer que eu faça? Quantidade... Deixa eu só voltar aqui. A quantidade aqui, vocês vão colocar
+[06:02] a quantidade de volume. Então tipo, ah, fiz 6 volumes, vou colocar 6. Ah, fiz 5 volumes, vou colocar
+[06:06] 5. Ah, esse daqui que é só dois produtos, é um volume, foi dois produtos e um volume só.
+[06:10] E aqui eu coloco volume. Coloquei volume aqui, tá pronto. Minha nota, vou dar um
+[06:16] o que? Aqui vai tá a transportadora, não esqueçam. Transportadora RL, eu não vou
+[06:21] conseguir deixar aqui pra vocês verem. RL, RL, sempre vai tá aqui RL. A transportadora RL,
+[06:27] pronto. Deu enter, ela apareceu aqui, dá o ok. Vou só voltar aqui, dá o ok. Dá o ok,
+[06:35] vai vir pra cá de novo, e aí sim você vai na parte de EMT. Aqui vai dar um erro,
+[06:40] porque eu não consigo imprimir nota fiscal aqui. E ele vai perguntar assim, atenção,
+[06:44] a informação, né? O implementar está vazio, mas aqui não tem problema, coloca sim,
+[06:50] né? E aí ele vai começar a gerar a sua nota fiscal, tá vendo? Aguardo,
+[06:55] transpirindo. E ele vai abrir uma nova telinha aqui. Abriu essa telinha, como vocês estão
+[07:01] vendo aqui, vai tá o número da nota fiscal de vocês aqui, e aqui vai tá a parte de
+[07:05] imprimir, aqui não vai pegar como eu disse, não vou conseguir imprimir, mas aqui vai tá,
+[07:08] imprimir. Aí você escolhe a impressora da loja, é só imprimir a nota fiscal,
+[07:13] sai. Outra situação, vamos dizer que eu fiz a nota fiscal, ela não saiu. Pô,
+[07:21] queria a nota fiscal, daquela que eu fiz, ela não conseguiu imprimir, coloquei a
+[07:26] impressora errada, e aí acabei fechando a tela. Como eu fechei aqui? Ah, fechei,
+[07:29] e aí eu queria aquela nota, ela não saiu da minha impressora. Fiz no estoque,
+[07:32] imprimi a nota fiscal quando eu desci, não tava lá. Ela não saiu lá embaixo,
+[07:36] deu um erro na impressora, não tô com a nota fiscal, como é que eu faço pra
+[07:39] reprimir essa nota? E aí no mesmo parte do seta, vou voltar de novo aqui pra vocês verem,
+[07:44] mesmo a parte do seta iniciar, que vocês vêm em retaguarda, aqui vocês vêm em fiscal,
+[07:50] como vocês estão vendo aqui, fiscal, não esqueçam, fiscal, apertou aqui em fiscal,
+[07:54] vai ter aqui, consultar nota fiscal eletrônica. Vocês vão clicar aqui,
+[07:59] nota fiscal eletrônica, pra consultar, e aqui ele vai abrir essa tela. Se atentem
+[08:04] isso que eu vou passar agora. Aqui vai tá a empresa, no caso a loja de vocês,
+[08:08] aqui vai tá o status da nota, então tem que mudar, porque se você fez a nota,
+[08:13] ela saiu, ela foi um monstro lá que imprimiu, mas ela não saiu, ela já foi feita,
+[08:19] ela só não foi imprimida, então aqui já muda. Uma coisa que eu quero mostrar
+[08:24] vocês, tá vendo aqui embaixo que tem a data inicial aqui, 2024, vocês vão colocar um 6
+[08:28] aqui, se caso vocês virem primeiro aqui, depois virem mudar aqui, vou colocar que foi
+[08:34] a nota que já foi enviada, então não tá pendente. Eu sempre aconselho a botar todos, mas pra ficar mais
+[08:38] certa, se eu enviei a nota só não foi impressa, então vou na parte de enviado.
+[08:42] Quando eu aperto aqui, aqui tá a minha data, aqui tá a data que vocês
+[08:50] querem colocar, aqui não apareceu, mas onde vocês é assim, aqui vai dar 2024,
+[08:55] na mesma hora que vocês mudarem aqui, pra qualquer um desses daqui, eu
+[08:59] vou colocar todos, qualquer um, ele volta aqui, mudou a todos, ele vai aparecer aqui,
+[09:03] 2024 novamente, aí eu vou ter que atualizar isso, então se atenta nessa
+[09:08] situação, se eu mudar, ele volta pra 2024, ele sempre volta pra 2024, então eu tenho que
+[09:14] ter essa atenção. Primeiro eu faço todo o processo aqui em cima e depois eu mudo
+[09:18] aqui a questão da data. Sobre filtro, eu pesquiso por data, então tipo a nota que eu quero,
+[09:24] a nota que eu quero, que eu vou pesquisar agora, ela foi feita hoje, então eu vou colocar
+[09:29] a data de hoje aqui, só que se caso eu tiver com a TRF na mão, ou eu tenho o número da
+[09:35] nota, eu venho aqui, ao invés de eu colocar a data, aí eu coloco o número da nota que aí eu vou conseguir
+[09:42] encontrar ela, mas eu vou pesquisar por data, então tá aqui a data de hoje, e aí eu vou apertar
+[09:49] e aí eu venho infiltrar, e ele vai aparecer, eu fiz três notas hoje, então vocês tem que se
+[09:55] atentar também a isso, vocês fizeram três notas, e aí vocês vão ver pela quantidade aqui,
+[10:00] acho que às vezes até pela data, quando vocês, a data aqui, ou então como é o mesmo dia, mas
+[10:05] aqui vocês vão ver pela hora que vocês fizeram, aqui tem a hora tudo ok, e aí vocês vão só
+[10:10] selecionar aqui e vocês vão abrir a nota, e aí ele vai abrir naquela mesma tela, deixa eu ver
+[10:16] aqui, abrir, ele vai abrir a nota, e aí que eu tô novamente pesquisando pra reimprimir, tá vendo que ela
+[10:25] abriu naquela mesma nota, naquela mesma tela, se caso for um erro de transportadora, vocês
+[10:31] podem vir aqui e mudar, aqui eu coloquei uma transportadora antiga, essa não se usa, RL,
+[10:36] como eu disse a vocês, né, não se usa, e aqui vocês vêm em MT, mesmo procedimento, e aí vocês,
+[10:44] nessa vez vocês tem que ter essa noção, na hora que eu colocar MT eu desço, vejo lá se a
+[10:49] impressora saiu certinho, pra não precisar tá voltando aqui, se não eu vou olhar o que
+[10:53] foi que aconteceu, deixo a tela aberta, não fez, só apertar aqui MT, o meu não vai aparecer,
+[10:57] porque o meu não tá conseguindo imprimir, é um sistema totalmente diferente, só pra eu
+[11:01] mostrar a vocês, quando apertar aqui ele vai gerar novamente a nota, tá vendo aqui que ele
+[11:06] tá aguardando, ele vai gerar novamente a nota, é mais rápida, porque como eu disse,
+[11:12] é um sistema um pouco diferente, e aqui vocês vão ter imprimir, e se caso não sair, vocês não
+[11:18] fecham essa tela, se fechar essa tela, vocês vão ter que voltar pra casa de novo, então deixa a
+[11:22] tela aberta, ver se saiu tudo certo, na impressora da loss, tá tudo ok, vocês tendem essa
+[11:27] nota em mãos, aí vocês vêm aqui e fecham, e aí depois que vocês fecharem, pronto, vocês
+[11:31] podem fazer isso com qualquer nota, aqui tá as notas do dia, né, as notas do dia aqui,
+[11:36] tudo ok, aí vocês conseguem ter esse controle, e é isso, mod.
