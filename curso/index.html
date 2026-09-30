@@ -390,7 +390,7 @@
     <h1>Central de Treinamento</h1>
     <p>Esposende Calçados · Processos operacionais</p>
   </div>
-  <div class="identity" id="identity-badge"></div><button id="voltarPortal" class="portal-back" type="button" onclick="voltarAoPortal()">← Voltar ao Portal</button>
+  <div class="identity" id="identity-badge"></div>
 </div>
 
 <div class="wrap">
@@ -486,22 +486,6 @@ async function rpcJson(nome, params){
   return t;
 }
 
-function voltarAoPortal(){
-  // Retorna ao último ponto válido do Portal sem encerrar a sessão.
-  // Evita voltar para login, splash ou páginas externas do navegador.
-  try{
-    const ref=document.referrer||'';
-    const origemPortal=ref.includes('/portal-esposende-login/') && !/login|index\.html(?:$|[?#])/i.test(ref);
-    if(history.length>1 && origemPortal){
-      history.back();
-      return;
-    }
-  }catch(e){}
-  // Fallback: tela do Portal (entra direto se o login estiver salvo). NUNCA o painel.html (Painel da TV, que exige codigo e mostrava "Link incompleto").
-  const portal=new URL('../', location.href).href;
-  try{ if(window.top && window.top!==window){ window.top.location.href=portal; return; } }catch(e){}
-  window.location.href=portal;
-}
 
 async function getPerms(){
   const id=getIdentidade();
@@ -632,7 +616,7 @@ async function atualizarProgressoUI(){
 }
 
 let DEMO_ADM=false;
-function ehAdmin(){ return PORTAL_ADMIN || !!(getIdentidade()||{}).admin; }
+function ehAdmin(){ return PORTAL_ADMIN; }
 function carregarDemo(){
   // Pré-visualização do administrador: simula alguém que concluiu todos os módulos (nada é gravado).
   DEMO_ADM=true;
@@ -841,19 +825,9 @@ carregarCatalogo();
 });
 
 async function iniciarCentral(){
-  // Ao abrir a Central pelo Portal, a própria sessão do Portal já identifica a Diretoria/Administrador.
-  // Preserva esse contexto no módulo para não aplicar bloqueios de colaborador ao administrador.
-  try{
-    const qs=new URLSearchParams(location.search);
-    const ref=document.referrer||'';
-    const veioDoPortal=ref.includes('/portal-esposende-login/') && !ref.includes('/curso/');
-    const adminHint=qs.get('admin')==='1' || qs.get('perfil')==='admin' || qs.get('perfil')==='diretoria';
-    if(veioDoPortal || adminHint){
-      PORTAL_ADMIN=true;
-      setIdentidade({loja:'ADMIN',nome:'Ricardo',cpf:null,cargo:'Diretoria',admin:true});
-    }
-  }catch(e){}
-  const admin=PORTAL_ADMIN ? true : await detectarAdministradorPortal();
+  // Modo administrador SÓ com login real do Portal (sessão Supabase + perfil administrador conferido no servidor).
+  // Não vale mais "veio do Portal" nem ?admin=1 no link.
+  const admin=await detectarAdministradorPortal();
   if(!admin){
     const id=getIdentidade();
     if(id && (id.admin || !id.validado)){

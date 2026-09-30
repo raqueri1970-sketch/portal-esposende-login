@@ -71,6 +71,7 @@
   .festa .t{font:900 24px Arial,sans-serif;margin:4px 0 6px}
   .festa .s{font:700 14.5px Arial,sans-serif;line-height:1.5;color:#dcfce7}
   .festa .e{font-size:40px;line-height:1}
+  .marca-exemplo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-24deg);font:900 58pt Arial,sans-serif;color:rgba(30,41,59,.13);white-space:nowrap;pointer-events:none;z-index:9}
   @page{size:A4 landscape;margin:0}
   @media print{
     body{background:#fff}
@@ -237,19 +238,26 @@ document.getElementById('btPdf').onclick=async ev=>{
 };
 
 (function(){
-  if(qs.get('demo')==='1'){
+  if(qs.get('demo')==='1'){ previaAdmin(); return; }
+  let cpf=dig(qs.get('cpf'));
+  if(!cpf){ try{ const id=JSON.parse(localStorage.getItem('curso_identidade_v2')||'null'); if(id&&id.cpf) cpf=dig(id.cpf); }catch(e){} }
+  carregar(cpf);
+})();
+async function previaAdmin(){
+  // Pré-visualização só para o administrador logado no Portal (conferido no servidor)
+  let ok=false;
+  try{ const {data:{session}}=await sb.auth.getSession(); if(session){ const {data}=await sb.rpc('portal_is_admin'); ok=data===true; } }catch(e){}
+  if(!ok){ estado.textContent='Pré-visualização disponível apenas para o administrador logado no Portal.'; return; }
+  {
     let s={}; try{ s=JSON.parse(sessionStorage.getItem('cert_demo')||'{}'); }catch(e){}
     const agora=new Date().toISOString();
     montar({codigo:'ESP-EXEMPLO',cpf:'00000000000',nome:'NOME DO COLABORADOR',area_nome:s.area_nome||'Operações de Estoque',carga_min:s.carga_min||65,
       emitido_em:agora,aceite_em:agora,assinatura:s.assinatura||null,ip:'000.000.000.000',hash:'0'.repeat(64),modulos:s.modulos||[],valido:true,demo:true});
     const b=document.getElementById('barraInfo'); b.innerHTML='<b style="color:#fca5a5">PRÉ-VISUALIZAÇÃO DO ADMINISTRADOR — exemplo sem valor, nada foi gravado</b>';
     document.getElementById('btVoltar').href='./?area=estoque';
-    return;
+    document.querySelectorAll('.pagina').forEach(pg=>{const w=document.createElement('div');w.className='marca-exemplo';w.textContent='EXEMPLO — SEM VALOR';pg.appendChild(w);});
   }
-  let cpf=dig(qs.get('cpf'));
-  if(!cpf){ try{ const id=JSON.parse(localStorage.getItem('curso_identidade_v2')||'null'); if(id&&id.cpf) cpf=dig(id.cpf); }catch(e){} }
-  carregar(cpf);
-})();
+}
 </script>
 </body>
 </html>
