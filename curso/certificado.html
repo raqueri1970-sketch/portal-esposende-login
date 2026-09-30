@@ -11,7 +11,7 @@
 <style>
   /* Layout copiado do modelo "Modelo Certificado do Treinamento - Estoque.pptx" (27,52 x 19,05 cm),
      ampliado para A4 paisagem (297 x 205,6 mm). Todas as medidas em mm. */
-  :root{ --campo:#FF0000; }
+  :root{ --campo:#000; }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{background:#2b3345;font-family:Arial,"Liberation Sans",Helvetica,sans-serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -46,7 +46,7 @@
   .v-tit{position:absolute;left:0;right:0;top:9mm;text-align:center;font-family:Calibri,Carlito,Arial,sans-serif;font-weight:bold;font-size:15pt}
   .v-cp{position:absolute;left:0;right:0;top:27mm;text-align:center;font-family:Calibri,Carlito,Arial,sans-serif;font-weight:bold;font-size:17.5pt}
   .v-lista{position:absolute;left:10mm;right:8mm;top:47mm;font-family:Calibri,Carlito,Arial,sans-serif;font-size:8.6pt;line-height:1.62;color:var(--campo)}
-  .v-lista .cab{color:#000;font-weight:bold}.v-lista .cab b{color:var(--campo)}
+  .v-lista .cab{color:#000;font-weight:bold}
   .v-lista ul{list-style:none;margin:0;padding:0}
   .v-lista li{padding-left:10mm;position:relative}
   .v-lista li:before{content:"➢";position:absolute;left:0;color:#000;font-size:8pt}
@@ -164,11 +164,10 @@ function montar(d){
         <div class="v-cp">CONTEÚDO PROGRAMÁTICO</div>
         <div class="v-lista">
           <div class="cab">1. <b>${esc(String(d.area_nome||'').toUpperCase())}</b></div>
-          <ul>${mods.map(m=>`<li>Módulo ${m.ordem} – ${esc(m.nome)} (${esc(m.duracao||'')}) — concluído em ${m.concluido_em?fmtD(m.concluido_em):'-'} · vídeo assistido ${m.percentual!=null?Math.round(m.percentual)+'%':'-'} · avaliação: nota ${m.nota!=null?Math.round(m.nota):'-'};</li>`).join('')}</ul>
-          <div class="tot">Total: ${mods.length} de ${mods.length} módulos concluídos · carga horária ${esc(carga(d.carga_min))}.</div>
+          <ul>${mods.map(m=>`<li>Módulo ${m.ordem} – ${esc(m.nome)} — concluído em ${m.concluido_em?fmtD(m.concluido_em):'-'} · vídeo assistido ${m.percentual!=null?Math.round(m.percentual)+'%':'-'} · avaliação: nota ${m.nota!=null?Math.round(m.nota):'-'};</li>`).join('')}</ul>
+          <div class="tot">Total: ${mods.length} de ${mods.length} módulos concluídos.</div>
         </div>
         <div class="v-prog">Este treinamento, faz parte do Programa de Treinamento &amp; Desenvolvimento da ESPOSENDE Calçados.</div>
-        <svg class="v-seta" viewBox="0 0 48 20"><line x1="1" y1="17" x2="44" y2="10.5" stroke="#FF0000" stroke-width=".45"/><polygon points="45.8,10.2 42.4,9.2 42.9,12.3" fill="#FF0000"/></svg>
         <img class="v-ass-img" src="cert/assinatura-auditoria.png" alt="Assinatura Auditoria Esposende">
         <div class="v-ass-txt">Certificado emitido e assinado pela <b>Auditoria Interna – Esposende Calçados</b><br>Conclusão confirmada por ${esc(d.nome)} · CPF ${esc(fmtCpf(d.cpf))} em ${esc(fmtDH(assinado))}${d.ip?' · IP '+esc(d.ip):''}</div>
         <div class="v-qr" id="qr"></div>
@@ -205,10 +204,8 @@ function ajustarEscala(){
   e.parentElement.style.height=(alt*s+60)+'px';
 }
 
-document.getElementById('btImp').onclick=()=>window.print();
-document.getElementById('btPdf').onclick=async ev=>{
-  const b=ev.target; b.disabled=true; b.textContent='Gerando PDF…';
-  try{
+// PDF sempre em A4 PAISAGEM (usado para baixar e para imprimir)
+async function gerarPdf(){
     const {jsPDF}=window.jspdf;
     const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
     const pgs=[...document.querySelectorAll('.pagina')];
@@ -217,8 +214,24 @@ document.getElementById('btPdf').onclick=async ev=>{
       if(i) pdf.addPage('a4','landscape');
       pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',0,(210-205.6)/2,297,205.6);
     }
-    const d=window._cert||{};
-    pdf.save(`Certificado_${String(d.nome||'').replace(/[^\wÀ-ú]+/g,'_')}_${d.codigo||''}.pdf`);
+    return pdf;
+}
+function nomeArq(){const d=window._cert||{};return `Certificado_${String(d.nome||'').replace(/[^\wÀ-ú]+/g,'_')}_${d.codigo||''}.pdf`;}
+document.getElementById('btImp').onclick=async ev=>{
+  const b=ev.target; b.disabled=true; b.textContent='Preparando impressão…';
+  const jan=window.open('','_blank'); // abre já (evita bloqueio de pop-up)
+  try{
+    const pdf=await gerarPdf(); pdf.autoPrint();
+    const url=pdf.output('bloburl');
+    if(jan){ jan.location.href=url; } else { window.print(); }
+  }catch(e){ if(jan) jan.close(); window.print(); }
+  b.disabled=false; b.textContent='🖨️ Imprimir certificado';
+};
+document.getElementById('btPdf').onclick=async ev=>{
+  const b=ev.target; b.disabled=true; b.textContent='Gerando PDF…';
+  try{
+    const pdf=await gerarPdf();
+    pdf.save(nomeArq());
   }catch(e){ alert('Não consegui gerar o PDF aqui. Use o botão Imprimir e escolha "Salvar como PDF".'); }
   b.disabled=false; b.textContent='⬇️ Baixar PDF';
 };
