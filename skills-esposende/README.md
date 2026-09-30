@@ -5,4 +5,4 @@ Princípios: nunca inventar dado; informar período e fonte; distinguir fato, al
 
 Orquestração: Auditor Mestre chama a skill especializada e, quando necessário, skills de cruzamento. Sentinela cuida de alertas. Toda exceção deve permitir rastrear registro, regra, fonte e período.
 
-Skills: auditor-mestre, ajuste-express, inventario, saci, comercial, rh-folha, comissao, compras, financeiro, notas-fiscais, almoxarifado, cd-recebimento, transportadora, cruzamentos.
+Skills: auditor-mestre, ajuste-express, inventario, saci, comercial, rh-folha, comissao, compras, financeiro, notas-fiscais, almoxarifado, cd-recebimento, transportadora, cruzamentos, treinamentos.

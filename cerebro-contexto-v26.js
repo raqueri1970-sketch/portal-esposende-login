@@ -70,7 +70,10 @@
           almoxarifado:'skills-esposende/almoxarifado.md',
           recebimento:'skills-esposende/cd-recebimento.md',
           transportadora:'skills-esposende/transportadora.md',
-          cruzamentos:'skills-esposende/cruzamentos.md'
+          cruzamentos:'skills-esposende/cruzamentos.md',
+          treinamento:'skills-esposende/treinamentos.md',
+          curso:'skills-esposende/treinamentos.md',
+          certificado:'skills-esposende/treinamentos.md'
         };
         p.instrucoes_skills='Usar o Auditor Mestre como orquestrador; selecionar a skill especializada pelo assunto; consultar a fonte operacional real; chamar cruzamentos quando houver chave confiavel; nunca inventar dado; separar fato, divergencia, alerta e dado insuficiente; retornar resultado primeiro com periodo e evidencia.';
         p.base_mae_atual=true;

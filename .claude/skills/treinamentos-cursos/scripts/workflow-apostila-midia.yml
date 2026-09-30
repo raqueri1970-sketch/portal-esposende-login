@@ -1,0 +1,79 @@
+name: Apostila - extrair midia dos videos
+# Baixa os videos do treinamento, transcreve a narracao e gera uma copia leve
+# (sem audio, 2 quadros/s) para capturar os prints da apostila.
+on:
+  push:
+    branches: [apostila-midia]
+    paths: ['.github/workflows/apostila-midia.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        mod: [recebimento, notas-fiscais, fazer-etiquetas, fechamento-de-volumes, defeito, remanejo]  # troque pelos ids dos vídeos novos
+    steps:
+      - name: Dependencias
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          pip install -q faster-whisper
+      - name: Baixar video
+        run: |
+          curl -fsSL -o v.mp4 "https://rdztzurfesnobfkazgpm.supabase.co/storage/v1/object/public/curso-videos/${{ matrix.mod }}-v3.mp4"
+          mkdir -p out
+          ffprobe -v error -show_format -show_streams -of json v.mp4 > out/${{ matrix.mod }}.probe.json
+      - name: Copia leve para prints
+        run: |
+          ffmpeg -v error -i v.mp4 -af volumedetect -f null - 2>&1 | grep -E "mean_volume|max_volume" | tee out/${{ matrix.mod }}.volume.txt || true
+          for crf in 24 30 36; do
+            ffmpeg -v error -y -i v.mp4 -an -vf "fps=2,scale='min(1920,iw)':-2" -c:v libx264 -preset slow -crf $crf -pix_fmt yuv420p out/${{ matrix.mod }}.2fps.mp4
+            [ $(stat -c%s out/${{ matrix.mod }}.2fps.mp4) -lt 90000000 ] && break
+          done
+          ls -la out
+      - name: Transcrever narracao
+        run: |
+          ffmpeg -v error -i v.mp4 -ac 1 -ar 16000 -af "volume=30dB,alimiter=limit=0.9,loudnorm" -f f32le a.raw
+          python - <<'PY'
+          import json
+          import numpy as np
+          from faster_whisper import WhisperModel
+          audio = np.fromfile("a.raw", dtype=np.float32)
+          m = WhisperModel("medium", device="cpu", compute_type="int8")
+          segs, info = m.transcribe(audio, language="pt", beam_size=5, vad_filter=False)
+          out = [{"start": round(s.start, 2), "end": round(s.end, 2), "text": s.text.strip()} for s in segs]
+          json.dump(out, open("out/${{ matrix.mod }}.transcricao.json", "w"), ensure_ascii=False, indent=1)
+          with open("out/${{ matrix.mod }}.transcricao.txt", "w") as f:
+              for s in out:
+                  f.write(f"[{int(s['start']//60):02d}:{int(s['start']%60):02d}] {s['text']}\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: midia-${{ matrix.mod }}
+          path: out/
+
+  salvar:
+    needs: video
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: art
+      - name: Commit da midia
+        run: |
+          mkdir -p apostila-midia
+          find art -type f -exec cp {} apostila-midia/ \;
+          ls -la apostila-midia
+          git config user.name "github-actions[bot]"
+          git config user.email "41898+github-actions[bot]@users.noreply.github.com"
+          git add apostila-midia
+          git commit -m "Apostila: midia extraida dos videos do treinamento" || exit 0
+          git push
