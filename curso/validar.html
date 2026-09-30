@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Validar Certificado — Esposende</title>
+<style>
+  :root{--bg:#0a0f1e;--card:#131b30;--border:#232d4a;--text:#eef1f8;--muted:#93a0bf}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,"Liberation Sans",sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+  .box{width:100%;max-width:460px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 22px;text-align:center}
+  h1{font-size:18px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+  .selo{font-size:44px;line-height:1;margin:6px 0 8px}
+  .ok{color:#4ade80}.no{color:#f87171}
+  .st{font-size:17px;font-weight:800;margin:0 0 16px}
+  dl{text-align:left;margin:0;font-size:13.5px;border-top:1px solid var(--border)}
+  dl div{display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border-bottom:1px solid var(--border)}
+  dt{color:var(--muted);flex-shrink:0}dd{margin:0;text-align:right;font-weight:700;word-break:break-all}
+  form{display:flex;gap:8px;margin-top:8px}
+  input{flex:1;min-width:0;padding:11px 12px;border-radius:9px;border:1px solid var(--border);background:#0a1230;color:var(--text);font:700 14px Arial}
+  button{padding:11px 16px;border-radius:9px;border:0;background:#38bdf8;color:#04121f;font:800 14px Arial;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>Esposende Calçados</h1>
+  <p class="sub">Validação de certificado de treinamento</p>
+  <div id="res"></div>
+  <form id="f"><input id="c" placeholder="Código ESP-AAAA-XXXXXXXXXX" autocomplete="off"><button>Validar</button></form>
+</div>
+<script>
+const SUPA_URL='https://rdztzurfesnobfkazgpm.supabase.co', SUPA_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function carga(min){min=Math.round(min||0);const h=Math.floor(min/60),m=min%60;return h?(m?`${h}h${String(m).padStart(2,'0')}min`:`${h}h`):m+'min';}
+async function validar(cod){
+  const res=document.getElementById('res'); cod=String(cod||'').trim().toUpperCase(); if(!cod){res.innerHTML='';return;}
+  document.getElementById('c').value=cod;
+  res.innerHTML='<p class="sub">Consultando…</p>';
+  try{
+    const r=await fetch(SUPA_URL+'/rest/v1/rpc/curso_validar_certificado',{method:'POST',headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_codigo:cod})});
+    const a=await r.json(); const d=a&&a[0];
+    if(!d){res.innerHTML='<div class="selo no">✖</div><p class="st no">Certificado não encontrado</p>';return;}
+    const dt=new Date(d.emitido_em);
+    res.innerHTML=`<div class="selo ${d.valido?'ok':'no'}">${d.valido?'✔':'✖'}</div><p class="st ${d.valido?'ok':'no'}">${d.valido?'Certificado válido':'Certificado revogado'}</p>
+      <dl><div><dt>Colaborador</dt><dd>${esc(d.nome)}</dd></div><div><dt>CPF</dt><dd>${esc(d.cpf_mascarado)}</dd></div>
+      <div><dt>Treinamento</dt><dd>${esc(d.area_nome)}</dd></div><div><dt>Módulos concluídos</dt><dd>${esc(d.modulos)}</dd></div>
+      <div><dt>Carga horária</dt><dd>${carga(d.carga_horaria_minutos)}</dd></div>
+      <div><dt>Emitido e assinado em</dt><dd>${dt.toLocaleDateString('pt-BR',{timeZone:'America/Recife'})} ${dt.toLocaleTimeString('pt-BR',{timeZone:'America/Recife',hour:'2-digit',minute:'2-digit'})}</dd></div>
+      <div><dt>Código</dt><dd>${esc(cod)}</dd></div><div><dt>SHA-256</dt><dd style="font-size:11px">${esc(d.hash||'')}</dd></div></dl>`;
+  }catch(e){res.innerHTML='<p class="st no">Falha na consulta. Tente de novo.</p>';}
+}
+document.getElementById('f').addEventListener('submit',e=>{e.preventDefault();validar(document.getElementById('c').value);});
+validar(new URLSearchParams(location.search).get('c'));
+</script>
+</body>
+</html>

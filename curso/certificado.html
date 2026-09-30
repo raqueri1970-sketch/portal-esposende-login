@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certificado de Treinamento — Esposende</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  /* Layout copiado do modelo "Modelo Certificado do Treinamento - Estoque.pptx" (27,52 x 19,05 cm),
+     ampliado para A4 paisagem (297 x 205,6 mm). Todas as medidas em mm. */
+  :root{ --campo:#FF0000; }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#2b3345;font-family:Arial,"Liberation Sans",Helvetica,sans-serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .barra{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:10px 12px;background:#0a0f1e;border-bottom:1px solid #232d4a}
+  .barra button,.barra a{font:800 13px Arial,sans-serif;border-radius:9px;padding:10px 14px;cursor:pointer;text-decoration:none;border:1px solid #2aa7ff;background:#0c2948;color:#fff}
+  .barra .pri{background:#facc15;border-color:#facc15;color:#1a1300}
+  .barra span{color:#93a0bf;font:700 12px Arial,sans-serif;flex-basis:100%;text-align:center}
+  #estado{color:#eef1f8;font:700 15px Arial,sans-serif;text-align:center;padding:60px 20px;line-height:1.5}
+  #estado input{font:700 16px Arial;padding:10px 12px;border-radius:8px;border:1px solid #93a0bf;width:220px;margin:10px 6px 0 0}
+  #estado button{font:800 14px Arial;padding:10px 16px;border-radius:8px;border:0;background:#38bdf8;cursor:pointer}
+  .palco{padding:16px 0 40px;display:flex;flex-direction:column;align-items:center;gap:18px}
+  .escala{transform-origin:top left}
+  .pagina{position:relative;width:297mm;height:205.6mm;background:#fff;overflow:hidden;box-shadow:0 10px 40px #0008}
+  .pagina + .pagina{margin-top:18px}
+
+  /* ---------- FRENTE ---------- */
+  .frente{background:#fff url('cert/frente.jpg') center/100% 100% no-repeat}
+  .f-texto{position:absolute;left:20.7mm;top:65.5mm;width:255.6mm;font-size:19.4pt;line-height:1.5;text-align:justify;color:#000}
+  .f-texto p{margin:0}
+  .f-texto .ind{display:inline-block;width:27.6mm}
+  .f-texto .campo{color:var(--campo);font-weight:bold}
+  .f-texto .campo-n{color:var(--campo)}
+  .f-data{text-align:right;color:var(--campo);font-family:Calibri,Carlito,"Liberation Sans",Arial,sans-serif}
+  .f-data .ponto{color:#000}
+  .f-ass{position:absolute;left:83.8mm;top:176.4mm;width:141.5mm;text-align:center;font-family:"Times New Roman","Liberation Serif",serif;font-size:19.4pt;line-height:1.15}
+  .f-ass-img{position:absolute;left:50%;transform:translateX(-50%);top:163mm;height:22mm;max-width:95mm;object-fit:contain}
+
+  /* ---------- VERSO ---------- */
+  .v-tab{position:absolute;left:7.1mm;top:6.7mm;width:282.8mm;height:192.1mm;border:1px solid #000;display:grid;grid-template-columns:217.2mm 1fr}
+  .v-esq{position:relative;border-right:1px solid #000}
+  .v-dir{position:relative;font-size:8.6pt;text-align:center;line-height:1.95}
+  .v-tit{position:absolute;left:0;right:0;top:9mm;text-align:center;font-family:Calibri,Carlito,Arial,sans-serif;font-weight:bold;font-size:15pt}
+  .v-cp{position:absolute;left:0;right:0;top:27mm;text-align:center;font-family:Calibri,Carlito,Arial,sans-serif;font-weight:bold;font-size:17.5pt}
+  .v-lista{position:absolute;left:10mm;right:8mm;top:47mm;font-family:Calibri,Carlito,Arial,sans-serif;font-size:8.6pt;line-height:1.62;color:var(--campo)}
+  .v-lista .cab{color:#000;font-weight:bold}.v-lista .cab b{color:var(--campo)}
+  .v-lista ul{list-style:none;margin:0;padding:0}
+  .v-lista li{padding-left:10mm;position:relative}
+  .v-lista li:before{content:"➢";position:absolute;left:0;color:#000;font-size:8pt}
+  .v-lista .tot{margin-top:2.4mm;color:#000;font-weight:bold}
+  .v-prog{position:absolute;left:0;right:0;top:131mm;text-align:center;font-family:Calibri,Carlito,Arial,sans-serif;font-size:13pt}
+  .v-ass-img{position:absolute;left:89mm;top:152mm;width:58mm;height:17mm;object-fit:contain}
+  .v-seta{position:absolute;left:43mm;top:152mm;width:48mm;height:20mm;overflow:visible}
+  .v-ass-txt{position:absolute;left:62mm;width:112mm;top:171mm;text-align:center;font-size:6.4pt;line-height:1.35;color:#333}
+  .v-qr{position:absolute;left:4mm;top:161mm;width:24mm;height:24mm}
+  .v-qr img,.v-qr canvas{width:24mm!important;height:24mm!important}
+  .v-qr-txt{position:absolute;left:4mm;top:185.8mm;width:70mm;font-size:5.6pt;color:#333;white-space:nowrap}
+  .v-hash{position:absolute;right:4mm;top:187.5mm;font-size:5.4pt;color:#666;text-align:right;line-height:1.3}
+  .v-dir h5{margin:0;font-size:11pt;font-weight:bold}
+  .v-fac{position:absolute;left:0;right:0;top:17mm}
+  .v-freq{position:absolute;left:1mm;right:1mm;top:76mm}
+  .v-freq p{margin:3mm 0 0;font-size:7.6pt;line-height:1.35}
+  .v-inst{position:absolute;left:0;right:0;top:121mm}
+  .v-inst h5{font-size:8.6pt}
+
+  @page{size:A4 landscape;margin:0}
+  @media print{
+    body{background:#fff}
+    .barra,#estado{display:none!important}
+    .palco{padding:0;gap:0;display:block}
+    .escala{transform:none!important;width:auto!important;height:auto!important}
+    .pagina{box-shadow:none;page-break-after:always;break-after:page;margin:0!important}
+    .pagina:last-child{page-break-after:auto;break-after:auto}
+  }
+</style>
+</head>
+<body>
+<div class="barra" id="barra" style="display:none">
+  <button class="pri" id="btPdf">⬇️ Baixar PDF</button>
+  <button id="btImp">🖨️ Imprimir</button>
+  <a id="btVoltar" href="./?area=estoque">← Voltar ao treinamento</a>
+  <span id="barraInfo"></span>
+</div>
+<div id="estado">Carregando certificado…</div>
+<div class="palco" id="palco" style="display:none"><div class="escala" id="escala"></div></div>
+
+<script>
+const SUPA_URL='https://rdztzurfesnobfkazgpm.supabase.co';
+const SUPA_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
+const sb=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPA_URL,SUPA_KEY):null;
+// Texto e dados fixos do modelo (mantidos como estão no PPTX)
+const EMISSOR='A HIPERFOCO';
+const FACILITADORES=['DEIVIDE MELO DOS SANTOS','JEFFERSON WESYLEY SANTIAGO VIEIRA','JOSE AMARO DA SILVA ALVES','ROBERTO JOSE DOS SANTOS FILHO'];
+const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+const qs=new URLSearchParams(location.search);
+const codigo=(qs.get('c')||'').trim().toUpperCase();
+const estado=document.getElementById('estado');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const dig=s=>String(s||'').replace(/\D/g,'');
+const fmtCpf=c=>{c=dig(c);return c.length===11?c.slice(0,3)+'.'+c.slice(3,6)+'.'+c.slice(6,9)+'-'+c.slice(9):c;};
+const fmtD=d=>{const x=new Date(d);return x.toLocaleDateString('pt-BR',{timeZone:'America/Recife'});};
+const fmtDH=d=>{const x=new Date(d);return x.toLocaleDateString('pt-BR',{timeZone:'America/Recife'})+' às '+x.toLocaleTimeString('pt-BR',{timeZone:'America/Recife',hour:'2-digit',minute:'2-digit'});};
+function dataExtenso(d){const x=new Date(new Date(d).toLocaleString('en-US',{timeZone:'America/Recife'}));return `${x.getDate()} de ${MESES[x.getMonth()]} de ${x.getFullYear()}`;}
+function carga(min){min=Math.max(1,Math.round(min||0));const h=Math.floor(min/60),m=min%60;if(!h)return m+'min';return m?`${h}h${String(m).padStart(2,'0')}min`:`${h}h`;}
+function nomeTreinamento(area){return /estoque/i.test(area||'')?'Treinamento de Estoque':('Treinamento de '+area);}
+
+async function rpc(nome,params){
+  const r=await fetch(`${SUPA_URL}/rest/v1/rpc/${nome}`,{method:'POST',headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(params)});
+  const t=await r.json().catch(()=>null); if(!r.ok) throw new Error((t&&t.message)||'Falha'); return t;
+}
+
+function pedirCpf(msg){
+  estado.innerHTML=`${esc(msg||'Para abrir o certificado, confirme o CPF do colaborador.')}<br><input id="cpfIn" inputmode="numeric" placeholder="CPF (só números)" maxlength="14"><button id="cpfOk">Abrir</button>`;
+  document.getElementById('cpfOk').onclick=()=>carregar(dig(document.getElementById('cpfIn').value));
+}
+
+async function carregar(cpf){
+  if(!codigo){estado.textContent='Link de certificado incompleto.';return;}
+  let d=null;
+  try{
+    if(cpf) d=await rpc('curso_certificado_dados',{p_codigo:codigo,p_cpf:cpf});
+    if(!d && sb){ // administrador/auditoria logado no Portal
+      const {data:{session}}=await sb.auth.getSession();
+      if(session){
+        const {data}=await sb.from('curso_certificados').select('*').eq('codigo',codigo).maybeSingle();
+        if(data) d={codigo:data.codigo,cpf:data.cpf,nome:data.nome_colaborador,cargo:data.cargo,loja:data.loja_codigo,area_id:data.area_id,area_nome:data.area_nome,carga_min:data.carga_horaria_minutos,emitido_em:data.emitido_em,assinatura:data.assinatura_png,aceite_texto:data.aceite_texto,aceite_em:data.aceite_em,ip:data.ip,hash:data.hash_sha256,modulos:data.modulos,valido:!data.revogado_em};
+      }
+    }
+  }catch(e){ estado.textContent='Não foi possível carregar: '+e.message; return; }
+  if(!d){ pedirCpf(cpf?'CPF não confere com este certificado. Confira e tente de novo.':null); return; }
+  montar(d);
+}
+
+function montar(d){
+  const mods=(d.modulos||[]).slice().sort((a,b)=>a.ordem-b.ordem);
+  const validar=new URL('validar.html?c='+encodeURIComponent(d.codigo),location.href).href;
+  const assinado=d.aceite_em||d.emitido_em;
+  const frente=`
+  <div class="pagina frente" id="pg1">
+    <div class="f-texto">
+      <p>&nbsp;</p>
+      <p><span class="ind"></span>${esc(EMISSOR)}, certifica que <span class="campo">${esc(fmtCpf(d.cpf))}, ${esc(String(d.nome||'').toUpperCase())}</span><b>, </b>concluiu com aproveitamento o <b>${esc(nomeTreinamento(d.area_nome))} da Esposende Calçados, </b>conforme instruções contidas no verso deste certificado, com carga horária total de <span class="campo-n">${esc(carga(d.carga_min))}.</span></p>
+      <p>&nbsp;</p>
+      <p class="f-data">Recife/PE, ${esc(dataExtenso(d.emitido_em))}<span class="ponto">.</span></p>
+    </div>
+    ${d.assinatura?`<img class="f-ass-img" src="${d.assinatura}" alt="Assinatura">`:''}
+    <div class="f-ass">________________________<br>${esc(d.nome||'Nome do Colaborador')}</div>
+  </div>`;
+  const verso=`
+  <div class="pagina" id="pg2">
+    <div class="v-tab">
+      <div class="v-esq">
+        <div class="v-tit">${esc(nomeTreinamento(d.area_nome))} ESPOSENDE Calçados</div>
+        <div class="v-cp">CONTEÚDO PROGRAMÁTICO</div>
+        <div class="v-lista">
+          <div class="cab">1. <b>${esc(String(d.area_nome||'').toUpperCase())}</b></div>
+          <ul>${mods.map(m=>`<li>Módulo ${m.ordem} – ${esc(m.nome)} (${esc(m.duracao||'')}) — concluído em ${m.concluido_em?fmtD(m.concluido_em):'-'} · vídeo assistido ${m.percentual!=null?Math.round(m.percentual)+'%':'-'} · avaliação: nota ${m.nota!=null?Math.round(m.nota):'-'};</li>`).join('')}</ul>
+          <div class="tot">Total: ${mods.length} de ${mods.length} módulos concluídos · carga horária ${esc(carga(d.carga_min))}.</div>
+        </div>
+        <div class="v-prog">Este treinamento, faz parte do Programa de Treinamento &amp; Desenvolvimento da ESPOSENDE Calçados.</div>
+        <svg class="v-seta" viewBox="0 0 48 20"><line x1="1" y1="17" x2="44" y2="10.5" stroke="#FF0000" stroke-width=".45"/><polygon points="45.8,10.2 42.4,9.2 42.9,12.3" fill="#FF0000"/></svg>
+        ${d.assinatura?`<img class="v-ass-img" src="${d.assinatura}" alt="Assinatura do colaborador">`:''}
+        <div class="v-ass-txt">Assinado eletronicamente por <b>${esc(d.nome)}</b> · CPF ${esc(fmtCpf(d.cpf))}<br>em ${esc(fmtDH(assinado))}${d.ip?' · IP '+esc(d.ip):''} · com aceite da declaração de conclusão</div>
+        <div class="v-qr" id="qr"></div>
+        <div class="v-qr-txt">Código <b>${esc(d.codigo)}</b> · valide pelo QR Code</div>
+        <div class="v-hash">Autenticação SHA-256<br>${esc(String(d.hash||'').slice(0,32))}<br>${esc(String(d.hash||'').slice(32))}</div>
+      </div>
+      <div class="v-dir">
+        <div class="v-fac"><h5>Facilitadores</h5>${FACILITADORES.map(f=>esc(f)).join('<br>')}<br><b>Auditoria Interna</b></div>
+        <div class="v-freq"><h5>Frequência</h5><p>O participante assistiu a 100% dos módulos (mínimo de 90% de cada vídeo, sem avançar) e foi aprovado na avaliação de cada módulo.</p></div>
+        <div class="v-inst"><h5>Instituição Responsável</h5>ESPOSENDE LTDA<br>CNPJ 44.616.854/0001-72<br>Avenida da Recuperação, nº 6485, Bairro<br>Guabiraba, Recife - Pernambuco<br>CEP 52490-570 – Fone 81 4042-4000</div>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('escala').innerHTML=frente+verso;
+  try{ new QRCode(document.getElementById('qr'),{text:validar,width:180,height:180,correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
+  estado.style.display='none';
+  document.getElementById('palco').style.display='flex';
+  document.getElementById('barra').style.display='flex';
+  document.getElementById('barraInfo').textContent=(d.valido===false?'⚠️ CERTIFICADO REVOGADO · ':'')+'Certificado '+d.codigo+' · emitido em '+fmtDH(d.emitido_em);
+  document.title='Certificado '+d.nome+' — Esposende';
+  window._cert=d;
+  ajustarEscala(); addEventListener('resize',ajustarEscala);
+}
+
+function ajustarEscala(){
+  const e=document.getElementById('escala'); const pg=e.querySelector('.pagina'); if(!pg) return;
+  const larg=pg.offsetWidth, alt=e.scrollHeight;
+  const s=Math.min(1,(window.innerWidth-24)/larg);
+  e.style.transform=`scale(${s})`; e.style.width=larg+'px';
+  e.parentElement.style.height=(alt*s+60)+'px';
+}
+
+document.getElementById('btImp').onclick=()=>window.print();
+document.getElementById('btPdf').onclick=async ev=>{
+  const b=ev.target; b.disabled=true; b.textContent='Gerando PDF…';
+  try{
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    const pgs=[...document.querySelectorAll('.pagina')];
+    for(let i=0;i<pgs.length;i++){
+      const cv=await html2canvas(pgs[i],{scale:2.4,useCORS:true,backgroundColor:'#ffffff',onclone:doc=>{const x=doc.getElementById('escala');x.style.transform='none';}});
+      if(i) pdf.addPage('a4','landscape');
+      pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',0,(210-205.6)/2,297,205.6);
+    }
+    const d=window._cert||{};
+    pdf.save(`Certificado_${String(d.nome||'').replace(/[^\wÀ-ú]+/g,'_')}_${d.codigo||''}.pdf`);
+  }catch(e){ alert('Não consegui gerar o PDF aqui. Use o botão Imprimir e escolha "Salvar como PDF".'); }
+  b.disabled=false; b.textContent='⬇️ Baixar PDF';
+};
+
+(function(){
+  let cpf=dig(qs.get('cpf'));
+  if(!cpf){ try{ const id=JSON.parse(localStorage.getItem('curso_identidade_v2')||'null'); if(id&&id.cpf) cpf=dig(id.cpf); }catch(e){} }
+  carregar(cpf);
+})();
+</script>
+</body>
+</html>

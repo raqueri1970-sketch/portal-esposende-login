@@ -291,60 +291,6 @@
     .area-card h3{font-size:13px}
     .area-card p{font-size:10px}
   }
-
-  /* ===== progresso, avaliação, parabéns e certificado ===== */
-  .prog-panel{display:none;background:linear-gradient(135deg,#0f1a36,#0c2340);border:1px solid #1f3b66;border-radius:14px;padding:16px 18px;margin:0 0 20px}
-  .prog-panel.show{display:block}
-  .prog-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-  .prog-top b{font-size:15px}
-  .prog-top span{font-size:12.5px;color:var(--muted);font-weight:600}
-  .prog-bar{height:10px;border-radius:99px;background:#0a1230;border:1px solid var(--border);overflow:hidden;margin:10px 0 8px}
-  .prog-bar i{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#4ade80);border-radius:99px;transition:width .4s}
-  .prog-msg{font-size:12.5px;color:var(--muted);line-height:1.45;margin:0}
-  .cert-btn{background:#facc15;color:#1a1300;border:none;border-radius:10px;font:900 14px Nunito,sans-serif;padding:11px 16px;cursor:pointer;box-shadow:0 6px 18px #facc1533}
-  .cert-btn:hover{background:#fde047}
-  .prog-badge{display:inline-flex;align-items:center;gap:5px;margin-top:9px;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:99px;border:1px solid var(--border);color:var(--muted)}
-  .prog-badge.ok{color:#4ade80;border-color:#166534;background:#052e1680}
-  .prog-badge.aval{color:#fbbf24;border-color:#854d0e;background:#42200680}
-  .prog-badge.meio{color:#38bdf8;border-color:#0c4a6e;background:#082f4980}
-  .aval-btn{display:block;margin-top:9px;width:100%;background:#fbbf24;color:#1a1300;border:none;border-radius:9px;font:800 12.5px Nunito,sans-serif;padding:9px;cursor:pointer}
-  .card.feito{border-color:#166534}
-  .aval .opt{display:block;width:100%;text-align:left;margin:0 0 8px;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:#0a1230;color:var(--text);font:700 13.5px Nunito,sans-serif;cursor:pointer;line-height:1.35}
-  .aval .opt:hover{border-color:#38bdf8}
-  .aval .opt.sel{background:#38bdf8;border-color:#38bdf8;color:#04121f}
-  .aval .enun{font-size:14.5px;font-weight:800;margin:0 0 12px;line-height:1.4}
-  .aval .msg{font-size:13px;font-weight:700;margin:10px 0 0;line-height:1.45}
-  .aval .msg.erro{color:#f87171}
-  .parabens{padding:30px 26px;text-align:center}
-  .parabens .emoji{font-size:46px;line-height:1;margin-bottom:10px}
-  .parabens h4{margin:0 0 8px;font-size:21px;font-weight:900;color:#4ade80}
-  .parabens p{margin:0 0 10px;font-size:14px;color:var(--text);line-height:1.5}
-  .parabens .sub{color:var(--muted);font-size:13px}
-  .parabens .acoes{display:flex;flex-direction:column;gap:8px;margin-top:16px}
-  .btn-sec{background:#17213b;color:var(--text);border:1px solid var(--border);border-radius:10px;font:800 13px Nunito,sans-serif;padding:11px;cursor:pointer}
-  .player-box.quiz-only #playerBody{grid-template-columns:minmax(0,1fr)!important;background:#0d1327}
-  .player-box.quiz-only .quiz-side{display:flex;flex-direction:column;border:0}
-  .skip-aviso{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:#b91c1cee;color:#fff;font:800 12.5px Nunito,sans-serif;padding:8px 14px;border-radius:99px;z-index:5;pointer-events:none;opacity:0;transition:opacity .2s;white-space:nowrap}
-  .skip-aviso.on{opacity:1}
-  #playerBody{position:relative}
-  .cert-ov{z-index:150}
-  .cert-box{margin:auto;width:100%;max-width:640px;background:#0a0f1e;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 24px 80px #000a}
-  .cert-body{padding:18px 20px 22px}
-  .cert-body .quem{background:#0d1428;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.55;margin-bottom:12px}
-  .cert-body table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:12px}
-  .cert-body td,.cert-body th{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left}
-  .cert-body th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
-  .cert-decl{font-size:12.8px;line-height:1.55;color:#dbe3f5;background:#0d1428;border-left:3px solid #facc15;padding:10px 12px;border-radius:6px;margin:0 0 10px}
-  .cert-check{display:flex;gap:9px;align-items:flex-start;font-size:13px;font-weight:700;margin:0 0 12px;cursor:pointer}
-  .cert-check input{width:20px;height:20px;flex-shrink:0;margin-top:1px}
-  .sig-wrap{position:relative;background:#fff;border-radius:10px;border:2px dashed #93a0bf;touch-action:none}
-  .sig-wrap canvas{display:block;width:100%;height:170px;cursor:crosshair;touch-action:none}
-  .sig-wrap .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9aa5bd;font-weight:800;font-size:14px;pointer-events:none}
-  .sig-wrap .linha{position:absolute;left:8%;right:8%;bottom:34px;border-bottom:1px solid #c7cedd;pointer-events:none}
-  .cert-acoes{display:flex;gap:8px;margin-top:12px}
-  .cert-acoes button{flex:1}
-  .cert-err{color:#f87171;font-size:12.5px;font-weight:800;margin:10px 0 0;display:none}
-  .cert-err.show{display:block}
 </style>
 </head>
 <body>
@@ -394,7 +340,7 @@
     <p>Clique em um módulo para assistir o vídeo do processo. Assista na ordem sugerida se estiver começando agora.</p>
   </div>
   <div class="areas-view" id="areasView"><div class="areas-grid" id="areasGrid"></div></div>
-  <div class="courses-view hidden" id="coursesView"><button class="back-area" id="backArea">← Departamentos</button><div class="prog-panel" id="progPanel"></div><div class="grid" id="grid"></div></div>
+  <div class="courses-view hidden" id="coursesView"><button class="back-area" id="backArea">← Departamentos</button><div class="grid" id="grid"></div></div>
 </div>
 
 <div class="overlay" id="overlay">
@@ -414,17 +360,6 @@
     <div id="playerBody">
       <div class="player-status"><div class="spinner"></div>Carregando vídeo…</div>
     </div>
-  </div>
-</div>
-
-
-<div class="overlay cert-ov" id="certOv">
-  <div class="cert-box">
-    <div class="player-head">
-      <div class="left"><span class="dot" style="background:#facc15"></span><div><h4>Emitir certificado</h4><span>Treinamento de Operações de Estoque</span></div></div>
-      <button class="close-btn" id="certClose" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
-    <div class="cert-body" id="certBody"></div>
   </div>
 </div>
 
@@ -467,19 +402,6 @@ const AREAS=[
   {id:'lideranca',nome:'Liderança',pos:'94.6% 86.8%'}
 ];
 let catalogoAtual=[];
-const AREA_LINK=(new URLSearchParams(location.search).get('area')||'').trim().toLowerCase();
-let areaAtual=null, areaAtualNome='';
-let PROGRESSO={}, PROG_RESUMO=null;
-function soDigitos(s){return String(s||'').replace(/\D/g,'');}
-function primeiroNome(n){n=String(n||'').trim().split(/\s+/)[0]||'';return n.charAt(0).toUpperCase()+n.slice(1).toLowerCase();}
-function fmtCpf(c){c=soDigitos(c);return c.length===11?c.slice(0,3)+'.'+c.slice(3,6)+'.'+c.slice(6,9)+'-'+c.slice(9):c;}
-function fmtData(d){try{return new Date(d).toLocaleDateString('pt-BR');}catch(e){return '';}}
-async function rpcJson(nome, params){
-  const r=await fetch(`${SUPA_URL}/rest/v1/rpc/${nome}`,{method:'POST',headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(params||{})});
-  const t=await r.json().catch(()=>null);
-  if(!r.ok) throw new Error((t&&(t.message||t.hint))||('Falha '+r.status));
-  return t;
-}
 
 function voltarAoPortal(){
   // Retorna ao último ponto válido do Portal sem encerrar a sessão.
@@ -551,21 +473,6 @@ async function carregarAreas(){
   document.getElementById('coursesView').classList.add('hidden');
   document.getElementById('backArea').style.display='none';
   document.querySelector('.intro h2').textContent='Módulos de processo';
-  // Link direto (ex.: ?area=estoque): pula a capa de departamentos e abre os módulos.
-  if(AREA_LINK){
-    const a=AREAS.find(x=>x.id===AREA_LINK);
-    if(a){
-      const ok=PORTAL_ADMIN||!!(perms[a.id]||{}).permitido;
-      if(ok){ abrirArea(a.id,a.nome); }
-      else{
-        document.getElementById('areasView').classList.remove('open');
-        document.getElementById('coursesView').classList.remove('hidden');
-        document.querySelector('.intro h2').textContent=a.nome;
-        document.getElementById('progPanel').classList.remove('show');
-        grid.innerHTML='<div class="empty-course">🔒 Seu cadastro ainda não tem acesso a este treinamento.<br>Ele é destinado a Estoquistas, Subgerentes e Gerentes. Fale com seu gerente para liberar.</div>';
-      }
-    }
-  }
 }
 
 function renderCursos(cursos){
@@ -578,67 +485,18 @@ function renderCursos(cursos){
     const d=document.createElement('div');
     d.className='card';
     d.style.setProperty('--accent',c.accent||'#38bdf8');
-    const pg=PROGRESSO[c.id];
-    let selo='';
-    if(pg){
-      if(pg.aprovado){ d.classList.add('feito'); selo=`<span class="prog-badge ok">✓ Concluído${pg.nota!=null?' · nota '+Math.round(pg.nota):''}${pg.concluido_em?' · '+fmtData(pg.concluido_em):''}</span>`; }
-      else if(pg.ref_avaliar){ selo=`<span class="prog-badge aval">⚠ Vídeo assistido · falta a avaliação</span><button type="button" class="aval-btn" data-ref="${pg.ref_avaliar}">Responder avaliação agora</button>`; }
-      else if(pg.percentual){ selo=`<span class="prog-badge meio">▶ Em andamento · ${Math.round(pg.percentual)}%</span>`; }
-      else { selo=`<span class="prog-badge">○ Não iniciado</span>`; }
-    }
-    d.innerHTML=`<div class="cover-wrap"><img src="${capaUrl(c)}" alt="Capa: ${escapeHtml(c.nome)}" decoding="async"><div class="duration-pill">${escapeHtml(c.duracao||'')}</div><div class="play-badge"><div class="circle"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div></div><div class="info"><h3>${escapeHtml(c.nome)}</h3><p>${escapeHtml(c.desc||'')}</p>${selo}</div>`;
+    d.innerHTML=`<div class="cover-wrap"><img src="${capaUrl(c)}" alt="Capa: ${escapeHtml(c.nome)}" decoding="async"><div class="duration-pill">${escapeHtml(c.duracao||'')}</div><div class="play-badge"><div class="circle"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div></div><div class="info"><h3>${escapeHtml(c.nome)}</h3><p>${escapeHtml(c.desc||'')}</p></div>`;
     d.addEventListener('click',()=>openPlayer(c));
-    const ab=d.querySelector('.aval-btn');
-    if(ab) ab.addEventListener('click',ev=>{ev.stopPropagation();abrirSoAvaliacao(c,ab.dataset.ref);});
     grid.appendChild(d);
   });
 }
 
-async function abrirArea(aid,nome){
-  areaAtual=aid; areaAtualNome=nome;
+function abrirArea(aid,nome){
   document.getElementById('areasView').classList.remove('open');
   document.getElementById('coursesView').classList.remove('hidden');
-  document.getElementById('backArea').style.display=AREA_LINK?'none':'inline-block';
+  document.getElementById('backArea').style.display='inline-block';
   document.querySelector('.intro h2').textContent=nome;
   renderCursos(catalogoAtual.filter(x=>x.area_id===aid));
-  await atualizarProgressoUI();
-}
-
-async function carregarProgresso(aid){
-  PROGRESSO={}; PROG_RESUMO=null;
-  const id=getIdentidade();
-  if(!aid||!id||!id.cpf||PORTAL_ADMIN||id.admin) return;
-  try{
-    const rows=await rpcJson('curso_progresso',{p_cpf:soDigitos(id.cpf),p_area_id:aid});
-    (rows||[]).forEach(r=>{PROGRESSO[r.modulo_id]=r;});
-    if(rows&&rows.length) PROG_RESUMO={total:rows[0].total,concluidos:rows[0].concluidos,certificado:rows[0].certificado};
-  }catch(e){ console.warn('progresso',e); }
-}
-
-async function atualizarProgressoUI(){
-  if(!areaAtual) return;
-  await carregarProgresso(areaAtual);
-  if(!document.getElementById('coursesView').classList.contains('hidden')) renderCursos(catalogoAtual.filter(x=>x.area_id===areaAtual));
-  renderProgPanel();
-}
-
-function renderProgPanel(){
-  const el=document.getElementById('progPanel');
-  if(!PROG_RESUMO||!PROG_RESUMO.total){ el.classList.remove('show'); el.innerHTML=''; return; }
-  const {total,concluidos,certificado}=PROG_RESUMO;
-  const pct=Math.round(concluidos/total*100);
-  const id=getIdentidade()||{};
-  let msg, acao='';
-  if(concluidos>=total){
-    msg=`🎓 Parabéns, ${escapeHtml(primeiroNome(id.nome))}! Você concluiu todos os módulos. `+(certificado?'Seu certificado já foi emitido e assinado.':'Assine para emitir seu certificado com a carga horária.');
-    acao=certificado?`<button class="cert-btn" id="btnVerCert">🎓 Ver meu certificado</button>`:`<button class="cert-btn" id="btnEmitirCert">🎓 Emitir meu certificado</button>`;
-  }else{
-    msg=`Assista cada vídeo até o fim e responda a pergunta do módulo. Faltam <b>${total-concluidos}</b> módulo(s) para liberar o seu certificado.`;
-  }
-  el.innerHTML=`<div class="prog-top"><div><b>Seu progresso no treinamento</b><br><span>${concluidos} de ${total} módulos concluídos · ${pct}%</span></div>${acao}</div><div class="prog-bar"><i style="width:${pct}%"></i></div><p class="prog-msg">${msg}</p>`;
-  el.classList.add('show');
-  const b1=document.getElementById('btnEmitirCert'); if(b1) b1.addEventListener('click',abrirCertificado);
-  const b2=document.getElementById('btnVerCert'); if(b2) b2.addEventListener('click',()=>{location.href='certificado.html?c='+encodeURIComponent(certificado);});
 }
 document.getElementById('backArea').addEventListener('click',carregarAreas);
 
@@ -746,8 +604,7 @@ gateCpfInput.addEventListener('input', ()=>{
   gateCpfInput.value = out;
 });
 
-document.getElementById('gate-submit').addEventListener('click', async ()=>{
-  const btnGate = document.getElementById('gate-submit');
+document.getElementById('gate-submit').addEventListener('click', ()=>{
   let loja = document.getElementById('gate-loja').value.trim();
   if(loja === '__outra__') loja = gateLojaOutra.value.trim();
   const nome = document.getElementById('gate-nome').value.trim();
@@ -755,23 +612,9 @@ document.getElementById('gate-submit').addEventListener('click', async ()=>{
   const cargo = document.getElementById('gate-cargo').value.trim();
   const err = document.getElementById('gate-err');
   const cpfDigits = cpf.replace(/\D/g,'');
-  if(!loja || !nome || cpfDigits.length !== 11 || !cargo){ err.textContent='Preencha todos os campos pra continuar.'; err.classList.add('show'); return; }
+  if(!loja || !nome || cpfDigits.length !== 11 || !cargo){ err.classList.add('show'); return; }
   err.classList.remove('show');
-  // O CPF precisa existir na base de colaboradores: é ele que identifica quem assistiu e sai no certificado.
-  btnGate.disabled = true; btnGate.textContent = 'Conferindo CPF…';
-  let func = null;
-  try{
-    const rows = await rpcJson('curso_identificar_funcionario', {p_cpf: cpfDigits});
-    func = rows && rows[0];
-  }catch(e){
-    err.textContent = 'Sem conexão para conferir o CPF. Verifique a internet e tente de novo.'; err.classList.add('show');
-    btnGate.disabled = false; btnGate.textContent = 'Começar'; return;
-  }
-  btnGate.disabled = false; btnGate.textContent = 'Começar';
-  if(!func){
-    err.textContent = 'CPF não encontrado no cadastro de colaboradores da Esposende. Confira os números ou fale com seu gerente.'; err.classList.add('show'); return;
-  }
-  setIdentidade({loja, nome: func.nome || nome, nome_digitado: nome, cpf, cargo: func.cargo || cargo, cargo_informado: cargo, loja_codigo: func.loja_codigo, validado: true});
+  setIdentidade({loja, nome, cpf, cargo});
   hideGate();
   renderIdentityBadge();
 carregarCatalogo();
@@ -793,7 +636,7 @@ async function iniciarCentral(){
   const admin=PORTAL_ADMIN ? true : await detectarAdministradorPortal();
   if(!admin){
     const id=getIdentidade();
-    if(id && (id.admin || !id.validado)){
+    if(id && id.admin){
       try{localStorage.removeItem(ID_KEY)}catch(e){}
     }
     if(!getIdentidade())showGate();
@@ -837,43 +680,32 @@ function rpc(nome, params){
 }
 
 let watchState = null;
-let cursoAtual = null;
-function avisoPulo(){
-  const a=document.getElementById('skipAviso'); if(!a) return;
-  a.classList.add('on'); clearTimeout(a._t); a._t=setTimeout(()=>a.classList.remove('on'),2200);
-}
 function startWatchTracking(videoEl, viewId){
   stopWatchTracking();
-  const ws = watchState = {viewId, maxWatched:0, duration:0, checkpoint:null, nearEndFired:false, lastT:0, lastW:performance.now()/1000};
-  // Só conta o tempo realmente reproduzido: o avanço do vídeo não pode ser maior que o tempo do relógio.
+  watchState = {viewId, maxWatched:0, duration:0, checkpoint:null, nearEndFired:false};
   videoEl.addEventListener('timeupdate', ()=>{
-    if(!isNaN(videoEl.duration)) ws.duration = videoEl.duration;
-    const t=videoEl.currentTime, agora=performance.now()/1000;
-    const dt=t-ws.lastT, dw=agora-ws.lastW;
-    if(!videoEl.paused && !videoEl.seeking && dt>0 && dt <= dw*1.15+0.6 && ws.lastT <= ws.maxWatched+0.75) ws.maxWatched=Math.max(ws.maxWatched,t);
-    ws.lastT=t; ws.lastW=agora;
+    if(!isNaN(videoEl.duration)) watchState.duration = videoEl.duration;
+    if(videoEl.currentTime > watchState.maxWatched) watchState.maxWatched = videoEl.currentTime;
     // reforço: em alguns navegadores mobile o evento 'ended' não dispara de forma confiável
-    if(!ws.nearEndFired && ws.duration && ws.maxWatched / ws.duration >= 0.95){
-      ws.nearEndFired = true;
-      concluirVideo();
+    if(!watchState.nearEndFired && watchState.duration && watchState.maxWatched / watchState.duration >= 0.95){
+      watchState.nearEndFired = true;
+      sendWatchProgress(true);
+      showQuiz();
     }
   });
-  videoEl.addEventListener('seeking', ()=>{
-    if(videoEl.currentTime > ws.maxWatched + 1.5){ videoEl.currentTime = ws.maxWatched; ws.lastT = ws.maxWatched; avisoPulo(); }
-  });
-  videoEl.addEventListener('ratechange', ()=>{ if(videoEl.playbackRate > 1){ videoEl.playbackRate = 1; avisoPulo(); } });
   videoEl.addEventListener('ended', ()=>{
-    if(ws.duration && ws.maxWatched >= ws.duration - 3) ws.maxWatched = ws.duration;
-    if(!ws.nearEndFired){ ws.nearEndFired = true; concluirVideo(); } else sendWatchProgress(true);
+    watchState.maxWatched = watchState.duration || watchState.maxWatched;
+    sendWatchProgress(true);
+    showQuiz();
   });
-  ws.checkpoint = setInterval(()=>sendWatchProgress(false), 15000);
+  watchState.checkpoint = setInterval(()=>sendWatchProgress(false), 15000);
 }
 function sendWatchProgress(concluido){
-  if(!watchState || !watchState.viewId) return Promise.resolve();
+  if(!watchState || !watchState.viewId) return;
   const seg = Math.round(watchState.maxWatched);
   const dur = watchState.duration ? Math.round(watchState.duration) : null;
   const pct = dur ? Math.min(100, Math.round((seg/dur)*100)) : null;
-  return rpc('curso_registrar_progresso', {
+  rpc('curso_registrar_progresso', {
     p_client_ref: watchState.viewId,
     p_segundos: seg,
     p_duracao: dur,
@@ -901,8 +733,6 @@ function quizHtml(){
   const check = '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 11 15.5 16 9"/></svg>';
   return `
     <div class="quiz-side">
-      <div class="quiz aval" id="avalBox" style="display:none"></div>
-      <div class="parabens" id="parabensBox" style="display:none"></div>
       <div class="quiz" id="quizBox" style="display:none">
         <p class="quiz-kicker">Avaliação do módulo</p>
         <h4>O que você achou deste módulo?</h4>
@@ -930,102 +760,6 @@ function quizHtml(){
       </div>
       <div class="quiz-thanks" id="quizThanks" style="display:none">${check}Obrigado pelo feedback!</div>
     </div>`;
-}
-
-function abrirPainelLateral(){
-  const caixa=document.querySelector('.player-box'); if(caixa) caixa.classList.add('quiz-open');
-}
-function soPainel(qual){
-  ['avalBox','parabensBox','quizBox','quizThanks'].forEach(k=>{const e=document.getElementById(k); if(e) e.style.display=(k===qual?'block':'none');});
-  abrirPainelLateral();
-  const e=document.getElementById(qual); if(e) e.scrollIntoView({block:'nearest',behavior:'smooth'});
-}
-
-async function concluirVideo(){
-  quizResolved = true;
-  const id=getIdentidade()||{};
-  for(let i=0;i<20 && watchState && !watchState.viewId;i++) await new Promise(r=>setTimeout(r,250));
-  await sendWatchProgress(true);
-  if(!watchState || !watchState.viewId || !id.cpf || PORTAL_ADMIN || id.admin){ showQuiz(); return; }
-  mostrarAvaliacao(watchState.viewId, cursoAtual);
-}
-
-async function mostrarAvaliacao(ref, c){
-  const box=document.getElementById('avalBox'); if(!box) return;
-  box.innerHTML='<div class="player-status"><div class="spinner"></div>Carregando a avaliação…</div>';
-  soPainel('avalBox');
-  let qs=[];
-  try{ qs=await rpcJson('curso_obter_avaliacao',{p_client_ref:ref}); }catch(e){ box.innerHTML='<p class="aval msg erro">Não foi possível carregar a avaliação. Feche e use o botão “Responder avaliação” no card do módulo.</p>'; return; }
-  if(!qs||!qs.length){ mostrarParabens(c,null); return; }
-  const resp={};
-  box.innerHTML=`<p class="quiz-kicker">Avaliação do módulo ${c?c.ordem:''}</p><h4>Responda para concluir o módulo</h4>`+
-    qs.map(q=>`<div class="quiz-q" data-q="${q.id}"><p class="enun">${escapeHtml(q.enunciado)}</p>`+
-      (q.alternativas||[]).slice().sort(()=>Math.random()-.5).map(a=>`<button type="button" class="opt" data-a="${escapeHtml(a)}">${escapeHtml(a)}</button>`).join('')+'</div>').join('')+
-    `<button type="button" class="quiz-submit" id="avalEnviar">Confirmar resposta</button><p class="msg" id="avalMsg"></p>`;
-  box.querySelectorAll('.quiz-q').forEach(qe=>{
-    qe.querySelectorAll('.opt').forEach(o=>o.addEventListener('click',()=>{
-      qe.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel')); o.classList.add('sel'); resp[qe.dataset.q]=o.dataset.a;
-    }));
-  });
-  const msg=document.getElementById('avalMsg');
-  document.getElementById('avalEnviar').addEventListener('click',async ev=>{
-    if(Object.keys(resp).length<qs.length){ msg.className='msg erro'; msg.textContent='Escolha uma resposta.'; return; }
-    ev.target.disabled=true; ev.target.textContent='Corrigindo…';
-    try{
-      const r=(await rpcJson('curso_corrigir_avaliacao',{p_client_ref:ref,p_respostas:resp}))[0]||{};
-      if(!r.aprovado){
-        msg.className='msg erro'; msg.textContent='Resposta incorreta. Pense no que o vídeo mostrou e tente de novo.';
-        ev.target.disabled=false; ev.target.textContent='Tentar de novo';
-        box.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel')); Object.keys(resp).forEach(k=>delete resp[k]);
-        return;
-      }
-      await carregarProgresso(areaAtual);
-      const pg=c&&PROGRESSO[c.id];
-      if(pg && !pg.aprovado){
-        msg.className='msg erro';
-        msg.innerHTML='Resposta certa, mas o vídeo não foi registrado como assistido por completo (avançar o vídeo não conta). Assista este módulo de novo, do início ao fim.';
-        ev.target.style.display='none'; return;
-      }
-      mostrarParabens(c,r.nota);
-    }catch(e){ msg.className='msg erro'; msg.textContent='Falha ao enviar: '+e.message; ev.target.disabled=false; ev.target.textContent='Confirmar resposta'; }
-  });
-}
-
-function mostrarParabens(c,nota){
-  const id=getIdentidade()||{};
-  const R=PROG_RESUMO||{total:0,concluidos:0};
-  const tudo=R.total&&R.concluidos>=R.total;
-  const box=document.getElementById('parabensBox');
-  const pct=R.total?Math.round(R.concluidos/R.total*100):0;
-  box.innerHTML=`<div class="emoji">${tudo?'🏆':'🎉'}</div>
-    <h4>Parabéns, ${escapeHtml(primeiroNome(id.nome))}!</h4>
-    <p>Você concluiu o <b>Módulo ${c?c.ordem:''} — ${escapeHtml(c?c.nome:'')}</b>${nota!=null?' com nota <b>'+Math.round(nota)+'</b>':''}.</p>
-    ${R.total?`<div class="prog-bar"><i style="width:${pct}%"></i></div><p class="sub">${R.concluidos} de ${R.total} módulos concluídos</p>`:''}
-    ${tudo?`<p><b>Você concluiu todo o Treinamento de ${escapeHtml(areaAtualNome||'Estoque')}!</b><br>Seu certificado com a carga horária já está liberado.</p>`:(R.total?`<p class="sub">Faltam ${R.total-R.concluidos} módulo(s) para o seu certificado.</p>`:'')}
-    <div class="acoes">
-      ${tudo?(R.certificado?'<button class="cert-btn" id="pbCert">🎓 Ver meu certificado</button>':'<button class="cert-btn" id="pbCert">🎓 Emitir meu certificado</button>'):''}
-      <button class="quiz-submit" id="pbAvaliar">Dar minha opinião sobre o módulo</button>
-      <button class="btn-sec" id="pbFechar">${tudo?'Fechar':'Continuar para o próximo módulo'}</button>
-    </div>`;
-  soPainel('parabensBox');
-  const pc=document.getElementById('pbCert');
-  if(pc) pc.addEventListener('click',()=>{ closePlayer(); if(R.certificado) location.href='certificado.html?c='+encodeURIComponent(R.certificado); else abrirCertificado(); });
-  document.getElementById('pbAvaliar').addEventListener('click',()=>{ quizResolved=false; soPainel('quizBox'); });
-  document.getElementById('pbFechar').addEventListener('click',closePlayer);
-}
-
-function abrirSoAvaliacao(c,ref){
-  cursoAtual=c;
-  overlay.classList.add('open');
-  playerTitle.textContent=c.nome;
-  playerSub.textContent=`Módulo ${c.ordem} · Avaliação`;
-  playerDot.style.background=c.accent;
-  playerBody.style.setProperty('--qacc', c.accent);
-  playerBody.innerHTML=quizHtml();
-  document.querySelector('.player-box').classList.add('quiz-only');
-  quizResolved=true;
-  wireQuiz(ref);
-  mostrarAvaliacao(ref,c);
 }
 
 function wireQuiz(viewId){
@@ -1107,9 +841,7 @@ async function openPlayer(c){
   playerDot.style.background = c.accent;
   playerBody.style.setProperty('--qacc', c.accent);
   prepararAudio();
-  cursoAtual = c;
-  document.querySelector('.player-box').classList.remove('quiz-only');
-  playerBody.innerHTML = `<div class="skip-aviso" id="skipAviso">⏩ Não é possível adiantar: assista o vídeo completo</div><video controls controlslist="noplaybackrate nodownload" disablepictureinpicture preload="metadata" playsinline webkit-playsinline poster="${capaUrl(c)}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
+  playerBody.innerHTML = `<video controls preload="metadata" playsinline webkit-playsinline poster="${capaUrl(c)}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
   const videoEl = playerBody.querySelector('video');
   videoEl.volume = 1.0;
   videoEl.addEventListener('loadedmetadata', ()=>{ if(videoEl.hasAttribute('crossorigin')) boostAudio(videoEl); }, {once:true});
@@ -1121,12 +853,10 @@ async function openPlayer(c){
       videoEl.play().catch(()=>{});
     }
   }, {once:true});
-  quizResolved = false;
-  startWatchTracking(videoEl, null); // rastreia desde o primeiro segundo
-  const ws = watchState;
   videoEl.play().catch(()=>{});
+  quizResolved = false;
   const viewId = await logVisualizacao(c);
-  if(ws) ws.viewId = viewId;
+  startWatchTracking(videoEl, viewId);
   wireQuiz(viewId);
 }
 
@@ -1145,56 +875,8 @@ function attemptClose(){
 function closePlayer(){
   stopWatchTracking();
   overlay.classList.remove('open');
-  document.querySelector('.player-box').classList.remove('quiz-open','quiz-only');
+  document.querySelector('.player-box').classList.remove('quiz-open');
   playerBody.innerHTML = '';
-  atualizarProgressoUI();
-}
-
-// -------- certificado: declaração + assinatura na tela --------
-const certOv=document.getElementById('certOv');
-document.getElementById('certClose').addEventListener('click',()=>certOv.classList.remove('open'));
-async function abrirCertificado(){
-  const id=getIdentidade()||{};
-  if(!id.cpf){ showGate(); return; }
-  await carregarProgresso(areaAtual||'estoque');
-  const R=PROG_RESUMO;
-  if(R&&R.certificado){ location.href='certificado.html?c='+encodeURIComponent(R.certificado); return; }
-  const body=document.getElementById('certBody');
-  if(!R||R.concluidos<R.total){ body.innerHTML='<p class="prog-msg">Conclua todos os módulos (vídeo completo + avaliação) para liberar o certificado.</p>'; certOv.classList.add('open'); return; }
-  const mods=Object.values(PROGRESSO).sort((a,b)=>a.ordem-b.ordem);
-  const decl=`Eu, ${id.nome}, CPF ${fmtCpf(id.cpf)}, declaro que assisti integralmente aos ${R.total} módulos do Treinamento de ${areaAtualNome||'Operações de Estoque'} da Esposende Calçados, fui aprovado(a) na avaliação de cada módulo e compreendi os procedimentos apresentados. Comprometo-me a aplicá-los na minha rotina de trabalho e estou ciente de que poderei ser cobrado(a) pelo seu cumprimento.`;
-  body.innerHTML=`<div class="quem"><b>${escapeHtml(id.nome)}</b><br>CPF ${fmtCpf(id.cpf)} · ${escapeHtml(id.cargo||'')} · Loja ${escapeHtml(id.loja||'')}</div>
-    <table><tr><th>Módulo</th><th>Concluído em</th><th>Nota</th></tr>${mods.map(m=>`<tr><td>${m.ordem}. ${escapeHtml(m.modulo_nome)}</td><td>${fmtData(m.concluido_em)}</td><td>${m.nota!=null?Math.round(m.nota):'-'}</td></tr>`).join('')}</table>
-    <p class="cert-decl" id="certDecl">${escapeHtml(decl)}</p>
-    <label class="cert-check"><input type="checkbox" id="certAceite"> Li e concordo com a declaração acima.</label>
-    <div style="font-size:12px;font-weight:800;color:var(--muted);margin:0 0 6px">Assine com o dedo (ou mouse) no quadro:</div>
-    <div class="sig-wrap"><canvas id="sigCanvas"></canvas><div class="linha"></div><div class="ph" id="sigPh">✍️ Assine aqui</div></div>
-    <div class="cert-acoes"><button class="btn-sec" id="sigLimpar">Limpar assinatura</button><button class="cert-btn" id="sigEmitir">Assinar e emitir</button></div>
-    <p class="cert-err" id="certErr"></p>`;
-  certOv.classList.add('open');
-  const cv=document.getElementById('sigCanvas'), ph=document.getElementById('sigPh');
-  const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
-  const w=cv.clientWidth, hh=cv.clientHeight;
-  cv.width=Math.round(w*dpr); cv.height=Math.round(hh*dpr);
-  const ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
-  ctx.lineWidth=2.4; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#0b1f4d';
-  let desenhando=false, ult=null, traco=0;
-  const pos=e=>{const r=cv.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};};
-  cv.addEventListener('pointerdown',e=>{desenhando=true;ult=pos(e);cv.setPointerCapture(e.pointerId);ph.style.display='none';e.preventDefault();});
-  cv.addEventListener('pointermove',e=>{if(!desenhando)return;const p=pos(e);ctx.beginPath();ctx.moveTo(ult.x,ult.y);ctx.lineTo(p.x,p.y);ctx.stroke();traco+=Math.hypot(p.x-ult.x,p.y-ult.y);ult=p;e.preventDefault();});
-  ['pointerup','pointercancel','pointerleave'].forEach(t=>cv.addEventListener(t,()=>{desenhando=false;}));
-  document.getElementById('sigLimpar').addEventListener('click',()=>{ctx.clearRect(0,0,cv.width,cv.height);traco=0;ph.style.display='flex';});
-  const errEl=document.getElementById('certErr');
-  document.getElementById('sigEmitir').addEventListener('click',async ev=>{
-    errEl.classList.remove('show');
-    if(!document.getElementById('certAceite').checked){errEl.textContent='Marque que você leu e concorda com a declaração.';errEl.classList.add('show');return;}
-    if(traco<120){errEl.textContent='Faça a sua assinatura no quadro branco.';errEl.classList.add('show');return;}
-    ev.target.disabled=true; ev.target.textContent='Emitindo…';
-    try{
-      const codigo=await rpcJson('curso_emitir_certificado_assinado',{p_cpf:soDigitos(id.cpf),p_area_id:areaAtual||'estoque',p_assinatura:cv.toDataURL('image/png'),p_aceite:true,p_aceite_texto:decl,p_user_agent:navigator.userAgent,p_loja:id.loja||null});
-      location.href='certificado.html?c='+encodeURIComponent(codigo);
-    }catch(e){ errEl.textContent=e.message; errEl.classList.add('show'); ev.target.disabled=false; ev.target.textContent='Assinar e emitir'; }
-  });
 }
 document.getElementById('closeBtn').addEventListener('click', attemptClose);
 overlay.addEventListener('click', (e)=>{ if(e.target === overlay) attemptClose(); });
