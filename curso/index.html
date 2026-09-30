@@ -345,6 +345,11 @@
   .cert-acoes button{flex:1}
   .cert-err{color:#f87171;font-size:12.5px;font-weight:800;margin:10px 0 0;display:none}
   .cert-err.show{display:block}
+  .adm-panel{border-color:#7c5cff;background:linear-gradient(135deg,#1b1640,#131b3a)}
+  .adm-botoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .adm-botoes button{background:#2a2160;color:#fff;border:1px solid #7c5cff;border-radius:10px;font:800 13px Nunito,sans-serif;padding:10px 13px;cursor:pointer}
+  .adm-botoes button:hover{background:#3a2f86}
+  .demo-tag{display:inline-block;background:#7c5cff;color:#fff;font:900 11px Nunito,sans-serif;letter-spacing:.6px;padding:3px 8px;border-radius:99px;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -622,8 +627,52 @@ async function atualizarProgressoUI(){
   renderProgPanel();
 }
 
+let DEMO_ADM=false;
+function ehAdmin(){ return PORTAL_ADMIN || !!(getIdentidade()||{}).admin; }
+function carregarDemo(){
+  // Pré-visualização do administrador: simula alguém que concluiu todos os módulos (nada é gravado).
+  DEMO_ADM=true;
+  const mods=catalogoAtual.filter(x=>x.area_id===(areaAtual||'estoque')).sort((a,b)=>a.ordem-b.ordem);
+  PROGRESSO={};
+  mods.forEach(m=>{PROGRESSO[m.id]={modulo_id:m.id,modulo_nome:m.nome,ordem:m.ordem,duracao:m.duracao,assistido:true,aprovado:true,nota:100,percentual:100,concluido_em:new Date().toISOString(),ref_avaliar:null};});
+  PROG_RESUMO={total:mods.length,concluidos:mods.length,certificado:null};
+  return mods;
+}
+function durSeg(d){const p=String(d||'').split(':').map(Number);return p.length===3?p[0]*3600+p[1]*60+p[2]:p.length===2?p[0]*60+p[1]:0;}
+function renderPainelAdmin(){
+  const el=document.getElementById('progPanel');
+  el.classList.add('show','adm-panel');
+  el.innerHTML=`<div class="prog-top"><div><b>👑 Visão do administrador</b><br><span>Como administrador você entra sem CPF, então o seu progresso não conta. Veja abaixo exatamente o que o colaborador vê no final.</span></div></div>
+    <div class="adm-botoes">
+      <button id="admParabens">🎉 Tela de parabéns (fim do curso)</button>
+      <button id="admAssinar">✍️ Tela de assinatura</button>
+      <button id="admCert">🎓 Certificado de exemplo</button>
+      <button id="admLista">📋 Quem concluiu / certificados emitidos</button>
+    </div>`;
+  document.getElementById('admParabens').onclick=()=>{
+    const mods=carregarDemo(); const c=mods[mods.length-1]; if(!c) return;
+    cursoAtual=c; overlay.classList.add('open');
+    playerTitle.textContent=c.nome; playerSub.textContent=`Módulo ${c.ordem} · Avaliação (pré-visualização)`;
+    playerDot.style.background=c.accent||'#38bdf8'; playerBody.innerHTML=quizHtml();
+    document.querySelector('.player-box').classList.add('quiz-only'); quizResolved=true;
+    wireQuiz(null); mostrarParabens(c,100);
+  };
+  document.getElementById('admAssinar').onclick=()=>{ carregarDemo(); abrirCertificado(); };
+  document.getElementById('admCert').onclick=()=>{ carregarDemo(); salvarDemoEIr(null); };
+  document.getElementById('admLista').onclick=()=>{ location.href='certificados.html?area='+encodeURIComponent(areaAtual||'estoque'); };
+}
+function salvarDemoEIr(assinatura){
+  const mods=Object.values(PROGRESSO).sort((a,b)=>a.ordem-b.ordem);
+  const carga=Math.ceil(mods.reduce((s,m)=>s+durSeg(m.duracao),0)/60);
+  try{ sessionStorage.setItem('cert_demo',JSON.stringify({area_nome:areaAtualNome||'Operações de Estoque',carga_min:carga,assinatura,
+    modulos:mods.map(m=>({id:m.modulo_id,nome:m.modulo_nome,ordem:m.ordem,duracao:m.duracao,nota:100,percentual:100,concluido_em:m.concluido_em}))})); }catch(e){}
+  location.href='certificado.html?demo=1';
+}
+
 function renderProgPanel(){
   const el=document.getElementById('progPanel');
+  if(ehAdmin()){ renderPainelAdmin(); return; }
+  el.classList.remove('adm-panel');
   if(!PROG_RESUMO||!PROG_RESUMO.total){ el.classList.remove('show'); el.innerHTML=''; return; }
   const {total,concluidos,certificado}=PROG_RESUMO;
   const pct=Math.round(concluidos/total*100);
@@ -1009,7 +1058,7 @@ function mostrarParabens(c,nota){
     </div>`;
   soPainel('parabensBox');
   const pc=document.getElementById('pbCert');
-  if(pc) pc.addEventListener('click',()=>{ closePlayer(); if(R.certificado) location.href='certificado.html?c='+encodeURIComponent(R.certificado); else abrirCertificado(); });
+  if(pc) pc.addEventListener('click',()=>{ if(DEMO_ADM){ overlay.classList.remove('open'); document.querySelector('.player-box').classList.remove('quiz-open','quiz-only'); playerBody.innerHTML=''; abrirCertificado(); return; } closePlayer(); if(R.certificado) location.href='certificado.html?c='+encodeURIComponent(R.certificado); else abrirCertificado(); });
   document.getElementById('pbAvaliar').addEventListener('click',()=>{ quizResolved=false; soPainel('quizBox'); });
   document.getElementById('pbFechar').addEventListener('click',closePlayer);
 }
@@ -1154,16 +1203,20 @@ function closePlayer(){
 const certOv=document.getElementById('certOv');
 document.getElementById('certClose').addEventListener('click',()=>certOv.classList.remove('open'));
 async function abrirCertificado(){
-  const id=getIdentidade()||{};
-  if(!id.cpf){ showGate(); return; }
-  await carregarProgresso(areaAtual||'estoque');
+  const demo=ehAdmin();
+  const id=demo?{nome:'NOME DO COLABORADOR (EXEMPLO)',cpf:'00000000000',cargo:'Estoquista',loja:'000 - Loja exemplo'}:(getIdentidade()||{});
+  if(demo) carregarDemo();
+  else{
+    if(!id.cpf){ showGate(); return; }
+    await carregarProgresso(areaAtual||'estoque');
+  }
   const R=PROG_RESUMO;
   if(R&&R.certificado){ location.href='certificado.html?c='+encodeURIComponent(R.certificado); return; }
   const body=document.getElementById('certBody');
   if(!R||R.concluidos<R.total){ body.innerHTML='<p class="prog-msg">Conclua todos os módulos (vídeo completo + avaliação) para liberar o certificado.</p>'; certOv.classList.add('open'); return; }
   const mods=Object.values(PROGRESSO).sort((a,b)=>a.ordem-b.ordem);
   const decl=`Eu, ${id.nome}, CPF ${fmtCpf(id.cpf)}, declaro que assisti integralmente aos ${R.total} módulos do Treinamento de ${areaAtualNome||'Operações de Estoque'} da Esposende Calçados, fui aprovado(a) na avaliação de cada módulo e compreendi os procedimentos apresentados. Comprometo-me a aplicá-los na minha rotina de trabalho e estou ciente de que poderei ser cobrado(a) pelo seu cumprimento.`;
-  body.innerHTML=`<div class="quem"><b>${escapeHtml(id.nome)}</b><br>CPF ${fmtCpf(id.cpf)} · ${escapeHtml(id.cargo||'')} · Loja ${escapeHtml(id.loja||'')}</div>
+  body.innerHTML=`${demo?'<span class="demo-tag">PRÉ-VISUALIZAÇÃO DO ADMINISTRADOR · nada é gravado</span>':''}<div class="quem"><b>${escapeHtml(id.nome)}</b><br>CPF ${fmtCpf(id.cpf)} · ${escapeHtml(id.cargo||'')} · Loja ${escapeHtml(id.loja||'')}</div>
     <table><tr><th>Módulo</th><th>Concluído em</th><th>Nota</th></tr>${mods.map(m=>`<tr><td>${m.ordem}. ${escapeHtml(m.modulo_nome)}</td><td>${fmtData(m.concluido_em)}</td><td>${m.nota!=null?Math.round(m.nota):'-'}</td></tr>`).join('')}</table>
     <p class="cert-decl" id="certDecl">${escapeHtml(decl)}</p>
     <label class="cert-check"><input type="checkbox" id="certAceite"> Li e concordo com a declaração acima.</label>
@@ -1189,6 +1242,7 @@ async function abrirCertificado(){
     errEl.classList.remove('show');
     if(!document.getElementById('certAceite').checked){errEl.textContent='Marque que você leu e concorda com a declaração.';errEl.classList.add('show');return;}
     if(traco<120){errEl.textContent='Faça a sua assinatura no quadro branco.';errEl.classList.add('show');return;}
+    if(demo){ salvarDemoEIr(cv.toDataURL('image/png')); return; }
     ev.target.disabled=true; ev.target.textContent='Emitindo…';
     try{
       const codigo=await rpcJson('curso_emitir_certificado_assinado',{p_cpf:soDigitos(id.cpf),p_area_id:areaAtual||'estoque',p_assinatura:cv.toDataURL('image/png'),p_aceite:true,p_aceite_texto:decl,p_user_agent:navigator.userAgent,p_loja:id.loja||null});

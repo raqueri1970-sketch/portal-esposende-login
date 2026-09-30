@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certificados emitidos — Esposende</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--bg:#0a0f1e;--card:#131b30;--border:#232d4a;--text:#eef1f8;--muted:#93a0bf}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,"Liberation Sans",sans-serif}
+  header{position:sticky;top:0;z-index:5;background:#0a0f1ef2;border-bottom:1px solid var(--border);padding:14px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  header h1{font-size:18px;margin:0;flex:1;min-width:220px}
+  header a,header button{font:800 13px Arial;border-radius:9px;padding:9px 13px;border:1px solid #2aa7ff;background:#0c2948;color:#fff;text-decoration:none;cursor:pointer}
+  .wrap{max-width:1200px;margin:0 auto;padding:16px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+  .kpi b{display:block;font-size:26px}.kpi span{color:var(--muted);font-size:12.5px;font-weight:700}
+  .filtros{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .filtros input,.filtros select{background:#0a1230;border:1px solid var(--border);color:var(--text);border-radius:9px;padding:10px 12px;font:700 14px Arial;min-width:0}
+  .filtros input{flex:1;min-width:200px}
+  .tab{overflow-x:auto;background:var(--card);border:1px solid var(--border);border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+  th,td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+  th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;background:#0d1428}
+  .ok{color:#4ade80;font-weight:800}.pend{color:#fbbf24;font-weight:800}
+  .bar{display:inline-block;width:70px;height:8px;background:#0a1230;border-radius:99px;overflow:hidden;vertical-align:middle;margin-right:6px}
+  .bar i{display:block;height:100%;background:#22c55e}
+  td a{color:#38bdf8;font-weight:800}
+  #msg{padding:40px 16px;text-align:center;color:var(--muted);font-weight:700;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎓 Treinamento de Estoque — quem concluiu</h1>
+  <button id="csv">⬇️ Exportar Excel (CSV)</button>
+  <a href="./?area=estoque">← Voltar ao treinamento</a>
+</header>
+<div class="wrap">
+  <div id="msg">Carregando…</div>
+  <div id="conteudo" style="display:none">
+    <div class="kpis" id="kpis"></div>
+    <div class="filtros">
+      <input id="busca" placeholder="Buscar nome, CPF, loja ou código…">
+      <select id="fil"><option value="">Todos</option><option value="cert">Com certificado</option><option value="pend">Em andamento</option></select>
+    </div>
+    <div class="tab"><table><thead><tr><th>Colaborador</th><th>CPF</th><th>Cargo</th><th>Loja</th><th>Módulos</th><th>Último acesso</th><th>Certificado</th></tr></thead><tbody id="tb"></tbody></table></div>
+  </div>
+</div>
+<script>
+const SUPA_URL='https://rdztzurfesnobfkazgpm.supabase.co', SUPA_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
+const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+const area=new URLSearchParams(location.search).get('area')||'estoque';
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const cpfF=c=>c&&c.length===11?c.slice(0,3)+'.'+c.slice(3,6)+'.'+c.slice(6,9)+'-'+c.slice(9):(c||'');
+const dh=d=>d?new Date(d).toLocaleString('pt-BR',{timeZone:'America/Recife',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+let dados=[];
+function render(){
+  const q=document.getElementById('busca').value.trim().toLowerCase(), f=document.getElementById('fil').value;
+  const rows=dados.filter(r=>(!f||(f==='cert'?r.certificado:!r.certificado)) && (!q||[r.nome,r.cpf,cpfF(r.cpf),r.loja_informada,r.loja_codigo,r.certificado,r.cargo].join(' ').toLowerCase().includes(q)));
+  document.getElementById('tb').innerHTML=rows.map(r=>`<tr><td><b>${esc(r.nome)}</b></td><td>${cpfF(r.cpf)}</td><td>${esc(r.cargo)}</td><td>${esc(r.loja_informada||r.loja_codigo||'')}</td>
+    <td><span class="bar"><i style="width:${Math.round(r.concluidos/r.total*100)}%"></i></span>${r.concluidos}/${r.total}</td><td>${dh(r.ultimo_acesso)}</td>
+    <td>${r.certificado?`<span class="ok">✔</span> <a href="certificado.html?c=${encodeURIComponent(r.certificado)}" target="_blank">${esc(r.certificado)}</a><br><small style="color:#93a0bf">${dh(r.emitido_em)}</small>`:'<span class="pend">em andamento</span>'}</td></tr>`).join('')
+    ||'<tr><td colspan="7" style="text-align:center;color:#93a0bf;padding:24px">Nenhum registro.</td></tr>';
+}
+(async()=>{
+  const msg=document.getElementById('msg');
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){ msg.innerHTML='Esta página é só para o administrador.<br>Entre no <a style="color:#38bdf8" href="../">Portal Esposende</a> com seu login e volte aqui.'; return; }
+  const {data,error}=await sb.rpc('curso_admin_andamento',{p_area_id:area});
+  if(error){ msg.textContent='Sem acesso: '+error.message; return; }
+  dados=data||[];
+  const cert=dados.filter(r=>r.certificado).length;
+  document.getElementById('kpis').innerHTML=`<div class="kpi"><b>${dados.length}</b><span>Colaboradores que começaram</span></div>
+    <div class="kpi"><b style="color:#4ade80">${cert}</b><span>Certificados emitidos (assinados)</span></div>
+    <div class="kpi"><b style="color:#fbbf24">${dados.length-cert}</b><span>Em andamento</span></div>`;
+  msg.style.display='none'; document.getElementById('conteudo').style.display='block'; render();
+})();
+document.getElementById('busca').oninput=render; document.getElementById('fil').onchange=render;
+document.getElementById('csv').onclick=()=>{
+  const l=[['Nome','CPF','Cargo','Loja','Modulos concluidos','Total','Ultimo acesso','Certificado','Emitido em']].concat(dados.map(r=>[r.nome,cpfF(r.cpf),r.cargo,r.loja_informada||r.loja_codigo,r.concluidos,r.total,dh(r.ultimo_acesso),r.certificado||'',dh(r.emitido_em)]));
+  const csv='﻿'+l.map(a=>a.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(';')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='certificados_treinamento_estoque.csv'; a.click();
+};
+</script>
+</body>
+</html>

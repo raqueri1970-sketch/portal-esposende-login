@@ -224,6 +224,15 @@ document.getElementById('btPdf').onclick=async ev=>{
 };
 
 (function(){
+  if(qs.get('demo')==='1'){
+    let s={}; try{ s=JSON.parse(sessionStorage.getItem('cert_demo')||'{}'); }catch(e){}
+    const agora=new Date().toISOString();
+    montar({codigo:'ESP-EXEMPLO',cpf:'00000000000',nome:'NOME DO COLABORADOR',area_nome:s.area_nome||'Operações de Estoque',carga_min:s.carga_min||65,
+      emitido_em:agora,aceite_em:agora,assinatura:s.assinatura||null,ip:'000.000.000.000',hash:'0'.repeat(64),modulos:s.modulos||[],valido:true,demo:true});
+    const b=document.getElementById('barraInfo'); b.innerHTML='<b style="color:#fca5a5">PRÉ-VISUALIZAÇÃO DO ADMINISTRADOR — exemplo sem valor, nada foi gravado</b>';
+    document.getElementById('btVoltar').href='./?area=estoque';
+    return;
+  }
   let cpf=dig(qs.get('cpf'));
   if(!cpf){ try{ const id=JSON.parse(localStorage.getItem('curso_identidade_v2')||'null'); if(id&&id.cpf) cpf=dig(id.cpf); }catch(e){} }
   carregar(cpf);
