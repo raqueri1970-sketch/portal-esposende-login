@@ -326,6 +326,9 @@
   .apostila-btn:hover{background:#2563eb}
   .prog-acoes{display:flex;gap:10px;flex-wrap:wrap}
   .prog-top a.apostila-cta{display:inline-block;background:#38bdf8;color:#04121f;box-shadow:0 6px 18px #38bdf833}
+  .revisao-aviso{position:absolute;left:12px;right:12px;top:10px;z-index:5;background:#14532dee;color:#dcfce7;border:1px solid #22c55e;border-radius:10px;font:800 12.5px Nunito,sans-serif;padding:8px 12px;text-align:center;pointer-events:none;animation:somePill 6s forwards}
+  @keyframes somePill{0%,80%{opacity:1}100%{opacity:0}}
+  .livre-pill{position:absolute;left:10px;bottom:10px;z-index:2;background:#16a34a;color:#fff;font:900 11px Nunito,sans-serif;padding:4px 10px;border-radius:99px;white-space:nowrap;box-shadow:0 4px 12px #0006}
   .btn-sec{background:#17213b;color:var(--text);border:1px solid var(--border);border-radius:10px;font:800 13px Nunito,sans-serif;padding:11px;cursor:pointer}
   .player-box.quiz-only #playerBody{grid-template-columns:minmax(0,1fr)!important;background:#0d1327}
   .player-box.quiz-only .quiz-side{display:flex;flex-direction:column;border:0}
@@ -583,6 +586,7 @@ function renderCursos(cursos){
     const ultimo=cursos.reduce((m,x)=>Math.max(m,x.ordem),0);
     if(ehAdmin() && c.ordem===ultimo) selo+=`<button type="button" class="aval-btn adm-cert-btn" style="background:#7c5cff;color:#fff">👑 Ver o certificado (só administrador)</button>`;
     d.innerHTML=`<div class="cover-wrap"><img src="${capaUrl(c)}" alt="Capa: ${escapeHtml(c.nome)}" decoding="async"><div class="duration-pill">${escapeHtml(c.duracao||'')}</div><div class="play-badge"><div class="circle"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div></div><div class="info"><h3>${escapeHtml(c.nome)}</h3><p>${escapeHtml(c.desc||'')}</p>${selo}</div>`;
+    if(pg && pg.aprovado){ const b=d.querySelector('.cover-wrap'); if(b) b.insertAdjacentHTML('beforeend','<span class="livre-pill">Revisão livre</span>'); }
     d.addEventListener('click',()=>openPlayer(c));
     const acb=d.querySelector('.adm-cert-btn');
     if(acb) acb.addEventListener('click',ev=>{ev.stopPropagation();demoParabens(c);});
@@ -624,6 +628,7 @@ async function atualizarProgressoUI(){
 
 let DEMO_ADM=false;
 function ehAdmin(){ return PORTAL_ADMIN; }
+function modoRevisao(c){ const pg=PROGRESSO[c.id]; return !!(pg && pg.aprovado); }
 function carregarDemo(){
   // Pré-visualização do administrador: simula alguém que concluiu todos os módulos (nada é gravado).
   DEMO_ADM=true;
@@ -1160,8 +1165,14 @@ async function openPlayer(c){
   playerBody.style.setProperty('--qacc', c.accent);
   prepararAudio();
   cursoAtual = c;
+  // Travas (não adiantar, sem acelerar) só valem até concluir o módulo. Concluído = revisão livre, sem registrar nova sessão.
+  const revisao = !ehAdmin() && modoRevisao(c);
+  if(revisao) playerSub.textContent += ' · Revisão livre';
   document.querySelector('.player-box').classList.remove('quiz-only');
-  playerBody.innerHTML = `<div class="skip-aviso" id="skipAviso">⏩ Não é possível adiantar: assista o vídeo completo</div><video controls controlslist="noplaybackrate nodownload" disablepictureinpicture preload="metadata" playsinline webkit-playsinline poster="${capaUrl(c)}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
+  playerBody.innerHTML = (revisao
+      ? `<div class="revisao-aviso">✅ Você já concluiu este módulo: o vídeo está liberado para rever como quiser (adiantar, voltar e acelerar).</div>`
+      : `<div class="skip-aviso" id="skipAviso">⏩ Não é possível adiantar: assista o vídeo completo</div>`)
+    + `<video controls controlslist="${(revisao||ehAdmin())?'nodownload':'noplaybackrate nodownload'}" disablepictureinpicture preload="metadata" playsinline webkit-playsinline poster="${capaUrl(c)}" src="${VIDEOS_BASE}${c.path}"></video>` + quizHtml();
   const videoEl = playerBody.querySelector('video');
   videoEl.volume = 1.0;
   videoEl.addEventListener('loadedmetadata', ()=>{ if(videoEl.hasAttribute('crossorigin')) boostAudio(videoEl); }, {once:true});
@@ -1173,6 +1184,7 @@ async function openPlayer(c){
       videoEl.play().catch(()=>{});
     }
   }, {once:true});
+  if(revisao){ quizResolved = true; videoEl.play().catch(()=>{}); return; }
   quizResolved = false;
   startWatchTracking(videoEl, null); // rastreia desde o primeiro segundo
   const ws = watchState;

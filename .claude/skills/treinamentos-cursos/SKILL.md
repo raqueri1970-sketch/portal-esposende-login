@@ -31,6 +31,7 @@ Portal estático (GitHub Pages, branch `main`) + Supabase (projeto `rdztzurfesno
 ## Regras de negócio (não quebrar)
 
 - Módulo concluído = vídeo assistido até o fim **sem adiantar** (a página bloqueia seek e velocidade > 1x; só admin pode adiantar) **e** avaliação aprovada.
+- Travas só **até concluir**: módulo com `aprovado` abre em **Revisão livre** (`modoRevisao()` em index.html) — pode adiantar/acelerar, não grava nova linha em `curso_visualizacoes` e não pede avaliação de novo. Não reintroduzir registro na revisão, para não poluir progresso/auditoria.
 - Certificado só com todos os módulos da área concluídos + declaração aceita; emitido e assinado pela **Auditoria Interna**. Carga horária = soma das durações.
 - Admin **só** com login real do Portal (sessão Supabase + `portal_is_admin`). Nunca reintroduzir `?admin=1` ou "veio do Portal".
 - Identidade do colaborador fica em `localStorage['curso_identidade_v2']` e precisa de `validado:true`.
