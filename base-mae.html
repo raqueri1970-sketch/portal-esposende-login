@@ -37,7 +37,7 @@ button.secondary{background:#1b2b41;border:1px solid #35506d}button.apply{backgr
 <div class="wrap" id="app">
 <header>
   <div class="brand"><div class="logo">ESPOSENDE<b>•</b></div><div><h1>Base Mãe do Portal</h1><div class="sub">Ponto oficial para carregar funcionários, lojas, regionais e setores</div></div></div>
-  <div class="admin" id="adminBadge">✓ Administrador reconhecido pelo Portal</div>
+  <div class="admin" id="adminBadge">✓ Acesso à Base Mãe reconhecido pelo Portal</div>
 </header>
 
 <div class="stats">
@@ -146,7 +146,7 @@ function normalizarFuncionarios(raw){
     if(cpf.length!==11){erros.push('Linha '+(i+2)+': CPF inválido');return}
     if(!nome){erros.push('Linha '+(i+2)+': nome vazio');return}
     const atual=atuais.get(cpf)||null;
-    const lj=lojaResolvida(pick(r,['loja_codigo','loja','codigo_loja','cod_loja','numero_loja','loja_origem']));
+    const lj=lojaResolvida(pick(r,['loja_codigo','loja','codigo_loja','cod_loja','numero_loja','loja_origem','filial','empresa','emp']));
     const cargo=txt(pick(r,['cargo','funcao','função']))||atual?.cargo||null;
     const situacao=txt(pick(r,['situacao','situação','status']))||atual?.situacao||null;
     const setorTxt=txt(pick(r,['setor','departamento','area','área']));
@@ -168,7 +168,7 @@ function normalizarLojas(raw){
   const atuais=new Map(refs.lojas.map(x=>[Number(x.codigo),x]));
   const erros=[],avisos=[],out=[];let novos=0,alterados=0,iguais=0;
   raw.forEach((r,i)=>{
-    const codigo=num(pick(r,['codigo','codigo_loja','cod_loja','numero_loja','loja']));
+    const codigo=num(pick(r,['codigo','codigo_loja','cod_loja','numero_loja','loja','filial']));
     const nome=txt(pick(r,['nome','nome_loja','loja_nome','cidade']));
     if(codigo==null){erros.push('Linha '+(i+2)+': código da loja inválido');return}
     const atual=atuais.get(codigo)||null;
@@ -183,7 +183,7 @@ function normalizarRegionais(raw){
   const regMap=byLower(refs.regionais),lojas=new Map(refs.lojas.map(x=>[Number(x.codigo),x]));
   const erros=[],avisos=[],out=[];let novos=0,alterados=0,iguais=0;
   raw.forEach((r,i)=>{
-    const original=num(pick(r,['numero_loja','loja','codigo_loja','cod_loja']));
+    const original=num(pick(r,['numero_loja','loja','codigo_loja','cod_loja','filial','empresa','emp']));
     if(original==null){erros.push('Linha '+(i+2)+': loja inválida');return}
     if(original===10||original===910){avisos.push('Linha '+(i+2)+': loja 10 ignorada por regra (sem regional)');iguais++;return}
     const codigo=lojaResolvida(original);
@@ -265,15 +265,34 @@ async function carregarHistorico(){
   historyList.innerHTML=data.map(x=>'<div class="hist-item"><b>'+String(x.tipo).toUpperCase()+'</b> · '+x.arquivo_nome+' · '+x.total_linhas+' linhas · '+new Date(x.criado_em).toLocaleString('pt-BR')+'</div>').join('');
 }
 
+// Arquivos roteados pela Central de Upload Universal: entram no quadro certo e já são validados.
+// Aplicar continua manual (botão "Aplicar na Base Mãe"), como no carregamento direto.
+const INPUT_DO_TIPO={funcionarios:'func',lojas:'lojas',regionais:'reg',setores:'set'};
+window.addEventListener('message',async ev=>{
+  if(ev.origin!==location.origin)return;
+  const d=ev.data;if(!d||d.type!=='baseMaeArquivos'||!Array.isArray(d.arquivos))return;
+  const ordem=['setores','lojas','regionais','funcionarios'];
+  const lista=d.arquivos.filter(a=>INPUT_DO_TIPO[a.tipo]&&a.file).sort((a,b)=>ordem.indexOf(a.tipo)-ordem.indexOf(b.tipo));
+  for(const a of lista){
+    const id=INPUT_DO_TIPO[a.tipo],dt=new DataTransfer();dt.items.add(a.file);
+    document.getElementById(id).files=dt.files;
+    await validarArquivo(a.tipo,id);
+  }
+  if(lista.length)document.querySelector('[data-tipo="'+lista[0].tipo+'"]').scrollIntoView({behavior:'smooth',block:'center'});
+});
+
 async function init(){
   try{
     const {data:{session}}=await sb.auth.getSession();
-    if(!session)throw Error('Entre no Portal com sua conta de administrador antes de abrir a Base Mãe.');
-    const {data:isAdmin,error:admErr}=await sb.rpc('portal_is_admin');
-    if(admErr||isAdmin!==true)throw Error('A Base Mãe é exclusiva do administrador do Portal.');
+    if(!session)throw Error('Entre no Portal com sua conta antes de abrir a Base Mãe.');
+    // Administrador e Controladoria alimentam a Base Mãe (mesma regra das policies no banco).
+    const {data:pode,error:podeErr}=await sb.rpc('portal_pode_base_mae');
+    if(podeErr||pode!==true)throw Error('A Base Mãe é exclusiva do Administrador e da Controladoria.');
     adminBadge.style.display='block';
     await carregarRefs();
     await carregarHistorico();
+    // Avisa o Portal que a tela está pronta para receber arquivos da Central de Upload Universal.
+    if(window.parent!==window)window.parent.postMessage({type:'baseMaeReady'},location.origin);
   }catch(e){
     app.style.display='none';fatal.style.display='block';fatal.textContent=e.message||String(e);
   }

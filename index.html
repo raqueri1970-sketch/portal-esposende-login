@@ -519,20 +519,22 @@ async function sairGestor(){
   location.reload();
 }
 
-async function usuarioEhAdministrador(session){
-  if(!session||!session.user)return false;
+async function perfilDoUsuario(session){
+  if(!session||!session.user)return null;
   try{
     var r=await sb.from('orc_perfis').select('perfil').eq('user_id',session.user.id).eq('ativo',true).maybeSingle();
-    return !!(r.data&&r.data.perfil==='administrador');
-  }catch(e){return false}
+    return (r.data&&r.data.perfil)||null;
+  }catch(e){return null}
 }
 async function atualizarBotaoBaseMae(session){
-  var ok=await usuarioEhAdministrador(session);
+  var perfil=await perfilDoUsuario(session);
+  var admin=perfil==='administrador';
+  // Base Mãe: Administrador e Controladoria (mesma regra de portal_pode_base_mae no banco). Usuários: só Administrador.
   var b=document.getElementById('btnBaseMae');
-  if(b)b.classList.toggle('hidden',!ok);
+  if(b)b.classList.toggle('hidden',!(admin||perfil==='controladoria'));
   var bu=document.getElementById('btnUsuarios');
-  if(bu)bu.classList.toggle('hidden',!ok);
-  return ok;
+  if(bu)bu.classList.toggle('hidden',!admin);
+  return admin;
 }
 function abrirBaseMae(){
   var o=document.getElementById('baseMaeOverlay'),f=document.getElementById('baseMaeFrame');
@@ -550,6 +552,19 @@ function abrirUsuarios(){
   f.src='usuarios.html?v=20260924-1';
   o.classList.add('open');o.setAttribute('aria-hidden','false');
 }
+// Central de Upload Universal → Base Mãe: guarda os arquivos e entrega quando a tela avisar que está pronta.
+var _baseMaePendentes=null;
+window.enviarParaBaseMae=function(lista){
+  if(!lista||!lista.length)return;
+  _baseMaePendentes=lista;
+  abrirBaseMae();
+};
+window.addEventListener('message',function(ev){
+  var d=ev.data,f=document.getElementById('baseMaeFrame');
+  if(!d||d.type!=='baseMaeReady'||!f||ev.source!==f.contentWindow||!_baseMaePendentes)return;
+  f.contentWindow.postMessage({type:'baseMaeArquivos',arquivos:_baseMaePendentes},location.origin);
+  _baseMaePendentes=null;
+});
 function fecharBaseMae(){
   var o=document.getElementById('baseMaeOverlay'),f=document.getElementById('baseMaeFrame');
   if(!o||!f)return;
@@ -617,6 +632,8 @@ async function openPortal(){
   html=html.replace(/<\/body>/i,ALMOX_MINIMO_PATCH+'</body>');
   // Capa oficial do card Treinamentos e Cursos.
   html=inserirAntesDoFimDoBody(html,TREINAMENTOS_CAPA_PATCH);
+  // Central de Upload Universal como porta única (Base Mãe + vários módulos por arquivo).
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('upload-universal-patch.js?v=20261001-1',location.href).href+'"></scr'+'ipt>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
