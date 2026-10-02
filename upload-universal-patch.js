@@ -60,7 +60,7 @@
     if(!lista.length)return;
     var pai=window.parent;
     if(pai&&pai!==window&&typeof pai.enviarParaBaseMae==='function'){pai.enviarParaBaseMae(lista);return;}
-    toast('⚠ Base Mãe indisponível nesta tela — use o botão "Base Mãe · Carregar arquivos"');
+    toast('⚠ Base Mãe indisponível nesta tela — abra o menu ☰ → Administração → Base Mãe');
   }
 
   processUniversalQueue=function(){

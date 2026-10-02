@@ -35,17 +35,13 @@ body.portal-on .card{display:none}
 .link-esqueci:hover{color:#93b3d9}
 .hidden{display:none !important}
 .voltar{background:none;border:none;color:#6b88a8;font-size:12px;text-decoration:underline;cursor:pointer;margin-top:14px;padding:0;width:auto;display:block;margin-left:auto;margin-right:auto}
-#btnBaseMae{position:fixed;right:16px;bottom:18px;z-index:2147483600;width:auto;background:#0f8bff;color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:11px 15px;font-size:12.5px;font-weight:900;box-shadow:0 8px 28px rgba(0,0,0,.38)}
-#btnBaseMae:hover{background:#2b9cff}
-#btnUsuarios{position:fixed;right:16px;bottom:66px;z-index:2147483600;width:auto;background:#132a43;color:#fff;border:1px solid #315170;border-radius:999px;padding:9px 14px;font-size:12px;font-weight:900;box-shadow:0 8px 28px rgba(0,0,0,.38)}
-#btnUsuarios:hover{background:#1b3a5c}
 #baseMaeOverlay{position:fixed;inset:0;z-index:2147483646;background:#06101c;display:none;flex-direction:column}
 #baseMaeOverlay.open{display:flex}
 #baseMaeTop{height:54px;flex:0 0 54px;background:#081421;border-bottom:1px solid #20334b;display:flex;align-items:center;padding:0 13px;gap:10px;font-family:Arial,sans-serif}
 #baseMaeTop button{width:auto;background:#132a43;color:#fff;border:1px solid #315170;border-radius:8px;padding:8px 12px;font-weight:800}
 #baseMaeTop strong{font-size:14px}#baseMaeTop span{font-size:11px;color:#9eb0c7}
 #baseMaeFrame{width:100%;height:calc(100vh - 54px);border:0;background:#07111f}
-@media(max-width:600px){#btnBaseMae{right:10px;bottom:12px;padding:10px 13px;font-size:11.5px}#btnUsuarios{right:10px;bottom:58px;padding:8px 12px;font-size:11px}#baseMaeTop span{display:none}}
+@media(max-width:600px){#baseMaeTop span{display:none}}
 </style>
 </head>
 <body>
@@ -78,8 +74,6 @@ body.portal-on .card{display:none}
 </div>
 <iframe id="portalFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups allow-top-navigation-by-user-activation allow-popups-to-escape-sandbox"></iframe>
 <button id="btnSairGestor" class="hidden" type="button" onclick="sairGestor()">Sair</button>
-<button id="btnBaseMae" class="hidden" type="button" onclick="abrirBaseMae()">📥 Base Mãe · Carregar arquivos</button>
-<button id="btnUsuarios" class="hidden" type="button" onclick="abrirUsuarios()">👥 Usuários</button>
 <div id="baseMaeOverlay" aria-hidden="true">
   <div id="baseMaeTop"><button type="button" onclick="fecharBaseMae()">← Voltar ao Portal</button><strong id="baseMaeTitulo">Base Mãe</strong><span id="baseMaeDesc">Carregamento oficial de funcionários, lojas, regionais e setores</span></div>
   <iframe id="baseMaeFrame" title="Base Mãe do Portal"></iframe>
@@ -366,6 +360,41 @@ function instalarBaseMaeNoPortal(ifr){
 }
 
 
+/* Base Mãe e Usuários no menu lateral do Portal (antes eram botões flutuantes que cobriam a tela). */
+var MENU_ADMIN={baseMae:false,usuarios:false};
+function instalarMenuAdminNoPortal(ifr){
+ function fecharMenuCelular(d){
+  var sb=d.getElementById('sb'),ovl=d.getElementById('ovl');
+  if(sb&&sb.classList.contains('on')){sb.classList.remove('on');if(ovl)ovl.classList.remove('on')}
+ }
+ function item(d,id,icone,rotulo,acao){
+  var b=d.createElement('button');
+  b.type='button';b.className='ni';b.id=id;
+  b.innerHTML='<span class="nii">'+icone+'</span><span class="nil">'+rotulo+'</span>';
+  b.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();fecharMenuCelular(d);acao()});
+  return b;
+ }
+ function garantir(){
+  var d;try{d=ifr.contentDocument}catch(e){return}
+  var sb=d&&d.getElementById('sb');if(!sb)return;
+  var grupo=d.getElementById('sg-admin-portal');
+  if(!MENU_ADMIN.baseMae&&!MENU_ADMIN.usuarios){if(grupo){grupo.remove();var dv=d.getElementById('ndv-admin-portal');if(dv)dv.remove()}return}
+  if(!grupo){
+   var dv2=d.createElement('div');dv2.className='ndv';dv2.id='ndv-admin-portal';
+   grupo=d.createElement('div');grupo.className='sg';grupo.id='sg-admin-portal';
+   grupo.innerHTML='<div class="sgl">Administração</div>';
+   grupo.appendChild(item(d,'ni-base-mae','📥','Base Mãe · Carregar arquivos',abrirBaseMae));
+   grupo.appendChild(item(d,'ni-usuarios','👥','Usuários',abrirUsuarios));
+   var rodape=sb.querySelector('.sbft');
+   sb.insertBefore(dv2,rodape);sb.insertBefore(grupo,rodape);
+  }
+  d.getElementById('ni-base-mae').style.display=MENU_ADMIN.baseMae?'':'none';
+  d.getElementById('ni-usuarios').style.display=MENU_ADMIN.usuarios?'':'none';
+ }
+ ifr.addEventListener('load',garantir);
+ setInterval(garantir,1500);
+}
+
 // Ponte externa: controla a Central pelo documento de login, acima do shell antigo.
 // Assim o módulo legado nunca precisa terminar de carregar para abrir a tela unificada.
 function abrirCentralUnicaExterna(){
@@ -530,10 +559,9 @@ async function atualizarBotaoBaseMae(session){
   var perfil=await perfilDoUsuario(session);
   var admin=perfil==='administrador';
   // Base Mãe: Administrador e Controladoria (mesma regra de portal_pode_base_mae no banco). Usuários: só Administrador.
-  var b=document.getElementById('btnBaseMae');
-  if(b)b.classList.toggle('hidden',!(admin||perfil==='controladoria'));
-  var bu=document.getElementById('btnUsuarios');
-  if(bu)bu.classList.toggle('hidden',!admin);
+  // Ficam no menu lateral do Portal (grupo Administração) — ver instalarMenuAdminNoPortal.
+  MENU_ADMIN.baseMae=admin||perfil==='controladoria';
+  MENU_ADMIN.usuarios=admin;
   return admin;
 }
 function abrirBaseMae(){
@@ -587,7 +615,7 @@ async function openPortal(){
       var _pf=await sb.from('orc_perfis').select('perfil').eq('user_id',_s0.user.id).eq('ativo',true).maybeSingle();
       // Sem perfil ativo (conta de robô, login de loja, usuário desativado) -> não entra no Portal.
       if(!_pf.error && !_pf.data){ return negarAcesso(); }
-      if(_pf.data && _pf.data.perfil==='gestor_departamento'){ var _bb=document.getElementById('btnBaseMae');if(_bb)_bb.classList.add('hidden'); var _bu=document.getElementById('btnUsuarios');if(_bu)_bu.classList.add('hidden'); return abrirSomenteOrcamento(_s0); }
+      if(_pf.data && _pf.data.perfil==='gestor_departamento'){ MENU_ADMIN.baseMae=false; MENU_ADMIN.usuarios=false; return abrirSomenteOrcamento(_s0); }
     }
   }catch(e){ console.warn('checagem de perfil gestor falhou',e); }
   var res=await sb.storage.from(BUCKET).createSignedUrl(FILE_PATH,3600);
@@ -633,7 +661,7 @@ async function openPortal(){
   // Capa oficial do card Treinamentos e Cursos.
   html=inserirAntesDoFimDoBody(html,TREINAMENTOS_CAPA_PATCH);
   // Central de Upload Universal como porta única (Base Mãe + vários módulos por arquivo).
-  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('upload-universal-patch.js?v=20261001-1',location.href).href+'"></scr'+'ipt>');
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('upload-universal-patch.js?v=20261002-1',location.href).href+'"></scr'+'ipt>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
@@ -641,6 +669,7 @@ async function openPortal(){
   instalarPonteCentral(ifr);
   instalarCerebroCentral(ifr);
   instalarBaseMaeNoPortal(ifr);
+  instalarMenuAdminNoPortal(ifr);
   // instalarAjusteEntrada(ifr); // desativado: o Ajuste Expresso agora tem modulo proprio no Portal (Acerto de Estoque Lojas) e link separado para gerentes
   ifr.style.display='block';
   document.body.classList.add('portal-on');
