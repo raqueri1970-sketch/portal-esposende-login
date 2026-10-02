@@ -395,12 +395,12 @@
     </select>
     <p class="err" id="gate-err">Preencha todos os campos pra continuar.</p>
     <button class="submit" id="gate-submit">Começar</button>
-    <a class="gate-portal" href="../" target="_top">← Voltar ao Portal</a>
+    <a class="gate-portal voltar-portal" href="../" target="_top">← Voltar ao Portal</a>
   </div>
 </div>
 
 <div class="topbar">
-  <a class="back-portal" href="../" target="_top" title="Voltar ao menu principal do Portal (módulos)">← Voltar ao Portal</a>
+  <a class="back-portal voltar-portal" href="../" target="_top" title="Voltar ao menu principal do Portal (módulos)">← Voltar ao Portal</a>
   <img id="brand-logo" alt="Esposende">
   <div>
     <h1>Central de Treinamento</h1>
@@ -713,6 +713,16 @@ function renderProgPanel(){
   const b2=document.getElementById('btnVerCert'); if(b2) b2.addEventListener('click',()=>{location.href='certificado.html?c='+encodeURIComponent(certificado);});
 }
 document.getElementById('backArea').addEventListener('click',carregarAreas);
+// "← Voltar ao Portal": se a Central foi aberta pelo Portal em outra aba, fecha esta aba e
+// volta para a do Portal (que já está no menu de módulos). Senão, vai para o Portal.
+document.querySelectorAll('.voltar-portal').forEach(a=>a.addEventListener('click',ev=>{
+  let op=null; try{ op=window.opener; }catch(e){}
+  if(!op||op.closed) return;
+  ev.preventDefault();
+  try{ op.focus(); }catch(e){}
+  window.close();
+  setTimeout(()=>{ if(!window.closed) location.href=a.href; },300);
+}));
 
 async function carregarCatalogo(){
   try{
