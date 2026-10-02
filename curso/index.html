@@ -37,6 +37,8 @@
   .topbar img{height:54px; width:54px; border-radius:12px; object-fit:cover; flex-shrink:0; box-shadow:0 0 0 1px var(--border);}
   .topbar h1{font-size:18px; font-weight:800; margin:0; letter-spacing:.2px;}
   .topbar p{margin:0; font-size:12.5px; color:var(--muted); font-weight:600;}
+  .back-portal{display:inline-flex; align-items:center; gap:6px; flex-shrink:0; background:#17213b; color:var(--text); border:1px solid var(--border); border-radius:9px; padding:9px 14px; font-size:13px; font-weight:800; text-decoration:none; white-space:nowrap;}
+  .back-portal:hover{background:var(--card-hover); border-color:#38bdf8;}
   .identity{margin-left:auto; font-size:12.5px; color:var(--muted); text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
   .identity b{color:var(--text);}
   .identity button{background:none; border:none; color:#38bdf8; cursor:pointer; font-size:12px; font-weight:700; padding:0; margin-left:8px;}
@@ -66,6 +68,8 @@
     font-family:inherit; font-size:14.5px; font-weight:800; padding:11px; cursor:pointer;
   }
   .gate-box button.submit:hover{background:#5fc9fb;}
+  .gate-box .gate-portal{display:inline-block; margin-top:14px; color:var(--muted); font-size:12.5px; font-weight:700; text-decoration:underline;}
+  .gate-box .gate-portal:hover{color:var(--text);}
 
   .wrap{max-width:1240px; margin:0 auto; padding:28px 28px 60px;}
   .intro{margin-bottom:26px;}
@@ -213,6 +217,8 @@
     .topbar{padding:12px 16px;}
     .topbar img{height:44px; width:44px;}
     .topbar h1{font-size:16px;}
+    .back-portal{flex-basis:100%; justify-content:center;}
+    .topbar img + div{flex:1 1 0; min-width:0;}
     .identity{flex-basis:100%; margin-left:0; text-align:left; white-space:normal; overflow:visible; text-overflow:clip;}
     .grid{grid-template-columns:1fr;}
     .gate-box{padding:24px 20px;}
@@ -389,10 +395,12 @@
     </select>
     <p class="err" id="gate-err">Preencha todos os campos pra continuar.</p>
     <button class="submit" id="gate-submit">Começar</button>
+    <a class="gate-portal" href="../" target="_top">← Voltar ao Portal</a>
   </div>
 </div>
 
 <div class="topbar">
+  <a class="back-portal" href="../" target="_top" title="Voltar ao menu principal do Portal (módulos)">← Voltar ao Portal</a>
   <img id="brand-logo" alt="Esposende">
   <div>
     <h1>Central de Treinamento</h1>
