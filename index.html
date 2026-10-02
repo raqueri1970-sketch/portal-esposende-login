@@ -712,6 +712,8 @@ async function openPortal(){
   html=inserirAntesDoFimDoBody(html,TREINAMENTOS_CAPA_PATCH);
   // Central de Upload Universal como porta única (Base Mãe + vários módulos por arquivo).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('upload-universal-patch.js?v=20261002-1',location.href).href+'"></scr'+'ipt>');
+  // Campanhas Meias/Grendene: carregar todos os relatórios (.csv) de uma vez e não baixar ao soltar.
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('campanhas-upload-patch.js?v=20261002-1',location.href).href+'"></scr'+'ipt>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
