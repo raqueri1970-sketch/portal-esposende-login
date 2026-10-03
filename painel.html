@@ -227,7 +227,11 @@ function render(d){
   const a24=A.filter(x=>x.horas>=24).length;
   const alertas=(h.sem_foto||0)+(h.foto_nao_confere||0)+(h.erros||0)+a24;
   let roboH;
-  if(r.online){const t=ROBO_TXT[r.status]||[r.status||'Online','st-ok','🤖'];roboH=hero(t[1]==='st-ok'?'g':'b','Sangue Azul · online',t[2]+' '+t[0],'fila '+nf(f.pendentes)+' · ajustando '+nf(f.executando)+' · problemas '+nf(f.problemas)+' · sinal há '+dur(idade),1)}
+  /* robo com sinal mas nenhum pedido sai ha 10+ min = TRAVADO (o link pausa sozinho e manda pro WhatsApp) */
+  const travMin=r.parado_desde?Math.max(0,Math.round((new Date(d.agora)-new Date(r.parado_desde))/60000)):0;
+  const trav=(r.alarmes_hoje||[]).filter(x=>x.tipo==='TRAVOU').length;
+  if(r.online&&r.travado)roboH=hero('b','Sangue Azul · TRAVADO','⚠️ Parado há '+nf(travMin)+' min','nenhum pedido sai · '+nf(r.esperando)+' esperando · link pausado (lojas vão pro WhatsApp) · reiniciar o robô/Seta',1);
+  else if(r.online){const t=ROBO_TXT[r.status]||[r.status||'Online','st-ok','🤖'];roboH=hero(t[1]==='st-ok'?'g':'b','Sangue Azul · online',t[2]+' '+t[0],'fila '+nf(f.pendentes)+' · ajustando '+nf(f.executando)+' · problemas '+nf(f.problemas)+' · sinal há '+dur(idade)+(trav?' · travou '+trav+'x hoje':''),1)}
   else roboH=hero('b','Sangue Azul · OFFLINE','🛑 Sem sinal',(r.ultimo_sinal?'há '+dur(idade)+' — ':'')+'pedidos ficam na fila ('+nf(f.pendentes)+' agora)',1);
   $('heroes').innerHTML=roboH+
     hero('g','Ajustes concluídos hoje',nf(h.ajustados),nf(h.unidades)+' unidades incluídas · '+nf(h.lojas)+' loja(s)')+
