@@ -714,6 +714,8 @@ async function openPortal(){
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('upload-universal-patch.js?v=20261002-1',location.href).href+'"></scr'+'ipt>');
   // Carregamento de arquivos em todos os módulos (CSV, arrastar sem baixar, campanhas Meias/Grendene).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('upload-correcoes.js?v=20261002-5',location.href).href+'"></scr'+'ipt>');
+  // Protocolo de Curso: painel de gráficos novo (dia, funil, regional, lojas e módulos).
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('protocolo-graficos.js?v=20261005-1',location.href).href+'"></scr'+'ipt>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
