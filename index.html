@@ -222,10 +222,52 @@ var ALMOX_MINIMO_PATCH=`<script id="patch-almox-minimo-seguranca-20260827">
       w.__almoxResumoPeriodo={inicio:datas[0].value,fim:datas[1].value,total:total};
     }catch(e){console.error('[Almoxarifado] Falha ao corrigir total por período:',e);}
   }
+  // Filtro de lojas/gerentes salvo vazio ("0 de 74 selecionadas") zerava todo o painel
+  // em um computador, enquanto em outro os mesmos dados apareciam. Sem nada marcado não há
+  // o que mostrar: volta para "todos" e aplica. Se a pessoa desmarcar tudo de propósito,
+  // o painel respeita (só corrige enquanto ninguém mexeu nos filtros).
+  function multiFiltrosVazios(doc){
+    var grupos=[];
+    Array.from(doc.querySelectorAll('*')).forEach(function(el){
+      if(el.children.length)return;
+      var m=String(el.textContent||'').trim().match(/^0 de ([0-9]+) selecionad[oa]s?$/i);
+      if(!m||!Number(m[1]))return;
+      for(var p=el.parentElement,n=0;p&&n<5;p=p.parentElement,n++){
+        var cbs=Array.from(p.querySelectorAll('input[type=checkbox]'));
+        if(cbs.length){grupos.push(cbs);return;}
+      }
+    });
+    return grupos;
+  }
+  function corrigirFiltrosVazios(ifr){
+    try{
+      var w=ifr&&ifr.contentWindow,doc=w&&w.document;
+      if(!doc||!doc.body||doc.__almoxFiltroMexido)return;
+      if(!doc.__almoxFiltroEscuta){
+        doc.__almoxFiltroEscuta=true;
+        doc.addEventListener('change',function(e){
+          if(e.isTrusted&&e.target&&e.target.type==='checkbox')doc.__almoxFiltroMexido=true;
+        },true);
+      }
+      var grupos=multiFiltrosVazios(doc);
+      if(!grupos.length)return;
+      grupos.forEach(function(cbs){
+        cbs.forEach(function(cb){
+          if(cb.checked||cb.disabled)return;
+          cb.checked=true;
+          cb.dispatchEvent(new w.Event('change',{bubbles:true}));
+        });
+      });
+      var aplicar=Array.from(doc.querySelectorAll('button')).find(function(b){return /APLICAR FILTROS/i.test(b.textContent||'')});
+      if(aplicar)aplicar.click();
+      console.info('[Almoxarifado] Filtro de lojas/gerentes estava vazio; todos foram marcados.');
+    }catch(e){console.error('[Almoxarifado] Falha ao restaurar filtros:',e);}
+  }
   function acompanhar(){
     var ifr=document.getElementById('ifr-alm');
     if(!ifr)return;
     instalarNoModulo(ifr);
+    corrigirFiltrosVazios(ifr);
     corrigirResumoFinanceiro(ifr);
     if(!ifr.__almoxPatchLoad){
       ifr.__almoxPatchLoad=true;
