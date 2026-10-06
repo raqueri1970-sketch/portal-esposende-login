@@ -38,10 +38,64 @@
     return null;
   }
 
+  // Destino pelo NOME dos relatórios que a Controladoria envia (2026-10-06). A pontuação
+  // por colunas mandava arquivos para o módulo errado e estragava o dado de quem abria depois:
+  //   RESUMO VENDAS → Remanejo/Pedidos (zerou envios e atendidos do Remanejo);
+  //   ESTOQUE ALMOXARIFADO, ESTOQUE TI, Fortpel, DESCONTOS → Comercial/Estoque CD;
+  //   Saldo de Pedidos de Transferência → SACI/D1 (10 cópias vazias, SACI zerado);
+  //   D1, Pagos, Requisição → NF/Vendas.
+  // Arquivo conhecido vai para o lugar certo; arquivo que não tem destino aqui fica SEM
+  // destino na fila (a pessoa escolhe) em vez de sobrescrever um módulo por engano.
+  var SEM_DESTINO={pid:'',sid:''};
+  var POR_NOME=[
+    {re:/requisicao\s*material/,alvo:['alm','juntos']},
+    {re:/estoque\s*almox|estoque\s*ti\b|fortpel/,alvo:SEM_DESTINO,aviso:'Almoxarifado → botão "Carregar Planilhas" do módulo'},
+    {re:/pedidos?\s*(com\s*custo\s*)?remanejo/,alvo:['rem','c']},
+    {re:/inconsistencia/,alvo:['rem','i']},
+    // "Desconto funcionario" tem as mesmas 54.249 linhas da base da Auditoria de Descontos.
+    {re:/base\s*de\s*descontos?|^descontos?$|desconto\s*funcionario/,alvo:['cmpaud','xlsx']},
+    {re:/cancelad/,alvo:['nf','canceladas']},
+    {re:/pedidos?\s*de\s*compra/,alvo:['desc','xlsx']},
+    {re:/curva\s*abc/,alvo:['cml','vendas']},
+    {re:/estoque\s*cd\b/,alvo:['cml','estoquecd']},
+    {re:/^d1\b/,alvo:['saci','d1']},
+    // Relatórios do SACI e do SGDF não têm campo na Central: vão pelo próprio módulo.
+    {re:/origem\s*lojas|casados/,alvo:SEM_DESTINO,aviso:'SACI → carregar no módulo'},
+    {re:/seta\b|com\s*coleta|sem\s*coleta|pre\s*nota|estoque\s*defeito|contas\s*a\s*pagar|\bpagos\b|\baberto\b/,alvo:SEM_DESTINO,aviso:'SGDF → carregar no módulo'},
+    {re:/saldo\s*de\s*pedidos?\s*de\s*transferencia/,alvo:SEM_DESTINO},
+    {re:/resumo\s*vendas?/,alvo:SEM_DESTINO}
+  ];
+  // Destinos que viravam "ralo" da pontuação: só aceitam arquivo com o nome esperado.
+  var EXIGE_NOME={
+    'rem|c':/remanejo/,'saci|d1':/^d1\b|\bd1\b/,'cml|estoquecd':/estoque\s*cd\b/,'nf|vendas':/venda/,
+    'cml|listagemvendas':/venda|listagem/,'cml|vendas':/venda|curva|abc/,'cml|pedidos':/pedido|compra/,
+    'cml|caixavendedor':/caixa|vendedor/,'mei|v':/quantitativ|vendid|vendedor|caixa|meia/,'gren|v':/quantitativ|vendid|vendedor|caixa|grendene/
+  };
+  function nomeSimples(n){
+    return String(n||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()
+      .replace(/\.[a-z0-9]+$/,'').replace(/[_\-+.]+/g,' ').replace(/\s+/g,' ').trim();
+  }
+  function destinoPorNome(nome,best){
+    var n=nomeSimples(nome);
+    for(var i=0;i<POR_NOME.length;i++){
+      var r=POR_NOME[i];if(!r.re.test(n))continue;
+      if(r.alvo===SEM_DESTINO)return {cand:null,aviso:r.aviso||''};
+      var c=alvo(r.alvo[0],r.alvo[1]);
+      if(c)return {cand:c,certo:true};
+    }
+    if(best){
+      var exige=EXIGE_NOME[best.pid+'|'+best.sid];
+      if(exige&&!exige.test(n))return {cand:null,aviso:''};
+    }
+    return {cand:best};
+  }
+  window.__uploadDestinoPorNome=destinoPorNome;
+
   handleUniversalFiles=async function(fileList){
     var files=Array.from(fileList||[]);
     if(!files.length)return;
     toast('🔎 Analisando '+files.length+' arquivo(s)...');
+    var manuais=[];
     for(var i=0;i<files.length;i++){
       var f=files[i];
       var sniff=await sniffFile(f);
@@ -51,9 +105,13 @@
         var s=scoreCandidate(sniff.headers,filenameNorm,cand);
         if(s>bestScore){bestScore=s;best=cand;}
       });
+      var porNome=destinoPorNome(f.name,best);
+      if(porNome.cand!==best||porNome.certo){best=porNome.cand;bestScore=best?Math.max(bestScore,0.9):0;}
+      if(!best)manuais.push(f.name+(porNome.aviso?' ('+porNome.aviso+')':''));
       UNIVERSAL_QUEUE.push({file:f,rowCount:sniff.rowCount,headers:sniff.headers,pid:best?best.pid:'',sid:best?best.sid:'',confidence:bestScore,error:sniff.error});
     }
     renderUniversalQueue();
+    if(manuais.length)toast('⚠ Sem destino automático — escolha na lista ou carregue no módulo: '+manuais.join('; '));
   };
 
   function enviarParaBaseMae(lista){
