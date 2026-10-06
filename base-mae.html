@@ -167,9 +167,16 @@ function normalizarFuncionarios(raw){
 function normalizarLojas(raw){
   const atuais=new Map(refs.lojas.map(x=>[Number(x.codigo),x]));
   const erros=[],avisos=[],out=[];let novos=0,alterados=0,iguais=0;
+  // Arquivo errado no lugar do cadastro de lojas (ex.: planilha de funcionários, que também
+  // tem coluna "loja") trocaria o nome de cada loja pelo nome de um funcionário.
+  const colunas=raw.length?Object.keys(raw[0]):[];
+  if(colunas.some(c=>/cpf/.test(c)))return {rows:[],erros:['Este arquivo tem CPF: parece ser de FUNCIONÁRIOS, não de lojas. Use o campo Funcionários.'],avisos,novos,alterados,iguais};
+  const codigos=raw.map(r=>num(pick(r,['codigo','codigo_loja','cod_loja','numero_loja','loja','filial']))).filter(c=>c!=null);
+  const repetidos=codigos.length-new Set(codigos).size;
+  if(repetidos>Math.max(2,codigos.length*0.1))return {rows:[],erros:['A mesma loja aparece em várias linhas ('+repetidos+' repetições): este arquivo não é o cadastro de lojas (uma linha por loja).'],avisos,novos,alterados,iguais};
   raw.forEach((r,i)=>{
     const codigo=num(pick(r,['codigo','codigo_loja','cod_loja','numero_loja','loja','filial']));
-    const nome=txt(pick(r,['nome','nome_loja','loja_nome','cidade']));
+    const nome=txt(pick(r,['nome','nome_loja','loja_nome']));
     if(codigo==null){erros.push('Linha '+(i+2)+': código da loja inválido');return}
     const atual=atuais.get(codigo)||null;
     const row={codigo,nome:nome||atual?.nome||null,cidade:txt(pick(r,['cidade','municipio','município']))||atual?.cidade||null,uf:txt(pick(r,['uf','estado']))||atual?.uf||null,regional_id:atual?.regional_id??null,ativo:bool(pick(r,['ativo']),atual?.ativo??true),atualizado_em:new Date().toISOString()};

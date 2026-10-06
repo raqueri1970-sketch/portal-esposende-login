@@ -52,15 +52,25 @@
     {re:/estoque\s*almox|estoque\s*ti\b|fortpel/,alvo:SEM_DESTINO,aviso:'Almoxarifado → botão "Carregar Planilhas" do módulo'},
     {re:/pedidos?\s*(com\s*custo\s*)?remanejo/,alvo:['rem','c']},
     {re:/inconsistencia/,alvo:['rem','i']},
-    {re:/base\s*de\s*descontos?|^descontos?$/,alvo:['cmpaud','xlsx']},
+    // "Desconto funcionario" tem as mesmas 54.249 linhas da base da Auditoria de Descontos.
+    {re:/base\s*de\s*descontos?|^descontos?$|desconto\s*funcionario/,alvo:['cmpaud','xlsx']},
     {re:/cancelad/,alvo:['nf','canceladas']},
-    {re:/saldo\s*de\s*pedidos?\s*de\s*transferencia/,alvo:SEM_DESTINO},
-    {re:/resumo\s*vendas?/,alvo:SEM_DESTINO},
+    {re:/pedidos?\s*de\s*compra/,alvo:['desc','xlsx']},
+    {re:/curva\s*abc/,alvo:['cml','vendas']},
     {re:/estoque\s*cd\b/,alvo:['cml','estoquecd']},
-    {re:/^d1\b/,alvo:['saci','d1']}
+    {re:/^d1\b/,alvo:['saci','d1']},
+    // Relatórios do SACI e do SGDF não têm campo na Central: vão pelo próprio módulo.
+    {re:/origem\s*lojas|casados/,alvo:SEM_DESTINO,aviso:'SACI → carregar no módulo'},
+    {re:/seta\b|com\s*coleta|sem\s*coleta|pre\s*nota|estoque\s*defeito|contas\s*a\s*pagar|\bpagos\b|\baberto\b/,alvo:SEM_DESTINO,aviso:'SGDF → carregar no módulo'},
+    {re:/saldo\s*de\s*pedidos?\s*de\s*transferencia/,alvo:SEM_DESTINO},
+    {re:/resumo\s*vendas?/,alvo:SEM_DESTINO}
   ];
   // Destinos que viravam "ralo" da pontuação: só aceitam arquivo com o nome esperado.
-  var EXIGE_NOME={'rem|c':/remanejo/,'saci|d1':/^d1\b|\bd1\b/,'cml|estoquecd':/estoque\s*cd\b/,'nf|vendas':/venda/};
+  var EXIGE_NOME={
+    'rem|c':/remanejo/,'saci|d1':/^d1\b|\bd1\b/,'cml|estoquecd':/estoque\s*cd\b/,'nf|vendas':/venda/,
+    'cml|listagemvendas':/venda|listagem/,'cml|vendas':/venda|curva|abc/,'cml|pedidos':/pedido|compra/,
+    'cml|caixavendedor':/caixa|vendedor/,'mei|v':/quantitativ|vendid|vendedor|caixa|meia/,'gren|v':/quantitativ|vendid|vendedor|caixa|grendene/
+  };
   function nomeSimples(n){
     return String(n||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()
       .replace(/\.[a-z0-9]+$/,'').replace(/[_\-+.]+/g,' ').replace(/\s+/g,' ').trim();
