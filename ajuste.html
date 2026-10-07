@@ -84,7 +84,7 @@ textarea{min-height:76px;resize:vertical;font-size:15px}
 <!-- LOGIN -->
 <section id="vLogin" class="hidden">
   <div class="card">
-    <h2 id="lTitulo">Entrar</h2><p class="sub" id="lSub">Digite seu CPF para começar.</p>
+    <h2 id="lTitulo">Entrar</h2><p class="sub" id="lSub">Digite seu CPF e sua senha.</p>
     <form id="fLogin" autocomplete="on">
       <label for="lCpf">CPF</label><input id="lCpf" type="tel" inputmode="numeric" placeholder="000.000.000-00" autocomplete="username" maxlength="14" required>
       <div id="lInfo"></div>
@@ -169,7 +169,7 @@ const SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
 const SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
 const BUCKET='ajuste-estoque-comprovantes';
 const WHATS='5581989087348';
-const BUILD='20260926-120623';
+const BUILD='20261007-134343';
 /* se o navegador guardou uma versao antiga desta pagina, busca a nova e recarrega (uma vez por versao) */
 (async()=>{try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);
   if(m&&m[1]!==BUILD&&m[1].indexOf('@@')<0){let k='';try{k=sessionStorage.getItem('ae_build')||''}catch(e){}if(k!==m[1]){try{sessionStorage.setItem('ae_build',m[1])}catch(e){}location.reload()}}}catch(e){}})();
@@ -247,25 +247,8 @@ function modoTela(modo,pedirNome){modoLogin=modo;$('lEsqueci').classList.add('hi
   $('lSenhaRot').textContent=modo==='novo'?'Crie uma senha':'Senha';$('lSenha').autocomplete=modo==='novo'?'new-password':'current-password';
   $('btnEntrar').textContent=modo==='novo'?'Criar acesso e entrar':'Entrar';
   $('lTitulo').textContent=modo==='novo'?'Primeiro acesso':'Entrar';$('lSub').textContent=modo==='novo'?'Confirme seus dados e crie sua senha.':'Digite seu CPF e sua senha.'}
-async function consultarCpf(cpf){
-  if(cpf.length!==11){cpfConsultado='';$('lInfo').innerHTML='';modoTela('entrar');return}
-  if(cpf===cpfConsultado)return;cpfConsultado=cpf;
-  const r=await sb.rpc('ajuste_consultar_cpf',{p_cpf:cpf});
-  if(cpf!==$('lCpf').value.replace(/\D/g,''))return;
-  const d=r.data;
-  if(r.error||!d){cpfConsultado='';$('lInfo').innerHTML='';modoTela('entrar');return}
-  if(!d.valido){$('lInfo').innerHTML='<div class="msg err">CPF inválido. Confira os números.</div>';modoTela('entrar');return}
-  if(d.bloqueado){$('lInfo').innerHTML='<div class="msg err">Este acesso está bloqueado. Fale com o suporte.</div>';modoTela('entrar');return}
-  const quem=d.achou?'<b>'+esc(d.nome_curto||'')+'</b>'+(d.cargo?' · '+esc(d.cargo):''):'';
-  const aviso=d.desligado?'<br>⚠ O cadastro do Seta consta como <b>desligado</b>. Você pode entrar, mas o pedido será sinalizado.':'';
-  if(d.tem_acesso){
-    $('lInfo').innerHTML=d.achou?'<div class="msg ok" style="text-align:left">✔ '+quem+'<br><span class="sub">Cadastro do Seta encontrado.</span>'+aviso+'</div>':'<div class="msg warn" style="text-align:left">CPF não localizado no cadastro do Seta. Você pode entrar normalmente; o pedido ficará sinalizado para a auditoria.</div>';
-    modoTela('entrar');$('lEsqueci').classList.remove('hidden');
-  }else{
-    $('lInfo').innerHTML=d.achou?'<div class="msg ok" style="text-align:left">✔ '+quem+'<br><span class="sub">Cadastro do Seta encontrado. É o seu primeiro acesso: crie uma senha.</span>'+aviso+'</div>':'<div class="msg warn" style="text-align:left">CPF não localizado no cadastro do Seta. Você pode entrar mesmo assim: digite seu nome e crie uma senha. O pedido ficará sinalizado para a auditoria.</div>';
-    modoTela('novo',!d.achou);
-  }
-}
+async function consultarCpf(cpf){/* acesso so por usuario criado pela Controladoria: nada e consultado no servidor */
+  $('lInfo').innerHTML='';modoTela('entrar');if(cpf.length===11)$('lEsqueci').classList.remove('hidden')}
 $('lEsqueci').onclick=async e=>{e.preventDefault();msg('lMsg','');
   const cpf=$('lCpf').value.replace(/\D/g,'');if(cpf.length!==11)return;
   const r=await sb.rpc('ajuste_pedir_nova_senha',{p_cpf:cpf});
@@ -285,7 +268,7 @@ $('fLogin').onsubmit=async e=>{e.preventDefault();msg('lMsg','');
       if(c.error)throw new Error(c.error.message.replace(/^.*?:\s*/,''));
     }
     const r=await sb.auth.signInWithPassword({email:cpf+DOMINIO,password:senha});
-    if(r.error)throw new Error('CPF ou senha inválidos. Se é seu primeiro acesso, confira o CPF.');
+    if(r.error)throw new Error('CPF ou senha inválidos. Se ainda não tem acesso, fale com a Controladoria.');
     uid=r.data.user.id;
     const p=await sb.rpc('ajuste_meu_perfil');
     if(p.error||!p.data||!p.data.ok){await sb.auth.signOut();throw new Error('CPF ou senha inválidos.')}
