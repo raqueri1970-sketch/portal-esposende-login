@@ -225,15 +225,16 @@ const ROBO_TXT={OCIOSO:['Aguardando pedidos','st-ok','🤖'],EXECUTANDO:['Ajusta
 /* miniatura da foto do cupom (WhatsApp): busca uma vez por ajuste e guarda */
 const FOTOS=new Map();
 function celFoto(x){
-  if(x.foto_wa){const u=FOTOS.get(x.id);return (u&&u!=='x')?'<img class="th" src="'+u+'" data-id="'+x.id+'" alt="foto">':'<span class="thv" data-id="'+x.id+'"></span>';}
-  if(x.foto)return '<span class="pill p-ok">📷 com</span>';
+  if(x.foto_wa||x.foto){const u=FOTOS.get(x.id);return (u&&u!=='x')?'<img class="th" src="'+u+'" data-id="'+x.id+'" alt="foto">':'<span class="thv" data-id="'+x.id+'" data-wa="'+(x.foto_wa?1:0)+'"></span>';}
   return x.status==='CONCLUIDO'?'<span class="pill p-bad">sem</span>':'';
 }
 async function carregarFotos(){
   for(const el of document.querySelectorAll('#feed [data-id]')){
     const id=+el.dataset.id;if(FOTOS.has(id)){const u=FOTOS.get(id);if(u!=='x'&&el.tagName!=='IMG')el.outerHTML='<img class="th" src="'+u+'" data-id="'+id+'" alt="foto">';continue}
     FOTOS.set(id,'x');
-    try{const r=await fetch(SB_URL+'/rest/v1/rpc/ajuste_painel_foto',{method:'POST',cache:'no-store',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:TOKEN,p_id:id})});
+    const wa=el.dataset.wa!=='0';
+    try{const r=wa?await fetch(SB_URL+'/rest/v1/rpc/ajuste_painel_foto',{method:'POST',cache:'no-store',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:TOKEN,p_id:id})})
+        :await fetch(SB_URL+'/functions/v1/painel-foto',{method:'POST',cache:'no-store',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({t:TOKEN,id:id})});
       const j=r.ok?await r.json():null;if(j&&j.dados){const u='data:'+(j.mime||'image/jpeg')+';base64,'+j.dados;FOTOS.set(id,u);const e2=document.querySelector('#feed [data-id="'+id+'"]');if(e2)e2.outerHTML='<img class="th" src="'+u+'" data-id="'+id+'" alt="foto">'}else if(!r.ok)FOTOS.delete(id);
     }catch(e){FOTOS.delete(id)}
   }
