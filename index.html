@@ -392,6 +392,114 @@ function capaTreinamentosNoShell(CAPA){
   setInterval(agendar,2500);agendar();
 }
 var TREINAMENTOS_CAPA_PATCH='<scr'+'ipt id="patch-capa-treinamentos-20260922">('+capaTreinamentosNoShell.toString()+')('+JSON.stringify(TREINAMENTOS_CAPA_URL)+');</scr'+'ipt>';
+// Capa do card "Obras & Reformas" no Portal principal (o card original não tem foto).
+var OBRAS_CAPA_URL=new URL('obras-reformas-capa.jpg?v=1',location.href).href;
+function capaObrasNoShell(CAPA){
+  var ALVO='OBRAS E REFORMAS',MARCA='data-capa-obras',BLOCO='data-capa-obras-bloco';
+  function norm(t){return String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/&/g,' E ').replace(/\s+/g,' ').trim().toUpperCase()}
+  function grande(el){var r=el.getBoundingClientRect();return r.width>=80&&r.height>=60}
+  function urlFundo(el){var b=getComputedStyle(el).backgroundImage;return b&&b.indexOf('url(')>=0?b:''}
+  function visivel(el){return getComputedStyle(el).display!=='none'&&el.getClientRects().length>0}
+  var MENU='nav,aside,header,[role="navigation"],[role="menu"],[class*="sidebar" i],[class*="menu" i],[id*="sidebar" i],[id*="menu" i]';
+  function clicavel(el){return /^(A|BUTTON)$/.test(el.tagName)||el.getAttribute('role')==='button'||el.hasAttribute('onclick')||typeof el.onclick==='function'||getComputedStyle(el).cursor==='pointer'}
+  function cards(){
+    var achados=[],w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),n;
+    while((n=w.nextNode())){
+      if(norm(n.nodeValue)!==ALVO)continue;
+      var el=n.parentElement;if(!el||el.closest(MENU))continue;
+      var card=el.closest('.oc');
+      for(var i=0;!card&&i<6&&el&&el!==document.body;i++,el=el.parentElement){
+        if(norm(el.textContent).length>400)break;
+        if(clicavel(el))card=el;
+      }
+      if(card&&achados.indexOf(card)<0)achados.push(card);
+    }
+    return achados;
+  }
+  function imagemEm(el){
+    var melhor=null,area=0;
+    [].slice.call(el.querySelectorAll('img')).forEach(function(img){
+      if(!grande(img))return;
+      var r=img.getBoundingClientRect();
+      if(r.width*r.height>area){area=r.width*r.height;melhor=img}
+    });
+    if(melhor)return melhor;
+    var fundos=[el].concat([].slice.call(el.querySelectorAll('*')));
+    for(var i=0;i<fundos.length;i++)if(urlFundo(fundos[i])&&grande(fundos[i]))return fundos[i];
+    return null;
+  }
+  // Card vizinho com foto: serve de molde para a Obras ficar igual aos demais.
+  function molde(card){
+    var irmaos=card.parentElement?[].slice.call(card.parentElement.children):[];
+    for(var i=0;i<irmaos.length;i++){
+      var c=irmaos[i];if(c===card||c.hasAttribute(MARCA))continue;
+      var img=imagemEm(c);if(img)return {card:c,img:img};
+    }
+    return null;
+  }
+  function trocarImagens(raiz){
+    [raiz].concat([].slice.call(raiz.querySelectorAll('*'))).forEach(function(el){
+      el.removeAttribute('id');
+      if(el.tagName==='SOURCE')el.setAttribute('srcset',CAPA);
+      else if(el.tagName==='IMG'){el.removeAttribute('srcset');el.removeAttribute('sizes');el.removeAttribute('loading');el.src=CAPA;el.alt='Obras & Reformas';el.style.objectFit='cover';el.style.objectPosition='center'}
+      else if(urlFundo(el)){el.style.backgroundImage=urlFundo(el).replace(/url\([^)]*\)/,'url("'+CAPA+'")');el.style.backgroundSize='cover';el.style.backgroundPosition='center'}
+    });
+    // Tira textos do molde (título de outro módulo), a arte já traz o nome.
+    var w=document.createTreeWalker(raiz,NodeFilter.SHOW_TEXT),n,t=[];
+    while((n=w.nextNode()))if(n.nodeValue.trim())t.push(n);
+    t.forEach(function(x){x.nodeValue=''});
+  }
+  function blocoPadrao(card){
+    var d=document.createElement('div');
+    d.style.cssText='position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#0b1a33';
+    var img=document.createElement('img');img.src=CAPA;img.alt='Obras & Reformas';
+    img.style.cssText='display:block;width:100%;height:100%;object-fit:cover;object-position:center';
+    d.appendChild(img);
+    var cs=getComputedStyle(card),pad=cs.paddingTop+' '+cs.paddingRight+' '+cs.paddingBottom+' '+cs.paddingLeft;
+    card.style.padding='0';card.style.overflow='hidden';
+    [].slice.call(card.children).forEach(function(c){
+      if(/(^|\s)ocft(\s|$)/.test(c.className)){c.style.padding=pad;c.style.marginTop='auto'}
+      else c.style.display='none';
+    });
+    return d;
+  }
+  // Esconde o que o molde não mostra (cabeçalho com ícone, descrição...).
+  function esconderComoMolde(card,molde,topo){
+    var visiveis=[].slice.call(molde.children).filter(function(c){return c!==topo&&visivel(c)});
+    [].slice.call(card.children).forEach(function(c){
+      var par=visiveis.filter(function(v){return [].some.call(c.classList,function(k){return v.classList.contains(k)})})[0];
+      if(!par){c.style.display='none';return}
+      var ps=getComputedStyle(par);c.style.padding=ps.padding;c.style.margin=ps.margin;
+    });
+  }
+  function aplicar(card){
+    if(card.getAttribute(MARCA)===CAPA&&(card.querySelector('['+BLOCO+']')||card.style.backgroundImage.indexOf(CAPA)>=0))return;
+    [].slice.call(card.querySelectorAll('['+BLOCO+']')).forEach(function(x){x.remove()});
+    var m=molde(card),bloco=null,pos=0;
+    if(!m&&!card.classList.contains('oc'))return;
+    if(card.getBoundingClientRect().width<200)return;
+    if(m&&m.img!==m.card){
+      var topo=m.img;while(topo.parentElement!==m.card)topo=topo.parentElement;
+      pos=[].indexOf.call(m.card.children,topo);
+      bloco=topo.cloneNode(true);trocarImagens(bloco);
+      esconderComoMolde(card,m.card,topo);
+      var ms=getComputedStyle(m.card);
+      ['padding','overflow','display','flexDirection','justifyContent','gap'].forEach(function(p){card.style[p]=ms[p]});
+    }else if(m){
+      esconderComoMolde(card,m.card,null);
+      card.style.backgroundImage=urlFundo(m.card).replace(/url\([^)]*\)/,'url("'+CAPA+'")');
+      card.style.backgroundSize='cover';card.style.backgroundPosition='center';
+    }else bloco=blocoPadrao(card);
+    if(bloco){bloco.setAttribute(BLOCO,'1');card.insertBefore(bloco,card.children[pos]||null)}
+    card.setAttribute(MARCA,CAPA);
+  }
+  var agendado=null;
+  function varrer(){agendado=null;try{cards().forEach(aplicar)}catch(e){console.warn('[Portal] capa Obras:',e)}}
+  function agendar(){if(!agendado)agendado=setTimeout(varrer,250)}
+  new MutationObserver(agendar).observe(document.documentElement,{childList:true,subtree:true});
+  setInterval(agendar,2500);agendar();
+}
+var OBRAS_CAPA_PATCH='<scr'+'ipt id="patch-capa-obras-20261008">('+capaObrasNoShell.toString()+')('+JSON.stringify(OBRAS_CAPA_URL)+');</scr'+'ipt>';
 function inserirAntesDoFimDoBody(html,trecho){var i=html.toLowerCase().lastIndexOf('</body>');return i<0?html+trecho:html.slice(0,i)+trecho+html.slice(i)}
 
 
@@ -752,6 +860,8 @@ async function openPortal(){
   html=html.replace(/<\/body>/i,ALMOX_MINIMO_PATCH+'</body>');
   // Capa oficial do card Treinamentos e Cursos.
   html=inserirAntesDoFimDoBody(html,TREINAMENTOS_CAPA_PATCH);
+  // Capa do card Obras & Reformas (foto nova; o card original era só ícone e texto).
+  html=inserirAntesDoFimDoBody(html,OBRAS_CAPA_PATCH);
   // Central de Upload Universal como porta única (Base Mãe + vários módulos por arquivo).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('upload-universal-patch.js?v=20261006-2',location.href).href+'"></scr'+'ipt>');
   // Carregamento de arquivos em todos os módulos (CSV, arrastar sem baixar, campanhas Meias/Grendene).
