@@ -868,6 +868,8 @@ async function openPortal(){
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('upload-correcoes.js?v=20261002-5',location.href).href+'"></scr'+'ipt>');
   // Protocolo de Curso: painel de gráficos novo (dia, funil, regional, lojas e módulos).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('protocolo-graficos.js?v=20261005-1',location.href).href+'"></scr'+'ipt>');
+  // Obras & Reformas: telas de pagamento (Presidente, Contas a pagar, Financeiro, Relatórios) dentro do módulo, com a sessão do Portal.
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('obras-pagamentos-patch.js?v=20261009-1',location.href).href+'"></scr'+'ipt>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
