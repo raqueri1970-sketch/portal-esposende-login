@@ -1,11 +1,11 @@
-/* Obras & Reformas — Pagamentos dentro do módulo do Portal (2026-10-11).
+/* Obras & Reformas — Pagamentos dentro do módulo do Portal (2026-10-11, rev. 3: quadro com altura automática).
    Mantém apenas o Contas a pagar do bloco PAGAMENTOS.
    Remove definitivamente a antiga aba Contas a Pagar, logo abaixo de Prestações de contas.
 */
 (function(){
   if(window.__obrasPagamentos)return;window.__obrasPagamentos=true;
   var BASE=(function(){try{return new URL('obras/',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/obras/'}})();
-  var V='20261011-2';
+  var V='20261011-3';
   var ABAS=[
     {id:'pag',icone:'💳',rotulo:'Pagamentos (Presidente)',titulo:'Pagamentos · Presidente',url:'obras-presidente/'},
     {id:'cap',icone:'📋',rotulo:'Contas a pagar',titulo:'Contas a pagar · visão geral',url:'obras-contas-pagar/'},
@@ -26,10 +26,13 @@
     var nav=d.getElementById('nav'),main=d.getElementById('main'),ttl=d.getElementById('ttl');
     removerContaAntiga(nav);
     var tools=main&&main.querySelector('.tools'),sub=main&&main.querySelector('.top .sub');
-    var css=d.createElement('style');css.textContent='#nav [data-obras-pag]{text-decoration:none;cursor:pointer}#nav .tab-sep{margin:10px 6px 6px;padding-top:10px;border-top:1px solid rgba(148,163,184,.18);font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.65}#t-obras-pag{margin-top:6px}#t-obras-pag iframe{width:100%;height:calc(100vh - 150px);min-height:620px;border:0;border-radius:14px;background:#070b16;display:block}';d.head.appendChild(css);
+    var css=d.createElement('style');css.textContent='#nav [data-obras-pag]{text-decoration:none;cursor:pointer}#nav .tab-sep{margin:10px 6px 6px;padding-top:10px;border-top:1px solid rgba(148,163,184,.18);font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.65}#t-obras-pag{margin-top:6px}#t-obras-pag iframe{width:100%;height:640px;min-height:420px;border:0;border-radius:14px;background:#070b16;display:block;overflow:hidden}html,body{overflow-x:hidden}';d.head.appendChild(css);
     var sep=d.createElement('div');sep.className='tab-sep';sep.textContent='Pagamentos';nav.appendChild(sep);
     var sec=d.createElement('section');sec.id='t-obras-pag';sec.hidden=true;sec.innerHTML='<iframe title="Obras & Reformas - pagamentos" allow="clipboard-write"></iframe>';main.appendChild(sec);
-    var ifr=sec.querySelector('iframe'),atual=null,tituloOriginal=null;
+    var ifr=sec.querySelector('iframe'),atual=null,tituloOriginal=null,ro=null;
+    ifr.setAttribute('scrolling','no');
+    function ajustar(){try{var dd=ifr.contentDocument;if(!dd||!dd.body)return;var h=Math.ceil(dd.body.scrollHeight)+4;if(h>0&&Math.abs(h-ifr.offsetHeight)>2)ifr.style.height=h+'px'}catch(e){}}
+    ifr.addEventListener('load',function(){try{if(ro)ro.disconnect();var dd=ifr.contentDocument;ro=new (ifr.contentWindow.ResizeObserver||ResizeObserver)(ajustar);ro.observe(dd.body);ro.observe(dd.documentElement);ajustar();setTimeout(ajustar,400);setTimeout(ajustar,1500)}catch(e){}});
     function abrir(aba,link){if(tituloOriginal===null&&ttl)tituloOriginal=ttl.textContent;[].forEach.call(main.querySelectorAll(':scope > section'),function(s){if(s!==sec)s.hidden=true});[].forEach.call(nav.querySelectorAll('.tab'),function(t){t.classList.remove('on')});link.classList.add('on');sec.hidden=false;if(tools)tools.style.display='none';if(sub)sub.style.display='none';if(ttl)ttl.textContent=aba.titulo;if(atual!==aba.id){ifr.src=BASE+aba.url+'?v='+V;atual=aba.id}}
     function fechar(){if(sec.hidden)return;sec.hidden=true;[].forEach.call(nav.querySelectorAll('[data-obras-pag]'),function(t){t.classList.remove('on')});if(tools)tools.style.display='';if(sub)sub.style.display=''}
     ABAS.forEach(function(aba){var a=d.createElement('a');a.className='tab';a.href='#';a.setAttribute('data-obras-pag',aba.id);a.textContent=aba.icone+' '+aba.rotulo;a.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();abrir(aba,a)},true);nav.appendChild(a)});
