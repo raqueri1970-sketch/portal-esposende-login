@@ -1,11 +1,11 @@
 /* Obras & Reformas — Pagamentos dentro do módulo do Portal (2026-10-11).
    Mantém apenas o Contas a pagar do bloco PAGAMENTOS.
-   A antiga aba Contas a Pagar, logo abaixo de Prestação de contas, fica removida do menu.
+   Remove definitivamente a antiga aba Contas a Pagar, logo abaixo de Prestações de contas.
 */
 (function(){
   if(window.__obrasPagamentos)return;window.__obrasPagamentos=true;
   var BASE=(function(){try{return new URL('obras/',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/obras/'}})();
-  var V='20261011-1';
+  var V='20261011-2';
   var ABAS=[
     {id:'pag',icone:'💳',rotulo:'Pagamentos (Presidente)',titulo:'Pagamentos · Presidente',url:'obras-presidente/'},
     {id:'cap',icone:'📋',rotulo:'Contas a pagar',titulo:'Contas a pagar · visão geral',url:'obras-contas-pagar/'},
@@ -18,7 +18,7 @@
   function removerContaAntiga(nav){
     [].forEach.call(nav.querySelectorAll('.tab:not([data-obras-pag])'),function(t){
       var tx=normaliza(t.textContent);
-      if(tx==='contas a pagar'||tx.indexOf('contas a pagar')===0)t.style.display='none';
+      if(tx==='contas a pagar'||tx.indexOf('contas a pagar')===0){try{t.remove()}catch(e){t.style.display='none'}}
     });
   }
   function instalar(d){
