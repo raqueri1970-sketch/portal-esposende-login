@@ -5,7 +5,7 @@
 */
 (function(){
   if(window.__rlPainelCompleto)return;window.__rlPainelCompleto=true;
-  var V='20261013-1';
+  var V='20261013-2';
   var URL_PAINEL=(function(){try{return new URL('rl-painel.html?v='+V,document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/rl-painel.html?v='+V}})();
   // Só a página inicial do bot (painel). /fotos/ e /api/ seguem para o D90 normalmente.
   var RE_PAINEL=/^https?:\/\/100\.125\.195\.119:3456\/?(?:[?#].*)?$/;
@@ -23,7 +23,7 @@
     }
     var ifr=ov.querySelector('iframe');
     if(ifr.getAttribute('src')!==URL_PAINEL)ifr.setAttribute('src',URL_PAINEL);
-    else try{ifr.contentWindow.document.getElementById('btnAtualizar').click()}catch(e){}
+    else try{ifr.contentWindow.atualizarTudo()}catch(e){}
     ov.style.display='flex';
     try{d.documentElement.style.overflow='hidden'}catch(e){}
   }
