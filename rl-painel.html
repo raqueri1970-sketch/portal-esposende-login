@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>RL Transportes — Painel Completo</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#070b16;--bg1:#0b1222;--bg2:#101a2e;--b:#1e2a44;--tx:#e5edf8;--tx2:#a9b6cc;--tx3:#6f7f99;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--blue:#3b82f6;--purp:#8b5cf6}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;-webkit-text-size-adjust:100%}
+body{padding:14px 16px calc(28px + env(safe-area-inset-bottom))}
+h1{font-size:20px;margin:0}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.top .sp{flex:1}
+.sub{color:var(--tx3);font-size:12px;margin-bottom:12px}
+button,.btn{background:var(--bg2);border:1px solid var(--b);color:var(--tx);border-radius:9px;padding:8px 13px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+button:active{transform:scale(.98)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chip{background:var(--bg1);border:1px solid var(--b);border-radius:999px;padding:5px 11px;font-size:12px;color:var(--tx2)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.aviso{background:#2a1d05;border:1px solid #7c5a10;color:#fcd34d;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:12px}
+.erro{background:#2a0b0b;border:1px solid #7f1d1d;color:#fca5a5;border-radius:10px;padding:12px;font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--bg1);border:1px solid var(--b);border-radius:12px;padding:12px 14px}
+.kpi .l{font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.kpi .v{font-size:17px;font-weight:800}
+.kpi .s{font-size:11px;color:var(--tx3);margin-top:2px}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}
+.tabs button{white-space:nowrap}
+.tabs button.on{background:#1e3a8a;border-color:var(--blue)}
+.filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.filtros input,.filtros select{background:var(--bg1);border:1px solid var(--b);color:var(--tx);border-radius:9px;padding:8px 10px;font:inherit;font-size:14px;min-width:0}
+.filtros input[type=search]{flex:1 1 200px}
+.res{font-size:12px;color:var(--tx2);margin-bottom:8px}
+.lista{display:flex;flex-direction:column;gap:8px}
+.it{background:var(--bg1);border:1px solid var(--b);border-radius:11px;padding:10px 12px}
+.it .l1{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.it .val{font-weight:800;white-space:nowrap}
+.it .forn{font-weight:600;overflow-wrap:anywhere}
+.it .l2{font-size:12px;color:var(--tx3);margin-top:3px;overflow-wrap:anywhere}
+.tag{display:inline-block;font-size:11px;border-radius:6px;padding:1px 7px;margin-right:4px;background:var(--bg2);border:1px solid var(--b);color:var(--tx2)}
+.tag.placa{color:#fbbf24;border-color:#5b4511;font-family:ui-monospace,Menlo,monospace}
+.tag.pend{color:#fbbf24}.tag.canc{color:#f87171}.tag.sem{color:#f87171}
+.bar{height:6px;border-radius:4px;background:var(--bg2);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%}
+.foto{background:none;border:0;color:#93c5fd;padding:0;font-size:12px;font-weight:600;cursor:pointer;margin-left:6px}
+.mais{width:100%;margin-top:10px}
+.vazio{color:var(--tx3);text-align:center;padding:30px 10px}
+.carregando{color:var(--tx2);text-align:center;padding:50px 10px}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>🚛 RL Transportes — Painel Completo</h1>
+  <span class="sp"></span>
+  <button id="btnAtualizar" type="button">🔄 Atualizar</button>
+</div>
+<div class="sub">Dados do espelho no Supabase · funciona no celular, sem depender do PC do escritório</div>
+<div id="app"><div class="carregando">Carregando…</div></div>
+
+<script>
+(function(){
+var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
+var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
+// Comprovantes (fotos/PDF) ficam só no PC D90; abrem apenas com o Tailscale ligado e o bot no ar.
+var FOTOS_D90='http://100.125.195.119:3456/fotos/';
+var TIPOS_PAGAMENTO=['comprovante_pix','comprovante_ted','comprovante_boleto'];
+var sb=supabase.createClient(SB_URL,SB_KEY);
+var app=document.getElementById('app');
+var estado={aba:'despesas',busca:'',status:'',mes:'',limite:100,dados:null};
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function brl(n){return 'R$ '+Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+// As datas da RL são gravadas em hora local marcada como UTC: lê as partes em UTC.
+function dataRL(iso){if(!iso)return '';var d=new Date(iso);if(isNaN(d))return String(iso);function p(n){return String(n).padStart(2,'0')}return p(d.getUTCDate())+'/'+p(d.getUTCMonth()+1)+'/'+d.getUTCFullYear()+' '+p(d.getUTCHours())+':'+p(d.getUTCMinutes())}
+function diaDoc(r){var s=r.data_documento||(r.data?new Date(r.data).toISOString().slice(0,10):'');return s}
+function diaBr(s){var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?m[3]+'/'+m[2]+'/'+m[1]:(s||'')}
+function horasDesde(iso){return iso?(Date.now()-new Date(iso).getTime())/36e5:Infinity}
+// Datas da RL (hora local gravada como UTC): soma 3 h (Brasília, sem horário de verão) para medir o tempo real.
+function rlUtc(iso){return iso?new Date(new Date(iso).getTime()+3*36e5).toISOString():iso}
+function tempo(iso){var h=horasDesde(iso);if(!isFinite(h))return 'nunca';if(h<1)return Math.max(1,Math.round(h*60))+' min atrás';if(h<48)return Math.round(h)+' h atrás';return Math.round(h/24)+' dias atrás'}
+
+async function garantirSessao(){
+  var s=(await sb.auth.getSession()).data.session;
+  if(s)return s;
+  // Fallback: sessão injetada pelo Portal no documento pai.
+  try{
+    var w=window.parent,p=null;
+    for(var i=0;i<5&&w;i++){if(w.__PORTAL_SESSION){p=w.__PORTAL_SESSION;break}if(w===w.parent)break;w=w.parent}
+    if(p&&p.access_token){await sb.auth.setSession({access_token:p.access_token,refresh_token:p.refresh_token||''});return (await sb.auth.getSession()).data.session}
+  }catch(e){}
+  return null;
+}
+
+async function lerTudo(tabela,campos,ordem){
+  var out=[];
+  for(var de=0;;de+=1000){
+    var r=await sb.from(tabela).select(campos).order(ordem,{ascending:false}).order('id',{ascending:false}).range(de,de+999);
+    if(r.error)throw new Error(tabela+': '+r.error.message);
+    out=out.concat(r.data);
+    if(r.data.length<1000)return out;
+  }
+}
+
+async function carregar(){
+  app.innerHTML='<div class="carregando">Carregando…</div>';
+  try{
+    if(!await garantirSessao()){app.innerHTML='<div class="erro">Sessão do Portal não encontrada. Feche esta tela e entre no Portal novamente.</div>';return}
+    var res=await Promise.all([
+      sb.rpc('rl_painel',{p_limite:1}),
+      lerTudo('rl_despesas','id,deposito_id,data,data_documento,hora_documento,valor,remetente,fornecedor,servico,placa,nf,tipo_doc,descricao,arquivo,status','data'),
+      lerTudo('rl_depositos','id,data,data_documento,valor,saldo_restante,status,remetente,banco,descricao,arquivo','data'),
+      sb.from('rl_fornecedores').select('nome,total_gasto,total_ocorrencias,servicos').order('total_gasto',{ascending:false}).limit(300),
+      sb.from('capturador_status').select('instancia,atualizado_em,whatsapp_estado,versao,erros_24h,ultimo_comprovante')
+    ]);
+    if(res[0].error)throw new Error('rl_painel: '+res[0].error.message);
+    estado.dados={
+      dash:(res[0].data||{}).dashboard||{},
+      gastosPlaca:(res[0].data||{}).gastos_placa||[],
+      despesas:res[1],depositos:res[2],
+      fornecedores:res[3].error?[]:res[3].data,
+      capturadores:res[4].error?[]:res[4].data
+    };
+    render();
+  }catch(e){
+    app.innerHTML='<div class="erro">Não foi possível carregar o painel: '+esc(e&&e.message||e)+'</div>';
+  }
+}
+
+function chipsStatus(d){
+  var h='<div class="chips">';
+  (d.capturadores||[]).forEach(function(c){
+    var on=horasDesde(c.atualizado_em)<0.5;
+    var nome=c.instancia==='nuvem'?'Servidor nuvem (VPS)':'PC '+c.instancia;
+    var modo=/sombra/i.test(c.versao||'')?' · modo sombra':'';
+    h+='<span class="chip"><span class="dot" style="background:'+(on?'var(--ok)':'var(--err)')+'"></span>'+esc(nome)+': '+(on?'no ar':'fora do ar')+modo+' · '+esc(tempo(c.atualizado_em))+'</span>';
+  });
+  return h+'</div>';
+}
+
+function render(){
+  var d=estado.dados,k=d.dash,h='';
+  h+=chipsStatus(d);
+  var ult=k.ultima_atualizacao;
+  if(horasDesde(rlUtc(ult))>24){
+    h+='<div class="aviso">⚠️ Último lançamento recebido '+esc(tempo(rlUtc(ult)))+' ('+esc(dataRL(ult))+'). Comprovantes enviados depois disso só aparecem quando o capturador oficial (PC D90) voltar a gravar.</div>';
+  }
+  h+='<div class="kpis">'
+    +kpi('💰 Saldo disponível',brl(k.saldo_disponivel),Number(k.saldo_disponivel)<0?'var(--err)':'var(--ok)',k.saldo_inicial?'Saldo inicial '+brl(k.saldo_inicial.valor)+' em '+diaBr(k.saldo_inicial.data):'')
+    +kpi('📥 Depósitos',brl(k.total_depositos),'#93c5fd',(k.qtd_depositos||0)+' lançamentos · '+(k.depositos_ativos||0)+' com saldo')
+    +kpi('📤 Despesas',brl(k.total_despesas),'var(--warn)',(k.qtd_despesas||0)+' comprovantes de pagamento')
+    +kpi('🔗 Sem depósito',String(k.sem_deposito||0),(k.sem_deposito>0?'var(--err)':'var(--tx)'),'despesas sem vínculo FIFO')
+    +kpi('🕒 Atualizado',ult?dataRL(ult):'—','var(--tx)',tempo(rlUtc(ult)))
+    +'</div>';
+  var abas=[['despesas','📤 Despesas'],['depositos','📥 Depósitos'],['placas','🚗 Placas'],['fornecedores','🏷️ Fornecedores']];
+  h+='<div class="tabs">'+abas.map(function(a){return '<button type="button" data-aba="'+a[0]+'" class="'+(estado.aba===a[0]?'on':'')+'">'+a[1]+'</button>'}).join('')+'</div>';
+  h+='<div id="conteudo"></div>';
+  app.innerHTML=h;
+  [].forEach.call(app.querySelectorAll('[data-aba]'),function(b){b.onclick=function(){estado.aba=b.getAttribute('data-aba');estado.limite=100;render()}});
+  renderAba();
+}
+function kpi(l,v,cor,s){return '<div class="kpi"><div class="l">'+l+'</div><div class="v" style="color:'+cor+'">'+esc(v)+'</div>'+(s?'<div class="s">'+esc(s)+'</div>':'')+'</div>'}
+
+function botaoFoto(r){return r.arquivo?'<button type="button" class="foto" data-foto="'+esc(r.arquivo)+'">📷 comprovante</button>':''}
+
+function meses(lista){var m={};lista.forEach(function(r){var s=diaDoc(r).slice(0,7);if(s)m[s]=1});return Object.keys(m).sort().reverse()}
+
+function renderAba(){
+  var c=document.getElementById('conteudo'),d=estado.dados,a=estado.aba,h='';
+  if(a==='despesas'||a==='depositos'){
+    var base=a==='despesas'?d.despesas:d.depositos;
+    h+='<div class="filtros"><input type="search" id="fBusca" placeholder="'+(a==='despesas'?'Buscar fornecedor, placa, serviço, valor…':'Buscar remetente, banco, valor…')+'" value="'+esc(estado.busca)+'">'
+      +'<select id="fMes"><option value="">Todos os meses</option>'+meses(base).map(function(m){return '<option value="'+m+'"'+(estado.mes===m?' selected':'')+'>'+m.slice(5)+'/'+m.slice(0,4)+'</option>'}).join('')+'</select>'
+      +(a==='despesas'?'<select id="fStatus"><option value="">Todos os status</option><option value="confirmado">Confirmado</option><option value="pendente">Pendente</option><option value="cancelado">Cancelado</option><option value="sem">Sem depósito</option></select>':'')
+      +'</div><div id="lista"></div>';
+    c.innerHTML=h;
+    var fb=document.getElementById('fBusca'),fm=document.getElementById('fMes'),fs=document.getElementById('fStatus');
+    if(fs)fs.value=estado.status;
+    fb.oninput=function(){estado.busca=fb.value;estado.limite=100;renderLista()};
+    fm.onchange=function(){estado.mes=fm.value;estado.limite=100;renderLista()};
+    if(fs)fs.onchange=function(){estado.status=fs.value;estado.limite=100;renderLista()};
+    renderLista();
+  }else if(a==='placas'){
+    var tot=d.gastosPlaca.reduce(function(s,x){return s+Number(x.total_gasto||0)},0)||1;
+    h+='<div class="lista">'+(d.gastosPlaca.length?d.gastosPlaca.map(function(x){var p=Number(x.total_gasto||0)/tot*100;
+      return '<div class="it"><div class="l1"><span class="forn"><span class="tag placa">'+esc(x.placa)+'</span></span><span class="val" style="color:var(--warn)">'+brl(x.total_gasto)+'</span></div>'
+        +'<div class="l2">'+(x.total_servicos||0)+' serviços · último em '+esc(dataRL(x.ultimo_servico))+' · '+p.toFixed(1).replace('.',',')+'% do total</div>'
+        +'<div class="bar"><i style="width:'+p.toFixed(2)+'%;background:var(--warn)"></i></div></div>'}).join(''):'<div class="vazio">Sem dados.</div>')+'</div>';
+    c.innerHTML=h;
+  }else{
+    var lf=d.fornecedores||[];
+    h+='<div class="filtros"><input type="search" id="fBusca" placeholder="Buscar fornecedor…" value="'+esc(estado.busca)+'"></div><div id="lista"></div>';
+    c.innerHTML=h;
+    var fb2=document.getElementById('fBusca');
+    var desenha=function(){var q=fb2.value.trim().toLowerCase();var l=lf.filter(function(f){return !q||String(f.nome||'').toLowerCase().indexOf(q)>=0});
+      document.getElementById('lista').innerHTML='<div class="res">'+l.length+' fornecedores</div><div class="lista">'+(l.length?l.map(function(f){var sv=Array.isArray(f.servicos)?f.servicos.slice(0,6).join(', '):'';
+        return '<div class="it"><div class="l1"><span class="forn">'+esc(f.nome)+'</span><span class="val" style="color:var(--warn)">'+brl(f.total_gasto)+'</span></div><div class="l2">'+(f.total_ocorrencias||0)+' ocorrências'+(sv?' · '+esc(sv):'')+'</div></div>'}).join(''):'<div class="vazio">Nenhum fornecedor encontrado.</div>')+'</div>'};
+    fb2.oninput=function(){estado.busca=fb2.value;desenha()};
+    desenha();
+  }
+}
+
+function filtrar(lista,tipo){
+  var q=estado.busca.trim().toLowerCase(),qn=q.replace(/[r$\s.]/g,'').replace(',','.');
+  return lista.filter(function(r){
+    if(estado.mes&&diaDoc(r).slice(0,7)!==estado.mes)return false;
+    if(tipo==='despesas'&&estado.status){
+      if(estado.status==='sem'){if(r.deposito_id!=null||r.status==='cancelado'||TIPOS_PAGAMENTO.indexOf(r.tipo_doc)<0)return false}
+      else if(r.status!==estado.status)return false;
+    }
+    if(!q)return true;
+    var txt=[r.fornecedor,r.servico,r.placa,r.descricao,r.remetente,r.banco,r.nf,r.tipo_doc,diaBr(diaDoc(r))].join(' ').toLowerCase();
+    if(txt.indexOf(q)>=0)return true;
+    var n=parseFloat(qn);
+    return !isNaN(n)&&/^\d+(\.\d+)?$/.test(qn)&&Math.abs(Number(r.valor||0)-n)<0.005;
+  });
+}
+
+function renderLista(){
+  var d=estado.dados,a=estado.aba,el=document.getElementById('lista');
+  var l=filtrar(a==='despesas'?d.despesas:d.depositos,a);
+  var soma=l.reduce(function(s,r){return s+(r.status==='cancelado'?0:Number(r.valor||0))},0);
+  var h='<div class="res">'+l.length+' lançamentos · total '+brl(soma)+'</div><div class="lista">';
+  if(!l.length)h+='<div class="vazio">Nada encontrado com esses filtros.</div>';
+  l.slice(0,estado.limite).forEach(function(r){
+    if(a==='despesas'){
+      var tags='';
+      if(r.placa)tags+='<span class="tag placa">'+esc(r.placa)+'</span>';
+      if(r.tipo_doc)tags+='<span class="tag">'+esc(String(r.tipo_doc).replace('comprovante_','').toUpperCase())+'</span>';
+      if(r.status==='pendente')tags+='<span class="tag pend">pendente</span>';
+      if(r.status==='cancelado')tags+='<span class="tag canc">cancelado</span>';
+      if(r.deposito_id==null&&r.status!=='cancelado'&&TIPOS_PAGAMENTO.indexOf(r.tipo_doc)>=0)tags+='<span class="tag sem">sem depósito</span>';
+      h+='<div class="it"><div class="l1"><span class="forn">'+esc(r.fornecedor||r.descricao||'Sem fornecedor')+'</span><span class="val"'+(r.status==='cancelado'?' style="text-decoration:line-through;color:var(--tx3)"':'')+'>'+brl(r.valor)+'</span></div>'
+        +'<div class="l2">'+tags+esc(diaBr(diaDoc(r)))+(r.hora_documento?' '+esc(r.hora_documento):'')+(r.servico?' · '+esc(r.servico):'')+(r.remetente?' · por '+esc(r.remetente):'')+(r.deposito_id!=null?' · depósito #'+esc(r.deposito_id):'')+botaoFoto(r)+'</div></div>';
+    }else{
+      var v=Number(r.valor||0),s=Number(r.saldo_restante||0),usado=v>0?Math.min(100,Math.max(0,(v-s)/v*100)):100;
+      var ativo=r.status==='ativo';
+      h+='<div class="it"><div class="l1"><span class="forn">'+brl(v)+' <span class="tag">#'+esc(r.id)+'</span></span><span style="font-size:12px;font-weight:700;color:'+(ativo?'var(--ok)':'var(--err)')+'">● '+(ativo?'Com saldo':'Esgotado')+'</span></div>'
+        +'<div class="l2">'+esc(diaBr(diaDoc(r)))+' · Saldo: '+brl(s)+(r.remetente?' · '+esc(r.remetente):'')+(r.banco?' · '+esc(r.banco):'')+botaoFoto(r)+'</div>'
+        +'<div class="bar"><i style="width:'+usado.toFixed(1)+'%;background:'+(ativo?'var(--ok)':'var(--err)')+'"></i></div></div>';
+    }
+  });
+  h+='</div>';
+  if(l.length>estado.limite)h+='<button type="button" class="mais" id="btnMais">Mostrar mais ('+(l.length-estado.limite)+' restantes)</button>';
+  el.innerHTML=h;
+  var bm=document.getElementById('btnMais');if(bm)bm.onclick=function(){estado.limite+=200;renderLista()};
+}
+
+app.addEventListener('click',function(ev){
+  var b=ev.target.closest&&ev.target.closest('[data-foto]');if(!b)return;
+  var nome=b.getAttribute('data-foto').split(/[\\/]/).pop();
+  if(!confirm('Os comprovantes ficam guardados no PC do escritório (D90).\nSó abre com o Tailscale ligado e o PC no ar.\n\nAbrir mesmo assim?'))return;
+  window.open(FOTOS_D90+encodeURIComponent(nome),'_blank');
+});
+document.getElementById('btnAtualizar').onclick=carregar;
+carregar();
+})();
+</script>
+</body>
+</html>
