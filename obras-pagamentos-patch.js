@@ -1,15 +1,15 @@
-/* Obras & Reformas — Pagamentos dentro do módulo do Portal (2026-10-11, rev. 3: quadro com altura automática).
+/* Obras & Reformas — Pagamentos dentro do módulo do Portal (2026-10-11, rev. 3: quadro com altura automática;
+   2026-10-14: sem a aba Financeiro — o fluxo é direto despesa → pagamento).
    Mantém apenas o Contas a pagar do bloco PAGAMENTOS.
    Remove definitivamente a antiga aba Contas a Pagar, logo abaixo de Prestações de contas.
 */
 (function(){
   if(window.__obrasPagamentos)return;window.__obrasPagamentos=true;
   var BASE=(function(){try{return new URL('obras/',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/obras/'}})();
-  var V='20261011-3';
+  var V='20261014-3';
   var ABAS=[
+    {id:'cap',icone:'📊',rotulo:'Visão geral',titulo:'Despesas e pagamentos · visão geral',url:'obras-contas-pagar/'},
     {id:'pag',icone:'💳',rotulo:'Pagamentos (Presidente)',titulo:'Pagamentos · Presidente',url:'obras-presidente/'},
-    {id:'cap',icone:'📋',rotulo:'Contas a pagar',titulo:'Contas a pagar · visão geral',url:'obras-contas-pagar/'},
-    {id:'fin',icone:'🏦',rotulo:'Financeiro',titulo:'Financeiro',url:'obras-financeiro/'},
     {id:'rel',icone:'📑',rotulo:'Relatórios e PDF',titulo:'Relatórios e PDF',url:'obras-relatorios/'}
   ];
   function docs(w,lista,prof){if(prof>4)return lista;try{var d=w.document;if(d)lista.push(d)}catch(e){return lista}for(var i=0;i<w.frames.length;i++){try{docs(w.frames[i],lista,prof+1)}catch(e){}}return lista}
@@ -39,6 +39,36 @@
     nav.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('.tab');if(t&&!t.hasAttribute('data-obras-pag'))fechar()},true);
     new MutationObserver(function(){removerContaAntiga(nav)}).observe(nav,{childList:true,subtree:true});
   }
-  function varrer(){docs(window,[],0).forEach(function(d){try{if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
+  /* Comprovante em PDF (14/10/2026): o módulo Obras abre o PDF num <iframe> com o link do Supabase, e o Chrome bloqueia
+     o leitor de PDF dentro do Portal (quadro isolado / CSP sandbox do Storage) — aparecia "Esta página foi bloqueada".
+     Aqui o PDF é baixado e desenhado página a página (pdf.js), sem quadro. Vale para qualquer tela do Portal. */
+  var PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  var _pdf=null;
+  function pdfjs(){if(!_pdf)_pdf=new Promise(function(ok,erro){if(window.pdfjsLib)return ok(window.pdfjsLib);var sc=document.createElement('script');sc.src=PDFJS+'pdf.min.js';
+    sc.onload=function(){window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.js';ok(window.pdfjsLib)};sc.onerror=function(){_pdf=null;erro(new Error('pdf.js nao carregou'))};document.head.appendChild(sc)});return _pdf}
+  function ehPdfStorage(src){return /\/storage\/v1\/object\//.test(src||'')&&/\.pdf(\?|$)/i.test(String(src).split('?')[0]+'?')}
+  async function trocarIframePdf(ifr){
+    if(ifr.__pdfTrocado)return;ifr.__pdfTrocado=true;
+    var d=ifr.ownerDocument,src=ifr.getAttribute('src'),box=d.createElement('div');
+    box.setAttribute('style','width:100%;max-height:80vh;overflow:auto;background:#e5e7eb;border-radius:10px;padding:8px;box-sizing:border-box;text-align:center;color:#111;font:14px sans-serif');
+    box.textContent='Abrindo o PDF…';ifr.replaceWith(box);
+    try{
+      var r=await fetch(src);if(!r.ok)throw new Error('HTTP '+r.status);
+      var buf=await r.arrayBuffer(),lib=await pdfjs(),doc=await lib.getDocument({data:new Uint8Array(buf)}).promise;
+      box.textContent='';var larg=Math.max(320,Math.min(900,(box.clientWidth||800)-16));
+      for(var n=1;n<=Math.min(doc.numPages,30);n++){var pg=await doc.getPage(n),v0=pg.getViewport({scale:1}),vp=pg.getViewport({scale:larg/v0.width*(window.devicePixelRatio||1)});
+        var c=d.createElement('canvas');c.width=vp.width;c.height=vp.height;c.setAttribute('style','display:block;width:100%;margin:0 auto 8px;background:#fff;border-radius:6px');
+        box.appendChild(c);await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise}
+      var url=URL.createObjectURL(new Blob([buf],{type:'application/pdf'})),a=d.createElement('a');
+      a.href=url;a.download=(src.split('?')[0].split('/').pop()||'comprovante.pdf');a.textContent='Baixar o PDF';
+      a.setAttribute('style','display:inline-block;margin:6px auto;padding:9px 16px;border-radius:10px;background:#2563eb;color:#fff;text-decoration:none;font-weight:600');box.appendChild(a);
+    }catch(e){box.innerHTML='';var a2=d.createElement('a');a2.href=src;a2.target='_blank';a2.rel='noopener';a2.textContent='Não foi possível mostrar aqui ('+(e.message||e)+') — abrir o PDF em outra aba';box.appendChild(a2)}
+  }
+  function vigiarPdf(d){
+    if(d.__vigiaPdf||!d.body)return;d.__vigiaPdf=true;
+    var ver=function(){[].forEach.call(d.querySelectorAll('iframe[src]'),function(f){if(ehPdfStorage(f.getAttribute('src')))trocarIframePdf(f)})};
+    new MutationObserver(ver).observe(d.body,{childList:true,subtree:true});ver();
+  }
+  function varrer(){docs(window,[],0).forEach(function(d){try{vigiarPdf(d);if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
   setInterval(varrer,1500);if(document.readyState!=='loading')varrer();else document.addEventListener('DOMContentLoaded',varrer);
 })();
