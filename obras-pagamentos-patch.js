@@ -1,15 +1,15 @@
-/* Obras & Reformas — Pagamentos dentro do módulo do Portal (2026-10-11, rev. 3: quadro com altura automática).
+/* Obras & Reformas — Pagamentos dentro do módulo do Portal (2026-10-11, rev. 3: quadro com altura automática;
+   2026-10-14: sem a aba Financeiro — o fluxo é direto despesa → pagamento).
    Mantém apenas o Contas a pagar do bloco PAGAMENTOS.
    Remove definitivamente a antiga aba Contas a Pagar, logo abaixo de Prestações de contas.
 */
 (function(){
   if(window.__obrasPagamentos)return;window.__obrasPagamentos=true;
   var BASE=(function(){try{return new URL('obras/',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/obras/'}})();
-  var V='20261011-3';
+  var V='20261014-1';
   var ABAS=[
+    {id:'cap',icone:'📊',rotulo:'Visão geral',titulo:'Despesas e pagamentos · visão geral',url:'obras-contas-pagar/'},
     {id:'pag',icone:'💳',rotulo:'Pagamentos (Presidente)',titulo:'Pagamentos · Presidente',url:'obras-presidente/'},
-    {id:'cap',icone:'📋',rotulo:'Contas a pagar',titulo:'Contas a pagar · visão geral',url:'obras-contas-pagar/'},
-    {id:'fin',icone:'🏦',rotulo:'Financeiro',titulo:'Financeiro',url:'obras-financeiro/'},
     {id:'rel',icone:'📑',rotulo:'Relatórios e PDF',titulo:'Relatórios e PDF',url:'obras-relatorios/'}
   ];
   function docs(w,lista,prof){if(prof>4)return lista;try{var d=w.document;if(d)lista.push(d)}catch(e){return lista}for(var i=0;i<w.frames.length;i++){try{docs(w.frames[i],lista,prof+1)}catch(e){}}return lista}
