@@ -6,7 +6,7 @@
 (function(){
   if(window.__obrasPagamentos)return;window.__obrasPagamentos=true;
   var BASE=(function(){try{return new URL('obras/',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/obras/'}})();
-  var V='20261014-4';
+  var V='20261014-5';
   var ABAS=[
     {id:'cap',icone:'📊',rotulo:'Visão geral',titulo:'Despesas e pagamentos · visão geral',url:'obras-contas-pagar/'},
     {id:'pag',icone:'💳',rotulo:'Pagamentos (Presidente)',titulo:'Pagamentos · Presidente',url:'obras-presidente/'},
@@ -69,6 +69,41 @@
     var ver=function(){[].forEach.call(d.querySelectorAll('iframe[src]'),function(f){if(ehPdfStorage(f.getAttribute('src')))trocarIframePdf(f)})};
     new MutationObserver(ver).observe(d.body,{childList:true,subtree:true});ver();
   }
-  function varrer(){docs(window,[],0).forEach(function(d){try{vigiarPdf(d);if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
+  /* Totais em todo relatório (14/10/2026, pedido do Ricardo): os relatórios abertos em janela nova para imprimir/PDF
+     (ex.: "Relatório de Despesas" do módulo Obras) ganham uma linha TOTAL com a quantidade e a soma de cada coluna de valor. */
+  function numBR(t){t=String(t||'').replace(/\s+/g,' ').trim();var m=/^(-|−)?\s*(R\$)?\s*(\d{1,3}(\.\d{3})*|\d+),(\d{2})$/.exec(t);
+    if(!m)return null;var v=Number(m[3].replace(/\./g,'')+'.'+m[5]);return m[1]?-v:v}
+  function brlTxt(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+  function totalizarTabelas(doc){
+    [].forEach.call(doc.querySelectorAll('table'),function(tb){
+      if(tb.__totalizada)return;tb.__totalizada=true;
+      var linhas=[].filter.call(tb.querySelectorAll('tbody tr, tr'),function(r){return r.closest('table')===tb&&!r.closest('thead')&&!r.closest('tfoot')&&r.querySelector('td')});
+      if(linhas.length<1)return;
+      if(tb.querySelector('tfoot')||/^\s*total/i.test((linhas[linhas.length-1].cells[0]||{}).textContent||''))return;
+      var nCol=0;linhas.forEach(function(r){nCol=Math.max(nCol,r.cells.length)});
+      var cab=tb.querySelector('thead tr')||tb.querySelector('tr');
+      var somas=[],eh=[];
+      for(var c=0;c<nCol;c++){var tot=0,ok=0,cheio=0;
+        linhas.forEach(function(r){var cel=r.cells[c];if(!cel)return;var t=(cel.textContent||'').trim();if(!t)return;cheio++;var v=numBR(t);if(v!==null){ok++;tot+=v}});
+        var h=cab&&cab.cells[c]?(cab.cells[c].textContent||''):'';
+        eh[c]=ok>0&&ok>=cheio*0.6&&!/data|%|n[º°o]\b|qtd/i.test(h);somas[c]=tot}
+      if(!eh.some(Boolean))return;
+      var doc2=tb.ownerDocument,tf=doc2.createElement('tfoot'),tr=doc2.createElement('tr');
+      var rot=eh.indexOf(false);
+      for(var k=0;k<nCol;k++){var td=doc2.createElement('td');td.setAttribute('style','font-weight:800;border-top:2px solid #333;background:#eef1f6;color:#111;padding:6px;white-space:nowrap'+(eh[k]?';text-align:right':''));
+        td.textContent=eh[k]?brlTxt(somas[k]):(k===rot?'TOTAL ('+linhas.length+')':'');tr.appendChild(td)}
+      if(rot<0)tr.cells[0].textContent='TOTAL ('+linhas.length+'): '+brlTxt(somas[0]);
+      tf.appendChild(tr);tb.appendChild(tf);
+    });
+  }
+  function vigiarRelatorios(d){
+    var w=d.defaultView;if(!w||w.__totaisRel)return;w.__totaisRel=true;
+    var orig=w.open;
+    w.open=function(){var nw=orig.apply(w,arguments);
+      try{if(nw&&nw.document){var dd=nw.document,fecha=dd.close.bind(dd);
+        dd.close=function(){var r=fecha();try{totalizarTabelas(dd)}catch(e){console.warn('[Portal] totais:',e)}return r}}}catch(e){}
+      return nw};
+  }
+  function varrer(){docs(window,[],0).forEach(function(d){try{vigiarPdf(d);vigiarRelatorios(d);if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
   setInterval(varrer,1500);if(document.readyState!=='loading')varrer();else document.addEventListener('DOMContentLoaded',varrer);
 })();
