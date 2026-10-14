@@ -6,7 +6,7 @@
 (function(){
   if(window.__obrasPagamentos)return;window.__obrasPagamentos=true;
   var BASE=(function(){try{return new URL('obras/',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/obras/'}})();
-  var V='20261014-5';
+  var V='20261014-6';
   var ABAS=[
     {id:'cap',icone:'📊',rotulo:'Visão geral',titulo:'Despesas e pagamentos · visão geral',url:'obras-contas-pagar/'},
     {id:'pag',icone:'💳',rotulo:'Pagamentos (Presidente)',titulo:'Pagamentos · Presidente',url:'obras-presidente/'},
@@ -96,12 +96,26 @@
       tf.appendChild(tr);tb.appendChild(tf);
     });
   }
+  // Quanto foi duplicado: soma o valor das linhas marcadas como duplicada (não entram no "Lançado", mas o valor aparece).
+  function resumoDuplicidade(doc){
+    if(!doc.body||doc.getElementById('resumo-dup'))return;var n=0,tot=0;
+    [].forEach.call(doc.querySelectorAll('table'),function(tb){
+      var cab=tb.querySelector('thead tr')||tb.querySelector('tr');if(!cab)return;
+      var iv=-1;[].forEach.call(cab.cells,function(c,i){if(/^\s*valor\s*$/i.test(c.textContent||''))iv=i});if(iv<0)return;
+      [].forEach.call(tb.querySelectorAll('tr'),function(r){if(r.closest('thead')||r.closest('tfoot')||!r.querySelector('td'))return;
+        if(!/duplicad/i.test(r.textContent||''))return;var v=numBR((r.cells[iv]||{}).textContent);if(v!==null){n++;tot+=v}})});
+    if(!n)return;
+    var box=doc.createElement('div');box.id='resumo-dup';
+    box.setAttribute('style','margin:10px 0;padding:10px 14px;border:2px solid #b91c1c;border-radius:10px;background:#fef2f2;color:#7f1d1d;font:600 14px Arial,sans-serif');
+    box.textContent='Valor em duplicidade: '+brlTxt(tot)+' em '+n+' comprovante(s) — não somado no lançado.';
+    var t=doc.querySelector('table');if(t&&t.parentNode)t.parentNode.insertBefore(box,t);else doc.body.insertBefore(box,doc.body.firstChild);
+  }
   function vigiarRelatorios(d){
     var w=d.defaultView;if(!w||w.__totaisRel)return;w.__totaisRel=true;
     var orig=w.open;
     w.open=function(){var nw=orig.apply(w,arguments);
       try{if(nw&&nw.document){var dd=nw.document,fecha=dd.close.bind(dd);
-        dd.close=function(){var r=fecha();try{totalizarTabelas(dd)}catch(e){console.warn('[Portal] totais:',e)}return r}}}catch(e){}
+        dd.close=function(){var r=fecha();try{totalizarTabelas(dd);resumoDuplicidade(dd)}catch(e){console.warn('[Portal] totais:',e)}return r}}}catch(e){}
       return nw};
   }
   function varrer(){docs(window,[],0).forEach(function(d){try{vigiarPdf(d);vigiarRelatorios(d);if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
