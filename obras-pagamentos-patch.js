@@ -6,7 +6,7 @@
 (function(){
   if(window.__obrasPagamentos)return;window.__obrasPagamentos=true;
   var BASE=(function(){try{return new URL('obras/',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/obras/'}})();
-  var V='20261014-8';
+  var V='20261015-1';
   var ABAS=[
     {id:'cap',icone:'📊',rotulo:'Visão geral',titulo:'Despesas e pagamentos · visão geral',url:'obras-contas-pagar/'},
     {id:'pag',icone:'💳',rotulo:'Pagamentos (Presidente)',titulo:'Pagamentos · Presidente',url:'obras-presidente/'},
@@ -118,6 +118,31 @@
         dd.close=function(){var r=fecha();try{totalizarTabelas(dd);resumoDuplicidade(dd)}catch(e){console.warn('[Portal] totais:',e)}return r}}}catch(e){}
       return nw};
   }
-  function varrer(){docs(window,[],0).forEach(function(d){try{vigiarPdf(d);vigiarRelatorios(d);if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
+  /* Dashboard com TODOS os comprovantes (15/10/2026): o Supabase devolve no máximo 1000 linhas por consulta e o módulo
+     pedia limit(10000) — o Dashboard mostrava "1000 comprovantes" e deixava de fora os mais antigos (total errado).
+     Aqui a consulta de obras_comprovantes passa a buscar em páginas de 1000 (ordem estável por id) e o Dashboard recarrega. */
+  function paginarComprovantes(d){
+    if(d.__paginaObras||!d.body)return;d.__paginaObras=true;
+    var sc=d.createElement('script');
+    sc.textContent='('+function(){
+      if(typeof sb==='undefined'||!sb||sb.__paginado)return;sb.__paginado=true;
+      var orig=sb.from.bind(sb);
+      sb.from=function(t){var qb=orig(t);if(t!=='obras_comprovantes')return qb;var sel=qb.select.bind(qb);
+        qb.select=function(){var b=sel.apply(null,arguments);if(arguments[1]&&(arguments[1].head||arguments[1].count))return b;
+          var lim=b.limit.bind(b);
+          b.limit=function(n){if(!(n>1000))return lim.apply(null,arguments);
+            b.order('id',{ascending:true});var thenOrig=b.then;
+            b.then=function(ok,erro){return (async function(){var todos=[];
+              for(var de=0;de<n;de+=1000){b.range(de,Math.min(de+999,n-1));var r=await thenOrig.call(b,function(x){return x});
+                if(r.error)return r;todos=todos.concat(r.data||[]);if(!r.data||r.data.length<1000)break}
+              return {data:todos,error:null,count:todos.length,status:200,statusText:'OK'}})().then(ok,erro)};
+            return b};
+          return b};
+        return qb};
+      if(typeof carregar==='function')try{carregar()}catch(e){}
+    }.toString()+')();';
+    d.body.appendChild(sc);
+  }
+  function varrer(){docs(window,[],0).forEach(function(d){try{vigiarPdf(d);vigiarRelatorios(d);if(ehModuloObras(d))paginarComprovantes(d);if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
   setInterval(varrer,1500);if(document.readyState!=='loading')varrer();else document.addEventListener('DOMContentLoaded',varrer);
 })();
