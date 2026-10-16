@@ -143,6 +143,95 @@
     }.toString()+')();';
     d.body.appendChild(sc);
   }
-  function varrer(){docs(window,[],0).forEach(function(d){try{vigiarPdf(d);vigiarRelatorios(d);if(ehModuloObras(d))paginarComprovantes(d);if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
+  /* Buscador do Dashboard (16/10/2026, pedido do Ricardo): barra no topo do Dashboard do módulo Obras com busca por texto
+     e por período (semana de segunda a domingo, mês, ou de/até). Os cards e gráficos passam a somar só o que está no filtro,
+     e clicar num número abre os comprovantes já com o mesmo período/busca. */
+  function buscadorDashboard(d){
+    if(d.__buscaDash||!d.body||!d.getElementById('t-geral')||!d.getElementById('kpis'))return;
+    try{if(typeof d.defaultView.renderGeral!=='function'||typeof d.defaultView.aplicar!=='function')return}catch(e){return}  // espera o script do módulo rodar
+    d.__buscaDash=true;
+    var sc=d.createElement('script');
+    sc.textContent='('+function(){
+      if(typeof renderGeral!=='function'||window.__buscaDash)return;window.__buscaDash=true;
+      var $=function(id){return document.getElementById(id)};
+      var PER={p:'tudo',sem:'',de:'',ate:'',q:''};
+      var iso=function(x){return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')};
+      var hoje=function(){return iso(new Date())};
+      var mais=function(s,n){var x=new Date(s+'T12:00:00');x.setDate(x.getDate()+n);return iso(x)};
+      var segunda=function(s){var x=new Date((s||hoje())+'T12:00:00');x.setDate(x.getDate()-(x.getDay()+6)%7);return iso(x)};
+      var br=function(s){return s?s.split('-').reverse().join('/'):''};
+      function faixa(){
+        var h=hoje(),sg=segunda(h);
+        if(PER.p==='semana')return [sg,mais(sg,6)];
+        if(PER.p==='passada')return [mais(sg,-7),mais(sg,-1)];
+        if(PER.p==='sem'&&PER.sem)return [PER.sem,mais(PER.sem,6)];
+        if(PER.p==='mes')return [h.slice(0,8)+'01',h];
+        if(PER.p==='mesant'){var x=new Date(h.slice(0,8)+'01T12:00:00');x.setDate(0);var f=iso(x);return [f.slice(0,8)+'01',f]}
+        if(PER.p==='per')return [PER.de||'',PER.ate||''];
+        return ['',''];
+      }
+      function passa(r){
+        var fx=faixa(),dt=r.data_despesa||'';
+        if(fx[0]&&dt<fx[0])return false;if(fx[1]&&(!dt||dt>fx[1]))return false;
+        var q=(PER.q||'').toLowerCase();
+        if(q&&![r.fornecedor,r.loja,r.descricao,r.remetente,r.cnpj,r.legenda,r.autenticacao,(typeof CATS!=='undefined'?CATS[r.categoria]:'')].join(' ').toLowerCase().includes(q))return false;
+        return true;
+      }
+      var ativo=function(){var fx=faixa();return !!(fx[0]||fx[1]||PER.q)};
+      var origRender=renderGeral,origAplicar=aplicar;
+      renderGeral=function(){
+        if(!ativo()){var r0=origRender.apply(this,arguments);resumo(C.length);return r0}
+        var fx=faixa(),C0=C,P0=P,n=0,r1;
+        try{
+          C=C0.filter(passa);n=C.length;
+          P=P0.filter(function(p){var a=p.periodo_inicio||'',b=p.periodo_fim||a;return !(fx[1]&&a&&a>fx[1])&&!(fx[0]&&b&&b<fx[0])});
+          r1=origRender.apply(this,arguments);
+        }finally{C=C0;P=P0}
+        resumo(n);return r1;
+      };
+      aplicar=function(f){
+        f=Object.assign({},f||{});var fx=faixa();
+        if(fx[0]&&!f.de)f.de=fx[0];if(fx[1]&&!f.ate)f.ate=fx[1];if(PER.q&&!f.q)f.q=PER.q;
+        return origAplicar(f);
+      };
+      function semanas(){
+        var vis={},lista=[];(C||[]).forEach(function(r){if(r.data_despesa)vis[segunda(r.data_despesa)]=1});
+        vis[segunda(hoje())]=1;Object.keys(vis).sort().reverse().slice(0,60).forEach(function(s){lista.push(s)});return lista;
+      }
+      function resumo(n){
+        var el=$('buscaDashInfo');if(!el)return;var fx=faixa();
+        el.textContent=ativo()?('Mostrando '+n+' de '+C.length+' comprovantes'+(fx[0]||fx[1]?' · '+(fx[0]?br(fx[0]):'início')+' a '+(fx[1]?br(fx[1]):'hoje'):'')+(PER.q?' · busca “'+PER.q+'”':'')):'Mostrando todos os '+C.length+' comprovantes';
+        var sel=$('bdSem');if(sel){var atual=sel.value,ops=semanas();
+          sel.innerHTML='<option value="">Escolha a semana…</option>'+ops.map(function(s){return '<option value="'+s+'">'+br(s)+' a '+br(mais(s,6))+'</option>'}).join('');
+          sel.value=PER.sem||atual||''}
+      }
+      var css=document.createElement('style');
+      css.textContent='#buscaDash{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;padding:12px 14px;border:1px solid rgba(148,163,184,.22);border-radius:14px;background:rgba(15,23,42,.55)}#buscaDash input,#buscaDash select{background:#0b1222;color:#e2e8f0;border:1px solid rgba(148,163,184,.3);border-radius:10px;padding:8px 10px;font:inherit;font-size:14px}#buscaDash input[type=search]{flex:1 1 260px;min-width:180px}#buscaDash .bd-l{font-size:12px;opacity:.7}#buscaDash button{background:#1e293b;color:#e2e8f0;border:1px solid rgba(148,163,184,.3);border-radius:10px;padding:8px 12px;cursor:pointer;font:inherit;font-size:14px}#buscaDashInfo{flex-basis:100%;font-size:13px;color:#93c5fd}#buscaDash [hidden]{display:none!important}';
+      document.head.appendChild(css);
+      var box=document.createElement('div');box.id='buscaDash';
+      box.innerHTML='<input type="search" id="bdQ" placeholder="🔎 Buscar no Dashboard: fornecedor, loja, descrição, responsável, CNPJ…">'+
+        '<select id="bdP" title="Período"><option value="tudo">Todo o período</option><option value="semana">Esta semana (seg–dom)</option><option value="passada">Semana passada</option><option value="sem">Escolher semana…</option><option value="mes">Este mês</option><option value="mesant">Mês passado</option><option value="per">De / até…</option></select>'+
+        '<select id="bdSem" hidden></select>'+
+        '<span id="bdPer" hidden><span class="bd-l">de</span> <input type="date" id="bdDe"> <span class="bd-l">até</span> <input type="date" id="bdAte"></span>'+
+        '<button type="button" id="bdLimpa">Limpar</button><div id="buscaDashInfo"></div>';
+      var alvo=$('t-geral'),hint=alvo.querySelector('.hint');alvo.insertBefore(box,hint?hint.nextSibling:alvo.firstChild);
+      var t=null;
+      function aplicarBusca(){
+        PER.p=$('bdP').value;PER.sem=$('bdSem').value;PER.de=$('bdDe').value;PER.ate=$('bdAte').value;PER.q=$('bdQ').value.trim();
+        if(PER.p==='sem'&&!PER.sem){PER.sem=segunda(hoje())}
+        $('bdSem').hidden=PER.p!=='sem';$('bdPer').hidden=PER.p!=='per';
+        // CSV e Relatório/PDF seguem o mesmo período e busca
+        try{var fx=faixa();F.de=fx[0];F.ate=fx[1];F.q=PER.q;$('fDe').value=fx[0];$('fAte').value=fx[1];$('q').value=PER.q;if(typeof renderLista==='function')renderLista()}catch(e){}
+        renderGeral();
+        try{if($('bdSem').value!==PER.sem)$('bdSem').value=PER.sem}catch(e){}
+      }
+      $('bdQ').addEventListener('input',function(){clearTimeout(t);t=setTimeout(aplicarBusca,250)});
+      ['bdP','bdSem','bdDe','bdAte'].forEach(function(id){$(id).addEventListener('change',aplicarBusca)});
+      $('bdLimpa').onclick=function(){$('bdQ').value='';$('bdP').value='tudo';$('bdSem').value='';$('bdDe').value='';$('bdAte').value='';aplicarBusca()};
+      if(C&&C.length)renderGeral();else resumo(0);
+    }.toString()+')();';
+    d.body.appendChild(sc);
+  }
+  function varrer(){docs(window,[],0).forEach(function(d){try{vigiarPdf(d);vigiarRelatorios(d);if(ehModuloObras(d)){paginarComprovantes(d);buscadorDashboard(d)}if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
   setInterval(varrer,1500);if(document.readyState!=='loading')varrer();else document.addEventListener('DOMContentLoaded',varrer);
 })();
