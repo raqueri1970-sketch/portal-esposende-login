@@ -6,7 +6,7 @@
 (function(){
   if(window.__obrasPagamentos)return;window.__obrasPagamentos=true;
   var BASE=(function(){try{return new URL('obras/',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/obras/'}})();
-  var V='20261016-4';
+  var V='20261016-5';
   var ABAS=[
     {id:'cap',icone:'📊',rotulo:'Visão geral',titulo:'Despesas e pagamentos · visão geral',url:'obras-contas-pagar/'},
     {id:'pag',icone:'💳',rotulo:'Pagamentos (Presidente)',titulo:'Pagamentos · Presidente',url:'obras-presidente/'},
