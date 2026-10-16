@@ -1,10 +1,11 @@
 // Sistema de Inventário — Ajustes de Estoque manuais (Ajuste Expresso).
 //
-// Os ajustes manuais de inclusão (AC/ESTOQUE, AC/VENDA) feitos entre o inventário anterior
-// e este já estão "incluídos ok" no estoque do sistema. No inventário, cada ajuste é
-// reconhecido PELO CÓDIGO do produto — a numeração não importa — e abate a divergência
-// que sobrou naquele código depois de Recebimento Duplicado e Troca de Grade (falta ou
-// sobra, sempre em direção a zero, nunca invertendo o sinal).
+// Regra: quando se INCLUI um par numa numeração (AC/ESTOQUE, AC/VENDA), teoricamente era
+// preciso TIRAR um par de outra numeração do mesmo código. Essa saída não feita aparece no
+// inventário como FALTA em outra numeração do mesmo código — é ela que o ajuste abate.
+// Vale o código, não a numeração. Não abate: sobra no código (inclusão não explica sobra),
+// falta só na mesma numeração do ajuste (incluiu e o par não existe — verificar), ajuste
+// posterior ao inventário (alerta) e ajuste anterior ao inventário anterior da loja.
 //
 // No arquivo de ajustes o campo "produto" vem com 8 dígitos = código (6) + numeração (2):
 // 02054440 = código 020544, nº 40. O tamanho do código é medido pelo próprio inventário.
@@ -17,7 +18,7 @@
 //    linha a linha; o abatimento aparece em "Ajustes Aplicados" e em todos os totais.
 // Nuvem: tabela inv_ajustes_manuais (uma linha por auditoria); cache local sia_ajman_<id>.
 (function(){
-  var VERSAO='20261016-1';
+  var VERSAO='20261016-2';
   var CHAVE='sia_ajman_';
   var TIPO='Ajuste Manual de Estoque';
   var MESES={jan:1,feb:2,fev:2,mar:3,apr:4,abr:4,may:5,mai:5,jun:6,jul:7,aug:8,ago:8,sep:9,set:9,oct:10,out:10,nov:11,dec:12,dez:12};
@@ -147,40 +148,65 @@
     var nova=(m.ajustada||[]).map(function(r){return Object.assign({},r);});
     var lancamentos=[];
     var tot={faltaQtd:0,faltaCusto:0,faltaVenda:0,sobraQtd:0,sobraCusto:0,sobraVenda:0,codigos:0};
+    // Falta por numeração (antes da troca de grade), por código.
+    var porTam=new Map();
+    (m.liquidaRows||[]).forEach(function(r){
+      if(!(r.qtdDif<0))return;
+      var k=normCod(r.cdProd);
+      if(!porTam.has(k))porTam.set(k,[]);
+      porTam.get(k).push({tam:txt(r.tam),resta:-r.qtdDif});
+    });
+    var mesmoTam=function(a,b){return normCod(a)===normCod(b);};
     grupos.forEach(function(lista,k){
       var idx=porCod.get(k);
       if(idx===undefined){lista.forEach(function(it){it.status='sem_divergencia';});return;}
       var row=nova[idx];
-      var r=row.qtdDif, cap=lista.reduce(function(a,it){return a+Math.abs(it.qtd);},0);
-      var A=Math.min(cap,Math.abs(r));
-      if(!(A>0)){lista.forEach(function(it){it.status='sem_divergencia';});return;}
-      var sinal=r>0?1:-1, frac=A/Math.abs(r);
-      var abCusto=row.custoDif*frac, abVenda=row.vndaDif*frac;
-      var resto=A;
+      var r=row.qtdDif;
+      // Incluiu num nº → deveria ter tirado de OUTRO nº do mesmo código. Essa saída que não
+      // foi feita aparece como falta naquele outro nº. Sobra no código não é explicada.
+      if(!(r<0)){lista.forEach(function(it){it.status='sobra_codigo';});return;}
+      var tams=porTam.get(k)||[];
+      var cap=-r, A=0, origem={};
       lista.forEach(function(it){
-        var u=Math.min(Math.abs(it.qtd),resto);resto-=u;it.abatido=u;
-        it.status=u>0?(sinal<0?'abateu_falta':'abateu_sobra'):'excedente';
+        var precisa=Math.abs(it.qtd), tirou=[];
+        tams.forEach(function(t){
+          if(!precisa||!cap||!t.resta||(it.tam&&mesmoTam(t.tam,it.tam)))return;
+          var u=Math.min(precisa,t.resta,cap);
+          t.resta-=u;precisa-=u;cap-=u;A+=u;
+          tirou.push('nº '+t.tam+' ('+u+')');
+          origem[t.tam]=(origem[t.tam]||0)+u;
+        });
+        it.abatido=Math.abs(it.qtd)-precisa;
+        it.tirouDe=tirou.join(', ');
+        if(it.abatido>0)it.status='abateu_falta';
+        else if(tams.some(function(t){return it.tam&&mesmoTam(t.tam,it.tam);}))it.status='falta_mesma_numeracao';
+        else it.status='excedente';
       });
-      var tamsAj=lista.map(function(it){return it.tam;}).filter(Boolean);
+      if(!(A>0))return;
+      var frac=A/Math.abs(r);
+      var abCusto=row.custoDif*frac, abVenda=row.vndaDif*frac;
+      var tamsAj=Array.from(new Set(lista.filter(function(it){return it.abatido>0;}).map(function(it){return it.tam;}).filter(Boolean)));
+      var tamsTirou=Object.keys(origem).map(function(t){return t+' ('+origem[t]+')';});
       lancamentos.push({
         tipo:TIPO, cdProd:row.cdProd, marca:row.marca, depto:row.depto,
-        tam:'Ajuste nº '+(tamsAj.length?Array.from(new Set(tamsAj)).join(', '):'-')+' → Divergência nº '+(row.tam||'-'),
-        qtd:sinal*A, custo:abCusto, venda:abVenda,
-        residualQtd:r-sinal*A, residualCusto:row.custoDif-abCusto,
-        motivo:(sinal<0?'Falta':'Sobra')+' abatida por '+lista.length+' ajuste(s) manual(is) de estoque já incluído(s) no mesmo código (vale o código, não a numeração). Doc(s): '+
-          lista.map(function(it){return (it.doc||'s/nº')+' '+dataBR(it.data)+(it.tipo?' '+it.tipo:'');}).join('; ')
+        tam:'Incluído nº '+(tamsAj.join(', ')||'-')+' → tirado do nº '+tamsTirou.join(', '),
+        qtd:-A, custo:abCusto, venda:abVenda,
+        residualQtd:r+A, residualCusto:row.custoDif-abCusto,
+        motivo:'Inclusão manual já feita numa numeração sem a saída correspondente na outra numeração do mesmo código — falta abatida (vale o código). Doc(s): '+
+          lista.filter(function(it){return it.abatido>0;}).map(function(it){return (it.doc||'s/nº')+' '+dataBR(it.data)+(it.tipo?' '+it.tipo:'');}).join('; ')
       });
-      if(sinal<0){tot.faltaQtd+=A;tot.faltaCusto+=-abCusto;tot.faltaVenda+=-abVenda;}
-      else{tot.sobraQtd+=A;tot.sobraCusto+=abCusto;tot.sobraVenda+=abVenda;}
+      tot.faltaQtd+=A;tot.faltaCusto+=-abCusto;tot.faltaVenda+=-abVenda;
       tot.codigos++;
-      row.qtdDif=r-sinal*A; row.custoDif-=abCusto; row.vndaDif-=abVenda;
-      row.ajusteManualQtd=sinal*A;
+      row.qtdDif=r+A; row.custoDif-=abCusto; row.vndaDif-=abVenda;
+      row.ajusteManualQtd=-A;
     });
     var resumo={arquivo:aj.arquivo, importadoEm:aj.importadoEm, itens:itens, totais:tot, janela:janela,
       nPosterior:itens.filter(function(i){return i.status==='posterior';}).length,
       nAnterior:itens.filter(function(i){return i.status==='anterior';}).length,
       nSemDivergencia:itens.filter(function(i){return i.status==='sem_divergencia';}).length,
-      nExcedente:itens.filter(function(i){return i.status==='excedente';}).length};
+      nExcedente:itens.filter(function(i){return i.status==='excedente';}).length,
+      nSobraCodigo:itens.filter(function(i){return i.status==='sobra_codigo';}).length,
+      nMesmaNumeracao:itens.filter(function(i){return i.status==='falta_mesma_numeracao';}).length};
     m.ajusteManual=resumo;
     if(!lancamentos.length)return m;
 
@@ -414,7 +440,8 @@
     }
 
     // 5) Tela da loja: botão de importar/atualizar + quadro com o resultado linha a linha.
-    var ROTULO={abateu_falta:['good','Abateu falta'],abateu_sobra:['good','Abateu sobra'],excedente:['warning','Excedente — código já zerado'],
+    var ROTULO={abateu_falta:['good','Abateu falta'],excedente:['warning','Excedente — falta do código já zerada'],
+      sobra_codigo:['','Código com sobra — não abatido'],falta_mesma_numeracao:['critical','Falta só na mesma nº — verificar'],
       sem_divergencia:['','Sem divergência no código'],posterior:['critical','Posterior ao inventário — não abatido'],anterior:['','Antes do inventário anterior — não abatido']};
     function quadro(invId){
       var anchor=$('#ld-resultado-final');if(!anchor)return;
@@ -423,7 +450,7 @@
       var inv=(w.loadInvs()||[]).find(function(i){return i.id===invId;});
       var aj=carregar(invId);
       if(!inv||!aj||!aj.itens||!aj.itens.length){
-        card.innerHTML='<div class="card" style="padding:12px 16px"><span class="pill">Ajustes de Estoque</span> <span class="sub" style="margin:0">Nenhum arquivo de ajustes manuais nesta auditoria. Use "Importar/Atualizar Ajustes de Estoque" para abater os ajustes já incluídos (vale o código, não a numeração).</span></div>';
+        card.innerHTML='<div class="card" style="padding:12px 16px"><span class="pill">Ajustes de Estoque</span> <span class="sub" style="margin:0">Nenhum arquivo de ajustes manuais nesta auditoria. Use "Importar/Atualizar Ajustes de Estoque" para abater os ajustes já incluídos (incluiu numa numeração = falta em outra do mesmo código).</span></div>';
         return;
       }
       var m=w.invMetrics(inv,w.loadDet(invId));
@@ -431,20 +458,20 @@
       var t=r.totais||{};
       var linhas=r.itens.slice().sort(function(a,b){return (a.status>b.status?1:-1);}).map(function(it){
         var lb=ROTULO[it.status]||['',it.status];
-        return '<tr><td>'+esc(it.doc)+'</td><td>'+dataBR(it.data)+'</td><td>'+esc(it.tipo)+'</td><td>'+esc(it.cod)+'</td><td>'+esc(it.tam)+'</td><td>'+esc(it.desc)+'</td>'+
+        return '<tr><td>'+esc(it.doc)+'</td><td>'+dataBR(it.data)+'</td><td>'+esc(it.tipo)+'</td><td>'+esc(it.cod)+'</td><td>'+esc(it.tam)+'</td><td>'+esc(it.tirouDe||'—')+'</td><td>'+esc(it.desc)+'</td>'+
           '<td class="num">'+(it.qtd>0?'+':'')+fmtInt(it.qtd)+'</td><td class="num">'+(it.abatido?fmtInt(it.abatido):'—')+'</td><td><span class="pill '+lb[0]+'">'+lb[1]+'</span></td><td style="font-size:11px">'+esc(it.obs)+'</td></tr>';
       }).join('');
       card.innerHTML='<h2>Ajustes de Estoque Manuais (já incluídos)</h2>'+
-        '<div class="sub">Arquivo: '+esc(r.arquivo||aj.arquivo)+' · '+fmtInt(r.itens.length)+' linha(s) · período considerado: '+(r.janela&&r.janela.ini?'de '+dataBR(r.janela.ini)+' (inventário anterior, exclusive) ':'')+(r.janela&&r.janela.fim?'até '+dataBR(r.janela.fim):'sem data')+'. Cada ajuste abate a falta ou a sobra que restou no MESMO CÓDIGO, qualquer numeração.</div>'+
+        '<div class="sub">Arquivo: '+esc(r.arquivo||aj.arquivo)+' · '+fmtInt(r.itens.length)+' linha(s) · período considerado: '+(r.janela&&r.janela.ini?'de '+dataBR(r.janela.ini)+' (inventário anterior, exclusive) ':'')+(r.janela&&r.janela.fim?'até '+dataBR(r.janela.fim):'sem data')+'. Incluiu numa numeração → abate a falta de OUTRA numeração do mesmo código (a saída que não foi feita).</div>'+
         '<div class="kpis">'+
           '<div class="kpi critical"><div class="lbl">Falta abatida</div><div class="val">'+fmtInt(t.faltaQtd||0)+' un.</div><div class="sub2">'+fmtMoney(t.faltaCusto||0)+'</div></div>'+
-          '<div class="kpi good"><div class="lbl">Sobra abatida</div><div class="val">'+fmtInt(t.sobraQtd||0)+' un.</div><div class="sub2">'+fmtMoney(t.sobraCusto||0)+'</div></div>'+
+          '<div class="kpi '+(r.nMesmaNumeracao?'critical':'')+'"><div class="lbl">Falta só na mesma nº (verificar)</div><div class="val">'+fmtInt(r.nMesmaNumeracao||0)+'</div></div>'+
           '<div class="kpi"><div class="lbl">Códigos acertados</div><div class="val">'+fmtInt(t.codigos||0)+'</div></div>'+
-          '<div class="kpi"><div class="lbl">Sem divergência / excedente</div><div class="val">'+fmtInt((r.nSemDivergencia||0)+(r.nExcedente||0))+'</div></div>'+
+          '<div class="kpi"><div class="lbl">Sem falta no código / sobra / excedente</div><div class="val">'+fmtInt((r.nSemDivergencia||0)+(r.nExcedente||0)+(r.nSobraCodigo||0))+'</div></div>'+
           '<div class="kpi '+(r.nPosterior?'critical':'')+'"><div class="lbl">Após o inventário</div><div class="val">'+fmtInt(r.nPosterior||0)+'</div></div>'+
         '</div>'+
         '<div class="card"><div class="row" style="justify-content:space-between"><span class="backlink" id="ajm-toggle">Ver as '+fmtInt(r.itens.length)+' linhas do arquivo ▾</span><button class="btn secondary" id="ajm-remover">Remover ajustes desta auditoria</button></div>'+
-        '<div class="tablewrap" id="ajm-tabela" style="display:none;margin-top:10px"><table><tr><th>Doc</th><th>Data</th><th>Tipo</th><th>Cód</th><th>Nº</th><th>Descrição</th><th class="num">Qtd</th><th class="num">Abatido</th><th>Resultado</th><th>Obs</th></tr>'+linhas+'</table></div></div>';
+        '<div class="tablewrap" id="ajm-tabela" style="display:none;margin-top:10px"><table><tr><th>Doc</th><th>Data</th><th>Tipo</th><th>Cód</th><th>Nº incluído</th><th>Tirado do nº</th><th>Descrição</th><th class="num">Qtd</th><th class="num">Abatido</th><th>Resultado</th><th>Obs</th></tr>'+linhas+'</table></div></div>';
       card.querySelector('#ajm-toggle').addEventListener('click',function(){
         var tab=card.querySelector('#ajm-tabela'),ab=tab.style.display==='none';
         tab.style.display=ab?'block':'none';
