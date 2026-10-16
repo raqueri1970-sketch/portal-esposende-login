@@ -872,6 +872,8 @@ async function openPortal(){
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('obras-pagamentos-patch.js?v=20261015-1',location.href).href+'"></scr'+'ipt>');
   // RL Transportes: "Painel Completo" abre no Portal lendo o Supabase (antes apontava para o PC D90 pelo Tailscale).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('rl-painel-patch.js?v=20261013-2',location.href).href+'"></scr'+'ipt>');
+  // Auditoria Financeira: Contas a Pagar do Sallamo com cruzamentos de possíveis irregularidades (menu Financeiro).
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('financeiro-patch.js?v=20261016-1',location.href).href+'"></scr'+'ipt>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
