@@ -4,7 +4,7 @@
 */
 (function(){
   if(window.__finAuditoria)return;window.__finAuditoria=true;
-  var V='20261016-1';
+  var V='20261016-2';
   var URL_FIN=(function(){try{return new URL('financeiro/?v='+V,document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/financeiro/?v='+V}})();
 
   function abrir(d){
