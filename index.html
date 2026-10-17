@@ -869,7 +869,7 @@ async function openPortal(){
   // Protocolo de Curso: painel de gráficos novo (dia, funil, regional, lojas e módulos).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('protocolo-graficos.js?v=20261005-1',location.href).href+'"></scr'+'ipt>');
   // Obras & Reformas: telas de pagamento (Presidente, Contas a pagar, Financeiro, Relatórios) dentro do módulo, com a sessão do Portal.
-  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('obras-pagamentos-patch.js?v=20261016-6',location.href).href+'"></scr'+'ipt>');
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('obras-pagamentos-patch.js?v=20261017-1',location.href).href+'"></scr'+'ipt>');
   // RL Transportes: "Painel Completo" abre no Portal lendo o Supabase (antes apontava para o PC D90 pelo Tailscale).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('rl-painel-patch.js?v=20261013-2',location.href).href+'"></scr'+'ipt>');
   // Auditoria Financeira: Contas a Pagar do Sallamo com cruzamentos de possíveis irregularidades (menu Financeiro).
