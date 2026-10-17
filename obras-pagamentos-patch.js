@@ -6,7 +6,7 @@
 (function(){
   if(window.__obrasPagamentos)return;window.__obrasPagamentos=true;
   var BASE=(function(){try{return new URL('obras/',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/obras/'}})();
-  var V='20261017-1';
+  var V='20261017-2';
   var ABAS=[
     {id:'cap',icone:'📊',rotulo:'Visão geral',titulo:'Despesas e pagamentos · visão geral',url:'obras-contas-pagar/'},
     {id:'pag',icone:'💳',rotulo:'Pagamentos (Presidente)',titulo:'Pagamentos · Presidente',url:'obras-presidente/'},
@@ -143,6 +143,146 @@
     }.toString()+')();';
     d.body.appendChild(sc);
   }
+  /* Dashboard e Auditoria do módulo Obras (17/10/2026, pedido do Ricardo): mesmos dados, apresentação mais clara.
+     - Dashboard: "A pagar hoje" e "Caixa com os prestadores" (da conta corrente) no lugar do reembolso da capa antiga,
+       % conferido, valor em R$ em cada indicador e despesas por semana (segunda a domingo).
+     - Auditoria: resumo por gravidade, pontos do Agente Auditor do servidor (com a lista e a foto) e regras agrupadas. */
+  function melhorarAbas(d){
+    if(d.__melhorAbas||!d.body||!d.getElementById('t-geral'))return;
+    try{if(typeof d.defaultView.renderGeral!=='function'||typeof d.defaultView.cardAuditoria!=='function')return}catch(e){return}
+    d.__melhorAbas=true;
+    var sc=d.createElement('script');
+    sc.textContent='('+function(){
+      if(window.__melhorAbas)return;window.__melhorAbas=true;
+      var $=function(id){return document.getElementById(id)};
+      var css=document.createElement('style');
+      css.textContent='#kpis .kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.kpi small{display:block;font-size:13px;color:#cfd6ee;font-weight:600;margin-top:2px}.hero .hbar{height:7px;border-radius:5px;background:rgba(255,255,255,.12);overflow:hidden;margin:8px auto 2px;max-width:220px}.hero .hbar i{display:block;height:100%;background:#8cc8ff}'+
+        '.aud2-res{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0 4px}.aud2-res div{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;cursor:pointer}.aud2-res div:hover{border-color:var(--neon)}'+
+        '.aud2-res span{display:block;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:#e6eaf8}.aud2-res b{display:block;font-size:26px;font-weight:800;line-height:1.2}.aud2-res small{display:block;font-size:13px;color:#cfd6ee}'+
+        '.aud2-res .r b{color:#ff7b8d}.aud2-res .a b{color:#ffd166}.aud2-res .l b{color:#8cc8ff}.aud2-res .v b{color:#c4b5fd}.aud2-res .g b{color:#4dfc9a}'+
+        '.aud2-t{display:flex;align-items:center;gap:10px;font-size:15px;text-transform:uppercase;letter-spacing:.05em;margin:18px 0 4px;font-weight:800}.aud2-t::after{content:"";flex:1;height:1px;background:var(--border)}.aud2-t small{text-transform:none;letter-spacing:0;font-weight:600;color:#cfd6ee;font-size:13.5px}'+
+        '.aud-r .ib{background:none;border:1px solid var(--border);color:#cfd6ee;border-radius:999px;width:24px;height:24px;font-size:13px;cursor:pointer;margin-left:6px;font-family:inherit}.aud-r .ib:hover{border-color:var(--neon);color:#fff}'+
+        '.aud-r small.ex{display:none}.aud-r.ver small.ex{display:block}'+
+        '.aud2-lista{margin:0 0 6px 54px;border-left:2px solid var(--border);padding:4px 0 4px 12px}.aud2-it{display:grid;grid-template-columns:82px 1fr auto auto;gap:10px;align-items:center;padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.07);font-size:14px}'+
+        '.aud2-it .m{color:#cfd6ee;font-size:13px;display:block}.aud2-it .vl{font-weight:800;white-space:nowrap}.aud2-it button{background:#262a44;border:1px solid var(--border);color:#fff;border-radius:8px;padding:5px 10px;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px}'+
+        '@media(max-width:600px){.aud2-lista{margin-left:6px}.aud2-it{grid-template-columns:1fr auto}.aud2-it .dt{display:none}}';
+      document.head.appendChild(css);
+      // conta corrente (saldos) e pontos do Agente Auditor do servidor: carregados à parte e guardados por 1 min
+      var X={saldos:[],achados:[],em:0,carregando:false};
+      function carregarExtra(){
+        if(X.carregando||Date.now()-X.em<60000||typeof sb==='undefined')return;X.carregando=true;
+        Promise.all([sb.from('obras_saldo_prestador').select('prestador,em_aberto,adiantamento_disponivel,saldo_devedor,total_pago'),
+          sb.from('obras_auditoria_achados').select('id,comprovante_id,regra,nivel,mensagem').eq('resolvido',false).not('comprovante_id','is',null).limit(5000)])
+        .then(function(r){X.saldos=(r[0]&&r[0].data)||[];X.achados=(r[1]&&r[1].data)||[];X.em=Date.now();X.carregando=false;try{renderGeral()}catch(e){}})
+        .catch(function(){X.carregando=false;X.em=Date.now()});
+      }
+      var SRV={duplicidade_autenticacao:['⛔','Pagamento repetido (mesma autenticação)'],duplicidade_valor_data_fornecedor:['⛔','Possível duplicidade (valor, data e fornecedor)'],
+        arquivo_repetido:['🖼','Mesmo arquivo enviado de novo'],sem_comprovante:['📭','Sem documento'],leitura_baixa_confianca:['🔎','Leitura duvidosa da foto'],
+        valor_atipico:['💰','Valor fora do padrão'],sem_obra:['🏗','Sem obra informada'],data_incoerente:['📅','Data incoerente'],
+        pix_pessoa_fisica_material:['👤','Material pago por PIX a pessoa física'],fornecedor_varias_vezes_dia:['🔁','Mesmo fornecedor várias vezes no dia'],
+        ia_suspeita:['🤖','IA viu sinal na foto'],desvio_finalidade_grave:['🚫','Desvio de finalidade'],desvio_finalidade:['🚫','Item de uso pessoal'],
+        pix_para_o_proprio:['🪪','Pagou a si mesmo'],material_sem_nota:['📝','Material sem nota fiscal'],outra_cidade:['🗺','Despesa em outra cidade'],
+        compra_domingo:['📆','Compra no domingo'],compra_madrugada:['🌙','Despesa de madrugada']};
+      var iso=function(x){return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')};
+      var segunda=function(s){var x=new Date(s+'T12:00:00');x.setDate(x.getDate()-(x.getDay()+6)%7);return iso(x)};
+      var mais=function(s,n){var x=new Date(s+'T12:00:00');x.setDate(x.getDate()+n);return iso(x)};
+      var ddm=function(s){return s.slice(8,10)+'/'+s.slice(5,7)};
+      var somaS=function(a,f){return a.reduce(function(t,x){return t+Number(x[f]||0)},0)};
+      var irPag=function(){var a=document.querySelector('[data-obras-pag="pag"]');if(a)a.click()};
+      var ABERTO={};
+
+      cardAuditoria=function(){
+        var ids={};C.forEach(function(r){ids[r.id]=r});
+        var com=Object.keys(AUD).filter(function(id){return ids[id]});
+        var gv=function(id){return Math.max.apply(null,(AUD[id]||[]).map(function(k){return (REGRAS[k]||{}).g||1}))};
+        var gr=com.filter(function(id){return gv(id)>=3}),md=com.filter(function(id){return gv(id)===2}),lv=com.filter(function(id){return gv(id)<=1});
+        var vl=function(l){return l.reduce(function(t,id){return t+(Number(ids[id].valor)||0)},0)};
+        var ach=X.achados.filter(function(a){return ids[a.comprovante_id]});
+        var crit=ach.filter(function(a){return a.nivel==='critico'});
+        var vivos=C.filter(function(r){return r.status!=='cancelado'}),conf=vivos.filter(function(r){return r.revisado}).length,pct=vivos.length?Math.round(conf/vivos.length*100):100;
+        var porRegra={};ach.forEach(function(a){(porRegra[a.regra]=porRegra[a.regra]||[]).push(a)});
+        var srv=Object.keys(porRegra).map(function(k){var l=porRegra[k];return {k:k,l:l,crit:l.some(function(a){return a.nivel==='critico'}),v:l.reduce(function(t,a){return t+(Number(ids[a.comprovante_id].valor)||0)},0)}})
+          .sort(function(a,b){return (b.crit-a.crit)||(b.l.length-a.l.length)});
+        var lin=Object.keys(REGRAS).map(function(k){var its=C.filter(function(r){return (AUD[r.id]||[]).indexOf(k)>=0});return {k:k,R:REGRAS[k],n:its.length,v:soma(its)}}).filter(function(x){return x.n});
+        var dp=difPrest().filter(function(x){return x.dif!=null&&Math.abs(x.dif)>=0.01});
+        var linha=function(x){return '<div class="aud-r '+(x.R.g>=3?'alta':x.R.g==2?'media':'baixa')+'" data-aud="'+x.k+'"><span class="ic">'+x.R.i+'</span><div class="tx"><b>'+x.R.t+' <em>'+x.n+'</em><button class="ib" data-ex title="O que fazer">?</button></b><small class="ex">'+x.R.e+'</small></div><span class="vv">'+brl(x.v)+'</span></div>'};
+        var grupo=function(t,l){return l.length?'<div class="aud2-t">'+t+' <small>'+l.length+' tipo(s)</small></div>'+l.map(linha).join(''):''};
+        var itens=function(x){return '<div class="aud2-lista" id="srv_'+x.k+'"'+(ABERTO[x.k]?'':' hidden')+'>'+x.l.slice(0,80).map(function(a){var r=ids[a.comprovante_id];
+          return '<div class="aud2-it"><span class="dt">'+dbr(r.data_despesa)+'</span><span><b>'+esc(r.fornecedor||'—')+'</b> · '+esc(r.remetente||'')+'<span class="m">'+esc(String(a.mensagem||'').slice(0,220))+'</span></span><span class="vl">'+brl(r.valor)+'</span>'+(r.arquivo_path?'<button data-foto="'+r.id+'">ver foto</button>':'<span></span>')+'</div>'}).join('')+
+          (x.l.length>80?'<div class="aud2-it"><span></span><span class="m">mostrando 80 de '+x.l.length+'</span></div>':'')+'</div>'};
+        return '<div class="aud"><div class="aud-h"><div><h2>🛡 Auditoria de obra</h2><p>Comece pelos vermelhos. Toque numa linha para ver os comprovantes.</p></div></div>'+
+          '<div class="aud2-res">'+
+            '<div class="r" data-aud="*"><span>Graves</span><b>'+gr.length+'</b><small>'+brl(vl(gr))+'</small></div>'+
+            '<div class="a" data-aud="*"><span>Atenção</span><b>'+md.length+'</b><small>'+brl(vl(md))+'</small></div>'+
+            '<div class="l" data-aud="*"><span>Leves</span><b>'+lv.length+'</b><small>'+brl(vl(lv))+'</small></div>'+
+            '<div class="v" data-irsrv="1"><span>Agente Auditor</span><b>'+ach.length+'</b><small>'+crit.length+' crítico(s)</small></div>'+
+            '<div class="g" data-revisar="1"><span>Conferidos</span><b>'+pct+'%</b><small>'+(vivos.length-conf)+' a revisar</small></div></div>'+
+          (dp.length?'<div class="aud2-t">Prestações de contas</div><div class="aud-r alta" data-tab="prest"><span class="ic">⚖</span><div class="tx"><b>Diferença entre declarado e comprovado <em>'+dp.length+'</em></b><small>'+dp.map(function(x){return esc(x.p.numero)+': '+(x.dif<0?'faltam ':'sobram ')+brl(Math.abs(x.dif))}).join(' · ')+'</small></div><span class="vv">'+brl(dp.reduce(function(s,x){return s+Math.abs(x.dif)},0))+'</span></div>':'')+
+          '<div class="aud2-t" id="audSrv">🤖 Agente Auditor <small>'+(X.em?ach.length+' ponto(s) em aberto':'carregando…')+'</small></div>'+
+          (srv.length?srv.map(function(x){var s=SRV[x.k]||['•',x.k];return '<div class="aud-r '+(x.crit?'alta':'media')+'" data-srv="'+x.k+'"><span class="ic">'+s[0]+'</span><div class="tx"><b>'+s[1]+' <em>'+x.l.length+'</em></b><small>'+(x.crit?'crítico':'atenção')+' · toque para '+(ABERTO[x.k]?'fechar':'ver a lista')+'</small></div><span class="vv">'+brl(x.v)+'</span></div>'+itens(x)}).join(''):(X.em?'<div class="empty">Nenhum ponto em aberto do Agente Auditor.</div>':''))+
+          grupo('⛔ Graves',lin.filter(function(x){return x.R.g>=3}))+grupo('⚠ Atenção',lin.filter(function(x){return x.R.g==2}))+grupo('ℹ Leves',lin.filter(function(x){return x.R.g<=1}))+
+          (!lin.length&&!dp.length&&!srv.length&&X.em?'<div class="empty">Nenhum alerta nos comprovantes.</div>':'')+
+          '<div class="aud-rev"><b>A revisar</b> = comprovante que ainda não foi conferido por uma pessoa. Abra o lançamento, compare com a foto e use <b>“Salvar e marcar revisado”</b>.</div></div>';
+      };
+
+      renderGeral=function(){
+        auditar();carregarExtra();
+        var lan=C.filter(conta),vivos=C.filter(function(r){return r.status!=='cancelado'}),rev=vivos.filter(function(r){return !r.revisado});
+        var pct=vivos.length?Math.round((vivos.length-rev.length)/vivos.length*100):100;
+        var dup=C.filter(function(r){return r.status==='duplicada'}),alertas=C.filter(function(r){return (AUD[r.id]||[]).length});
+        var graves=C.filter(function(r){return (AUD[r.id]||[]).some(function(k){return REGRAS[k].g>=3})});
+        var S=X.saldos,aPagar=somaS(S,'saldo_devedor'),caixa=S.reduce(function(t,s){return t+Number(s.adiantamento_disponivel||0)-Number(s.em_aberto||0)},0);
+        var reg=function(k){return C.filter(function(r){return (AUD[r.id]||[]).indexOf(k)>=0})};
+        var kp=function(cls,l,its,f,tab){return '<div class="kpi '+cls+'" '+(tab?'data-tab="'+tab+'"':'data-f="'+dd(f)+'"')+'><span>'+l+'</span><b>'+its.length+'</b><small>'+brl(soma(its))+'</small></div>'};
+        $('kpis').innerHTML='<div class="heroes">'+
+          hero('g','Despesas comprovadas',kbrl(soma(lan)),lan.length+' comprovantes lançados',{st:'lancado'})+
+          '<div class="hero '+(aPagar>0.005?'w':'g')+'" data-pag="1"><div class="hl">A pagar hoje</div><div class="hv">'+(X.em?brl(aPagar):'…')+'</div><div class="hn">caixa com os prestadores '+(X.em?brl(caixa):'…')+'</div></div>'+
+          hero(graves.length?'b':'w','Alertas de auditoria',alertas.length,graves.length+' graves · '+brl(soma(graves))+' em risco',{tab:'aud'})+
+          '<div class="hero n" data-f="'+dd({st:'revisar'})+'"><div class="hl">Conferidos por uma pessoa</div><div class="hv">'+pct+'%</div><div class="hbar"><i style="width:'+pct+'%"></i></div><div class="hn">'+rev.length+' a revisar de '+vivos.length+'</div></div>'+
+          '</div><div class="kpis">'+
+          '<div class="kpi" data-f="'+dd({})+'"><span>Comprovantes</span><b>'+C.length+'</b><small>'+kbrl(soma(C))+'</small></div>'+
+          kp(dup.length?'b':'g','Duplicidades',dup,{aud:'duplicidade'})+kp('b','Itens pessoais',reg('pessoal'),{aud:'pessoal'})+
+          kp('b','Verba trabalhista',reg('trabalhista'),{aud:'trabalhista'})+kp('w','Sem nota fiscal',reg('sem_fiscal'),{aud:'sem_fiscal'})+
+          '<div class="kpi g" data-tab="prest"><span>Prestações</span><b>'+P.length+'</b><small>'+kbrl(P.reduce(function(s,p){return s+(Number(p.valor_declarado)||0)},0))+' declarado</small></div>'+
+          '</div>';
+        $('kpis').querySelectorAll('[data-f]').forEach(function(k){k.onclick=function(){aplicar(JSON.parse(k.dataset.f))}});
+        $('kpis').querySelectorAll('[data-tab]').forEach(function(k){k.onclick=function(){aba(k.dataset.tab)}});
+        $('kpis').querySelectorAll('[data-pag]').forEach(function(k){k.onclick=irPag});
+        // Auditoria
+        $('audit').innerHTML=cardAuditoria();
+        var au=$('audit');
+        au.querySelectorAll('[data-aud]').forEach(function(el){el.onclick=function(){aplicar({aud:el.dataset.aud})}});
+        au.querySelectorAll('[data-tab]').forEach(function(el){el.onclick=function(){aba(el.dataset.tab)}});
+        au.querySelectorAll('[data-ex]').forEach(function(el){el.onclick=function(ev){ev.stopPropagation();el.closest('.aud-r').classList.toggle('ver')}});
+        au.querySelectorAll('[data-srv]').forEach(function(el){el.onclick=function(){var k=el.dataset.srv;ABERTO[k]=!ABERTO[k];var l=$('srv_'+k);if(l)l.hidden=!ABERTO[k]}});
+        au.querySelectorAll('[data-foto]').forEach(function(el){el.onclick=function(ev){ev.stopPropagation();var r=C.find(function(x){return x.id===el.dataset.foto});if(r)verArquivo(r)}});
+        au.querySelectorAll('[data-irsrv]').forEach(function(el){el.onclick=function(){var t=$('audSrv');if(t)t.scrollIntoView({behavior:'smooth',block:'start'})}});
+        au.querySelectorAll('[data-revisar]').forEach(function(el){el.onclick=function(){aplicar({st:'revisar'})}});
+        var nA=$('navAud');if(nA)nA.innerHTML=alertas.length?'<em>'+alertas.length+'</em>':'';
+        // Gráficos
+        var ch=[];
+        if(lan.length){
+          var sem={};lan.forEach(function(r){if(!r.data_despesa)return;var s=segunda(r.data_despesa);sem[s]=(sem[s]||0)+(Number(r.valor)||0)});
+          var ks=Object.keys(sem).sort().slice(-12);
+          ch.push(cc('Despesas por semana · segunda a domingo',colsR(ks.map(function(s){return {l:ddm(s),v:sem[s],f:{st:'lancado',de:s,ate:mais(s,6)}}})),1));
+          ch.push(cc('Por categoria',donutR(agrupa(lan,function(r){return r.categoria}).map(function(e){return {l:CATS[e[0]]||e[0],v:e[1],f:{st:'lancado',cat:e[0]}}}),'comprovado')));
+          ch.push(cc('Por responsável',donutR(agrupa(lan,function(r){return r.remetente||'—'}).map(function(e){return {l:e[0],v:e[1],f:{st:'lancado',rem:e[0]}}}),'por pessoa')));
+          ch.push(cc('Forma de pagamento',donutR(agrupa(lan,function(r){return r.forma_pagamento||'nao_informada'}).map(function(e){return {l:FP[e[0]]||'Não informada',v:e[1],f:{st:'lancado',fp:e[0]},c:{pix:COR.aqua,dinheiro:COR.warn,cartao_debito:COR.blue,cartao_credito:COR.violet,transferencia:COR.orange}[e[0]]||COR.gray}}),'pagamentos')));
+          ch.push(cc('Tipo de comprovante',donutR(agrupa(lan,TDf).map(function(e){return {l:e[0],v:e[1],f:{st:'lancado',td:e[0]},c:{'Nota/cupom fiscal':COR.ok,'Só comprovante PIX':COR.aqua,'App de corrida / cartão':COR.blue,'Recibo (sem nota)':COR.warn,'Outros':COR.gray}[e[0]]}}),'documentos')));
+          ch.push(cc('Por loja / obra',hbars(agrupa(lan,function(r){return r.loja||'Sem loja'}).slice(0,10).map(function(e){return {l:e[0],v:e[1],f:{st:'lancado',loja:e[0]}}}))));
+          ch.push(cc('Maiores fornecedores',hbars(agrupa(lan,function(r){return r.fornecedor||'—'}).slice(0,10).map(function(e){return {l:e[0],v:e[1],f:{st:'lancado',forn:e[0]}}}),COR.violet)));
+          ch.push(cc('Despesas por mês',colsR(agrupa(lan,function(r){return (r.data_despesa||'').substring(0,7)}).filter(function(e){return e[0]}).sort(function(a,b){return a[0]<b[0]?-1:1}).map(function(e){return {l:e[0].split('-').reverse().join('/'),v:e[1],f:{st:'lancado',mes:e[0]}}}))));
+        }
+        var dp=difPrest(),mx=Math.max.apply(null,[1].concat(dp.map(function(y){return Math.max(Number(y.p.valor_declarado)||0,y.cp)})));
+        if(dp.length)ch.push(cc('Prestações — declarado × comprovado',dp.map(function(x){return '<div class="pb" data-prest="'+x.p.id+'"><span class="l">'+esc(x.p.numero)+'</span><div class="pbb"><i class="d" style="width:'+((Number(x.p.valor_declarado)||0)/mx*100)+'%"></i><i class="c" style="width:'+(x.cp/mx*100)+'%"></i></div><span class="v">'+(x.p.valor_declarado!=null?brl(x.p.valor_declarado):'sem capa')+'<small>'+(x.n?brl(x.cp)+(x.dif!=null&&Math.abs(x.dif)>=0.01?' <em class="'+(x.dif<0?'neg':'pos')+'">('+(x.dif<0?'−':'+')+brl(Math.abs(x.dif))+')</em>':' ✓'):'não lançada')+'</small></span></div>'}).join('')+'<p class="legp"><i class="d"></i> declarado na capa <i class="c"></i> comprovado pelas fotos</p>',1));
+        $('charts').innerHTML=ch.join('');
+        $('charts').querySelectorAll('[data-f]').forEach(function(b){b.onclick=function(){aplicar(JSON.parse(b.dataset.f))}});
+        $('charts').querySelectorAll('[data-prest]').forEach(function(b){b.onclick=function(){aplicar({prest:b.dataset.prest})}});
+      };
+      if(C&&C.length)renderGeral();
+    }.toString()+')();';
+    d.body.appendChild(sc);
+  }
   /* Buscador do Dashboard (16/10/2026, pedido do Ricardo): barra no topo do Dashboard do módulo Obras com busca por texto
      e por período (semana de segunda a domingo, mês, ou de/até). Os cards e gráficos passam a somar só o que está no filtro,
      e clicar num número abre os comprovantes já com o mesmo período/busca. */
@@ -232,6 +372,6 @@
     }.toString()+')();';
     d.body.appendChild(sc);
   }
-  function varrer(){docs(window,[],0).forEach(function(d){try{vigiarPdf(d);vigiarRelatorios(d);if(ehModuloObras(d)){paginarComprovantes(d);buscadorDashboard(d)}if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
+  function varrer(){docs(window,[],0).forEach(function(d){try{vigiarPdf(d);vigiarRelatorios(d);if(ehModuloObras(d)){paginarComprovantes(d);melhorarAbas(d);if(d.__melhorAbas)buscadorDashboard(d)}if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
   setInterval(varrer,1500);if(document.readyState!=='loading')varrer();else document.addEventListener('DOMContentLoaded',varrer);
 })();
