@@ -6,7 +6,7 @@
 (function(){
   if(window.__obrasPagamentos)return;window.__obrasPagamentos=true;
   var BASE=(function(){try{return new URL('obras/',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/obras/'}})();
-  var V='20261017-2';
+  var V='20261017-4';
   var ABAS=[
     {id:'cap',icone:'📊',rotulo:'Visão geral',titulo:'Despesas e pagamentos · visão geral',url:'obras-contas-pagar/'},
     {id:'pag',icone:'💳',rotulo:'Pagamentos (Presidente)',titulo:'Pagamentos · Presidente',url:'obras-presidente/'},
@@ -42,10 +42,11 @@
   /* Comprovante em PDF (14/10/2026): o módulo Obras abre o PDF num <iframe> com o link do Supabase, e o Chrome bloqueia
      o leitor de PDF dentro do Portal (quadro isolado / CSP sandbox do Storage) — aparecia "Esta página foi bloqueada".
      Aqui o PDF é baixado e desenhado página a página (pdf.js), sem quadro. Vale para qualquer tela do Portal. */
-  var PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  // 17/10/2026: jsDelivr (pdfjs-dist) traz as fontes padrão e os cmaps — sem eles, PDF de banco/PicPay sem fonte embutida aparecia com □□□
+  var PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
   var _pdf=null;
-  function pdfjs(){if(!_pdf)_pdf=new Promise(function(ok,erro){if(window.pdfjsLib)return ok(window.pdfjsLib);var sc=document.createElement('script');sc.src=PDFJS+'pdf.min.js';
-    sc.onload=function(){window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.js';ok(window.pdfjsLib)};sc.onerror=function(){_pdf=null;erro(new Error('pdf.js nao carregou'))};document.head.appendChild(sc)});return _pdf}
+  function pdfjs(){if(!_pdf)_pdf=new Promise(function(ok,erro){if(window.pdfjsLib)return ok(window.pdfjsLib);var sc=document.createElement('script');sc.src=PDFJS+'build/pdf.min.js';
+    sc.onload=function(){window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+'build/pdf.worker.min.js';ok(window.pdfjsLib)};sc.onerror=function(){_pdf=null;erro(new Error('pdf.js nao carregou'))};document.head.appendChild(sc)});return _pdf}
   function ehPdfStorage(src){return /\/storage\/v1\/object\//.test(src||'')&&/\.pdf(\?|$)/i.test(String(src).split('?')[0]+'?')}
   async function trocarIframePdf(ifr){
     if(ifr.__pdfTrocado)return;ifr.__pdfTrocado=true;
@@ -54,11 +55,18 @@
     box.textContent='Abrindo o PDF…';ifr.replaceWith(box);
     try{
       var r=await fetch(src);if(!r.ok)throw new Error('HTTP '+r.status);
-      var buf=await r.arrayBuffer(),lib=await pdfjs(),doc=await lib.getDocument({data:new Uint8Array(buf)}).promise;
+      // 17/10/2026: o PDF é aberto dentro do quadro do módulo, mas o pdf.js roda na página de fora — as fontes que ele registra
+      // não valem no quadro e o texto saía □□□. Agora: letras desenhadas como traço (disableFontFace), página desenhada num
+      // canvas da página de fora e entregue ao quadro como imagem.
+      var buf=await r.arrayBuffer(),lib=await pdfjs(),doc=await lib.getDocument({data:new Uint8Array(buf),cMapUrl:PDFJS+'cmaps/',cMapPacked:true,
+        standardFontDataUrl:PDFJS+'standard_fonts/',disableFontFace:true}).promise;
       box.textContent='';var larg=Math.max(320,Math.min(900,(box.clientWidth||800)-16));
-      for(var n=1;n<=Math.min(doc.numPages,30);n++){var pg=await doc.getPage(n),v0=pg.getViewport({scale:1}),vp=pg.getViewport({scale:larg/v0.width*(window.devicePixelRatio||1)});
-        var c=d.createElement('canvas');c.width=vp.width;c.height=vp.height;c.setAttribute('style','display:block;width:100%;margin:0 auto 8px;background:#fff;border-radius:6px');
-        box.appendChild(c);await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise}
+      for(var n=1;n<=Math.min(doc.numPages,30);n++){var pg=await doc.getPage(n),v0=pg.getViewport({scale:1}),vp=pg.getViewport({scale:larg/v0.width*Math.max(2,window.devicePixelRatio||1)});
+        var c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;
+        var cx=c.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,c.width,c.height);
+        await pg.render({canvasContext:cx,viewport:vp}).promise;
+        var im=d.createElement('img');im.src=c.toDataURL('image/png');im.alt='Página '+n;
+        im.setAttribute('style','display:block;width:100%;margin:0 auto 8px;background:#fff;border-radius:6px');box.appendChild(im)}
       var url=URL.createObjectURL(new Blob([buf],{type:'application/pdf'})),a=d.createElement('a');
       a.href=url;a.download=(src.split('?')[0].split('/').pop()||'comprovante.pdf');a.textContent='Baixar o PDF';
       a.setAttribute('style','display:inline-block;margin:6px auto;padding:9px 16px;border-radius:10px;background:#2563eb;color:#fff;text-decoration:none;font-weight:600');box.appendChild(a);
