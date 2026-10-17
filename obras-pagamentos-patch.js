@@ -6,7 +6,7 @@
 (function(){
   if(window.__obrasPagamentos)return;window.__obrasPagamentos=true;
   var BASE=(function(){try{return new URL('obras/',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/obras/'}})();
-  var V='20261017-1';
+  var V='20261017-2';
   var ABAS=[
     {id:'cap',icone:'📊',rotulo:'Visão geral',titulo:'Despesas e pagamentos · visão geral',url:'obras-contas-pagar/'},
     {id:'pag',icone:'💳',rotulo:'Pagamentos (Presidente)',titulo:'Pagamentos · Presidente',url:'obras-presidente/'},
@@ -156,7 +156,7 @@
       if(window.__melhorAbas)return;window.__melhorAbas=true;
       var $=function(id){return document.getElementById(id)};
       var css=document.createElement('style');
-      css.textContent='.kpi small{display:block;font-size:13px;color:#cfd6ee;font-weight:600;margin-top:2px}.hero .hbar{height:7px;border-radius:5px;background:rgba(255,255,255,.12);overflow:hidden;margin:8px auto 2px;max-width:220px}.hero .hbar i{display:block;height:100%;background:#8cc8ff}'+
+      css.textContent='#kpis .kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.kpi small{display:block;font-size:13px;color:#cfd6ee;font-weight:600;margin-top:2px}.hero .hbar{height:7px;border-radius:5px;background:rgba(255,255,255,.12);overflow:hidden;margin:8px auto 2px;max-width:220px}.hero .hbar i{display:block;height:100%;background:#8cc8ff}'+
         '.aud2-res{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0 4px}.aud2-res div{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;cursor:pointer}.aud2-res div:hover{border-color:var(--neon)}'+
         '.aud2-res span{display:block;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:#e6eaf8}.aud2-res b{display:block;font-size:26px;font-weight:800;line-height:1.2}.aud2-res small{display:block;font-size:13px;color:#cfd6ee}'+
         '.aud2-res .r b{color:#ff7b8d}.aud2-res .a b{color:#ffd166}.aud2-res .l b{color:#8cc8ff}.aud2-res .v b{color:#c4b5fd}.aud2-res .g b{color:#4dfc9a}'+
