@@ -25,7 +25,9 @@
   var CURTO={'recebimento':'Receb.','notas-fiscais':'NF','fazer-etiquetas':'Etiq.','fechamento-de-volumes':'Volume','defeito':'Defeito','remanejo':'Remanejo'};
   var periodo=30,serie='aprov',cache=null,cacheEm=0;
   var filtro={st:'pend',reg:'',q:''};
-  var fp={st:'and',reg:'',q:'',lim:40};
+  var fp={st:'and',g:'',q:'',lim:40};
+  var escopo={reg:'',loja:''}; // visão global: todos os cards seguem a regional/loja escolhida
+  var fc={t:'mel',lim:5};      // comentários: mel | elo | todos
 
   /* ============================ DADOS ============================ */
   function acharSb(){
@@ -67,7 +69,7 @@
       get(tk,'portal_lojas?select=codigo,nome,ativo,regional_id'),
       get(tk,'portal_regionais?select=id,nome,ativo'),
       get(tk,'curso_catalogo?select=id,nome,ordem,area_id,ativo&area_id=eq.'+AREA),
-      get(tk,'curso_visualizacoes?select=modulo_id,criado_em,avaliado_em,avaliacao_aprovada&order=criado_em.asc&limit=50000')
+      get(tk,'curso_visualizacoes?select=modulo_id,criado_em,avaliado_em,avaliacao_aprovada,loja,nome,nota_curso,achou_util,sugestao&order=criado_em.asc&limit=50000')
     ]);
     cache={pes:res[0]||[],lojas:res[1],regs:res[2],cat:res[3].filter(function(c){return c.ativo!==false;}),vis:res[4]};cacheEm=Date.now();
     return cache;
@@ -81,6 +83,27 @@
   function ordemSt(s){return {nao:0,and:1,ok:2}[s];}
   function ordemG(g){var o={ger:0,sub:1,est:2}[g];return o==null?3:o;}
   function ordemLoja(s){return {zerada:0,parcial:1,ok:2,vazia:3}[s];}
+
+  function codLoja(s){var m=String(s||'').match(/^\s*0*(\d+)/);return m?Number(m[1]):null;}
+  // Recorta pessoas, lojas e visualizações para a regional/loja escolhida na barra de visão.
+  function recorte(d){
+    if(!escopo.reg&&!escopo.loja)return d;
+    var regNome={},lojaReg={};
+    d.regs.forEach(function(r){regNome[r.id]=titulo(r.nome);});
+    d.lojas.forEach(function(l){lojaReg[l.codigo]=regNome[l.regional_id]||'Sem regional';});
+    function dentro(cod){
+      if(cod==null)return false;
+      if(escopo.loja)return String(cod)===String(escopo.loja);
+      return lojaReg[cod]===escopo.reg;
+    }
+    return {regs:d.regs,cat:d.cat,
+      pes:d.pes.filter(function(p){return dentro(p.loja_codigo);}),
+      lojas:d.lojas.filter(function(l){return dentro(l.codigo);}),
+      vis:d.vis.filter(function(v){return dentro(codLoja(v.loja));})};
+  }
+  // Comentário que aponta melhoria: nota baixa, "não achou útil" ou palavras de crítica/sugestão.
+  var RE_MELHORIA=/(n[aã]o |melhor|simples|dif[ií]cil|problema|atrapalh|deveria|poderia|falt|confus|lent|demor|trav|erro|ruim|excess|ocult|complicad|cansativ|longo|r[aá]pido demais|sugiro|sugest)/i;
+  function ehMelhoria(t,v){return (v.nota_curso!=null&&Number(v.nota_curso)<=7)||(v.achou_util&&v.achou_util!=='sim')||RE_MELHORIA.test(t);}
 
   function calcular(d){
     var regPorId={},lojaPorCod={},modIds={};
@@ -149,8 +172,28 @@
     }
     pontos.forEach(function(x){var p=porDia[chaveDia(x)];if(p)p.v++;});
 
+    // Satisfação (nota de 0 a 10 dada ao fim do módulo) e comentários — todo o histórico da visão.
+    var nomeMod={};d.cat.forEach(function(c){nomeMod[c.id]=c.nome;});
+    var av={n:0,soma:0,prom:0,neut:0,detr:0,util:{sim:0,mais_ou_menos:0,nao:0},nUtil:0,porMod:{}},coms=[];
+    d.vis.forEach(function(v){
+      if(!modIds[v.modulo_id])return;
+      if(v.nota_curso!=null){
+        var nt=Number(v.nota_curso);av.n++;av.soma+=nt;
+        if(nt>=9)av.prom++;else if(nt>=7)av.neut++;else av.detr++;
+        var pm=av.porMod[v.modulo_id]||(av.porMod[v.modulo_id]={s:0,n:0});pm.s+=nt;pm.n++;
+      }
+      if(v.achou_util){av.util[v.achou_util]=(av.util[v.achou_util]||0)+1;av.nUtil++;}
+      var tx=String(v.sugestao||'').trim();
+      if(tx)coms.push({t:tx,nota:v.nota_curso,util:v.achou_util,mod:nomeMod[v.modulo_id]||v.modulo_id,loja:String(v.loja||'').trim(),
+        nome:v.nome,data:v.avaliado_em||v.criado_em,mel:ehMelhoria(tx,v)});
+    });
+    av.media=av.n?av.soma/av.n:null;
+    av.mods=d.cat.slice().sort(function(a,b){return (a.ordem||99)-(b.ordem||99);}).map(function(c){
+      var x=av.porMod[c.id];return {nome:c.nome,media:x?x.s/x.n:null,n:x?x.n:0};});
+    coms.sort(function(a,b){return (b.mel-a.mel)||Date.parse(b.data)-Date.parse(a.data);});
+
     var reais=lista.filter(function(L){return L.cod!=null&&L.n;});
-    return {tot:tot,lojas:lista,regs:rl,mods:mods,dias:dias,totMods:totMods,lojasAtivas:reais.length,
+    return {aval:av,coms:coms,tot:tot,lojas:lista,regs:rl,mods:mods,dias:dias,totMods:totMods,lojasAtivas:reais.length,
       lojasOk:reais.filter(function(L){return L.status==='ok';}).length,
       lojasZeradas:reais.filter(function(L){return L.status==='zerada';}).length};
   }
@@ -170,7 +213,25 @@
   +'.pg-seg{display:inline-flex;background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:3px;gap:2px}'
   +'.pg-seg button{all:unset;cursor:pointer;font-size:12px;font-weight:700;color:var(--t2);padding:6px 12px;border-radius:7px}'
   +'.pg-seg button:hover{color:var(--tx)}.pg-seg button[aria-pressed=true]{background:#1d3a63;color:#fff}'
-  +'.pg-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}'
+  +'.pg-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}'
+  +':where(button.pg-kpi,button.pg-cg){all:unset;box-sizing:border-box;cursor:pointer;display:block;text-align:left;font-family:inherit;color:var(--tx);transition:border-color .15s,transform .15s}'
+  +'button.pg-kpi:hover,button.pg-cg:hover{border-color:#36507a;transform:translateY(-1px)}'
+  +'button.pg-kpi:focus-visible,button.pg-cg:focus-visible{outline:2px solid '+C.azul+';outline-offset:2px}'
+  +'.pg-cg[aria-pressed=true]{border-color:'+C.verde+';box-shadow:0 0 0 1px '+C.verde+' inset}'
+  +'.pg-esc{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:10px 12px}'
+  +'.pg-esc .lb{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--t3)}'
+  +'.pg-esc .pg-chip small{font-weight:600;color:var(--t3);margin-left:3px}.pg-esc .pg-chip[aria-pressed=true] small{color:#bcd3f2}'
+  +'.pg-esc .res{margin-left:auto;font-size:12px;color:var(--t2)}.pg-esc .res b{color:var(--tx)}'
+  +'.pg-tbl tr.on td{background:rgba(57,135,229,.12)}'
+  +'.pg-nt{display:flex;gap:16px;align-items:center}.pg-nt .big{font-size:40px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}.pg-nt .big small{font-size:14px;color:var(--t3);margin-left:2px}'
+  +'.pg-stk{display:flex;gap:2px;height:12px;border-radius:4px;overflow:hidden;background:var(--s2)}.pg-stk i{display:block;height:100%}'
+  +'.pg-lg{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--t2);margin-top:6px}.pg-lg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}'
+  +'.pg-nm2{margin-top:12px;border-top:1px solid var(--bd);padding-top:8px}.pg-nm2 .it{display:grid;grid-template-columns:1fr 40px 28px;gap:8px;align-items:center;font-size:12.5px;padding:4px 0}'
+  +'.pg-nm2 .it b{text-align:right;font-variant-numeric:tabular-nums}.pg-nm2 .it small{color:var(--t3);text-align:right;font-size:11px}'
+  +'.pg-nm2 .it em{font-style:normal;font-size:10px;font-weight:800;color:#ff8f93;border:1px solid #5b2630;border-radius:5px;padding:0 4px;margin-left:4px}'
+  +'.pg-coms{display:flex;flex-direction:column;gap:8px}.pg-cm{border-left:3px solid var(--c);background:var(--s2);border-radius:8px;padding:8px 10px}'
+  +'.pg-cm.mel{--c:'+C.ambar+'}.pg-cm.elo{--c:'+C.verde+'}.pg-cm p{margin:0 0 6px;font-size:13px;line-height:1.45;color:var(--tx)}'
+  +'.pg-cm .mt{display:flex;gap:4px 10px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--t3)}'
   +'.pg-kpi{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:14px 16px;border-top:3px solid var(--c)}'
   +'.pg-kpi b{display:block;font-size:28px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}'
   +'.pg-kpi>span{display:block;font-size:12.5px;font-weight:700;color:var(--tx);margin-top:4px}'
@@ -239,7 +300,8 @@
   +'.pg-mc.ok{background:rgba(25,158,112,.2);color:#5fd3a6}.pg-mc.pa{background:rgba(214,158,46,.16);color:#f0c66b}'
   +'.pg-mc.av{background:rgba(57,135,229,.18);color:#8dbcf3;font-size:10.5px}.pg-mc.no{color:#3c4d68}'
   +'@media (max-width:820px){.pg-pn .sm{display:inline}}'
-  +'@media (max-width:980px){.pg-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.pg-cargos{grid-template-columns:1fr}}'
+  +'@media (max-width:1100px){.pg-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}'
+  +'@media (max-width:980px){.pg-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.pg-esc .res{margin-left:0;width:100%}.pg-cargos{grid-template-columns:1fr}}'
   +'@media (max-width:820px){.pg-grid{grid-template-columns:1fr}.pg-form{grid-template-columns:1fr}.pg-tbl .hm{display:none}}';
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -275,13 +337,16 @@
   // Resumo do topo
   function kpis(r){
     var t=r.tot;
-    function k(cor,num,rot,sub){return '<div class="pg-kpi" style="--c:'+cor+'"><b>'+num+'</b><span>'+rot+'</span><small>'+sub+'</small></div>';}
+    function k(kpi,cor,num,rot,sub,dica){return '<button type="button" class="pg-kpi" data-kpi="'+kpi+'" title="'+dica+'" style="--c:'+cor+'"><b>'+num+'</b><span>'+rot+'</span><small>'+sub+'</small></button>';}
+    var a=r.aval,corN=a.media==null?C.cinza:a.media>=9?C.verde:a.media>=7?C.ambar:C.verm;
     return '<div class="pg-kpis">'
-      +k(C.verde,t.ok,'Completaram o curso',pct(t.ok,t.n)+' de '+plural(t.n,'colaborador','colaboradores')+' do público')
-      +k(C.ambar,t.and,'Em andamento','começaram e ainda faltam módulos')
-      +k(C.verm,t.nao,'Não começaram','nenhum módulo assistido')
-      +k(C.azul,r.lojasOk+'<small style="font-size:15px;color:var(--t3);font-weight:600"> / '+r.lojasAtivas+'</small>','Lojas com 100% completo',
-        '<b style="display:inline;font-size:inherit;color:#ff8f93">'+plural(r.lojasZeradas,'loja zerada','lojas zeradas')+'</b> (ninguém começou)')
+      +k('ok',C.verde,t.ok,'Completaram o curso',pct(t.ok,t.n)+' de '+plural(t.n,'colaborador','colaboradores')+' do público','Ver quem completou')
+      +k('and',C.ambar,t.and,'Em andamento','começaram e ainda faltam módulos','Ver quem está no meio do curso')
+      +k('nao',C.verm,t.nao,'Não começaram','nenhum módulo assistido','Ver quem não começou')
+      +k('lojas',C.azul,r.lojasOk+'<small style="font-size:15px;color:var(--t3);font-weight:600"> / '+r.lojasAtivas+'</small>','Lojas com 100% completo',
+        '<b style="display:inline;font-size:inherit;color:#ff8f93">'+plural(r.lojasZeradas,'loja zerada','lojas zeradas')+'</b> (ninguém começou)','Ver as lojas zeradas')
+      +k('nota',corN,a.media==null?'—':a.media.toFixed(1).replace('.',',')+'<small style="font-size:15px;color:var(--t3);font-weight:600"> /10</small>','Nota média do curso',
+        plural(a.n,'avaliação','avaliações')+' · '+plural(r.coms.filter(function(c){return c.mel;}).length,'sugestão de melhoria','sugestões de melhoria'),'Ver notas e comentários')
       +'</div>';
   }
 
@@ -289,10 +354,10 @@
   function cargos(r){
     return '<div class="pg-cargos">'+GRUPOS.map(function(g){
       var x=r.tot.g[g[0]],p=x.n?x.ok/x.n:0;
-      return '<div class="pg-cg"><h5>'+g[2]+' com curso completo</h5>'
+      return '<button type="button" class="pg-cg" data-cargo="'+g[0]+'" aria-pressed="'+(fp.g===g[0])+'" title="Ver os '+g[2].toLowerCase()+' que ainda faltam"><h5>'+g[2]+' com curso completo</h5>'
         +'<span class="pc">'+pct(x.ok,x.n)+'</span><div class="big">'+x.ok+' <small>de '+x.n+'</small></div>'
         +'<div class="pg-meter"><i style="width:'+(p*100)+'%;background:'+C.verde+'"></i></div>'
-        +'<div class="lin"><b>'+x.and+'</b> em andamento · <b style="color:#ff8f93">'+x.nao+'</b> não começaram</div></div>';
+        +'<div class="lin"><b>'+x.and+'</b> em andamento · <b style="color:#ff8f93">'+x.nao+'</b> não começaram</div></button>';
     }).join('')+'</div>';
   }
 
@@ -306,7 +371,8 @@
     if(!r.regs.length)return '<div class="pg-vazio">Sem lojas cadastradas.</div>';
     return '<div style="overflow-x:auto"><table class="pg-tbl"><thead><tr><th>Regional</th><th class="n hm">Lojas</th><th class="n">Colab.</th><th class="n">Completos</th><th>% completo</th><th class="n">Zeradas</th></tr></thead><tbody>'
       +r.regs.map(function(g){
-        return '<tr class="lj" data-reg="'+esc(g.nome)+'" title="Ver as lojas desta regional"><td><b>'+esc(g.nome)+'</b></td>'
+        var on=escopo.reg===g.nome;
+        return '<tr class="lj'+(on?' on':'')+'" data-reg="'+esc(g.nome)+'" title="'+(on?'Voltar para a rede toda':'Filtrar todo o painel por esta regional')+'"><td><b>'+(on?'▸ ':'')+esc(g.nome)+'</b></td>'
           +'<td class="n hm">'+g.lojas+'</td><td class="n">'+g.n+'</td><td class="n"><b>'+g.ok+'</b></td>'
           +'<td>'+barraPct(g.pct,corPct(g.pct))+'</td>'
           +'<td class="n"><span class="pg-cgx '+(g.zeradas?'no':'ok')+'">'+g.zeradas+'</span></td></tr>';
@@ -324,7 +390,6 @@
   function lojasFiltradas(r){
     var q=filtro.q.toLowerCase();
     return r.lojas.filter(function(L){
-      if(filtro.reg&&L.reg!==filtro.reg)return false;
       if(filtro.st==='pend'&&!(L.status==='zerada'||L.status==='parcial'))return false;
       if(filtro.st==='zerada'&&L.status!=='zerada')return false;
       if(filtro.st==='ok'&&L.status!=='ok')return false;
@@ -351,8 +416,7 @@
     var fil='<div class="pg-fil"><div class="pg-chips" role="group" aria-label="Situação da loja">'
       +[['pend','Pendentes'],['zerada','Ninguém começou'],['ok','100% completo'],['todas','Todas']].map(function(c){
         return '<button type="button" class="pg-chip" data-st="'+c[0]+'" aria-pressed="'+(filtro.st===c[0])+'">'+c[1]+' · '+cont[c[0]]+'</button>';}).join('')
-      +'</div><select class="pg-in" data-f="reg" aria-label="Regional"><option value="">Todas as regionais</option>'
-      +regs.map(function(n){return '<option'+(filtro.reg===n?' selected':'')+'>'+esc(n)+'</option>';}).join('')+'</select>'
+      +'</div>'
       +'<input class="pg-in" data-f="q" type="search" aria-label="Buscar loja ou pessoa" placeholder="Buscar loja ou pessoa…" value="'+esc(filtro.q)+'" style="flex:1;min-width:160px"></div>';
     var lista=lojasFiltradas(r),abertas=box.__abertas||{};
     if(!lista.length)return fil+'<div class="pg-vazio">Nenhuma loja neste filtro.</div>';
@@ -431,8 +495,8 @@
   function pessoasFiltradas(r){
     var q=fp.q.toLowerCase(),lista=[];
     r.lojas.forEach(function(L){L.pes.forEach(function(p){
-      if(fp.reg&&L.reg!==fp.reg)return;
-      if(fp.st!=='todos'&&p.st!==fp.st)return;
+      if(fp.g&&p.grupo!==fp.g)return;
+      if(fp.st==='pend'?p.st==='ok':(fp.st!=='todos'&&p.st!==fp.st))return;
       if(q&&(p.nome+' '+L.nome+' '+p.cargo).toLowerCase().indexOf(q)<0)return;
       lista.push(p);
     });});
@@ -442,12 +506,14 @@
     });
   }
   function tabPessoas(r){
-    var cont={and:r.tot.and,ok:r.tot.ok,nao:r.tot.nao,todos:r.tot.n};
+    var base={and:0,ok:0,nao:0,todos:0,pend:0};
+    r.lojas.forEach(function(L){L.pes.forEach(function(p){if(fp.g&&p.grupo!==fp.g)return;base[p.st]++;base.todos++;if(p.st!=='ok')base.pend++;});});
+    var cont=base;
     var fil='<div class="pg-fil"><div class="pg-chips" role="group" aria-label="Situação da pessoa">'
-      +[['and','Em andamento'],['ok','Completos'],['nao','Não começaram'],['todos','Todos']].map(function(c){
+      +[['pend','Pendentes'],['and','Em andamento'],['ok','Completos'],['nao','Não começaram'],['todos','Todos']].map(function(c){
         return '<button type="button" class="pg-chip" data-fpst="'+c[0]+'" aria-pressed="'+(fp.st===c[0])+'">'+c[1]+' · '+cont[c[0]]+'</button>';}).join('')
-      +'</div><select class="pg-in" data-fp="reg" aria-label="Regional"><option value="">Todas as regionais</option>'
-      +r.regs.map(function(g){return '<option'+(fp.reg===g.nome?' selected':'')+'>'+esc(g.nome)+'</option>';}).join('')+'</select>'
+      +'</div><select class="pg-in" data-fp="g" aria-label="Cargo"><option value="">Todos os cargos</option>'
+      +GRUPOS.map(function(g){return '<option value="'+g[0]+'"'+(fp.g===g[0]?' selected':'')+'>'+g[2]+'</option>';}).join('')+'</select>'
       +'<input class="pg-in" data-fp="q" type="search" aria-label="Buscar pessoa ou loja" placeholder="Buscar pessoa ou loja…" value="'+esc(fp.q)+'" style="flex:1;min-width:160px"></div>';
     var lista=pessoasFiltradas(r);
     if(!lista.length)return fil+'<div class="pg-vazio">Ninguém neste filtro.</div>';
@@ -468,6 +534,54 @@
       +'<div class="pg-nota"><span class="pg-mc ok">✓</span> aprovado · <span class="pg-mc pa">74%</span> parou no meio do vídeo · <span class="pg-mc av">prova</span> assistiu, falta passar na avaliação · <span class="pg-mc no">–</span> não abriu</div>';
   }
 
+  // Barra de visão: regional e loja valem para todos os cards, tabelas, gráficos e relatórios.
+  function barraEscopo(r){
+    var T=r.todas,regs=T.regs.slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
+    var lojas=T.lojas.filter(function(L){return L.cod!=null&&L.n&&(!escopo.reg||L.reg===escopo.reg);}).sort(function(a,b){return a.cod-b.cod;});
+    var txt=escopo.loja?'Loja '+esc((T.lojas.filter(function(L){return String(L.cod)===String(escopo.loja);})[0]||{}).nome||escopo.loja)
+      :escopo.reg?'Regional '+esc(escopo.reg)+' · '+plural(r.lojasAtivas,'loja','lojas'):'Rede toda · '+plural(r.lojasAtivas,'loja','lojas');
+    return '<div class="pg-esc"><span class="lb">Visão</span><div class="pg-chips" role="group" aria-label="Regional">'
+      +'<button type="button" class="pg-chip" data-esc-reg="" aria-pressed="'+(!escopo.reg&&!escopo.loja)+'">Rede</button>'
+      +regs.map(function(g){return '<button type="button" class="pg-chip" data-esc-reg="'+esc(g.nome)+'" aria-pressed="'+(escopo.reg===g.nome)+'">'+esc(g.nome)+' <small>'+pct(g.ok,g.n)+'</small></button>';}).join('')
+      +'</div><select class="pg-in" data-esc="loja" aria-label="Loja"><option value="">'+(escopo.reg?'Todas as lojas da regional':'Todas as lojas')+'</option>'
+      +lojas.map(function(L){return '<option value="'+L.cod+'"'+(String(escopo.loja)===String(L.cod)?' selected':'')+'>'+esc(L.nome)+'</option>';}).join('')+'</select>'
+      +'<span class="res">Mostrando: <b>'+txt+'</b> · '+plural(r.tot.n,'colaborador','colaboradores')+'</span></div>';
+  }
+
+  // Satisfação: nota média, distribuição (uma métrica só), utilidade e nota por módulo.
+  function cardNotas(r){
+    var a=r.aval;
+    if(!a.n&&!a.nUtil)return '<div class="pg-vazio">Ninguém avaliou o curso nesta visão ainda.</div>';
+    var corN=a.media==null?C.cinza:a.media>=9?C.verde:a.media>=7?C.ambar:C.verm;
+    var dist=[[a.prom,'9–10',C.verde],[a.neut,'7–8',C.ambar],[a.detr,'0–6',C.verm]];
+    var piorMod=a.mods.filter(function(m){return m.media!=null;}).sort(function(x,y){return x.media-y.media;})[0];
+    return '<div class="pg-nt"><div class="big" style="color:'+corN+'">'+(a.media==null?'—':a.media.toFixed(1).replace('.',','))+'<small>/10</small></div>'
+      +'<div style="flex:1;min-width:0"><div class="pg-stk">'+dist.map(function(x){return x[0]?'<i style="flex:'+x[0]+';background:'+x[2]+'" data-tip="'+tipHtml('Notas '+x[1],[['Avaliações',x[0]],['Do total',pct(x[0],a.n)]])+'"></i>':'';}).join('')+'</div>'
+      +'<div class="pg-lg">'+dist.map(function(x){return '<span><i style="background:'+x[2]+'"></i>'+x[1]+': <b>'+x[0]+'</b></span>';}).join('')+'</div>'
+      +'<div class="pg-nota" style="margin-top:6px">'+plural(a.n,'avaliação','avaliações')
+      +(a.nUtil?' · achou útil: <b style="color:#5fd3a6">'+pct(a.util.sim||0,a.nUtil)+' sim</b>'+(a.util.mais_ou_menos?' · '+pct(a.util.mais_ou_menos,a.nUtil)+' mais ou menos':'')+(a.util.nao?' · <b style="color:#ff8f93">'+pct(a.util.nao,a.nUtil)+' não</b>':''):'')+'</div></div></div>'
+      +'<div class="pg-nm2">'+a.mods.map(function(m,i){
+        var c=m.media==null?C.cinza:m.media>=9?C.verde:m.media>=7?C.ambar:C.verm,pior=piorMod&&m===piorMod&&a.mods.length>1;
+        return '<div class="it'+(pior?' pior':'')+'"><span>'+(i+1)+'. '+esc(m.nome)+(pior?' <em>menor nota</em>':'')+'</span><b style="color:'+c+'">'+(m.media==null?'—':m.media.toFixed(1).replace('.',','))+'</b><small>'+m.n+'</small></div>';
+      }).join('')+'</div>';
+  }
+
+  // Comentários: melhorias primeiro, com módulo, loja, pessoa e nota.
+  function cardComentarios(r){
+    var mel=r.coms.filter(function(c){return c.mel;}),elo=r.coms.filter(function(c){return !c.mel;});
+    var lista=fc.t==='mel'?mel:fc.t==='elo'?elo:r.coms;
+    var h='<div class="pg-chips" style="margin-bottom:10px" role="group" aria-label="Tipo de comentário">'
+      +[['mel','💡 Melhorias',mel.length],['elo','👍 Elogios',elo.length],['todos','Todos',r.coms.length]].map(function(c){
+        return '<button type="button" class="pg-chip" data-fc="'+c[0]+'" aria-pressed="'+(fc.t===c[0])+'">'+c[1]+' · '+c[2]+'</button>';}).join('')+'</div>';
+    if(!lista.length)return h+'<div class="pg-vazio">'+(fc.t==='mel'?'Nenhuma sugestão de melhoria nesta visão. 👏':'Nenhum comentário nesta visão.')+'</div>';
+    return h+'<div class="pg-coms">'+lista.slice(0,fc.lim).map(function(c){
+      var nc=c.nota==null?'':'<span class="pg-cgx '+(c.nota>=9?'ok':c.nota>=7?'pa':'no')+'">nota '+c.nota+'</span>';
+      return '<div class="pg-cm '+(c.mel?'mel':'elo')+'"><p>“'+esc(c.t)+'”</p><div class="mt">'+nc+'<span>'+esc(c.mod)+'</span><span>'+esc(c.loja||'—')+'</span><span>'+esc(nomeCurto(c.nome||''))+'</span><span>'+dataBR(c.data)+'</span></div></div>';
+    }).join('')+'</div>'
+      +(lista.length>fc.lim?'<button type="button" class="pg-btn" data-acao="maiscom" style="margin-top:10px">Ver mais '+Math.min(10,lista.length-fc.lim)+'</button>':'')
+      +'<div class="pg-nota">“Melhoria” = nota até 7, não achou útil, ou texto com crítica/sugestão. Use para ajustar vídeos e processos.</div>';
+  }
+
   function montar(box,r){
     box.__r=r;
     var nomePer=periodo?'últimos '+periodo+' dias':'todo o período';
@@ -480,12 +594,14 @@
       +'<button type="button" class="pg-btn" data-acao="csv" title="Uma linha por pessoa, abre no Excel">⬇ Planilha</button>'
       +'<button type="button" class="pg-btn" data-acao="atualizar" title="Recarregar os dados">↻</button></div></div>'
       +'<div data-msg></div>'
-      +kpis(r)+cargos(r)
-      +'<div class="pg-card"><div class="pg-h"><h4>Situação por loja</h4></div><p class="pg-sub">Da loja mais atrasada para a mais adiantada. Cadastro = gerente, sub e estoquista; Viram = assistiram 1+ módulo; Completos = curso inteiro aprovado.</p><div data-lojas>'+tabLojas(r,box)+'</div>'
+      +barraEscopo(r)+kpis(r)+cargos(r)
+      +'<div class="pg-card" data-sec="lojas"><div class="pg-h"><h4>Situação por loja</h4></div><p class="pg-sub">Da loja mais atrasada para a mais adiantada. Cadastro = gerente, sub e estoquista; Viram = assistiram 1+ módulo; Completos = curso inteiro aprovado.</p><div data-lojas>'+tabLojas(r,box)+'</div>'
       +(semLoja&&semLoja.n?'<div class="pg-nota">⚠ '+plural(semLoja.n,'pessoa do público está','pessoas do público estão')+' sem loja na base do RH e nunca assistiu — aparecem em “Sem loja na base do RH” (filtro Todas). Corrija a loja na planilha mãe ou libere o CPF com a loja certa.</div>':'')+'</div>'
       +'<div class="pg-grid">'
-      +'<div class="pg-card"><div class="pg-h"><h4>Cobrança por regional</h4></div><p class="pg-sub">Da regional mais atrasada para a mais adiantada. Clique para ver as lojas.</p>'+tabRegionais(r)+'</div>'
+      +'<div class="pg-card"><div class="pg-h"><h4>Cobrança por regional</h4></div><p class="pg-sub">Rede toda, da regional mais atrasada para a mais adiantada. Clique para filtrar o painel inteiro.</p>'+tabRegionais(r.todas)+'</div>'
       +'<div class="pg-card"><div class="pg-h"><h4>Aprovados por módulo</h4></div><p class="pg-sub">De '+plural(r.tot.n,'pessoa','pessoas')+' do público.</p>'+grafMods(r)+'</div>'
+      +'<div class="pg-card" data-sec="notas"><div class="pg-h"><h4>Nota do curso</h4></div><p class="pg-sub">Nota de 0 a 10 que o colaborador dá ao terminar cada módulo.</p>'+cardNotas(r)+'</div>'
+      +'<div class="pg-card"><div class="pg-h"><h4>Comentários</h4></div><p class="pg-sub">O que o pessoal escreveu — melhorias primeiro.</p><div data-coms>'+cardComentarios(r)+'</div></div>'
       +'<div class="pg-card full"><div class="pg-h"><h4>'+(serie==='aprov'?'Módulos aprovados por dia':'Acessos iniciados por dia')+'</h4>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap"><div class="pg-seg" role="group" aria-label="O que mostrar">'
       +[['aprov','Aprovados'],['ini','Acessos']].map(function(p){return '<button type="button" data-serie="'+p[0]+'" aria-pressed="'+(serie===p[0])+'">'+p[1]+'</button>';}).join('')
@@ -493,7 +609,7 @@
       +[[7,'7 dias'],[30,'30 dias'],[0,'Tudo']].map(function(p){return '<button type="button" data-per="'+p[0]+'" aria-pressed="'+(periodo===p[0])+'">'+p[1]+'</button>';}).join('')
       +'</div></div></div><p class="pg-sub">'+(serie==='aprov'?'Módulos com avaliação aprovada em cada dia':'Vídeos abertos em cada dia, concluídos ou não')+' — '+nomePer+'.</p>'+grafDias(r,box.clientWidth-40)+'</div>'
       +'</div>'
-      +'<div class="pg-card"><div class="pg-h"><h4>Andamento por pessoa</h4>'
+      +'<div class="pg-card" data-sec="pessoas"><div class="pg-h"><h4>Andamento por pessoa'+(fp.g?' · '+NOME_G[fp.g]+'s':'')+'</h4>'
       +(box.__lista&&box.__lista.length?'<button type="button" class="pg-chip" data-acao="registro" aria-pressed="'+!!box.__listaVisivel+'">'+(box.__listaVisivel?'Ocultar':'Ver')+' registro detalhado</button>':'')
       +'</div><p class="pg-sub">Uma linha por colaborador, uma coluna por módulo — mais recente primeiro.</p><div data-pessoas>'+tabPessoas(r)+'</div></div>';
   }
@@ -509,6 +625,7 @@
     alvo.innerHTML=tabPessoas(box.__r);
     if(f){var el=alvo.querySelector('[data-fp="'+f+'"]');if(el){el.focus();if(pos!=null)try{el.setSelectionRange(pos,pos);}catch(e){}}}
   }
+  function irPara(box,sec){var el=box.querySelector('[data-sec="'+sec+'"]');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
   function msg(box,html,tipo){
     var m=box.querySelector('[data-msg]');if(!m)return;
     m.innerHTML=html?'<div class="'+(tipo==='erro'?'pg-erro':'pg-ok')+'">'+html+'</div>':'';
@@ -558,14 +675,14 @@
   // do navegador já com o nome do arquivo no título — "Salvar como PDF".
   function relatorioHtml(r){
     var hoje=new Date().toLocaleDateString('pt-BR');
-    var regs=filtro.reg?r.regs.filter(function(g){return g.nome===filtro.reg;}):r.regs.slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
+    var regs=escopo.reg?r.regs.filter(function(g){return g.nome===escopo.reg;}):r.regs.slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
     function cel(x){if(!x[0])return '<span class="ch na">—</span>';return '<span class="ch '+(x[1]===x[0]?'ok':x[1]?'pa':'no')+'">'+x[1]+'/'+x[0]+'</span>';}
     function barra(p){return '<div class="bar"><i style="width:'+(p*100)+'%;background:'+corPct(p)+'"></i></div>';}
     function kp(cor,v,rot){return '<div style="--c:'+cor+'"><b>'+v+'</b>'+rot+'</div>';}
     function somaG(lojas){var g={ger:[0,0],sub:[0,0],est:[0,0]};lojas.forEach(function(L){['ger','sub','est'].forEach(function(k){g[k][0]+=L.g[k][0];g[k][1]+=L.g[k][1];});});return g;}
     function faixaCargos(g){return '<div class="cg">'+GRUPOS.map(function(x){var v=g[x[0]];return '<div><span>'+x[2]+'</span><b>'+v[1]+' de '+v[0]+'</b> completos <em>'+pct(v[1],v[0])+'</em></div>';}).join('')+'</div>';}
     var html='';
-    if(!filtro.reg){
+    if(!escopo.reg){
       var gR=somaG(r.lojas.filter(function(L){return L.cod!=null;}));
       html+='<section class="pag"><header><h1>Treinamento Operações de Estoque — Situação da rede</h1><p>Posição em '+hoje+' · curso completo = '+r.totMods+' módulos aprovados · público: gerentes, subgerentes e estoquistas</p></header>'
         +'<div class="k">'+kp(C.verde,r.tot.ok+' <small>('+pct(r.tot.ok,r.tot.n)+')</small>','Completaram')+kp(C.ambar,r.tot.and,'Em andamento')+kp(C.verm,r.tot.nao,'Não começaram')
@@ -591,7 +708,7 @@
           }).join('')+'</div>':'<p class="okmsg">✓ Todas as lojas desta regional estão com 100% do público com o curso completo.</p>')
         +'<footer>Ger/Sub/Est = completos sobre cadastrados · Fonte: Central de Treinamento — Portal Esposende</footer></section>';
     });
-    var titulo='Treinamento Estoque - '+(filtro.reg?'Regional '+filtro.reg:'Rede e regionais')+' - '+hoje.replace(/\//g,'-');
+    var titulo='Treinamento Estoque - '+(escopo.reg?'Regional '+escopo.reg:'Rede e regionais')+' - '+hoje.replace(/\//g,'-');
     return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>'+esc(titulo)+'</title><style>'
       +'@page{size:A4 portrait;margin:11mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
       +'body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;font-size:10.5px;margin:0;background:#fff}'
@@ -775,9 +892,18 @@
       var s=t.closest('[data-serie]');if(s){serie=s.getAttribute('data-serie');desenhar(box,false);return;}
       var ch=t.closest('[data-st]');if(ch){filtro.st=ch.getAttribute('data-st');redesenharLojas(box);return;}
       var cp=t.closest('[data-fpst]');if(cp){fp.st=cp.getAttribute('data-fpst');fp.lim=40;redesenharPessoas(box);return;}
+      var er=t.closest('[data-esc-reg]');if(er){escopo.reg=er.getAttribute('data-esc-reg');escopo.loja='';desenhar(box,false);return;}
+      var kc=t.closest('[data-kpi]');
+      if(kc){var kk=kc.getAttribute('data-kpi');
+        if(kk==='nota'){irPara(box,'notas');return;}
+        if(kk==='lojas'){filtro.st='zerada';redesenharLojas(box);irPara(box,'lojas');return;}
+        fp.st=kk;fp.g='';fp.lim=40;montar(box,box.__r);irPara(box,'pessoas');return;}
+      var cg=t.closest('[data-cargo]');
+      if(cg){var g=cg.getAttribute('data-cargo');fp.g=fp.g===g?'':g;fp.st=fp.g?'pend':'and';fp.lim=40;montar(box,box.__r);if(fp.g)irPara(box,'pessoas');return;}
+      var fcb=t.closest('[data-fc]');if(fcb){fc.t=fcb.getAttribute('data-fc');fc.lim=5;var cc=box.querySelector('[data-coms]');if(cc)cc.innerHTML=cardComentarios(box.__r);return;}
       var rg=t.closest('tr[data-reg]');
-      if(rg){filtro.reg=rg.getAttribute('data-reg');filtro.st='todas';redesenharLojas(box);
-        var cd=box.querySelector('[data-lojas]');if(cd)cd.scrollIntoView({behavior:'smooth',block:'start'});return;}
+      if(rg){var nr=rg.getAttribute('data-reg');escopo.reg=escopo.reg===nr?'':nr;escopo.loja='';filtro.st='todas';
+        desenhar(box,false).then(function(){box.scrollIntoView({behavior:'smooth',block:'start'});});return;}
       var lj=t.closest('tr[data-loja]');
       if(lj){var k=lj.getAttribute('data-loja');box.__abertas=box.__abertas||{};box.__abertas[k]=!box.__abertas[k];redesenharLojas(box);
         var nv=box.querySelector('tr[data-loja="'+k+'"]');if(nv)nv.focus({preventScroll:true});return;}
@@ -785,9 +911,10 @@
       var acao=ac.getAttribute('data-acao');
       if(acao==='liberar')abrirLiberar(box);
       if(acao==='maispes'){fp.lim+=40;redesenharPessoas(box);}
+      if(acao==='maiscom'){fc.lim+=10;var cm=box.querySelector('[data-coms]');if(cm)cm.innerHTML=cardComentarios(box.__r);}
       if(acao==='atualizar')desenhar(box,true);
       if(acao==='pdf'){imprimirRelatorio(doc,relatorioHtml(box.__r));
-        msg(box,'Relatório '+(filtro.reg?'da regional '+esc(filtro.reg):'da rede + todas as regionais')+' aberto. Na janela de impressão, escolha “Salvar como PDF”.','ok');}
+        msg(box,'Relatório '+(escopo.reg?'da regional '+esc(escopo.reg):'da rede + todas as regionais')+' aberto. Na janela de impressão, escolha “Salvar como PDF”.','ok');}
       if(acao==='registro'){box.__listaVisivel=!box.__listaVisivel;
         (box.__lista||[]).forEach(function(x){x.style.display=box.__listaVisivel?'':'none';});
         ac.setAttribute('aria-pressed',String(box.__listaVisivel));ac.textContent=(box.__listaVisivel?'Ocultar':'Ver')+' registro detalhado';
@@ -795,7 +922,7 @@
       if(acao==='csv')baixar(doc,'treinamento-estoque-por-loja-'+chaveDia(new Date())+'.csv',csv(box.__r));
       if(acao==='cobranca'){
         var ok=await copiar(doc,textoCobranca(box.__r));
-        msg(box,ok?'✓ Cobrança copiada'+(filtro.reg?' (regional '+esc(filtro.reg)+')':' (todas as regionais)')+'. É só colar no WhatsApp.':'Não foi possível copiar automaticamente.',ok?'ok':'erro');
+        msg(box,ok?'✓ Cobrança copiada'+(escopo.reg?' (regional '+esc(escopo.reg)+')':' (todas as regionais)')+'. É só colar no WhatsApp.':'Não foi possível copiar automaticamente.',ok?'ok':'erro');
       }
     });
     box.addEventListener('keydown',function(e){
@@ -810,8 +937,9 @@
       }
     });
     box.addEventListener('change',function(e){
-      if(e.target.getAttribute&&e.target.getAttribute('data-f')==='reg'){filtro.reg=e.target.value;redesenharLojas(box);}
-      if(e.target.getAttribute&&e.target.getAttribute('data-fp')==='reg'){fp.reg=e.target.value;fp.lim=40;redesenharPessoas(box);}
+      if(e.target.getAttribute&&e.target.getAttribute('data-f')==='reg'){escopo.reg=e.target.value;redesenharLojas(box);}
+      if(e.target.getAttribute&&e.target.getAttribute('data-fp')==='g'){fp.g=e.target.value;fp.lim=40;montar(box,box.__r);}
+      if(e.target.getAttribute&&e.target.getAttribute('data-esc')==='loja'){escopo.loja=e.target.value;desenhar(box,false);}
     });
     // Botão "Atualizar" do módulo também recarrega o painel.
     if(!doc.__pgAtualizar){doc.__pgAtualizar=true;
@@ -825,7 +953,9 @@
   async function desenhar(box,forcar){
     try{
       var d=await carregar(forcar);
-      montar(box,calcular(d));
+      var todas=calcular(d),r=(escopo.reg||escopo.loja)?calcular(recorte(d)):todas;
+      r.todas=todas;
+      montar(box,r);
     }catch(e){
       console.warn('[protocolo-graficos]',e);
       (box.__esconder||[]).concat(box.__lista||[]).forEach(function(x){x.style.display='';});

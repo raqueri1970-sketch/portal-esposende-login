@@ -867,7 +867,7 @@ async function openPortal(){
   // Carregamento de arquivos em todos os módulos (CSV, arrastar sem baixar, campanhas Meias/Grendene).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('upload-correcoes.js?v=20261002-5',location.href).href+'"></scr'+'ipt>');
   // Protocolo de Curso: painel por loja (completos por cargo, cobrança por regional/loja, liberar CPF).
-  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('protocolo-graficos.js?v=20261019-2',location.href).href+'"></scr'+'ipt>');
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('protocolo-graficos.js?v=20261019-3',location.href).href+'"></scr'+'ipt>');
   // Obras & Reformas: telas de pagamento (Presidente, Contas a pagar, Financeiro, Relatórios) dentro do módulo, com a sessão do Portal.
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('obras-pagamentos-patch.js?v=20261019-2',location.href).href+'"></scr'+'ipt>');
   // RL Transportes: "Painel Completo" abre no Portal lendo o Supabase (antes apontava para o PC D90 pelo Tailscale).
