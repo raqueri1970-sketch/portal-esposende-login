@@ -8,8 +8,10 @@
      com filtro (pendentes / ninguém começou / 100%) e lista das pessoas de cada loja.
    - Gráficos de uma série só (concluído e andamento nunca no mesmo gráfico).
    - "Liberar CPF": cadastra CPF + nome + cargo + loja para o curso sem depender da planilha mãe do RH.
-   - "Copiar cobrança": texto pronto para WhatsApp; "Planilha": CSV por pessoa.
-   Os dados vêm do Supabase com a sessão do Portal (RPC curso_painel_lojas, só staff). Se algo falhar,
+   - "Copiar cobrança": texto pronto para WhatsApp; "Planilha": CSV por pessoa; "Relatório PDF": uma página por regional.
+   - Andamento por pessoa: uma linha por colaborador e uma coluna por módulo (✓ aprovado ou % assistido), no lugar do
+     registro antigo de uma linha por vídeo (que continua disponível em "Ver registro detalhado").
+   Os dados vêm do Supabase com a sessão do Portal (RPC curso_painel_pessoas, só staff). Se algo falhar,
    os gráficos originais voltam a aparecer — nada do módulo original é apagado. */
 (function(){
   if(window.__protocoloGraficos)return;window.__protocoloGraficos=true;
@@ -20,8 +22,10 @@
   var C={azul:'#3987e5',verde:'#199e70',ambar:'#d69e2e',verm:'#e5484d',cinza:'#475569'};
   var GRUPOS=[['ger','Gerente','Gerentes'],['sub','Subgerente','Subgerentes'],['est','Estoquista','Estoquistas']];
   var NOME_G={ger:'Gerente',sub:'Subgerente',est:'Estoquista'};
+  var CURTO={'recebimento':'Receb.','notas-fiscais':'NF','fazer-etiquetas':'Etiq.','fechamento-de-volumes':'Volume','defeito':'Defeito','remanejo':'Remanejo'};
   var periodo=30,serie='aprov',cache=null,cacheEm=0;
   var filtro={st:'pend',reg:'',q:''};
+  var fp={st:'and',reg:'',q:'',lim:40};
 
   /* ============================ DADOS ============================ */
   function acharSb(){
@@ -59,7 +63,7 @@
     if(cache&&!forcar&&Date.now()-cacheEm<60000)return cache;
     var tk=await token();if(!tk)throw new Error('sem sessão do Portal');
     var res=await Promise.all([
-      rpc('curso_painel_lojas',{p_area_id:AREA}),
+      rpc('curso_painel_pessoas',{p_area_id:AREA}),
       get(tk,'portal_lojas?select=codigo,nome,ativo,regional_id'),
       get(tk,'portal_regionais?select=id,nome,ativo'),
       get(tk,'curso_catalogo?select=id,nome,ordem,area_id,ativo&area_id=eq.'+AREA),
@@ -101,7 +105,7 @@
       p.st=totMods&&aprov>=totMods?'ok':(p.iniciados>0?'and':'nao');
       var k=p.loja_codigo==null?'x':p.loja_codigo;
       var L=lojas[k]||(lojas[k]=novaLoja(p.loja_codigo));
-      L.pes.push(p);L.n++;L[p.st]++;
+      L.pes.push(p);L.n++;L[p.st]++;p.L=L;
       var gl=L.g[p.grupo]||L.g.out;gl[0]++;if(p.st==='ok')gl[1]++;
       tot.n++;tot[p.st]++;
       var tg=tot.g[p.grupo]||tot.g.out;tg.n++;tg[p.st]++;
@@ -128,7 +132,7 @@
     // Por módulo: pessoas aprovadas em cada módulo (uma série só).
     var mods=d.cat.slice().sort(function(a,b){return (a.ordem||99)-(b.ordem||99);}).map(function(c){
       var n=0;d.pes.forEach(function(p){if((p.aprovados||[]).indexOf(c.id)>=0)n++;});
-      return {nome:c.nome,n:n};
+      return {id:c.id,nome:c.nome,curto:CURTO[c.id]||String(c.nome).split(' ')[0],n:n};
     });
 
     // Série diária: módulos aprovados (avaliado_em) ou acessos iniciados (criado_em).
@@ -229,6 +233,12 @@
   +'.pg-modal .lib .it{display:flex;align-items:center;gap:10px;font-size:12.5px;padding:6px 0;border-bottom:1px solid #18243b}'
   +'.pg-modal .lib .it span{flex:1;min-width:0}.pg-modal .lib .it small{color:#6f819c}'
   +'.pg-x{all:unset;cursor:pointer;font-size:11.5px;font-weight:700;color:#ff8f93}'
+  +'.pg-mx td{padding:6px 6px}.pg-mx th.c{font-size:10.5px;letter-spacing:.2px}'
+  +'.pg-pn{display:flex;align-items:center;gap:2px;min-width:150px}.pg-pn small{display:block;font-size:11px;color:var(--t3)}.pg-pn .sm{display:none}'
+  +'.pg-mc{display:inline-block;min-width:38px;padding:3px 4px;border-radius:6px;font-size:11.5px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums}'
+  +'.pg-mc.ok{background:rgba(25,158,112,.2);color:#5fd3a6}.pg-mc.pa{background:rgba(214,158,46,.16);color:#f0c66b}'
+  +'.pg-mc.av{background:rgba(57,135,229,.18);color:#8dbcf3;font-size:10.5px}.pg-mc.no{color:#3c4d68}'
+  +'@media (max-width:820px){.pg-pn .sm{display:inline}}'
   +'@media (max-width:980px){.pg-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.pg-cargos{grid-template-columns:1fr}}'
   +'@media (max-width:820px){.pg-grid{grid-template-columns:1fr}.pg-form{grid-template-columns:1fr}.pg-tbl .hm{display:none}}';
 
@@ -409,6 +419,55 @@
     }).join('')+'<div class="pg-nota">Pessoas aprovadas em cada módulo, na ordem do curso. A queda de um módulo para o outro mostra onde o pessoal para.</div>';
   }
 
+  // Andamento por pessoa: uma linha por colaborador, uma coluna por módulo.
+  function celMod(m,mod){
+    var x=mod&&mod[m.id];
+    if(!x)return '<td class="c"><span class="pg-mc no" title="'+esc(m.nome)+': não abriu">–</span></td>';
+    if(x.ok)return '<td class="c"><span class="pg-mc ok" title="'+esc(m.nome)+': aprovado'+(x.nota!=null?' · nota '+Math.round(x.nota):'')+'">✓</span></td>';
+    var p=Math.round(x.p||0);
+    if(p>=90)return '<td class="c"><span class="pg-mc av" title="'+esc(m.nome)+': assistiu, falta passar na avaliação">prova</span></td>';
+    return '<td class="c"><span class="pg-mc pa" title="'+esc(m.nome)+': assistiu '+p+'%">'+p+'%</span></td>';
+  }
+  function pessoasFiltradas(r){
+    var q=fp.q.toLowerCase(),lista=[];
+    r.lojas.forEach(function(L){L.pes.forEach(function(p){
+      if(fp.reg&&L.reg!==fp.reg)return;
+      if(fp.st!=='todos'&&p.st!==fp.st)return;
+      if(q&&(p.nome+' '+L.nome+' '+p.cargo).toLowerCase().indexOf(q)<0)return;
+      lista.push(p);
+    });});
+    return lista.sort(function(a,b){
+      return (b.ultimo_acesso?Date.parse(b.ultimo_acesso):0)-(a.ultimo_acesso?Date.parse(a.ultimo_acesso):0)
+        ||(a.L.cod||0)-(b.L.cod||0)||ordemG(a.grupo)-ordemG(b.grupo)||String(a.nome).localeCompare(b.nome);
+    });
+  }
+  function tabPessoas(r){
+    var cont={and:r.tot.and,ok:r.tot.ok,nao:r.tot.nao,todos:r.tot.n};
+    var fil='<div class="pg-fil"><div class="pg-chips" role="group" aria-label="Situação da pessoa">'
+      +[['and','Em andamento'],['ok','Completos'],['nao','Não começaram'],['todos','Todos']].map(function(c){
+        return '<button type="button" class="pg-chip" data-fpst="'+c[0]+'" aria-pressed="'+(fp.st===c[0])+'">'+c[1]+' · '+cont[c[0]]+'</button>';}).join('')
+      +'</div><select class="pg-in" data-fp="reg" aria-label="Regional"><option value="">Todas as regionais</option>'
+      +r.regs.map(function(g){return '<option'+(fp.reg===g.nome?' selected':'')+'>'+esc(g.nome)+'</option>';}).join('')+'</select>'
+      +'<input class="pg-in" data-fp="q" type="search" aria-label="Buscar pessoa ou loja" placeholder="Buscar pessoa ou loja…" value="'+esc(fp.q)+'" style="flex:1;min-width:160px"></div>';
+    var lista=pessoasFiltradas(r);
+    if(!lista.length)return fil+'<div class="pg-vazio">Ninguém neste filtro.</div>';
+    var vis=lista.slice(0,fp.lim);
+    return fil+'<div style="overflow-x:auto"><table class="pg-tbl pg-mx"><thead><tr><th>Colaborador</th><th class="hm">Loja</th>'
+      +r.mods.map(function(m,i){return '<th class="c" title="'+esc(m.nome)+'">'+(i+1)+'. '+esc(m.curto)+'</th>';}).join('')
+      +'<th>Progresso</th><th class="n hm">Último acesso</th></tr></thead><tbody>'
+      +vis.map(function(p){
+        var cor=p.st==='ok'?C.verde:p.st==='and'?C.ambar:C.verm,mod=p.modulos||{};
+        return '<tr><td><div class="pg-pn"><span class="pg-dot" style="background:'+cor+'"></span><span><b>'+esc(nomeCurto(p.nome))+'</b>'
+          +(p.origem==='manual'?'<span class="pg-tag">MANUAL</span>':'')+'<small>'+esc(NOME_G[p.grupo]||p.cargo)+'<span class="sm"> · '+esc(p.L.nome)+'</span></small></span></div></td>'
+          +'<td class="hm" style="color:var(--t2);white-space:nowrap">'+esc(p.L.nome)+'<small style="display:block;color:var(--t3)">'+esc(p.L.reg)+'</small></td>'
+          +r.mods.map(function(m){return celMod(m,mod);}).join('')
+          +'<td><div class="pg-pct" style="min-width:90px"><div class="pg-trk"><i style="width:'+(r.totMods?p.nAprov/r.totMods*100:0)+'%;background:'+C.verde+'"></i></div><b style="width:30px">'+p.nAprov+'/'+r.totMods+'</b></div></td>'
+          +'<td class="n hm" style="color:var(--t2)">'+dataBR(p.ultimo_acesso)+'</td></tr>';
+      }).join('')+'</tbody></table></div>'
+      +(lista.length>vis.length?'<button type="button" class="pg-btn" data-acao="maispes" style="margin-top:10px">Mostrar mais '+Math.min(40,lista.length-vis.length)+' de '+(lista.length-vis.length)+' restantes</button>':'')
+      +'<div class="pg-nota"><span class="pg-mc ok">✓</span> aprovado · <span class="pg-mc pa">74%</span> parou no meio do vídeo · <span class="pg-mc av">prova</span> assistiu, falta passar na avaliação · <span class="pg-mc no">–</span> não abriu</div>';
+  }
+
   function montar(box,r){
     box.__r=r;
     var nomePer=periodo?'últimos '+periodo+' dias':'todo o período';
@@ -417,7 +476,9 @@
       +'<div class="pg-bar"><div class="pg-tt">Treinamento Operações de Estoque<small>Público: gerentes, subgerentes e estoquistas da base do RH + CPFs liberados manualmente · curso completo = '+plural(r.totMods,'módulo aprovado','módulos aprovados')+'</small></div>'
       +'<div class="pg-acts"><button type="button" class="pg-btn pri" data-acao="liberar">＋ Liberar CPF</button>'
       +'<button type="button" class="pg-btn" data-acao="cobranca" title="Copia as lojas pendentes do filtro atual, por regional, para colar no WhatsApp">📋 Copiar cobrança</button>'
-      +'<button type="button" class="pg-btn" data-acao="csv" title="Uma linha por pessoa, abre no Excel">⬇ Planilha</button></div></div>'
+      +'<button type="button" class="pg-btn" data-acao="pdf" title="Situação das lojas, uma página por regional (usa a regional escolhida no filtro de lojas, ou todas)">📄 Relatório PDF</button>'
+      +'<button type="button" class="pg-btn" data-acao="csv" title="Uma linha por pessoa, abre no Excel">⬇ Planilha</button>'
+      +'<button type="button" class="pg-btn" data-acao="atualizar" title="Recarregar os dados">↻</button></div></div>'
       +'<div data-msg></div>'
       +kpis(r)+cargos(r)
       +'<div class="pg-card"><div class="pg-h"><h4>Situação por loja</h4></div><p class="pg-sub">Da loja mais atrasada para a mais adiantada. Cadastro = gerente, sub e estoquista; Viram = assistiram 1+ módulo; Completos = curso inteiro aprovado.</p><div data-lojas>'+tabLojas(r,box)+'</div>'
@@ -431,13 +492,22 @@
       +'</div><div class="pg-seg" role="group" aria-label="Período">'
       +[[7,'7 dias'],[30,'30 dias'],[0,'Tudo']].map(function(p){return '<button type="button" data-per="'+p[0]+'" aria-pressed="'+(periodo===p[0])+'">'+p[1]+'</button>';}).join('')
       +'</div></div></div><p class="pg-sub">'+(serie==='aprov'?'Módulos com avaliação aprovada em cada dia':'Vídeos abertos em cada dia, concluídos ou não')+' — '+nomePer+'.</p>'+grafDias(r,box.clientWidth-40)+'</div>'
-      +'</div>';
+      +'</div>'
+      +'<div class="pg-card"><div class="pg-h"><h4>Andamento por pessoa</h4>'
+      +(box.__lista&&box.__lista.length?'<button type="button" class="pg-chip" data-acao="registro" aria-pressed="'+!!box.__listaVisivel+'">'+(box.__listaVisivel?'Ocultar':'Ver')+' registro detalhado</button>':'')
+      +'</div><p class="pg-sub">Uma linha por colaborador, uma coluna por módulo — mais recente primeiro.</p><div data-pessoas>'+tabPessoas(r)+'</div></div>';
   }
   function redesenharLojas(box){
     var alvo=box.querySelector('[data-lojas]');if(!alvo||!box.__r)return;
     var foco=box.ownerDocument.activeElement,f=foco&&foco.getAttribute&&foco.getAttribute('data-f'),pos=f==='q'?foco.selectionStart:null;
     alvo.innerHTML=tabLojas(box.__r,box);
     if(f){var el=alvo.querySelector('[data-f="'+f+'"]');if(el){el.focus();if(pos!=null)try{el.setSelectionRange(pos,pos);}catch(e){}}}
+  }
+  function redesenharPessoas(box){
+    var alvo=box.querySelector('[data-pessoas]');if(!alvo||!box.__r)return;
+    var foco=box.ownerDocument.activeElement,f=foco&&foco.getAttribute&&foco.getAttribute('data-fp'),pos=f==='q'?foco.selectionStart:null;
+    alvo.innerHTML=tabPessoas(box.__r);
+    if(f){var el=alvo.querySelector('[data-fp="'+f+'"]');if(el){el.focus();if(pos!=null)try{el.setSelectionRange(pos,pos);}catch(e){}}}
   }
   function msg(box,html,tipo){
     var m=box.querySelector('[data-msg]');if(!m)return;
@@ -481,6 +551,78 @@
     try{await doc.defaultView.navigator.clipboard.writeText(txt);return true;}catch(e){}
     var ta=doc.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';doc.body.appendChild(ta);ta.select();
     var ok=false;try{ok=doc.execCommand('copy');}catch(e){}ta.remove();return ok;
+  }
+
+  /* ============================ RELATÓRIO PDF ============================ */
+  // Documento A4 claro, uma página por regional (mais o resumo da rede quando são todas). Abre a impressão
+  // do navegador já com o nome do arquivo no título — "Salvar como PDF".
+  function relatorioHtml(r){
+    var hoje=new Date().toLocaleDateString('pt-BR');
+    var regs=filtro.reg?r.regs.filter(function(g){return g.nome===filtro.reg;}):r.regs.slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
+    function cel(x){if(!x[0])return '<span class="ch na">—</span>';return '<span class="ch '+(x[1]===x[0]?'ok':x[1]?'pa':'no')+'">'+x[1]+'/'+x[0]+'</span>';}
+    function barra(p){return '<div class="bar"><i style="width:'+(p*100)+'%;background:'+corPct(p)+'"></i></div>';}
+    function kp(cor,v,rot){return '<div style="--c:'+cor+'"><b>'+v+'</b>'+rot+'</div>';}
+    function somaG(lojas){var g={ger:[0,0],sub:[0,0],est:[0,0]};lojas.forEach(function(L){['ger','sub','est'].forEach(function(k){g[k][0]+=L.g[k][0];g[k][1]+=L.g[k][1];});});return g;}
+    function faixaCargos(g){return '<div class="cg">'+GRUPOS.map(function(x){var v=g[x[0]];return '<div><span>'+x[2]+'</span><b>'+v[1]+' de '+v[0]+'</b> completos <em>'+pct(v[1],v[0])+'</em></div>';}).join('')+'</div>';}
+    var html='';
+    if(!filtro.reg){
+      var gR=somaG(r.lojas.filter(function(L){return L.cod!=null;}));
+      html+='<section class="pag"><header><h1>Treinamento Operações de Estoque — Situação da rede</h1><p>Posição em '+hoje+' · curso completo = '+r.totMods+' módulos aprovados · público: gerentes, subgerentes e estoquistas</p></header>'
+        +'<div class="k">'+kp(C.verde,r.tot.ok+' <small>('+pct(r.tot.ok,r.tot.n)+')</small>','Completaram')+kp(C.ambar,r.tot.and,'Em andamento')+kp(C.verm,r.tot.nao,'Não começaram')
+        +kp(C.azul,r.lojasOk+' / '+r.lojasAtivas,'Lojas 100%')+kp(C.verm,r.lojasZeradas,'Lojas zeradas')+'</div>'+faixaCargos(gR)
+        +'<h2>Ranking das regionais (da mais atrasada para a mais adiantada)</h2><table><thead><tr><th>Regional</th><th class="n">Lojas</th><th class="n">Colab.</th><th class="n">Completos</th><th style="width:28%">% completo</th><th class="n">Lojas 100%</th><th class="n">Zeradas</th></tr></thead><tbody>'
+        +r.regs.map(function(g){return '<tr><td><b>'+esc(g.nome)+'</b></td><td class="n">'+g.lojas+'</td><td class="n">'+g.n+'</td><td class="n"><b>'+g.ok+'</b></td><td><div class="pc">'+barra(g.pct)+'<b>'+pct(g.ok,g.n)+'</b></div></td><td class="n">'+g.cem+'</td><td class="n">'+(g.zeradas?'<span class="ch no">'+g.zeradas+'</span>':'0')+'</td></tr>';}).join('')
+        +'</tbody></table></section>';
+    }
+    regs.forEach(function(g){
+      var lojas=r.lojas.filter(function(L){return L.cod!=null&&L.reg===g.nome&&L.n;});
+      var pend=lojas.filter(function(L){return L.status!=='ok';});
+      html+='<section class="pag"><header><h1>Regional '+esc(g.nome)+'</h1><p>Treinamento Operações de Estoque · posição em '+hoje+' · '+plural(g.lojas,'loja','lojas')+' · '+plural(g.n,'colaborador','colaboradores')+' no público</p></header>'
+        +'<div class="k">'+kp(C.verde,g.ok+' <small>('+pct(g.ok,g.n)+')</small>','Completaram')+kp(C.ambar,g.and,'Em andamento')+kp(C.verm,g.nao,'Não começaram')
+        +kp(C.azul,g.cem+' / '+g.lojas,'Lojas 100%')+kp(C.verm,g.zeradas,'Lojas zeradas')+'</div>'+faixaCargos(somaG(lojas))
+        +'<h2>Situação das lojas</h2><table><thead><tr><th>Loja</th><th class="n">Cadastro</th><th class="n">Viram</th><th class="n">Completos</th><th style="width:22%">% completo</th><th class="c">Ger</th><th class="c">Sub</th><th class="c">Est</th><th>Situação</th></tr></thead><tbody>'
+        +lojas.map(function(L){var st=stLoja(L.status);
+          return '<tr><td><b>'+esc(L.nome)+'</b></td><td class="n">'+L.n+'</td><td class="n">'+(L.ok+L.and)+'</td><td class="n"><b>'+L.ok+'</b></td><td><div class="pc">'+barra(L.pct)+'<b>'+pct(L.ok,L.n)+'</b></div></td>'
+            +'<td class="c">'+cel(L.g.ger)+'</td><td class="c">'+cel(L.g.sub)+'</td><td class="c">'+cel(L.g.est)+'</td><td><span class="dot" style="background:'+st[1]+'"></span>'+st[0]+'</td></tr>';}).join('')
+        +'</tbody></table>'
+        +(pend.length?'<h2>Quem falta, por loja</h2><div class="pend">'+pend.map(function(L){
+            return '<div class="pl"><b>'+esc(L.nome)+'</b> <span class="mut">'+L.ok+'/'+L.n+' completos</span><br>'+L.pes.filter(function(p){return p.st!=='ok';}).map(function(p){
+              return esc(nomeCurto(p.nome))+' <span class="mut">('+({ger:'Ger',sub:'Sub',est:'Est'}[p.grupo]||'Outro')+' '+p.nAprov+'/'+r.totMods+(p.st==='nao'?', não começou':'')+')</span>';}).join(' · ')+'</div>';
+          }).join('')+'</div>':'<p class="okmsg">✓ Todas as lojas desta regional estão com 100% do público com o curso completo.</p>')
+        +'<footer>Ger/Sub/Est = completos sobre cadastrados · Fonte: Central de Treinamento — Portal Esposende</footer></section>';
+    });
+    var titulo='Treinamento Estoque - '+(filtro.reg?'Regional '+filtro.reg:'Rede e regionais')+' - '+hoje.replace(/\//g,'-');
+    return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>'+esc(titulo)+'</title><style>'
+      +'@page{size:A4 portrait;margin:11mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+      +'body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;font-size:10.5px;margin:0;background:#fff}'
+      +'.pag{page-break-after:always;padding:2px}.pag:last-child{page-break-after:auto}'
+      +'header{border-bottom:3px solid #1d3a63;padding-bottom:6px;margin-bottom:8px}h1{font-size:17px;margin:0;color:#0f2747}header p{margin:3px 0 0;color:#64748b;font-size:10px}'
+      +'h2{font-size:12px;margin:14px 0 6px;color:#0f2747}'
+      +'.k{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.k div{border:1px solid #e2e8f0;border-top:3px solid var(--c);border-radius:6px;padding:6px 8px;font-size:9.5px;color:#475569}'
+      +'.k b{display:block;font-size:17px;color:#0f172a}.k small{font-size:10px;color:#64748b;font-weight:400}'
+      +'.cg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}.cg div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:10px}'
+      +'.cg span{display:block;font-size:8.5px;text-transform:uppercase;letter-spacing:.4px;color:#64748b;font-weight:700}.cg em{float:right;font-style:normal;font-weight:700;color:#15803d}'
+      +'table{width:100%;border-collapse:collapse}th{background:#f1f5f9;font-size:8.5px;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:5px;color:#475569}'
+      +'td{padding:4px 5px;border-bottom:1px solid #e2e8f0;vertical-align:middle}tr{page-break-inside:avoid}.n{text-align:right}.c{text-align:center}'
+      +'.pc{display:flex;align-items:center;gap:6px}.pc b{width:32px;text-align:right}.bar{flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden}.bar i{display:block;height:100%}'
+      +'.ch{display:inline-block;min-width:28px;padding:1px 4px;border-radius:4px;font-weight:700;font-size:9.5px;text-align:center}'
+      +'.ch.ok{background:#dcfce7;color:#166534}.ch.pa{background:#fef3c7;color:#92400e}.ch.no{background:#fee2e2;color:#991b1b}.ch.na{color:#94a3b8}'
+      +'.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}'
+      +'.pend{columns:2;column-gap:14px}.pl{break-inside:avoid;padding:4px 0;border-bottom:1px dashed #e2e8f0;line-height:1.45}.mut{color:#64748b}'
+      +'.okmsg{color:#166534;font-weight:700}footer{margin-top:10px;font-size:8.5px;color:#94a3b8}'
+      +'</style></head><body>'+html+'</body></html>';
+  }
+  function imprimirRelatorio(doc,html){
+    var w=null;try{w=doc.defaultView.open('','_blank');}catch(e){}
+    if(w&&w.document){
+      w.document.open();w.document.write(html);w.document.close();
+      setTimeout(function(){try{w.focus();w.print();}catch(e){}},400);return true;
+    }
+    // Pop-up bloqueado: imprime por um iframe escondido.
+    var f=doc.createElement('iframe');f.style.cssText='position:fixed;width:0;height:0;border:0;right:0;bottom:0';
+    doc.body.appendChild(f);f.contentDocument.open();f.contentDocument.write(html);f.contentDocument.close();
+    setTimeout(function(){try{f.contentWindow.focus();f.contentWindow.print();}catch(e){}setTimeout(function(){f.remove();},60000);},400);
+    return true;
   }
 
   /* ============================ LIBERAR CPF ============================ */
@@ -575,11 +717,34 @@
     return out;
   }
 
+  // Registro antigo (busca "Buscar por loja…" + uma linha por vídeo): fica escondido e pode ser reaberto pelo painel.
+  // Só mexe em irmãos do painel, a partir do bloco que tem a busca, enquanto tiverem datas dd/mm/aaaa.
+  function listaAntiga(doc,box){
+    var ins=[].slice.call(doc.querySelectorAll('input')).filter(function(i){return !i.closest('.pg')&&/buscar por loja/i.test(i.placeholder||'');})[0];
+    if(!ins||!box.parentNode)return [];
+    var topo=filhoDireto(box.parentNode,ins);
+    if(!topo||topo===box)return [];
+    var out=[topo],el=topo.nextElementSibling;
+    var data=/\d{2}\/\d{2}\/\d{4}/;
+    while(el&&!(el.classList&&el.classList.contains('pg'))){
+      var t=el.textContent||'';
+      // um controle pequeno (ex.: botão Atualizar) entre a busca e a lista também sai, se a lista vier logo depois
+      if(data.test(t)||(t.trim().length<40&&el.nextElementSibling&&data.test(el.nextElementSibling.textContent||''))){out.push(el);el=el.nextElementSibling;}
+      else break;
+    }
+    return out;
+  }
+
   function instalar(doc){
     if(!doc||!doc.body)return;
     var box=doc.querySelector('.pg[data-protocolo-graficos]');
     if(box&&box.isConnected&&box.__alvo&&box.__alvo.isConnected){
       (box.__esconder||[]).forEach(function(e){if(e.style.display!=='none')e.style.display='none';});
+      if(!box.__lista||!box.__lista.length||!box.__lista[0].isConnected){
+        box.__lista=listaAntiga(doc,box);
+        if(box.__lista.length&&box.__r&&!box.querySelector('[data-acao=registro]'))montar(box,box.__r);
+      }
+      (box.__lista||[]).forEach(function(e){var d=box.__listaVisivel?'':'none';if(e.style.display!==d)e.style.display=d;});
       return;
     }
     var a=acharTitulo(doc,'por dia','visualizacoes por dia');if(!a)return;
@@ -602,12 +767,14 @@
     ref.parentNode.insertBefore(box,ref);
     box.__alvo=ref;box.__esconder=esconder;
     esconder.forEach(function(e){e.style.display='none';});
+    box.__lista=listaAntiga(doc,box);box.__lista.forEach(function(e){e.style.display='none';});
     ligarTip(box,doc);
     box.addEventListener('click',async function(e){
       var t=e.target;
       var p=t.closest('[data-per]');if(p){periodo=Number(p.getAttribute('data-per'));desenhar(box,false);return;}
       var s=t.closest('[data-serie]');if(s){serie=s.getAttribute('data-serie');desenhar(box,false);return;}
       var ch=t.closest('[data-st]');if(ch){filtro.st=ch.getAttribute('data-st');redesenharLojas(box);return;}
+      var cp=t.closest('[data-fpst]');if(cp){fp.st=cp.getAttribute('data-fpst');fp.lim=40;redesenharPessoas(box);return;}
       var rg=t.closest('tr[data-reg]');
       if(rg){filtro.reg=rg.getAttribute('data-reg');filtro.st='todas';redesenharLojas(box);
         var cd=box.querySelector('[data-lojas]');if(cd)cd.scrollIntoView({behavior:'smooth',block:'start'});return;}
@@ -617,6 +784,14 @@
       var ac=t.closest('[data-acao]');if(!ac||!box.__r)return;
       var acao=ac.getAttribute('data-acao');
       if(acao==='liberar')abrirLiberar(box);
+      if(acao==='maispes'){fp.lim+=40;redesenharPessoas(box);}
+      if(acao==='atualizar')desenhar(box,true);
+      if(acao==='pdf'){imprimirRelatorio(doc,relatorioHtml(box.__r));
+        msg(box,'Relatório '+(filtro.reg?'da regional '+esc(filtro.reg):'da rede + todas as regionais')+' aberto. Na janela de impressão, escolha “Salvar como PDF”.','ok');}
+      if(acao==='registro'){box.__listaVisivel=!box.__listaVisivel;
+        (box.__lista||[]).forEach(function(x){x.style.display=box.__listaVisivel?'':'none';});
+        ac.setAttribute('aria-pressed',String(box.__listaVisivel));ac.textContent=(box.__listaVisivel?'Ocultar':'Ver')+' registro detalhado';
+        if(box.__listaVisivel&&box.__lista[0])box.__lista[0].scrollIntoView({behavior:'smooth',block:'start'});}
       if(acao==='csv')baixar(doc,'treinamento-estoque-por-loja-'+chaveDia(new Date())+'.csv',csv(box.__r));
       if(acao==='cobranca'){
         var ok=await copiar(doc,textoCobranca(box.__r));
@@ -627,12 +802,16 @@
       if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('tr[data-loja]')){e.preventDefault();e.target.click();}
     });
     box.addEventListener('input',function(e){
+      if(e.target.getAttribute&&e.target.getAttribute('data-fp')==='q'){
+        fp.q=e.target.value;fp.lim=40;clearTimeout(box.__tp);box.__tp=setTimeout(function(){redesenharPessoas(box);},200);return;
+      }
       if(e.target.getAttribute&&e.target.getAttribute('data-f')==='q'){
         filtro.q=e.target.value;clearTimeout(box.__tq);box.__tq=setTimeout(function(){redesenharLojas(box);},200);
       }
     });
     box.addEventListener('change',function(e){
       if(e.target.getAttribute&&e.target.getAttribute('data-f')==='reg'){filtro.reg=e.target.value;redesenharLojas(box);}
+      if(e.target.getAttribute&&e.target.getAttribute('data-fp')==='reg'){fp.reg=e.target.value;fp.lim=40;redesenharPessoas(box);}
     });
     // Botão "Atualizar" do módulo também recarrega o painel.
     if(!doc.__pgAtualizar){doc.__pgAtualizar=true;
@@ -649,7 +828,7 @@
       montar(box,calcular(d));
     }catch(e){
       console.warn('[protocolo-graficos]',e);
-      (box.__esconder||[]).forEach(function(x){x.style.display='';});
+      (box.__esconder||[]).concat(box.__lista||[]).forEach(function(x){x.style.display='';});
       box.innerHTML='<div class="pg-erro">Não foi possível carregar o painel do treinamento ('+esc(e.message||e)+'). Mostrando os gráficos originais.</div>';
       box.__alvo=null;
     }
