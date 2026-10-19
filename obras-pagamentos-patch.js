@@ -6,7 +6,7 @@
 (function(){
   if(window.__obrasPagamentos)return;window.__obrasPagamentos=true;
   var BASE=(function(){try{return new URL('obras/',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/obras/'}})();
-  var V='20261017-4';
+  var V='20261019-1';
   var ABAS=[
     {id:'cap',icone:'📊',rotulo:'Visão geral',titulo:'Despesas e pagamentos · visão geral',url:'obras-contas-pagar/'},
     {id:'pag',icone:'💳',rotulo:'Pagamentos (Presidente)',titulo:'Pagamentos · Presidente',url:'obras-presidente/'},
@@ -380,6 +380,81 @@
     }.toString()+')();';
     d.body.appendChild(sc);
   }
-  function varrer(){docs(window,[],0).forEach(function(d){try{vigiarPdf(d);vigiarRelatorios(d);if(ehModuloObras(d)){paginarComprovantes(d);melhorarAbas(d);if(d.__melhorAbas)buscadorDashboard(d)}if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
+  /* Status reversível e duplicidade só com o MESMO documento (19/10/2026, pedido do Ricardo).
+     - Comprovante cancelado por engano: ao abrir, mostra o status atual, o botão "↩ Voltar para Lançado" e "Alterar status",
+       pedindo o motivo. Toda troca fica em obras_status_historico (de → para, motivo, quem, quando — gravado por trigger) e o
+       histórico aparece no próprio comprovante. O "Cancelar" e a troca pelo campo Status também pedem o motivo.
+     - "Possível duplicidade" (Auditoria da tela): só quando é o mesmo documento — mesma autenticação/NSU/nº do documento, ou o
+       mesmo favorecido com o mesmo valor, data e hora ATÉ OS SEGUNDOS. Mesmo valor e data com horário diferente, só até os
+       minutos ou sem horário NÃO conta. A foto idêntica já chega como "Foto duplicada" pelo robô. */
+  function revisaoObras(d){
+    if(d.__revObras||!d.body)return;
+    try{var w=d.defaultView;if(typeof w.abrir!=='function'||typeof w.mesmaDespesa!=='function'||typeof w.renderLista!=='function')return}catch(e){return}
+    d.__revObras=true;
+    var sc=d.createElement('script');
+    sc.textContent='('+function(){
+      if(window.__revObras)return;window.__revObras=true;
+      var hs=function(h){var m=String(h||'').match(/^\s*(\d{1,2}):(\d{2}):(\d{2})/);return m?(m[1].length<2?'0'+m[1]:m[1])+':'+m[2]+':'+m[3]:null};
+      var aut=function(r){return String(r.autenticacao||'').replace(/\s+/g,'')};
+      mesmaDespesa=function(a,b){
+        if(aut(a).length>=6&&aut(a)===aut(b))return true;
+        var ba=benefDe(a),bb=benefDe(b);if(ba&&bb&&ba!==bb)return false;
+        var pa=pagadorDe(a),pb=pagadorDe(b);if(pa&&pb&&pa!==pb)return false;
+        var fa=recebedor(a),fb=recebedor(b);if(!fa||!fb)return false;
+        if(!(fa===fb||fa.indexOf(fb)>=0||fb.indexOf(fa)>=0||fa.split(' ')[0]===fb.split(' ')[0]))return false;
+        var ha=hs(a.hora_documento);return !!ha&&ha===hs(b.hora_documento);
+      };
+      if(REGRAS&&REGRAS.duplicidade)REGRAS.duplicidade.e='Só é duplicidade quando é o MESMO documento: a mesma foto, o mesmo nº de autenticação/NSU/documento, ou o mesmo favorecido com o mesmo valor, a mesma data e a mesma hora ATÉ OS SEGUNDOS. Mesmo valor e data com horário diferente, só até os minutos ou sem horário NÃO é duplicidade. Compare as duas fotos — se for o mesmo pagamento cobrado duas vezes, glosar.';
+      var css=document.createElement('style');
+      css.textContent='.revbox{margin:12px 0 4px;padding:12px 14px;border:1px solid #f59e0b;border-radius:12px;background:rgba(245,158,11,.08);display:flex;flex-wrap:wrap;gap:8px;align-items:center}.revbox b{flex-basis:100%;font-size:14px}.revbox select{background:#0b1222;color:#e2e8f0;border:1px solid rgba(148,163,184,.35);border-radius:10px;padding:8px 10px;font:inherit}.revhist{margin-top:10px;font-size:13px;color:#cfd6ee}.revhist div{padding:4px 0;border-top:1px solid rgba(255,255,255,.07)}';
+      document.head.appendChild(css);
+      var esc2=function(v){return String(v==null?'':v).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+      function pedirMotivo(de,para){var m=prompt('Motivo da mudança de status: '+(STS[de]||de)+' → '+(STS[para]||para)+'\n(fica no histórico do comprovante)','');return m===null?null:m.trim()}
+      async function mudarStatus(r,novo,btn){
+        if(novo===r.status)return;var motivo=pedirMotivo(r.status,novo);if(motivo===null)return;
+        var t=btn.textContent;btn.disabled=true;btn.textContent='Salvando…';
+        var upd={status:novo,status_motivo:motivo||null,revisado:true,updated_at:new Date().toISOString()};
+        var res=await sb.from('obras_comprovantes').update(upd).eq('id',r.id).select('id');
+        if(res.error||!res.data||!res.data.length){alert('Não salvou: '+(res.error?res.error.message:'sem permissão')+'\n(Só administrador/controladoria/diretoria pode alterar.)');btn.disabled=false;btn.textContent=t;return}
+        Object.assign(r,upd);renderGeral();renderLista();renderPrest();
+      }
+      async function historico(r,box){
+        var res=await sb.from('obras_status_historico').select('status_de,status_para,motivo,alterado_por,alterado_em').eq('comprovante_id',r.id).order('alterado_em',{ascending:false}).limit(20);
+        if(res.error){box.textContent='Histórico do status indisponível ('+res.error.message+')';return}
+        var l=res.data||[];
+        box.innerHTML='<b>Histórico do status</b>'+(l.length?l.map(function(h){return '<div>'+new Date(h.alterado_em).toLocaleString('pt-BR')+' · <b>'+esc2(STS[h.status_de]||h.status_de||'—')+' → '+esc2(STS[h.status_para]||h.status_para)+'</b> · '+esc2(h.alterado_por||'')+(h.motivo?' · motivo: “'+esc2(h.motivo)+'”':'')+'</div>'}).join(''):'<div>Nenhuma troca de status registrada (o registro começou em 19/10/2026).</div>');
+      }
+      var origAbrir=abrir;
+      abrir=function(row){
+        origAbrir(row);
+        if(!row.classList.contains('open'))return;
+        var r=C.find(function(x){return x.id===row.dataset.id});if(!r)return;
+        var rd=row.querySelector('.rd'),acts=rd.querySelector('.acts');if(!acts)return;
+        // Cancelar com motivo
+        var bc=rd.querySelector('[data-a="cancelar"]');
+        if(bc)bc.onclick=function(ev){ev.stopPropagation();mudarStatus(r,'cancelado',bc)};
+        // Troca pelo campo Status + "Salvar": pede o motivo e manda junto (campo escondido lido pelo Salvar original)
+        var sel=rd.querySelector('select[data-c="status"]');
+        if(sel){var hid=document.createElement('input');hid.type='hidden';hid.setAttribute('data-c','status_motivo');hid.value=r.status_motivo||'';sel.parentNode.appendChild(hid);
+          sel.addEventListener('change',function(){if(sel.value===r.status){hid.value=r.status_motivo||'';return}var m=pedirMotivo(r.status,sel.value);if(m===null){sel.value=r.status;return}hid.value=m})}
+        // Status diferente de Lançado: reverter ou alterar
+        if(r.status!=='lancado'){
+          var outros=Object.keys(STS).filter(function(k){return k!==r.status&&k!=='lancado'});
+          var box=document.createElement('div');box.className='revbox';
+          box.innerHTML='<b>Status atual: '+esc2(STS[r.status]||r.status)+(r.status==='cancelado'?' — NÃO soma no total.':'')+' Cancelado ou marcado por engano? Reverta aqui.</b>'+
+            '<button class="btn pri" data-rev="lancado">↩ Voltar para Lançado (volta a somar)</button>'+
+            (outros.length?'<select data-revsel>'+outros.map(function(k){return '<option value="'+k+'">'+esc2(STS[k])+'</option>'}).join('')+'</select><button class="btn" data-rev2>Alterar para este status</button>':'');
+          acts.parentNode.insertBefore(box,acts);
+          box.querySelector('[data-rev]').onclick=function(ev){ev.stopPropagation();mudarStatus(r,'lancado',ev.currentTarget)};
+          var b2=box.querySelector('[data-rev2]');if(b2)b2.onclick=function(ev){ev.stopPropagation();mudarStatus(r,box.querySelector('[data-revsel]').value,b2)};
+          box.onclick=function(ev){ev.stopPropagation()};
+        }
+        var hb=document.createElement('div');hb.className='revhist';hb.textContent='Carregando histórico do status…';rd.appendChild(hb);historico(r,hb);
+      };
+      if(C&&C.length){try{auditar();renderGeral();renderLista()}catch(e){}}
+    }.toString()+')();';
+    d.body.appendChild(sc);
+  }
+  function varrer(){docs(window,[],0).forEach(function(d){try{vigiarPdf(d);vigiarRelatorios(d);if(ehModuloObras(d)){paginarComprovantes(d);melhorarAbas(d);if(d.__melhorAbas)buscadorDashboard(d);revisaoObras(d)}if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
   setInterval(varrer,1500);if(document.readyState!=='loading')varrer();else document.addEventListener('DOMContentLoaded',varrer);
 })();
