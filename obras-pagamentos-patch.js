@@ -6,7 +6,7 @@
 (function(){
   if(window.__obrasPagamentos)return;window.__obrasPagamentos=true;
   var BASE=(function(){try{return new URL('obras/',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/obras/'}})();
-  var V='20261019-1';
+  var V='20261019-2';
   var ABAS=[
     {id:'cap',icone:'📊',rotulo:'Visão geral',titulo:'Despesas e pagamentos · visão geral',url:'obras-contas-pagar/'},
     {id:'pag',icone:'💳',rotulo:'Pagamentos (Presidente)',titulo:'Pagamentos · Presidente',url:'obras-presidente/'},
@@ -451,6 +451,30 @@
         }
         var hb=document.createElement('div');hb.className='revhist';hb.textContent='Carregando histórico do status…';rd.appendChild(hb);historico(r,hb);
       };
+      // Na própria lista (19/10/2026): cancelado ganha "↩ Reverter" sem abrir o comprovante, e a barra de cima ganha o atalho
+      // "Ver cancelados (N)" para rever todos os cancelados de uma vez.
+      var origLista=renderLista;
+      renderLista=function(){
+        var ret=origLista.apply(this,arguments);
+        try{
+          document.querySelectorAll('#list .row').forEach(function(row){
+            var r=C.find(function(x){return x.id===row.dataset.id});if(!r||r.status!=='cancelado')return;
+            var f=row.querySelector('.rs .f');if(!f||f.querySelector('.revq'))return;
+            var aps=f.querySelector('.aps');if(!aps){aps=document.createElement('div');aps.className='aps';f.appendChild(aps)}
+            var b=document.createElement('button');b.className='apv revq';b.title='Cancelado por engano? Volta a somar (pede o motivo)';b.textContent='↩ Reverter (voltar a Lançado)';
+            b.onclick=function(ev){ev.stopPropagation();mudarStatus(r,'lancado',b)};aps.appendChild(b);
+          });
+          var bulk=document.getElementById('bulk');
+          if(bulk&&!bulk.querySelector('.vercanc')){
+            var n=C.filter(function(x){return x.status==='cancelado'}).length,noFiltro=typeof F==='object'&&F&&F.st==='cancelado';
+            if(n||noFiltro){var vb=document.createElement('button');vb.className='btn vercanc';
+              vb.textContent=noFiltro?'✕ Sair dos cancelados (ver todos)':'🚫 Ver cancelados ('+n+') — rever ou reverter';
+              vb.onclick=function(){var f=Object.assign({},F);if(noFiltro)delete f.st;else f.st='cancelado';aplicar(f)};bulk.appendChild(vb)}
+          }
+        }catch(e){console.warn('[Portal] cancelados:',e)}
+        return ret;
+      };
+      var css2=document.createElement('style');css2.textContent='.apv.revq{background:#f59e0b;color:#111;border-color:#f59e0b;font-weight:700}#bulk .vercanc{margin-left:auto}';document.head.appendChild(css2);
       if(C&&C.length){try{auditar();renderGeral();renderLista()}catch(e){}}
     }.toString()+')();';
     d.body.appendChild(sc);
