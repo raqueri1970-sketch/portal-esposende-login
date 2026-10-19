@@ -244,7 +244,8 @@ declare v text := regexp_replace(coalesce(p_cpf,''),'\D','','g');
 begin
   if not public.portal_is_admin() then raise exception 'Apenas administrador do Portal'; end if;
   update public.curso_cadastro_manual set ativo=false, atualizado_em=now() where cpf=v;
-  delete from public.curso_permissoes_cpf where cpf=v
+  -- Desativa em vez de apagar: guarda o histórico; sem cadastro ativo o CPF já não passa da identificação.
+  update public.curso_permissoes_cpf set permitido=false, atualizado_em=now() where cpf=v
     and not exists (select 1 from public.portal_funcionarios f where f.cpf=v and f.ativo);
 end;
 $function$;
