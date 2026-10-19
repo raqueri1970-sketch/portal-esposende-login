@@ -681,10 +681,11 @@
     function kp(cor,v,rot){return '<div style="--c:'+cor+'"><b>'+v+'</b>'+rot+'</div>';}
     function somaG(lojas){var g={ger:[0,0],sub:[0,0],est:[0,0]};lojas.forEach(function(L){['ger','sub','est'].forEach(function(k){g[k][0]+=L.g[k][0];g[k][1]+=L.g[k][1];});});return g;}
     function faixaCargos(g){return '<div class="cg">'+GRUPOS.map(function(x){var v=g[x[0]];return '<div><span>'+x[2]+'</span><b>'+v[1]+' de '+v[0]+'</b> completos <em>'+pct(v[1],v[0])+'</em></div>';}).join('')+'</div>';}
+    var notaTxt=r.aval.media==null?'':' · nota média do curso '+r.aval.media.toFixed(1).replace('.',',')+' ('+plural(r.aval.n,'avaliação','avaliações')+')';
     var html='';
     if(!escopo.reg){
       var gR=somaG(r.lojas.filter(function(L){return L.cod!=null;}));
-      html+='<section class="pag"><header><h1>Treinamento Operações de Estoque — Situação da rede</h1><p>Posição em '+hoje+' · curso completo = '+r.totMods+' módulos aprovados · público: gerentes, subgerentes e estoquistas</p></header>'
+      html+='<section class="pag"><header><h1>Treinamento Operações de Estoque — Situação da rede</h1><p>Posição em '+hoje+' · curso completo = '+r.totMods+' módulos aprovados · público: gerentes, subgerentes e estoquistas'+notaTxt+'</p></header>'
         +'<div class="k">'+kp(C.verde,r.tot.ok+' <small>('+pct(r.tot.ok,r.tot.n)+')</small>','Completaram')+kp(C.ambar,r.tot.and,'Em andamento')+kp(C.verm,r.tot.nao,'Não começaram')
         +kp(C.azul,r.lojasOk+' / '+r.lojasAtivas,'Lojas 100%')+kp(C.verm,r.lojasZeradas,'Lojas zeradas')+'</div>'+faixaCargos(gR)
         +'<h2>Ranking das regionais (da mais atrasada para a mais adiantada)</h2><table><thead><tr><th>Regional</th><th class="n">Lojas</th><th class="n">Colab.</th><th class="n">Completos</th><th style="width:28%">% completo</th><th class="n">Lojas 100%</th><th class="n">Zeradas</th></tr></thead><tbody>'
@@ -694,7 +695,7 @@
     regs.forEach(function(g){
       var lojas=r.lojas.filter(function(L){return L.cod!=null&&L.reg===g.nome&&L.n;});
       var pend=lojas.filter(function(L){return L.status!=='ok';});
-      html+='<section class="pag"><header><h1>Regional '+esc(g.nome)+'</h1><p>Treinamento Operações de Estoque · posição em '+hoje+' · '+plural(g.lojas,'loja','lojas')+' · '+plural(g.n,'colaborador','colaboradores')+' no público</p></header>'
+      html+='<section class="pag"><header><h1>Regional '+esc(g.nome)+'</h1><p>Treinamento Operações de Estoque · posição em '+hoje+' · '+plural(g.lojas,'loja','lojas')+' · '+plural(g.n,'colaborador','colaboradores')+' no público'+(escopo.reg?notaTxt:'')+'</p></header>'
         +'<div class="k">'+kp(C.verde,g.ok+' <small>('+pct(g.ok,g.n)+')</small>','Completaram')+kp(C.ambar,g.and,'Em andamento')+kp(C.verm,g.nao,'Não começaram')
         +kp(C.azul,g.cem+' / '+g.lojas,'Lojas 100%')+kp(C.verm,g.zeradas,'Lojas zeradas')+'</div>'+faixaCargos(somaG(lojas))
         +'<h2>Situação das lojas</h2><table><thead><tr><th>Loja</th><th class="n">Cadastro</th><th class="n">Viram</th><th class="n">Completos</th><th style="width:22%">% completo</th><th class="c">Ger</th><th class="c">Sub</th><th class="c">Est</th><th>Situação</th></tr></thead><tbody>'
