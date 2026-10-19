@@ -586,6 +586,7 @@
     box.__r=r;
     var nomePer=periodo?'últimos '+periodo+' dias':'todo o período';
     var semLoja=r.lojas.filter(function(L){return L.cod==null;})[0];
+    var vazias=r.lojas.filter(function(L){return L.cod!=null&&L.status==='vazia';});
     box.innerHTML=''
       +'<div class="pg-bar"><div class="pg-tt">Treinamento Operações de Estoque<small>Público: gerentes, subgerentes e estoquistas da base do RH + CPFs liberados manualmente · curso completo = '+plural(r.totMods,'módulo aprovado','módulos aprovados')+'</small></div>'
       +'<div class="pg-acts"><button type="button" class="pg-btn pri" data-acao="liberar">＋ Liberar CPF</button>'
@@ -596,6 +597,8 @@
       +'<div data-msg></div>'
       +barraEscopo(r)+kpis(r)+cargos(r)
       +'<div class="pg-card" data-sec="lojas"><div class="pg-h"><h4>Situação por loja</h4></div><p class="pg-sub">Da loja mais atrasada para a mais adiantada. Cadastro = gerente, sub e estoquista; Viram = assistiram 1+ módulo; Completos = curso inteiro aprovado.</p><div data-lojas>'+tabLojas(r,box)+'</div>'
+      +(vazias.length?'<div class="pg-nota">⚠ '+plural(vazias.length,'loja ativa sem','lojas ativas sem')+' gerente, sub ou estoquista na base do RH (não entram na conta): <b style="color:var(--t2)">'
+        +vazias.map(function(L){return esc(L.nome)+' ('+esc(L.reg)+')';}).join(', ')+'</b>. Atualize a planilha mãe ou use “Liberar CPF”.</div>':'')
       +(semLoja&&semLoja.n?'<div class="pg-nota">⚠ '+plural(semLoja.n,'pessoa do público está','pessoas do público estão')+' sem loja na base do RH e nunca assistiu — aparecem em “Sem loja na base do RH” (filtro Todas). Corrija a loja na planilha mãe ou libere o CPF com a loja certa.</div>':'')+'</div>'
       +'<div class="pg-grid">'
       +'<div class="pg-card"><div class="pg-h"><h4>Cobrança por regional</h4></div><p class="pg-sub">Rede toda, da regional mais atrasada para a mais adiantada. Clique para filtrar o painel inteiro.</p>'+tabRegionais(r.todas)+'</div>'
