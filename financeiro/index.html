@@ -6,7 +6,7 @@
 <title>Auditoria Financeira</title>
 <meta name="theme-color" content="#070b16">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="auditoria.js?v=20261016-3"></script>
+<script src="auditoria.js?v=20261020-1"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -90,6 +90,18 @@ tr.tot td{background:#111a30;font-weight:800;border-top:2px solid var(--line2);f
 .leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin-top:6px}
 .leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 svg text{fill:var(--mut);font:11px 'Inter',sans-serif}
+/* Agente de Duplicidade: cards e comparativo lado a lado */
+.dgrid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(520px,100%),1fr));margin-top:12px}
+.dcard{border-left:4px solid var(--line2)}.dcard.c-alta{border-left-color:var(--alta)}.dcard.c-media{border-left-color:var(--media)}.dcard.c-baixa{border-left-color:var(--baixa)}
+.dcard .vv{font-size:20px;font-weight:800;margin-top:6px;font-variant-numeric:tabular-nums}
+.nota{font-size:11px;font-weight:800;padding:2px 9px;border-radius:99px;background:var(--card3);white-space:nowrap}
+ul.sin{margin:8px 0 0;padding-left:2px;list-style:none;font-size:12.5px}ul.sin li{margin:2px 0}ul.sin li.a{color:#86efac}ul.sin li.b{color:#fcd34d}
+table.cmp td,table.cmp th{font-size:12px;padding:6px 8px}table.cmp td.eq{background:rgba(34,197,94,.08)}table.cmp td.df{background:rgba(245,179,1,.11);color:#fde68a}
+table.cmp td.k{color:var(--mut);font-weight:600;white-space:nowrap}
+.explica{border-left:3px solid var(--pri);padding:12px 14px;background:rgba(59,130,246,.07);border-radius:8px;font-size:13px;margin-top:12px}
+.explica b{color:#fff}
+.ok-chip{background:rgba(34,197,94,.13);color:#86efac;border-color:rgba(34,197,94,.3)}
+.rl{display:block;margin:2px 0;cursor:pointer}.rl:hover{text-decoration:underline}
 
 </style>
 </head>
@@ -157,7 +169,7 @@ function toast(m, ms = 3500) { const t = $('toast'); t.textContent = m; t.style.
 // ---------- estado ----------
 let R = null, DADOS = null, ANAL = {}, CFG = {}, ABA = 'painel', NOMES = [], NIDX = new Map();
 const fx = nome => NIDX.get(nome);  // índice do fornecedor para os onclick (nomes podem ter aspas)
-let F = {regra: '', sev: '', sit: '', q: '', cc: '', ord: 'sev', pag: 0};
+let F = {regra: '', sev: '', sit: '', q: '', cc: '', ord: 'sev', pag: 0, vista: 'fornecedor'};
 let B = {q: '', pag: 0, ord: 'pagamento'};  // aba Busca de títulos
 let USUARIO = '';
 
@@ -235,9 +247,10 @@ function analisar() {
 // ---------- abas ----------
 function render() {
   const pend = R.ocorrencias.filter(o => o.sit === 'pendente' || o.sit === 'em_analise').length;
-  const abas = [['painel', 'Painel'], ['ocorrencias', 'Ocorrências', pend], ['fornecedores', 'Risco por fornecedor', R.riscoFornecedor.length], ['despesas', '💸 Despesas'], ['descontos', '🏷 Descontos e observações', R.ocorrencias.filter(o => o.regra === 'R20' || o.regra === 'R22').length], ['centros', 'Centros de custo'], ['busca', '🔎 Busca de títulos'], ['regras', 'Regras e parâmetros']];
+  const dup = R.ocorrencias.filter(o => o.dup && (o.sit === 'pendente' || o.sit === 'em_analise') && o.sev !== 'baixa').length;
+  const abas = [['painel', 'Painel'], ['duplicidade', '🕵️ Agente de Duplicidade', dup], ['ocorrencias', 'Ocorrências', pend], ['fornecedores', 'Risco por fornecedor', R.riscoFornecedor.length], ['despesas', '💸 Despesas'], ['descontos', '🏷 Descontos e observações', R.ocorrencias.filter(o => o.regra === 'R20' || o.regra === 'R22').length], ['centros', 'Centros de custo'], ['busca', '🔎 Busca de títulos'], ['regras', 'Regras e parâmetros']];
   $('tabs').innerHTML = abas.map(([k, t, c]) => `<button class="${ABA === k ? 'on' : ''}" onclick="aba('${k}')">${t}${c != null ? `<span class="cnt">${n0(c)}</span>` : ''}</button>`).join('');
-  ({painel, ocorrencias, fornecedores, despesas: despesasAba, descontos: descontosAba, centros, busca, regras})[ABA]();
+  ({painel, duplicidade: duplicidadeAba, ocorrencias, fornecedores, despesas: despesasAba, descontos: descontosAba, centros, busca, regras})[ABA]();
 }
 window.aba = k => { ABA = k; render(); window.scrollTo(0, 0); };
 
@@ -245,7 +258,7 @@ window.aba = k => { ABA = k; render(); window.scrollTo(0, 0); };
 function painel() {
   const I = R.indicadores, oc = R.ocorrencias;
   const alta = oc.filter(o => o.sev === 'alta');
-  const risco = oc.filter(o => ['R01', 'R03', 'R08'].includes(o.regra)).reduce((s, o) => s + o.impacto, 0);
+  const risco = oc.filter(o => ['R01', 'R23', 'R03', 'R08'].includes(o.regra) && (o.regra !== 'R23' || o.sev !== 'baixa')).reduce((s, o) => s + o.impacto, 0);
   const irreg = oc.filter(o => o.sit === 'irregular');
   const porRegra = Object.keys(A.REGRAS).map(k => { const g = oc.filter(o => o.regra === k); return {k, n: g.length, alta: g.filter(o => o.sev === 'alta').length, v: g.reduce((s, o) => s + o.impacto, 0), pend: g.filter(o => o.sit === 'pendente').length}; });
   const maxMes = Math.max(...I.porMes.map(m => m.v), 1), maxAg = Math.max(...I.aging.map(a => a.valor), 1);
@@ -257,7 +270,7 @@ function painel() {
     ${kpi('Em aberto', brlK(I.emAberto), `vencido: ${brlK(I.vencido)} (${n0(I.nVencidos)} títulos)`, 'k-warn')}
     ${kpi('Juros/multa pagos', brl(I.juros), `${I.pctPagoAtraso.toLocaleString('pt-BR')}% pagos em atraso · ${I.prazoMedioAtraso.toLocaleString('pt-BR')} dias em média`, 'k-bad')}
     ${kpi('Ocorrências de alta gravidade', n0(alta.length), `${n0(oc.length)} ocorrências no total`, 'k-bad')}
-    ${kpi('Dinheiro em risco', brlK(risco), 'duplicidade + pago a maior + fracionamento', 'k-bad')}
+    ${kpi('Dinheiro em risco', brlK(risco), 'duplicidade (R01 + Agente) + pago a maior + fracionamento', 'k-bad')}
     ${kpi('Confirmadas irregulares', n0(irreg.length), brl(irreg.reduce((s, o) => s + o.impacto, 0)), 'k-pur')}
     ${kpi('Concentração top 10', I.pctTop10.toLocaleString('pt-BR') + '%', `HHI ${n0(I.hhi)} · ${I.hhi > 1500 ? 'concentrado' : 'pulverizado'}`)}
   </div>
@@ -307,6 +320,60 @@ function filtradas() {
   else a = [...a].sort((x, y) => P[y.sev] - P[x.sev] || y.impacto - x.impacto);
   return a;
 }
+// Uma linha por fornecedor: todas as regras que o pegaram juntas, valor contado uma vez só e coluna que diz se há duplicidade
+function gruposFornecedor(a) {
+  const m = new Map();
+  for (const o of a) { if (!m.has(o.fornecedor)) m.set(o.fornecedor, []); m.get(o.fornecedor).push(o); }
+  return [...m].map(([f, g]) => {
+    const idx = [...new Set(g.flatMap(o => o.titulos))], dup = g.filter(o => A.REGRAS_DUP.includes(o.regra) && o.sev !== 'baixa');
+    const sev = g.reduce((p, o) => A.PESO[o.sev] > A.PESO[p] ? o.sev : p, 'baixa');
+    return {f, g: ordenar(g, 'sev'), idx, tt: totTitulos(idx), dup, dupV: somaImp(dup), sev, contas: [...new Set(idx.map(i => R.titulos[i].conta))]};
+  }).sort((x, y) => F.ord === 'fornecedor' ? x.f.localeCompare(y.f) : F.ord === 'impacto' ? y.dupV - x.dupV || y.tt.pago - x.tt.pago
+    : A.PESO[y.sev] - A.PESO[x.sev] || y.dupV - x.dupV || y.tt.pago - x.tt.pago);
+}
+// as ocorrências do fornecedor agrupadas por regra (duplicidade primeiro, depois a gravidade)
+function porRegraNoGrupo(x) {
+  const m = new Map(); for (const o of x.g) { if (!m.has(o.regra)) m.set(o.regra, []); m.get(o.regra).push(o); }
+  return [...m].map(([k, g]) => ({k, g, sev: g.reduce((p, o) => A.PESO[o.sev] > A.PESO[p] ? o.sev : p, 'baixa')}))
+    .sort((a, b) => (A.REGRAS_DUP.includes(b.k) && b.sev !== 'baixa') - (A.REGRAS_DUP.includes(a.k) && a.sev !== 'baixa') || A.PESO[b.sev] - A.PESO[a.sev] || a.k.localeCompare(b.k));
+}
+window.verRegraDoFornecedor = (i, k) => { F = {...F, regra: k, q: '"' + window._grupos[i].f.replace(/"/g, ' ') + '"', vista: 'regra', pag: 0}; render(); window.scrollTo(0, 0); };
+const resumoSit = g => { const c = {}; g.forEach(o => c[o.sit] = (c[o.sit] || 0) + 1); return Object.entries(c).map(([k, n]) => `${sitChip(k)}${n > 1 ? ` <span class="small mut">×${n}</span>` : ''}`).join(' '); };
+const colDup = x => x.dup.length ? `<span class="chip sv-alta">⚠ possível duplicidade</span><div class="num b" style="margin-top:4px;text-align:left">${brl(x.dupV)}</div><div class="small mut">pode ter saído a mais</div>`
+  : `<span class="chip ok-chip">✓ não apontada</span>`;
+function abrirGrupo(f) { const k = fx(f); if (k != null) return dossie(k); const o = R.ocorrencias.find(o => o.fornecedor === f); if (o) abrir(o.n); }
+window.abrirGrupoN = n => abrirGrupo(window._grupos[n].f);
+function ocorrenciasPorFornecedor(a) {
+  const gs = gruposFornecedor(a), POR = 100, pags = Math.max(1, Math.ceil(gs.length / POR));
+  F.pag = Math.min(F.pag, pags - 1);
+  const ini = F.pag * POR, pg = gs.slice(ini, ini + POR);
+  window._grupos = gs;
+  const idxTodos = [...new Set(a.flatMap(o => o.titulos))], ttTodos = totTitulos(idxTodos), dupTot = gs.reduce((s, x) => s + x.dupV, 0);
+  return `<div class="explica"><b>Uma linha por fornecedor.</b> Todas as regras que pegaram o fornecedor ficam juntas e o dinheiro é contado <b>uma vez só</b>.
+    A coluna <b>Duplicidade</b> diz se existe suspeita de pagamento em dobro (R01 e Agente de Duplicidade). Nas outras regras (Benford, conta sensível, classificação, pessoa física…) o valor é o que foi <b>analisado</b> — não quer dizer que foi pago duas vezes nem que é perda.</div>
+  <div class="row" style="justify-content:space-between;margin:10px 0"><div class="small mut">${n0(gs.length)} fornecedor(es) · ${n0(a.length)} ocorrência(s) · valor envolvido (sem repetir) <b>${brl(ttTodos.pago)}</b> · possível duplicidade <b style="color:#fca5a5">${brl(dupTot)}</b></div>
+    <button class="btn" onclick="relatorioFornecedores()" ${a.length ? '' : 'disabled'}>🖨 PDF / imprimir esta lista</button></div>
+  <div class="tw"><table>
+    <tr><th>Gravidade</th><th>Fornecedor</th><th>Regras e o que foi encontrado</th><th class="num">Valor envolvido<br><span style="text-transform:none;font-weight:500">sem repetir</span></th><th>Duplicidade?</th><th>Análise</th></tr>
+    ${pg.map((x, k) => (x.i = ini + k, `<tr class="clic" onclick="abrirGrupoN(${ini + k})"><td>${sevChip(x.sev)}</td>
+      <td class="small" style="max-width:220px"><b>${esc(x.f)}</b><br><span class="mut">${esc(x.contas.slice(0, 3).join(' / ').slice(0, 90))}</span></td>
+      <td class="small">${porRegraNoGrupo(x).map(r => r.g.length === 1
+        ? `<span class="rl" onclick="event.stopPropagation();abrir(${r.g[0].n})"><span class="chip sv-${r.sev}">${r.k}</span> <b>${esc(A.REGRAS[r.k].nome)}</b> — <span class="mut">${esc(r.g[0].detalhe.slice(0, 140))}${r.g[0].detalhe.length > 140 ? '…' : ''}</span></span>`
+        : `<span class="rl" onclick="event.stopPropagation();verRegraDoFornecedor(${x.i},'${r.k}')"><span class="chip sv-${r.sev}">${r.k} ×${r.g.length}</span> <b>${esc(A.REGRAS[r.k].nome)}</b> — <span class="mut">${n0(r.g.length)} ocorrências · ${brl(somaImp(r.g))}${A.REGRAS[r.k].volume ? ' analisados' : ''} · clique para ver</span></span>`).join('')}</td>
+      <td class="num b">${brl(x.tt.pago)}<div class="small mut" style="font-weight:400">${n0(x.idx.length)} título(s)</div></td>
+      <td style="min-width:150px">${colDup(x)}</td><td>${resumoSit(x.g)}</td></tr>`)).join('') || '<tr><td colspan="6" class="mut" style="text-align:center;padding:30px">Nenhuma ocorrência com esses filtros.</td></tr>'}
+    ${gs.length ? `<tr class="tot"><td colspan="3">TOTAL (${n0(gs.length)} fornecedores · cada título contado uma vez)</td><td class="num">${brl(ttTodos.pago)}</td><td class="num" style="text-align:left">${brl(dupTot)}</td><td></td></tr>` : ''}
+  </table></div>
+  ${pags > 1 ? `<div class="pag"><button class="btn" ${F.pag ? '' : 'disabled'} onclick="F.pag--;render()">‹ Anterior</button><span class="small mut">página ${F.pag + 1} de ${pags}</span><button class="btn" ${F.pag < pags - 1 ? '' : 'disabled'} onclick="F.pag++;render()">Próxima ›</button></div>` : ''}`;
+}
+window.relatorioFornecedores = () => {
+  const a = filtradas(), gs = gruposFornecedor(a), idx = [...new Set(a.flatMap(o => o.titulos))], tt = totTitulos(idx), dupTot = gs.reduce((s, x) => s + x.dupV, 0);
+  imprimirHTML('Ocorrências por fornecedor (uma linha por fornecedor)', `<div class="desc">Cada título contado uma vez. "Duplicidade" = suspeita de pagamento em dobro (R01 e Agente de Duplicidade). Nas demais regras o valor é o analisado, não perda.</div>
+    <div class="k"><div><b>${n0(gs.length)}</b><span>fornecedores</span></div><div><b>${n0(a.length)}</b><span>ocorrências</span></div><div><b>${brl(tt.pago)}</b><span>valor envolvido (sem repetir)</span></div><div><b>${brl(dupTot)}</b><span>possível duplicidade</span></div></div>
+    <table><tr><th style="width:52px">Grav.</th><th style="width:22%">Fornecedor</th><th>Regras e o que foi encontrado</th><th class="n">Valor envolvido</th><th class="n">Possível duplicidade</th></tr>
+    ${gs.map(x => `<tr><td>${gChip(x.sev)}</td><td><b>${esc(x.f)}</b></td><td>${porRegraNoGrupo(x).map(r => r.g.length === 1 ? `<b>${r.k}</b> ${esc(A.REGRAS[r.k].nome)} — ${esc(r.g[0].detalhe)} <i>(${SIT[r.g[0].sit]})</i>` : `<b>${r.k} ×${r.g.length}</b> ${esc(A.REGRAS[r.k].nome)} — ${brl(somaImp(r.g))}`).join('<br>')}</td><td class="n">${brl(x.tt.pago)}</td><td class="n">${x.dup.length ? brl(x.dupV) : 'não'}</td></tr>`).join('')}
+    <tr class="tot"><td colspan="3">TOTAL (${n0(gs.length)} fornecedores)</td><td class="n">${brl(tt.pago)}</td><td class="n">${brl(dupTot)}</td></tr></table>`);
+};
 function ocorrencias() {
   const a = filtradas(), POR = 100, pags = Math.max(1, Math.ceil(a.length / POR));
   F.pag = Math.min(F.pag, pags - 1);
@@ -318,21 +385,23 @@ function ocorrencias() {
     <select onchange="F.sev=this.value;F.pag=0;render()"><option value="">Toda gravidade</option>${Object.entries(SEV).map(([k, t]) => `<option value="${k}" ${F.sev === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
     <select onchange="F.sit=this.value;F.pag=0;render()"><option value="">Toda situação</option>${Object.entries(SIT).map(([k, t]) => `<option value="${k}" ${F.sit === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
     <select onchange="F.cc=this.value;F.pag=0;render()" style="max-width:220px"><option value="">Todos os centros de custo</option>${ccs.map(c => `<option ${F.cc === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+    <select onchange="F.vista=this.value;F.pag=0;render()"><option value="fornecedor" ${F.vista === 'fornecedor' ? 'selected' : ''}>Ver: uma linha por fornecedor</option><option value="regra" ${F.vista === 'regra' ? 'selected' : ''}>Ver: uma linha por regra (detalhado)</option></select>
     <select onchange="F.ord=this.value;render()"><option value="sev" ${F.ord === 'sev' ? 'selected' : ''}>Ordenar: gravidade</option><option value="impacto" ${F.ord === 'impacto' ? 'selected' : ''}>Ordenar: impacto</option><option value="fornecedor" ${F.ord === 'fornecedor' ? 'selected' : ''}>Ordenar: fornecedor</option></select>
   </div>
   ${campoBusca('F', F.q)}
   ${F.regra ? `<div class="aviso" style="border-color:var(--pri);background:rgba(59,130,246,.07)"><b>${F.regra} · ${esc(A.REGRAS[F.regra].nome)}.</b> ${esc(A.REGRAS[F.regra].desc)}</div>` : ''}
+  ${F.vista === 'fornecedor' ? ocorrenciasPorFornecedor(a) : `
   <div class="row" style="justify-content:space-between;margin:10px 0"><div class="small mut">${n0(a.length)} ocorrência(s) · impacto somado <b>${brl(a.reduce((s, o) => s + o.impacto, 0))}</b></div>
     <button class="btn" onclick="relatorioLista()" ${a.length ? '' : 'disabled'}>🖨 PDF / imprimir esta lista</button></div>
   <div class="tw"><table>
     <tr><th>Gravidade</th><th>Regra</th><th>Fornecedor</th><th>O que foi encontrado</th><th class="num">Impacto</th><th>Análise</th></tr>
     ${pg.map(o => `<tr class="clic" onclick="abrir(${o.n})"><td>${sevChip(o.sev)}</td><td class="small"><b>${o.regra}</b><br><span class="mut">${esc(o.nome)}</span></td>
       <td class="small" style="max-width:240px">${esc(o.fornecedor)}${o.conta ? `<br><span class="mut">${esc(o.conta.slice(0, 60))}</span>` : ''}</td>
-      <td class="small">${esc(o.detalhe)}</td><td class="num b">${brl(o.impacto)}</td><td>${sitChip(o.sit)}</td></tr>`).join('') || '<tr><td colspan="6" class="mut" style="text-align:center;padding:30px">Nenhuma ocorrência com esses filtros.</td></tr>'}
+      <td class="small">${esc(o.detalhe)}</td><td class="num b">${brl(o.impacto)}${A.REGRAS[o.regra].volume ? '<div class="small mut" style="font-weight:400">valor analisado, não é perda</div>' : ''}</td><td>${sitChip(o.sit)}</td></tr>`).join('') || '<tr><td colspan="6" class="mut" style="text-align:center;padding:30px">Nenhuma ocorrência com esses filtros.</td></tr>'}
     ${a.length ? `<tr class="tot"><td colspan="4">${pags > 1 ? `Subtotal da página (${n0(pg.length)})` : `TOTAL (${n0(a.length)} ocorrências)`}</td><td class="num">${brl(pg.reduce((s, o) => s + o.impacto, 0))}</td><td></td></tr>
     ${pags > 1 ? `<tr class="tot"><td colspan="4">TOTAL GERAL (${n0(a.length)} ocorrências)</td><td class="num">${brl(a.reduce((s, o) => s + o.impacto, 0))}</td><td></td></tr>` : ''}` : ''}
   </table></div>
-  ${pags > 1 ? `<div class="pag"><button class="btn" ${F.pag ? '' : 'disabled'} onclick="F.pag--;render()">‹ Anterior</button><span class="small mut">página ${F.pag + 1} de ${pags}</span><button class="btn" ${F.pag < pags - 1 ? '' : 'disabled'} onclick="F.pag++;render()">Próxima ›</button></div>` : ''}`;
+  ${pags > 1 ? `<div class="pag"><button class="btn" ${F.pag ? '' : 'disabled'} onclick="F.pag--;render()">‹ Anterior</button><span class="small mut">página ${F.pag + 1} de ${pags}</span><button class="btn" ${F.pag < pags - 1 ? '' : 'disabled'} onclick="F.pag++;render()">Próxima ›</button></div>` : ''}`}`;
 }
 
 // ---------- detalhe da ocorrência + análise ----------
@@ -344,6 +413,42 @@ const tabTitulos = idx => `<div class="tw" style="max-height:420px;overflow:auto
   ${idx.length ? (() => { const tt = totTitulos(idx); return `<tr class="tot"><td colspan="6">TOTAL (${n0(idx.length)} títulos)</td><td class="num">${brl(tt.parcela)}</td><td class="num">${brl(tt.pago)}</td><td class="num">${brl(tt.saldo)}</td><td colspan="2"></td></tr>`; })() : ''}
   </table></div>${idx.length > 500 ? `<div class="small mut">Mostrando 500 de ${n0(idx.length)} títulos — exporte para Excel para ver todos.</div>` : ''}`;
 
+// ---------- comparativo lado a lado (duplicidade) ----------
+const LETRA = i => String.fromCharCode(65 + i);
+const linkSeguro = u => /^https?:\/\//i.test(u) ? `<a href="${esc(u)}" target="_blank" rel="noopener" style="color:#93c5fd">abrir comprovante</a>` : esc(u);
+function comparativo(idx, max = 6) {
+  const ts = [...new Set(idx)].map(i => R.titulos[i]).sort((a, b) => String(a.pagamento || a.vencimento).localeCompare(String(b.pagamento || b.vencimento))).slice(0, max);
+  const campos = [['Código (título)', t => t.codigo], ['Status', t => t.status], ['Fornecedor (como está no cadastro)', t => t.fornecedorBruto || t.fornecedor],
+    ['Valor pago', t => brl(t.valorPago)], ['Valor da parcela', t => brl(t.valorParcela)], ['Saldo', t => brl(t.saldo)],
+    ['Data do pagamento', t => t.pagamento ? dBRa(t.pagamento) : 'em aberto'], ['Vencimento', t => dBRa(t.vencimento)], ['Competência', t => dBRa(t.competencia)],
+    ['Conta contábil', t => t.conta], ['Centro de custo (loja)', t => t.cc]];
+  // campos que a API pode passar a enviar: só aparecem quando vierem
+  [['Nº documento / NF', 'documento'], ['Forma de pagamento', 'forma'], ['Baixado por', 'usuario'], ['Observação', 'obs'], ['Comprovante', 'comprovante']]
+    .forEach(([r, k]) => { if (ts.some(t => t[k])) campos.push([r, t => t[k] || '—', k === 'comprovante']); });
+  return `<div class="tw"><table class="cmp"><tr><th></th>${ts.map((t, i) => `<th>Evento ${LETRA(i)}</th>`).join('')}<th>Comparação</th></tr>
+    ${campos.map(([r, f, link]) => { const v = ts.map(f), igual = new Set(v.map(String)).size === 1;
+      return `<tr><td class="k">${r}</td>${v.map(x => `<td class="${igual ? 'eq' : 'df'}">${link && x !== '—' ? linkSeguro(x) : esc(x)}</td>`).join('')}<td class="small ${igual ? '' : 'b'}" style="color:${igual ? '#86efac' : '#fcd34d'}">${igual ? '= igual' : '≠ diferente'}</td></tr>`; }).join('')}
+  </table></div>${[...new Set(idx)].length > max ? `<div class="small mut">Mostrando ${max} de ${n0([...new Set(idx)].length)} eventos — a lista completa está em "Títulos envolvidos".</div>` : ''}
+  ${ts.some(t => t.comprovante || t.documento) ? '' : '<div class="small mut" style="margin-top:6px">O Sallamo ainda não envia o nº da NF nem o comprovante bancário pela API — a comparação usa os dados do título. Quando vierem, aparecem aqui sozinhos.</div>'}`;
+}
+const sinaisHTML = d => `<ul class="sin">${d.sinais.map(x => `<li class="a">✓ ${esc(x)}</li>`).join('')}${d.alivios.map(x => `<li class="b">↓ ${esc(x)}</li>`).join('')}</ul>`;
+const confChip = d => `<span class="nota" style="color:${d.nota >= 70 ? '#fca5a5' : d.nota >= 45 ? '#fcd34d' : '#93c5fd'}">confiança ${d.nota}/100</span>`;
+const pct1 = v => (v * 100).toFixed(1).replace('.', ',') + '%';
+// Lei de Benford explicada em linguagem simples
+function explicaBenford(o) {
+  const b = o.benford, p = b.pior, nd = b.digitos[p.d - 1].n, esperado = Math.round(p.esp * b.n), vezes = (b.mad / A.PADRAO.benfordMAD).toFixed(1).replace('.', ',');
+  return `<div class="explica"><b>O que é a Lei de Benford (em palavras simples)</b><br>
+    Em qualquer lista grande de valores do dia a dia (notas, contas, pagamentos), o <b>primeiro número</b> não aparece por igual:
+    cerca de <b>30% começam com 1</b>, 18% com 2, 12% com 3… e só <b>5% começam com 9</b> (linha amarela do gráfico).
+    Quando os valores são combinados, ajustados ou "inventados", essa proporção se quebra (barras azuis bem diferentes da linha).<br><br>
+    <b>Neste fornecedor:</b> ${nd} dos ${b.n} pagamentos (${pct1(p.obs)}) começam com <b>${p.d}</b> — o normal seria uns ${esperado} (${pct1(p.esp)}).
+    ${p.obs > p.esp ? `Ou seja, há <b>muitos valores na faixa de R$ ${p.d}xx / R$ ${p.d}.xxx</b>.` : `Ou seja, há <b>poucos</b> valores começando com ${p.d}.`}
+    O índice de desvio (MAD) deu ${b.mad.toFixed(4).replace('.', ',')}: até 0,006 é normal e acima de 0,015 é fora do padrão — aqui está ${vezes}× acima do limite.<br><br>
+    <b>O que isso NÃO é:</b> não é pagamento em duplicidade e não é perda. ${brl(o.impacto)} é o <b>total pago</b> a esse fornecedor no período (${b.n} pagamentos), só como referência.
+    Duplicidade aparece na aba <b>🕵️ Agente de Duplicidade</b>.<br>
+    <b>O que fazer:</b> confira os pagamentos que começam com ${p.d} (lista abaixo) contra contrato/tabela de preço. Serviço com preço fixo (ex.: mensalidade de alarme por loja) repete o mesmo valor e "quebra" Benford sem haver irregularidade.</div>`;
+}
+
 window.abrir = async n => {
   const o = R.ocorrencias[n]; if (!o) return; const id = o.id;
   const a = ANAL[id] || {};
@@ -353,7 +458,12 @@ window.abrir = async n => {
     <div style="margin-top:6px">${esc(o.detalhe)}</div>
     <div class="small mut" style="margin-top:6px">${esc(A.REGRAS[o.regra].desc)}</div>
     <div class="row" style="margin-top:8px"><span class="chip sv-baixa">Impacto ${brl(o.impacto)}</span>${o.conta ? `<span class="small mut">${esc(o.conta)}</span>` : ''}</div>
-    ${o.benford ? `<div style="max-width:420px;margin-top:10px">${benfordSVG(o.benford)}</div>` : ''}
+    ${A.REGRAS[o.regra].volume && o.regra !== 'R10' ? `<div class="small mut" style="margin-top:6px">ℹ️ ${brl(o.impacto)} é o valor <b>analisado</b> por esta regra — não é valor pago em duplicidade nem perda. Para duplicidade veja a aba 🕵️ Agente de Duplicidade.</div>` : ''}
+    ${o.benford ? `<div style="max-width:420px;margin-top:10px">${benfordSVG(o.benford)}</div><div class="leg"><span><i style="background:var(--pri)"></i>observado</span><span><i style="background:var(--warn)"></i>esperado (Benford)</span></div>${explicaBenford(o)}` : ''}
+    ${o.dup ? `<h2>🕵️ Agente de Duplicidade · ${confChip(o.dup)}</h2>${sinaisHTML(o.dup)}
+      <div class="row" style="margin-top:8px">${o.dup.excesso ? `<span class="chip sv-alta">Pode ter saído a mais: ${brl(o.dup.excesso)}</span>` : ''}${o.dup.evitavel ? `<span class="chip sv-media">Em aberto, dá para evitar: ${brl(o.dup.evitavel)}</span>` : ''}</div>
+      <h2>Comparativo lado a lado</h2>${comparativo(o.titulos)}` : ''}
+    ${o.benford ? (() => { const sub = o.titulos.filter(i => A.primeiroDigito(R.titulos[i].valorPago) === o.benford.pior.d); return `<h2>Pagamentos que começam com ${o.benford.pior.d} (${n0(sub.length)})</h2>${tabTitulos(sub)}`; })() : ''}
     <h2>Títulos envolvidos (${n0(o.titulos.length)})</h2>${tabTitulos(o.titulos)}
     <h2>Análise do auditor</h2>
     <div class="sit">${['em_analise', 'justificada', 'irregular', 'corrigida'].map(s => `<button class="btn ${s === 'irregular' ? 'b-bad' : s === 'justificada' ? 'b-ok' : s === 'corrigida' ? 'b-pri' : 'b-warn'} ${a.situacao === s ? 'on' : ''}" onclick="salvar(${n},'${s}')">${SIT[s]}</button>`).join('')}</div>
@@ -377,6 +487,84 @@ window.salvar = async (n, situacao) => {
 window.fechar = () => $('modal').classList.add('hidden');
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fechar(); });
 
+// ---------- 🕵️ AGENTE DE DUPLICIDADE ----------
+// Um card por caso suspeito (R01 + R23), com a nota de confiança, os motivos e os eventos lado a lado.
+let DP = {conf: 'am', marca: '', sit: '', q: '', pag: 0};
+const MARCAS = {mesmo_dia: 'Mesmo dia', dias_proximos: 'Dias próximos', mesmo_titulo: 'Mesmo título (código)', centros: 'Centros de custo diferentes',
+  folha: 'Folha, pensão, VT, Uber, reembolso', cadastro: 'Cadastro com grafia diferente', aberto: 'Ainda em aberto (evitável)'};
+function casosDup() {
+  let a = R.ocorrencias.filter(o => o.dup && A.REGRAS_DUP.includes(o.regra));
+  if (DP.conf === 'alta') a = a.filter(o => o.dup.nota >= 70); else if (DP.conf === 'am') a = a.filter(o => o.dup.nota >= 45); else if (DP.conf === 'baixa') a = a.filter(o => o.dup.nota < 45);
+  if (DP.marca) a = a.filter(o => o.dup.marcas.includes(DP.marca));
+  if (DP.sit === 'pend') a = a.filter(o => o.sit === 'pendente' || o.sit === 'em_analise'); else if (DP.sit) a = a.filter(o => o.sit === DP.sit);
+  return A.filtrarOcorrencias(a, A.interpretarBusca(DP.q), R.titulos).sort((x, y) => y.dup.nota - x.dup.nota || y.impacto - x.impacto);
+}
+function cardDup(o) {
+  const d = o.dup, ts = [...new Set(o.titulos)].map(i => R.titulos[i]);
+  const datas = [...new Set(ts.map(t => t.pagamento || t.vencimento))].sort().map(dBRa);
+  const conf = d.nota >= 70 ? 'alta' : d.nota >= 45 ? 'media' : 'baixa';
+  return `<div class="card dcard c-${conf}">
+    <div class="row" style="justify-content:space-between"><div class="row">${sevChip(conf)}${confChip(d)}<span class="small mut b">${o.regra}</span></div>${sitChip(o.sit)}</div>
+    <div class="b" style="margin-top:8px;font-size:15px">${esc(o.fornecedor)}</div>
+    <div class="vv">${brl(d.valor)} <span style="font-size:14px;font-weight:600;color:var(--txt2)">${d.pagos >= 2 ? `pago ${d.pagos}×` : `lançado ${d.n}×`} · ${datas.join(' e ')}</span></div>
+    <div class="row" style="margin-top:6px">${d.excesso ? `<span class="chip sv-alta">pode ter saído a mais ${brl(d.excesso)}</span>` : ''}${d.evitavel ? `<span class="chip sv-media">em aberto, dá para evitar ${brl(d.evitavel)}</span>` : ''}</div>
+    ${sinaisHTML(d)}
+    <div style="margin-top:10px">${comparativo(o.titulos, 4)}</div>
+    <div class="row" style="margin-top:10px"><button class="btn b-pri" onclick="abrir(${o.n})">Analisar / registrar</button>${fx(ts[0].fornecedor) != null ? `<button class="btn" onclick="dossie(${fx(ts[0].fornecedor)})">Dossiê do fornecedor</button>` : ''}</div>
+  </div>`;
+}
+function duplicidadeAba() {
+  const a = casosDup(), POR = 30, pags = Math.max(1, Math.ceil(a.length / POR));
+  DP.pag = Math.min(DP.pag, pags - 1);
+  const pg = a.slice(DP.pag * POR, DP.pag * POR + POR);
+  const todos = R.ocorrencias.filter(o => o.dup && A.REGRAS_DUP.includes(o.regra)), alta = todos.filter(o => o.dup.nota >= 70);
+  const soma = (g, k) => g.reduce((s, o) => s + o.dup[k], 0);
+  const folha = todos.filter(o => o.dup.marcas.includes('folha') && o.dup.nota >= 45);
+  window._dpCasos = a;
+  $('corpo').innerHTML = `
+  <div class="explica"><b>🕵️ Como o Agente de Duplicidade trabalha</b><br>
+    Ele junta os pagamentos com o <b>mesmo valor exato</b> para o <b>mesmo fornecedor ou pessoa</b> (mesmo com grafia diferente no cadastro) e procura o mesmo dinheiro saindo de novo:
+    no <b>mesmo dia</b>, em <b>até ${R.cfg.dupJanela} dias</b>, no <b>mesmo título</b>, em <b>centros de custo diferentes</b> e, na <b>folha</b> (pensão, salário, vale-transporte, Uber, reembolso, ajuda de custo…), na <b>mesma competência</b>.
+    Cada caso ganha uma <b>nota de confiança (0–100)</b>: ✓ o que pesa a favor da duplicidade · ↓ o que pode explicar (rateio entre lojas, preço por loja, lote de mercadoria, cobrança recorrente).
+    Títulos <b>em aberto</b> também entram — dá para segurar antes de pagar. Compare os eventos lado a lado: <span style="color:#86efac">verde = igual</span>, <span style="color:#fcd34d">amarelo = diferente</span>.</div>
+  <div class="grid" style="margin-top:12px">
+    ${kpi('Casos (média e alta confiança)', n0(todos.filter(o => o.dup.nota >= 45).length), `${n0(todos.length)} no total, contando os de baixa confiança`, 'k-warn')}
+    ${kpi('Alta confiança', n0(alta.length), brl(soma(alta, 'excesso')) + ' podem ter saído a mais', 'k-bad')}
+    ${kpi('Pode ter saído a mais', brl(soma(todos.filter(o => o.dup.nota >= 45), 'excesso')), 'média + alta confiança · confirmar com o banco', 'k-bad')}
+    ${kpi('Em aberto (dá para evitar)', brl(soma(todos.filter(o => o.dup.nota >= 45), 'evitavel')), 'lançado de novo e ainda não pago', 'k-ok')}
+    ${kpi('Folha, pensão, VT, Uber, reembolso', n0(folha.length), brl(soma(folha, 'excesso') + soma(folha, 'evitavel')), 'k-pur')}
+  </div>
+  <div class="filtros">
+    <select onchange="DP.conf=this.value;DP.pag=0;render()">${[['am', 'Confiança: média e alta'], ['alta', 'Só alta confiança'], ['baixa', 'Só baixa confiança'], ['', 'Todas as confianças']].map(([v, t]) => `<option value="${v}" ${DP.conf === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
+    <select onchange="DP.marca=this.value;DP.pag=0;render()"><option value="">Todos os tipos</option>${Object.entries(MARCAS).map(([k, t]) => `<option value="${k}" ${DP.marca === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
+    <select onchange="DP.sit=this.value;DP.pag=0;render()"><option value="">Toda situação</option><option value="pend" ${DP.sit === 'pend' ? 'selected' : ''}>Pendentes / em análise</option>${['justificada', 'irregular', 'corrigida'].map(k => `<option value="${k}" ${DP.sit === k ? 'selected' : ''}>${SIT[k]}</option>`).join('')}</select>
+    <button class="btn" onclick="relatorioDuplicidade()" ${a.length ? '' : 'disabled'}>🖨 PDF / imprimir</button><button class="btn" onclick="excelDuplicidade()" ${a.length ? '' : 'disabled'}>⬇ Excel</button>
+  </div>
+  ${campoBusca('DP', DP.q)}
+  <div class="small mut" style="margin-top:8px">${n0(a.length)} caso(s) · pode ter saído a mais <b>${brl(soma(a, 'excesso'))}</b> · em aberto <b>${brl(soma(a, 'evitavel'))}</b></div>
+  <div class="dgrid">${pg.map(cardDup).join('') || '<div class="carregando">Nenhum caso de duplicidade com esses filtros. 🎉</div>'}</div>
+  ${pags > 1 ? `<div class="pag"><button class="btn" ${DP.pag ? '' : 'disabled'} onclick="DP.pag--;render();window.scrollTo(0,0)">‹ Anterior</button><span class="small mut">página ${DP.pag + 1} de ${pags}</span><button class="btn" ${DP.pag < pags - 1 ? '' : 'disabled'} onclick="DP.pag++;render();window.scrollTo(0,0)">Próxima ›</button></div>` : ''}`;
+}
+window.relatorioDuplicidade = () => {
+  const a = window._dpCasos || [], soma = k => a.reduce((s, o) => s + o.dup[k], 0);
+  imprimirHTML('Agente de Duplicidade · possíveis pagamentos em dobro', `<div class="desc">Mesmo valor exato para o mesmo fornecedor/pessoa saindo mais de uma vez. Cada caso com nota de confiança, motivos (✓ a favor · ↓ pode explicar) e os eventos lado a lado (verde = igual · amarelo = diferente).</div>
+    <div class="k"><div><b>${n0(a.length)}</b><span>casos</span></div><div><b>${brl(soma('excesso'))}</b><span>pode ter saído a mais</span></div><div><b>${brl(soma('evitavel'))}</b><span>em aberto (evitável)</span></div><div><b>${n0(a.filter(o => o.dup.nota >= 70).length)}</b><span>alta confiança</span></div></div>
+    ${a.map((o, i) => `<div class="caso"><h3>${i + 1}. ${esc(o.fornecedor)} — ${brl(o.dup.valor)} ${o.dup.pagos >= 2 ? `pago ${o.dup.pagos}×` : `lançado ${o.dup.n}×`} · confiança ${o.dup.nota}/100 · ${o.regra} · ${SIT[o.sit]}</h3>
+      ${sinaisRel(o.dup)}${comparativoRel(o.titulos)}${(ANAL[o.id] || {}).comentario ? `<div class="desc"><b>Análise:</b> ${esc(ANAL[o.id].comentario)}</div>` : ''}</div>`).join('')}
+    <table><tr class="tot"><td>TOTAL (${n0(a.length)} casos)</td><td class="n">pode ter saído a mais ${brl(soma('excesso'))}</td><td class="n">em aberto ${brl(soma('evitavel'))}</td></tr></table>`);
+};
+window.excelDuplicidade = async () => {
+  await carregarXLSX();
+  const a = window._dpCasos || [], wb = XLSX.utils.book_new();
+  const casos = a.map((o, i) => ({Caso: i + 1, Regra: o.regra, Confiança: o.dup.nota, Fornecedor: o.fornecedor, Valor: o.dup.valor, Vezes: o.dup.n, Pagos: o.dup.pagos, 'Em aberto': o.dup.abertos,
+    'Pode ter saído a mais': o.dup.excesso, 'Evitável (em aberto)': o.dup.evitavel, 'Motivos (a favor)': o.dup.sinais.join(' | '), 'Pode explicar': o.dup.alivios.join(' | '),
+    Códigos: [...new Set(o.titulos.map(i => R.titulos[i].codigo))].join(', '), Análise: SIT[o.sit], Comentário: (ANAL[o.id] || {}).comentario || ''}));
+  casos.push({Caso: 'TOTAL', 'Pode ter saído a mais': r2(a.reduce((s, o) => s + o.dup.excesso, 0)), 'Evitável (em aberto)': r2(a.reduce((s, o) => s + o.dup.evitavel, 0))});
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(casos), 'Casos');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(a.flatMap((o, k) => [...new Set(o.titulos)].map((i, j) => ({Caso: k + 1, Evento: LETRA(j), ...linhaTitulo(R.titulos[i])})))), 'Eventos lado a lado');
+  XLSX.writeFile(wb, `duplicidades_${$('fDe').value}_a_${$('fAte').value}.xlsx`);
+};
+
 // ---------- RISCO POR FORNECEDOR ----------
 function fornecedores() {
   const a = R.riscoFornecedor;
@@ -398,9 +586,11 @@ window.dossie = k => {
   const ts = T.map(i => R.titulos[i]);
   const pago = ts.reduce((s, t) => s + t.valorPago, 0), aberto = ts.reduce((s, t) => s + (t.status !== 'Pago' ? t.saldo : 0), 0);
   const contas = [...new Set(ts.map(t => t.conta))], ccs = [...new Set(ts.map(t => t.cc))];
+  const dupOc = oc.filter(o => A.REGRAS_DUP.includes(o.regra) && o.sev !== 'baixa'), dupV = dupOc.reduce((s, o) => s + o.impacto, 0);
   $('mBody').innerHTML = `<div class="x row"><button class="btn" onclick="relatorioDossie(${k})">🖨 Imprimir dossiê</button><button class="btn" onclick="fechar()">✕</button></div>
     <div class="small mut b">DOSSIÊ DO FORNECEDOR</div><h1 style="font-size:20px;margin-top:4px">${esc(nome)}</h1>
-    <div class="grid" style="margin-top:12px">${kpi('Nota de risco', f ? f.score : 0, f ? f.regras.join(' · ') : 'sem indícios', f && f.score >= 70 ? 'k-bad' : 'k-warn')}${kpi('Total pago', brl(pago), `${n0(ts.filter(t => t.valorPago > 0).length)} pagamentos`, 'k-ok')}${kpi('Em aberto', brl(aberto), `${n0(T.length)} títulos`)}${kpi('Classificação', `${contas.length} contas`, `${ccs.length} centros de custo`)}</div>
+    <div class="grid" style="margin-top:12px">${kpi('Nota de risco', f ? f.score : 0, f ? f.regras.join(' · ') : 'sem indícios', f && f.score >= 70 ? 'k-bad' : 'k-warn')}${kpi('Total pago', brl(pago), `${n0(ts.filter(t => t.valorPago > 0).length)} pagamentos`, 'k-ok')}${kpi('Em aberto', brl(aberto), `${n0(T.length)} títulos`)}${kpi('Classificação', `${contas.length} contas`, `${ccs.length} centros de custo`)}${kpi('Possível duplicidade', dupOc.length ? brl(dupV) : 'não apontada', dupOc.length ? `${n0(dupOc.length)} caso(s) — veja abaixo` : 'nenhum pagamento em dobro encontrado', dupOc.length ? 'k-bad' : 'k-ok')}</div>
+    <div class="small mut" style="margin-top:8px">Cada regra abaixo olha o fornecedor de um jeito. O mesmo pagamento pode aparecer em mais de uma regra — isso <b>não</b> quer dizer que foi pago duas vezes. Pagamento em dobro só é apontado no card "Possível duplicidade".</div>
     <h2>Ocorrências (${n0(oc.length)})</h2>
     <div class="tw"><table><tr><th>Gravidade</th><th>Regra</th><th>Detalhe</th><th class="num">Impacto</th><th>Análise</th></tr>
     ${oc.map(o => `<tr class="clic" onclick="abrir(${o.n})"><td>${sevChip(o.sev)}</td><td class="small"><b>${o.regra}</b> ${esc(o.nome)}</td><td class="small">${esc(o.detalhe)}</td><td class="num">${brl(o.impacto)}</td><td>${sitChip(o.sit)}</td></tr>`).join('') || '<tr><td colspan="5" class="mut">Nenhuma ocorrência.</td></tr>'}</table></div>
@@ -431,6 +621,7 @@ const PARAMS = [
   ['pfMin', 'R12 · total mínimo a pessoa física (R$)'], ['redondoMin', 'R14 · valor redondo a partir de (R$)'],
   ['novoValor', 'R15 · fornecedor novo: total a partir de (R$)'], ['novoDias', 'R15 · dias após o início da base'],
   ['mesmoValorMin', 'R16 · valor mínimo (R$)'], ['vencidoMin', 'R18 · saldo vencido a partir de (R$)'], ['vencidoDias', 'R18 · dias de atraso'], ['contasMin', 'R19 · nº de contas contábeis'],
+  ['dupJanela', 'R23 · Agente: dias entre pagamentos de mesmo valor'], ['dupAgenteMin', 'R23 · Agente: valor mínimo (R$)'], ['dupAgenteNota', 'R23 · Agente: nota de confiança mínima (0–100)'],
 ];
 function regras() {
   const c = Object.assign({}, A.PADRAO, CFG);
@@ -504,7 +695,18 @@ tr.tit td{background:#fafafa;font-size:9px;color:#333}
 .g-alta{background:#fee2e2;color:#991b1b}.g-media{background:#fef3c7;color:#92400e}.g-baixa{background:#dbeafe;color:#1e40af}
 .k{display:flex;gap:8px;margin:6px 0}.k div{flex:1;border:1px solid #c7d2fe;border-radius:6px;padding:5px 8px}.k b{display:block;font-size:13px;color:#1e3a8a}.k span{font-size:9px;color:#555}
 .quebra{page-break-before:always}.ass{display:flex;gap:40px;margin-top:40px}.ass div{flex:1;border-top:1px solid #333;text-align:center;padding-top:4px;font-size:10px}
-.rod{margin-top:12px;font-size:9px;color:#666}.g2{display:flex;gap:12px}.g2>div{flex:1}`;
+.rod{margin-top:12px;font-size:9px;color:#666}.g2{display:flex;gap:12px}.g2>div{flex:1}
+td.eq{background:#ecfdf5}td.df{background:#fef3c7;font-weight:700}ul.s{margin:3px 0 6px;padding-left:16px}ul.s li.b{color:#92400e}
+.caso{page-break-inside:avoid;border:1px solid #c7d2fe;border-radius:6px;padding:6px 8px;margin:8px 0}`;
+const sinaisRel = d => `<ul class="s">${d.sinais.map(x => `<li>✓ ${esc(x)}</li>`).join('')}${d.alivios.map(x => `<li class="b">↓ ${esc(x)}</li>`).join('')}</ul>`;
+function comparativoRel(idx) {
+  const ts = [...new Set(idx)].map(i => R.titulos[i]).sort((a, b) => String(a.pagamento || a.vencimento).localeCompare(String(b.pagamento || b.vencimento))).slice(0, 6);
+  const campos = [['Código', t => t.codigo], ['Status', t => t.status], ['Fornecedor', t => t.fornecedorBruto || t.fornecedor], ['Valor pago', t => brl(t.valorPago)], ['Parcela', t => brl(t.valorParcela)],
+    ['Pagamento', t => t.pagamento ? dBRa(t.pagamento) : 'em aberto'], ['Vencimento', t => dBRa(t.vencimento)], ['Competência', t => dBRa(t.competencia)], ['Conta', t => t.conta], ['Centro de custo', t => t.cc]];
+  [['Nº documento / NF', 'documento'], ['Forma de pagamento', 'forma'], ['Baixado por', 'usuario'], ['Observação', 'obs']].forEach(([r, k]) => { if (ts.some(t => t[k])) campos.push([r, t => t[k] || '—']); });
+  return `<table><tr><th></th>${ts.map((t, i) => `<th>Evento ${LETRA(i)}</th>`).join('')}<th>Comparação</th></tr>${campos.map(([r, f]) => { const v = ts.map(f), ig = new Set(v.map(String)).size === 1;
+    return `<tr><td><b>${r}</b></td>${v.map(x => `<td class="${ig ? 'eq' : 'df'}">${esc(x)}</td>`).join('')}<td>${ig ? '= igual' : '≠ diferente'}</td></tr>`; }).join('')}</table>`;
+}
 function imprimirHTML(titulo, corpo) {
   const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(titulo)}</title><style>${CSS_REL}</style></head><body>
     <div class="cab"><div><h1>${esc(titulo)}</h1><div class="s">Esposende · Auditoria Financeira · Contas a Pagar (Sallamo) · ${periodoTxt()}</div></div>
@@ -620,6 +822,7 @@ window.relatorioOcorrencia = n => {
   imprimirHTML(`Ocorrência ${o.regra} · ${o.nome}`, `<h2>${esc(o.fornecedor)}</h2><div class="desc">${esc(A.REGRAS[o.regra].desc)}</div>
     <div class="k"><div><b>${gChip(o.sev)}</b><span>gravidade</span></div><div><b>${brl(o.impacto)}</b><span>impacto</span></div><div><b>${SIT[o.sit]}</b><span>situação</span></div><div><b>${n0(idx.length)}</b><span>títulos</span></div></div>
     <p><b>Achado:</b> ${esc(o.detalhe)}</p>
+    ${o.dup ? `<h3>Agente de Duplicidade · confiança ${o.dup.nota}/100</h3>${sinaisRel(o.dup)}<h3>Comparativo lado a lado</h3>${comparativoRel(o.titulos)}` : ''}
     <h3>Títulos envolvidos</h3><table><tr><th>Código</th><th>Status</th><th>Venc.</th><th>Compet.</th><th>Pagto.</th><th class="n">Parcela</th><th class="n">Pago</th><th class="n">Saldo</th><th>Conta</th><th>Centro de custo</th></tr>
     ${idx.map(i => { const t = R.titulos[i]; return `<tr><td><b>${t.codigo}</b></td><td>${esc(t.status)}</td><td>${dBRa(t.vencimento)}</td><td>${dBRa(t.competencia)}</td><td>${dBRa(t.pagamento)}</td><td class="n">${brl(t.valorParcela)}</td><td class="n">${brl(t.valorPago)}</td><td class="n">${brl(t.saldo)}</td><td>${esc(t.conta)}</td><td>${esc(t.cc)}</td></tr>`; }).join('')}
     <tr class="tot"><td colspan="5">TOTAL (${n0(idx.length)} títulos)</td><td class="n">${brl(tt.parcela)}</td><td class="n">${brl(tt.pago)}</td><td class="n">${brl(tt.saldo)}</td><td colspan="2"></td></tr></table>

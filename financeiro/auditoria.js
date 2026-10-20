@@ -25,6 +25,9 @@
     contasMin: 4,              // R19: fornecedor classificado em N ou mais contas contábeis
     benfordMinLinhas: 60,      // R10: mínimo de pagamentos para testar Benford por fornecedor
     benfordMAD: 0.015,         // R10: MAD acima disso = não conformidade (Nigrini)
+    dupJanela: 7,              // R23: dias entre um pagamento e outro de mesmo valor para ser "o mesmo dinheiro saindo de novo"
+    dupAgenteMin: 50,          // R23: valor mínimo (pega reembolso de Uber, vale-transporte, pensão…)
+    dupAgenteNota: 30,         // R23: nota de confiança mínima (0–100) para virar ocorrência
   };
 
   // Contas onde certos padrões são normais
@@ -33,6 +36,8 @@
   const RX_TRIBUTO = /icms|iss\b|iptu|ipva|tribut|imposto|fgts|inss|pis|cofins|irrf|csll|contribui[cç][aã]o|taxa de|parcelamento|das\b|simples/i;
   const RX_FOLHA = /sal[aá]ri|f[eé]rias|re[cs]+is|pens[aã]o|fgts|13º|d[eé]cimo|pr[oó].?labore|vale transporte|ajuda de custo|pr[eê]mio|bolsa|est[aá]gi|inss|comiss|trabalhist|rpa\b|aut[oô]nomo|di[aá]ria|reembolso/i;
   const RX_RECORRENTE = /aluguel|condom[ií]nio|energia|[aá]gua|internet|link de|tarifa|taxas? administrativa|mensalidade|alarme|seguro|iptu|benef[ií]cio|sindicato|sa[uú]de ocupacional|credsystem|parcelamento|icms|cim\b/i;
+  // R23 (hiperfoco): contas de pessoas — folha, benefícios e reembolsos — onde pagar 2× a mesma pessoa é erro comum
+  const RX_FOLHA_DUP = /sal[aá]ri|pens[aã]o|pr[oó].?labore|vale|transporte|uber|t[aá]xi|reembolso|ajuda de custo|di[aá]ria|f[eé]rias|rescis|re[cs]+is|d[eé]cimo|13º|bolsa|est[aá]gi|comiss|pr[eê]mio|adiantamento salarial|plano de sa[uú]de|odonto|benef[ií]cio|deslocamento|combust[ií]vel|prestadores de servi[cç]os pf|rpa\b|aut[oô]nomo/i;
   // Contas sensíveis: saída de caixa sem nota de mercadoria/serviço — olhar uma a uma
   const CONTAS_SENSIVEIS = [
     [/retirada banc/i, 'Retirada bancária (saque/dinheiro)'],
@@ -83,6 +88,11 @@
   const K_ABAT = ['valorAbatimento', 'abatimento', 'abatimentos', 'vlAbatimento'];
   const K_JUROS = ['valorJuros', 'juros', 'vlJuros'];
   const K_MULTA = ['valorMulta', 'multa', 'vlMulta'];
+  // Para comparar comprovantes (R23): nº da NF/duplicata, forma de pagamento, quem baixou e link do comprovante
+  const K_DOC = ['numeroDocumento', 'documento', 'numeroNota', 'numeroNF', 'notaFiscal', 'nf', 'duplicata', 'numeroDuplicata'];
+  const K_FORMA = ['formaPagamento', 'forma_pagamento', 'meioPagamento'];
+  const K_USUARIO = ['usuarioBaixa', 'usuario_baixa', 'baixadoPor'];
+  const K_COMPROVANTE = ['comprovante', 'urlComprovante', 'linkComprovante', 'comprovanteUrl'];
 
   // Feriados nacionais (fixos + móveis 2025–2027)
   const FERIADOS = new Set([
@@ -100,20 +110,23 @@
     R06: {nome: 'Pagamento em fim de semana/feriado', sev: 'media', desc: 'Baixa registrada em sábado, domingo ou feriado nacional — fora do expediente bancário normal.'},
     R08: {nome: 'Possível fracionamento', sev: 'alta', desc: 'Vários títulos do mesmo fornecedor pagos no mesmo dia, cada um abaixo da alçada de aprovação, mas que somados passam dela.'},
     R09: {nome: 'Valor atípico', sev: 'media', desc: 'Valor muito acima do padrão histórico do mesmo fornecedor na mesma conta contábil.'},
-    R10: {nome: 'Lei de Benford', sev: 'baixa', desc: 'A distribuição do 1º dígito dos valores pagos ao fornecedor foge do padrão natural (Benford). Indica valores "inventados" ou ajustados.'},
-    R11: {nome: 'Cadastro de fornecedor duplicado', sev: 'media', desc: 'Nomes de fornecedor quase iguais (grafia, espaços, sufixos). Cadastro duplicado facilita pagamento em dobro e desvio.'},
-    R12: {nome: 'Pagamento a possível pessoa física', sev: 'media', desc: 'Fornecedor com nome de pessoa (sem razão social) recebendo fora das contas de folha. Conferir vínculo com funcionários e nota fiscal.'},
-    R13: {nome: 'Conta sensível', sev: 'media', desc: 'Saídas em contas de alto risco (retirada bancária, partes relacionadas, adiantamentos, acordos, ajuda de custo…). Exigem comprovação individual.'},
-    R14: {nome: 'Valores redondos altos', sev: 'baixa', desc: 'Pagamentos altos em valor "cheio" (múltiplos de R$ 1.000) fora de compra de mercadoria — típico de estimativas sem documento.'},
-    R15: {nome: 'Fornecedor novo com valor alto', sev: 'media', desc: 'Fornecedor que apareceu recentemente e já recebeu valor relevante. Validar cadastro, CNPJ, sócios e entrega.'},
+    R10: {nome: 'Lei de Benford', sev: 'baixa', volume: true, desc: 'Teste estatístico, NÃO é duplicidade. Em valores naturais cerca de 30% começam com 1 e só 5% com 9. Quando um fornecedor tem muito mais valores começando por um mesmo número do que o normal, pode haver valores combinados ou ajustados — ou só preço fixo que se repete. O valor mostrado é o total pago ao fornecedor (referência), não perda.'},
+    R11: {nome: 'Cadastro de fornecedor duplicado', sev: 'media', volume: true, desc: 'Nomes de fornecedor quase iguais (grafia, espaços, sufixos). Cadastro duplicado facilita pagamento em dobro e desvio.'},
+    R12: {nome: 'Pagamento a possível pessoa física', sev: 'media', volume: true, desc: 'Fornecedor com nome de pessoa (sem razão social) recebendo fora das contas de folha. Conferir vínculo com funcionários e nota fiscal.'},
+    R13: {nome: 'Conta sensível', sev: 'media', volume: true, desc: 'Saídas em contas de alto risco (retirada bancária, partes relacionadas, adiantamentos, acordos, ajuda de custo…). Exigem comprovação individual.'},
+    R14: {nome: 'Valores redondos altos', sev: 'baixa', volume: true, desc: 'Pagamentos altos em valor "cheio" (múltiplos de R$ 1.000) fora de compra de mercadoria — típico de estimativas sem documento.'},
+    R15: {nome: 'Fornecedor novo com valor alto', sev: 'media', volume: true, desc: 'Fornecedor que apareceu recentemente e já recebeu valor relevante. Validar cadastro, CNPJ, sócios e entrega.'},
     R16: {nome: 'Mesmo valor, mesmo dia, fornecedores diferentes', sev: 'baixa', desc: 'O mesmo valor exato pago no mesmo dia a fornecedores diferentes. Pode ser coincidência ou o mesmo documento usado duas vezes.'},
     R17: {nome: 'Datas incoerentes', sev: 'baixa', desc: 'Vencimento antes da competência ou competência muito distante do vencimento (lançamento retroativo).'},
     R18: {nome: 'Vencido em aberto', sev: 'media', desc: 'Título vencido há mais de 30 dias sem pagamento: risco de juros, multa, protesto e corte de fornecimento.'},
-    R19: {nome: 'Classificação contábil inconsistente', sev: 'baixa', desc: 'O mesmo fornecedor lançado em muitas contas contábeis diferentes. Distorce o DRE e pode esconder despesa.'},
+    R19: {nome: 'Classificação contábil inconsistente', sev: 'baixa', volume: true, desc: 'O mesmo fornecedor lançado em muitas contas contábeis diferentes. Distorce o DRE e pode esconder despesa.'},
     R20: {nome: 'Pago a menor (desconto/abatimento)', sev: 'media', desc: 'Duplicata paga por valor menor que a parcela. Se a baixa foi total ("Pago"), a diferença é desconto ou abatimento e precisa de documento (acordo, devolução, nota de crédito); se não, é pagamento parcial com saldo devedor.'},
-    R21: {nome: 'Despesa na conta errada', sev: 'media', desc: 'O nome do fornecedor indica um tipo de despesa (hotel, posto, Uber, restaurante, companhia aérea…) mas o lançamento está em outra conta contábil. Despesa "escondida" em conta que não é dela.'},
+    R21: {nome: 'Despesa na conta errada', sev: 'media', volume: true, desc: 'O nome do fornecedor indica um tipo de despesa (hotel, posto, Uber, restaurante, companhia aérea…) mas o lançamento está em outra conta contábil. Despesa "escondida" em conta que não é dela.'},
     R22: {nome: 'Duplicata com observação/abatimento', sev: 'media', desc: 'Pagamento com observação, desconto, abatimento, juros ou multa informados no Sallamo. Ler a observação e conferir o documento que justifica a diferença. (Depende da API enviar esses campos.)'},
+    R23: {nome: 'Possível duplicidade (Agente)', sev: 'alta', desc: 'Agente de Duplicidade: o mesmo valor exato saindo mais de uma vez para o mesmo fornecedor/pessoa — no mesmo dia, em dias próximos, no mesmo título (código), em centros de custo diferentes ou, na folha (pensão, salário, vale-transporte, Uber, reembolso…), na mesma competência. Cada caso tem nota de confiança 0–100 e os eventos lado a lado para comparar. Impacto = o que pode ter saído a mais.'},
   };
+  // Regras de duplicidade (o "impacto" delas é dinheiro que pode ter saído em dobro)
+  const REGRAS_DUP = ['R01', 'R23'];
   const PESO = {alta: 10, media: 4, baixa: 1};
 
   // ---------- utilidades ----------
@@ -163,6 +176,7 @@
         vencimento: dia(x.vencimento), competencia: dia(x.competencia), pagamento: dia(x.dataPagamento),
         conta: String(x.contaContabil || '(sem conta)').trim(), cc: String(x.centroCusto || '(sem centro)').replace(/\s+/g, ' ').trim(),
         obs: pegaTexto(x, K_OBS), desconto: pegaValor(x, K_DESC), abatimento: pegaValor(x, K_ABAT), juros: pegaValor(x, K_JUROS), multa: pegaValor(x, K_MULTA),
+        documento: pegaTexto(x, K_DOC), forma: pegaTexto(x, K_FORMA), usuario: pegaTexto(x, K_USUARIO), comprovante: pegaTexto(x, K_COMPROVANTE),
       };
     }).map(t => Object.assign(t, {categoria: categoriaDe(t.conta)}));
   }
@@ -198,6 +212,7 @@
         impacto: r2(x.valorPago * (cods.length - 1)), titulos: g.map(t => t.i),
         detalhe: `${brl(x.valorPago)} pago ${cods.length}× com vencimento ${dBRa(x.vencimento)} no ${x.cc} · códigos ${cods.join(', ')} · pago em ${pags.map(dBR).join(', ')}` +
           (mesmaComp ? ' · mesma competência' : ''),
+        dup: avaliarDuplicidade(g.map(t => ({t, valor: t.valorPago, data: t.pagamento, pago: true}))),
       });
     }
 
@@ -408,6 +423,47 @@
         detalhe: `Cód. ${t.codigo}: ${partes.join(' · ') || 'observação no pagamento'}${t.obs ? ` · obs.: "${t.obs.slice(0, 200)}"` : ''}`});
     }
 
+    // R23 — Agente de Duplicidade: mesmo fornecedor (cadastro normalizado) + mesmo valor exato saindo mais de uma vez
+    // em datas próximas (≤ dupJanela dias entre um e outro) — ou, nas contas de pessoas (folha, benefício, reembolso),
+    // na mesma competência. Entram também títulos em aberto (duplicidade que ainda dá para evitar).
+    // Casos já inteiros na R01 não se repetem aqui.
+    const naR01 = ocorrencias.filter(o => o.regra === 'R01').map(o => new Set(o.titulos));
+    const linhasDup = [];
+    for (const t of T) {
+      if (/cancel/i.test(t.status)) continue;
+      const pago = t.valorPago > 0 && !!t.pagamento;
+      const valor = pago ? t.valorPago : t.saldo;
+      if (!pago && !(t.saldo > 0 && t.vencimento && t.status !== 'Pago')) continue;
+      if (valor < cfg.dupAgenteMin || t.categoria === 'receita') continue;
+      linhasDup.push({t, valor, data: pago ? t.pagamento : t.vencimento, pago, chave: chaveNome(t.fornecedor) || t.fornecedor});
+    }
+    const mesComp = t => (t.competencia || '').slice(0, 7);
+    for (const [, g] of agrupar(linhasDup, x => x.chave + '|' + x.valor.toFixed(2))) {
+      if (g.length < 2) continue;
+      g.sort((a, b) => a.data.localeCompare(b.data) || a.t.i - b.t.i);
+      const grupos = [[g[0]]];
+      for (let k = 1; k < g.length; k++) {
+        const b = g[k], atual = grupos[grupos.length - 1], a = atual[atual.length - 1];
+        const perto = difDias(b.data, a.data) <= cfg.dupJanela;
+        const mesmaFolha = RX_FOLHA_DUP.test(b.t.conta) && mesComp(b.t) && atual.some(x => x.t.conta === b.t.conta && mesComp(x.t) === mesComp(b.t));
+        if (perto || mesmaFolha) atual.push(b); else grupos.push([b]);
+      }
+      for (const grupo of grupos) {
+        if (grupo.length < 2 || unicos(grupo.map(x => x.t.i)).length < 2) continue;
+        if (naR01.some(s => grupo.every(x => s.has(x.t.i)))) continue;
+        const d = avaliarDuplicidade(grupo);
+        if (d.nota < cfg.dupAgenteNota) continue;
+        const ts = grupo.map(x => x.t), cods = unicos(ts.map(t => t.codigo)).sort();
+        add('R23', [grupo[0].chave, d.valor.toFixed(2), cods.join('-'), grupo[0].data].join('|'), {
+          sev: d.nota >= 70 ? 'alta' : d.nota >= 45 ? 'media' : 'baixa',
+          fornecedor: unicos(ts.map(t => t.fornecedor)).join(' / '), conta: unicos(ts.map(t => t.conta)).join(' / '), cc: unicos(ts.map(t => t.cc)).join(' / '),
+          impacto: d.excesso + d.evitavel, titulos: ts.map(t => t.i), dup: d,
+          detalhe: `${brl(d.valor)} ${d.pagos >= 2 ? `pago ${d.pagos}×` : `lançado ${grupo.length}×`}${d.abertos ? ` (${d.abertos} em aberto)` : ''} · ` +
+            `${unicos(grupo.map(x => x.data)).map(dBRa).join(', ')} · cód. ${cods.join(', ')} · confiança ${d.nota}/100`,
+        });
+      }
+    }
+
     for (const o of ocorrencias) o.impacto = r2(o.impacto);
     ocorrencias.sort((a, b) => PESO[b.sev] - PESO[a.sev] || b.impacto - a.impacto);
 
@@ -466,7 +522,7 @@
   // Benford (1º dígito) com MAD de Nigrini: <0,006 conforme · <0,012 aceitável · <0,015 marginal · acima não conforme
   function benfordDe(valores) {
     const cont = Array(10).fill(0); let n = 0;
-    for (const v of valores) { const s = String(Math.abs(v)).replace(/^[0.]+/, ''); const d = Number(s[0]); if (d >= 1 && d <= 9) { cont[d]++; n++; } }
+    for (const v of valores) { const d = primeiroDigito(v); if (d >= 1 && d <= 9) { cont[d]++; n++; } }
     const digitos = []; let mad = 0, pior = null;
     for (let d = 1; d <= 9; d++) {
       const esp = Math.log10(1 + 1 / d), obs = n ? cont[d] / n : 0, dif = Math.abs(obs - esp);
@@ -477,6 +533,59 @@
     const conformidade = mad < 0.006 ? 'conforme' : mad < 0.012 ? 'aceitável' : mad < 0.015 ? 'marginal' : 'não conforme';
     return {n, digitos, mad, conformidade, pior};
   }
+
+  // ---------- Agente de Duplicidade: nota de confiança ----------
+  // Recebe os eventos de mesmo valor ({t, valor, data, pago}) e soma os sinais de "mesmo dinheiro saindo de novo",
+  // descontando os padrões legítimos (rateio entre lojas, cobrança por loja, lote de mercadoria, cobrança recorrente).
+  // sinais = o que pesa a favor da duplicidade · alivios = o que pode explicar (conferir antes de concluir)
+  function avaliarDuplicidade(grupo) {
+    const ts = grupo.map(x => x.t), n = grupo.length;
+    const cods = unicos(ts.map(t => t.codigo)), datas = unicos(grupo.map(x => x.data)).sort(), ccs = unicos(ts.map(t => t.cc));
+    const vencs = unicos(ts.map(t => t.vencimento).filter(Boolean)).sort(), comps = unicos(ts.map(t => t.competencia).filter(Boolean));
+    const contas = unicos(ts.map(t => t.conta)), nomes = unicos(ts.map(t => t.fornecedorBruto || t.fornecedor));
+    const docs = ts.map(t => t.documento).filter(Boolean);
+    const valor = grupo[0].valor, pagos = grupo.filter(x => x.pago).length, abertos = n - pagos;
+    const span = datas.length > 1 ? difDias(datas[datas.length - 1], datas[0]) : 0;
+    const vencSpan = vencs.length > 1 ? difDias(vencs[vencs.length - 1], vencs[0]) : 0;
+    const folha = ts.some(t => RX_FOLHA_DUP.test(t.conta));
+    let nota = 20; const sinais = [], alivios = [], marcas = [];
+    sinais.push(`mesmo valor exato (${brl(valor)}) ${n}× para o mesmo ${folha ? 'favorecido' : 'fornecedor'}`);
+    if (datas.length === 1) { nota += 25; marcas.push('mesmo_dia'); sinais.push(`${pagos === n ? 'pagos' : 'lançados'} no mesmo dia (${dBRa(datas[0])})`); }
+    else if (span <= 3) { nota += 15; marcas.push('dias_proximos'); sinais.push(`datas coladas: ${datas.map(dBRa).join(', ')} (${span} dia(s) de diferença)`); }
+    else { nota += 5; marcas.push('dias_proximos'); sinais.push(`datas próximas: ${datas.map(dBRa).join(', ')}`); }
+    const rateio = cods.length === 1 && ccs.length === n && datas.length === 1;  // um título dividido entre lojas no mesmo dia
+    if (cods.length === 1 && !rateio) {
+      marcas.push('mesmo_titulo');
+      if (vencSpan <= 3) { nota += 25; sinais.push(`mesmo título (cód. ${cods[0]}) baixado ${n}× com o mesmo valor`); }
+      else { nota += 5; alivios.push(`mesmo título (cód. ${cods[0]}) com vencimentos diferentes — podem ser parcelas`); }
+    }
+    if (docs.length === n && unicos(docs).length === 1) { nota += 30; sinais.push(`mesmo nº de documento/NF (${docs[0]})`); }
+    if (vencs.length === 1 && ts.every(t => t.vencimento)) { nota += 15; sinais.push(`mesmo vencimento (${dBRa(vencs[0])})`); }
+    if (comps.length === 1 && ts.every(t => t.competencia)) { nota += 10; sinais.push(`mesma competência (${dBRa(comps[0])})`); }
+    if (ccs.length === 1) { nota += 10; sinais.push(`mesmo centro de custo (${ccs[0]})`); }
+    else { marcas.push('centros'); sinais.push(`centros de custo diferentes (${ccs.join(', ')}) — conferir se a mesma nota foi lançada em mais de uma loja`); }
+    if (contas.length > 1) { nota += 5; sinais.push(`contas contábeis diferentes (${contas.join(', ')})`); }
+    if (nomes.length > 1) { nota += 10; marcas.push('cadastro'); sinais.push(`cadastros com grafia diferente: ${nomes.join(' · ')}`); }
+    if (folha) {
+      nota += 10; marcas.push('folha');
+      sinais.push('conta de pessoas (folha, pensão, vale-transporte, Uber, reembolso…) — pagar 2× a mesma pessoa é erro comum');
+      const mc = unicos(ts.map(t => (t.competencia || '').slice(0, 7)).filter(Boolean));
+      if (mc.length === 1 && comps.length > 1) { nota += 10; sinais.push(`mesmo mês de competência (${mc[0].split('-').reverse().join('/')})`); }
+    }
+    // padrões legítimos
+    if (ts.every(t => RX_MERCADORIA.test(t.conta)) && cods.length >= 3) { nota -= 35; alivios.push('lote de pedidos iguais de mercadoria (grade de calçado)'); }
+    if (rateio) { nota -= 40; alivios.push(`mesmo título (cód. ${cods[0]}) dividido entre centros de custo no mesmo dia (rateio)`); }
+    else if (cods.length === n && ccs.length === n && contas.every(c => RX_RECORRENTE.test(c) || /monitoramento/i.test(c))) { nota -= n >= 3 ? 45 : 30; alivios.push('cada loja com o seu próprio título de cobrança mensal (pode ser o preço por loja)'); }
+    if (datas.length >= 4 && cods.length > 1) { nota -= 25; alivios.push(`${datas.length} datas diferentes em sequência — parece cobrança recorrente`); }
+    if (!pagos) { nota -= 10; alivios.push('nenhum foi pago ainda (lançamento repetido)'); }
+    if (abertos) { marcas.push('aberto'); sinais.push(`${abertos} ainda em aberto — dá para segurar antes de pagar`); }
+    // rateio: vencimento e competência iguais são da própria nota dividida — não somam como indício
+    nota = Math.max(0, Math.min(rateio ? 20 : 100, nota));
+    return {nota, valor, n, pagos, abertos, sinais, alivios, marcas: unicos(marcas),
+      excesso: r2(valor * Math.max(0, pagos - 1)), evitavel: r2(pagos ? valor * abertos : valor * Math.max(0, abertos - 1))};
+  }
+  // 1º algarismo significativo de um valor (Benford)
+  const primeiroDigito = v => Number(String(Math.abs(v)).replace(/^[0.]+/, '')[0]) || 0;
 
   // ---------- helpers ----------
   function agrupar(a, chave) { const m = new Map(); for (const x of a) { const k = chave(x); if (!m.has(k)) m.set(k, []); m.get(k).push(x); } return m; }
@@ -577,7 +686,7 @@
     return T.filter(t => termos.every(x => casaTitulo(t, x)));
   }
 
-  const api = {analisar, normalizar, benfordDe, REGRAS, PADRAO, PESO, brl, dBR, dBRa, chaveNome, parecePessoa,
+  const api = {analisar, normalizar, benfordDe, primeiroDigito, avaliarDuplicidade, REGRAS, REGRAS_DUP, PADRAO, PESO, brl, dBR, dBRa, chaveNome, parecePessoa,
     interpretarBusca, filtrarOcorrencias, filtrarTitulos, casaTitulo, numBR, despesas, CATEGORIAS, CAT_NOME, categoriaDe, tipoPorFornecedor};
   if (typeof module === 'object' && module.exports) module.exports = api; else raiz.FinAudit = api;
 })(typeof self !== 'undefined' ? self : this);
