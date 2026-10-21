@@ -14,42 +14,53 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Aplicar cinco regras executivas
+      - name: Aplicar revisao e painel de juros
         shell: python
         run: |
           from pathlib import Path
-          p = Path('financeiro/index.html')
-          s = p.read_text(encoding='utf-8')
 
-          old = "  const porRegra = Object.keys(A.REGRAS).map(k => { const g = oc.filter(o => o.regra === k); return {k, n: g.length, alta: g.filter(o => o.sev === 'alta').length, v: g.reduce((s, o) => s + o.impacto, 0), pend: g.filter(o => o.sit === 'pendente').length}; });"
-          new = """  // Cinco regras executivas. As regras técnicas R01... continuam somente no motor/agentes, por trás da tela.\n  const macroDefs = [\n    {k:'F01', nome:'Pagamento em duplicidade', regras:['R01','R02','R23'], sev:'alta'},\n    {k:'F02', nome:'Pagamento divergente', regras:['R03','R20','R22'], sev:'alta'},\n    {k:'F03', nome:'Pagamento sem comprovação', regras:['R13','R17'], sev:'alta'},\n    {k:'F04', nome:'Dados / status incoerentes', regras:['R04','R05','R18'], sev:'media'},\n    {k:'F05', nome:'Anomalia financeira', regras:Object.keys(A.REGRAS).filter(k => !['R01','R02','R23','R03','R20','R22','R13','R17','R04','R05','R18'].includes(k)), sev:'media'},\n  ];\n  const porRegra = macroDefs.map(m => { const g = oc.filter(o => m.regras.includes(o.regra)); return {...m, n:g.length, alta:g.filter(o => o.sev === 'alta').length, v:g.reduce((s,o)=>s+o.impacto,0), pend:g.filter(o => o.sit === 'pendente' || o.sit === 'em_analise').length}; });"""
-          if old not in s:
-              raise SystemExit('Bloco porRegra não encontrado; abortando sem alterar.')
-          s = s.replace(old, new, 1)
+          p=Path('financeiro/revisao.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('Ao marcar <b>Resolvido</b>, o caso sai automaticamente desta caixa, mas permanece no histórico.','Dê a decisão do auditor. Casos confirmados ou descartados saem da fila ativa e ficam no histórico.')
+          old='<div class="actions"><button class="btn blue" onclick="acao(${x.id},\'revisar\')">↻ Revisar / manter na caixa</button><button class="btn green" onclick="acao(${x.id},\'resolvido\')">✓ Resolvido · retirar da auditoria</button></div>'
+          new='<div class="actions"><button class="btn blue" onclick="acao(${x.id},\'revisar\')">↻ Manter em análise</button><button class="btn green" onclick="acao(${x.id},\'confirmada\')">✓ Duplicidade confirmada</button><button class="btn" style="background:#475569" onclick="acao(${x.id},\'nao_duplicidade\')">✓ Não é duplicidade</button><button class="btn" onclick="acao(${x.id},\'resolvido\')">Encerrar caso</button></div>'
+          if old in s: s=s.replace(old,new,1)
+          s=s.replace("if(a==='resolvido'&&!confirm('Marcar como resolvido e retirar este caso da caixa de auditoria?'))return;","if(['confirmada','nao_duplicidade','resolvido'].includes(a)&&!confirm(a==='confirmada'?'Confirmar que este pagamento é duplicado?':a==='nao_duplicidade'?'Confirmar que NÃO é duplicidade? O caso sairá da auditoria ativa.':'Encerrar este caso?'))return;")
+          s=s.replace("if(a==='resolvido'){casos=casos.filter(x=>x.id!==id);","if(['confirmada','nao_duplicidade','resolvido'].includes(a)){casos=casos.filter(x=>x.id!==id);")
+          p.write_text(s,encoding='utf-8')
 
-          old2 = """  <h2>Regras de auditoria · clique para ver as ocorrências</h2>\n  <div class=\"regras\">${porRegra.map(r => `<div class=\"card rg ${r.n ? '' : 'zero'}\" onclick=\"filtrarRegra('${r.k}')\">\n    <div class=\"t\"><span>${r.k} · ${esc(A.REGRAS[r.k].nome)}</span>${sevChip(A.REGRAS[r.k].sev)}</div>\n    <div class=\"q\">${n0(r.n)} <span class=\"i\">${r.alta ? `· ${n0(r.alta)} alta` : ''}${r.pend ? ` · ${n0(r.pend)} pendente(s)` : ''}</span></div>\n    <div class=\"i\">impacto ${brl(r.v)}</div></div>`).join('')}</div>"""
-          new2 = """  <h2>5 regras executivas · agentes fazem os cruzamentos técnicos por trás</h2>\n  <div class=\"regras\">${porRegra.map(r => `<div class=\"card rg ${r.n ? '' : 'zero'}\" onclick=\"aba('ocorrencias')\">\n    <div class=\"t\"><span>${r.k} · ${esc(r.nome)}</span>${sevChip(r.sev)}</div>\n    <div class=\"q\">${n0(r.n)} <span class=\"i\">${r.alta ? `· ${n0(r.alta)} alta` : ''}${r.pend ? ` · ${n0(r.pend)} para revisar` : ''}</span></div>\n    <div class=\"i\">impacto ${brl(r.v)}</div></div>`).join('')}</div>"""
-          if old2 not in s:
-              raise SystemExit('Bloco visual de regras não encontrado; abortando sem alterar.')
-          s = s.replace(old2, new2, 1)
+          p=Path('financeiro/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace("['descontos', '🏷 Descontos e observações', R.ocorrencias.filter(o => o.regra === 'R20' || o.regra === 'R22').length]", "['juros', '⏱ Juros e atrasos'], ['descontos', '🏷 Descontos e observações', R.ocorrencias.filter(o => o.regra === 'R20' || o.regra === 'R22').length]",1)
+          s=s.replace("({painel, duplicidade: duplicidadeAba, comprovantes: comprovantesAba, ocorrencias, fornecedores, despesas: despesasAba, descontos: descontosAba, centros, busca, regras})[ABA]();", "({painel, duplicidade: duplicidadeAba, comprovantes: comprovantesAba, ocorrencias, fornecedores, despesas: despesasAba, juros: jurosAba, descontos: descontosAba, centros, busca, regras})[ABA]();",1)
+          marker='// ---------- PAINEL ----------'
+          fn=r'''// ---------- JUROS E ATRASOS ----------
+let JDIAS=30;
+function jurosAba(){
+  const fim=hojeISO(), ini=new Date(fim+'T12:00:00'); ini.setDate(ini.getDate()-JDIAS); const de=ini.toISOString().slice(0,10);
+  const rows=R.titulos.filter(t=>t.pagamento&&t.pagamento>=de&&t.pagamento<=fim&&t.vencimento&&t.pagamento>t.vencimento).map(t=>{const dias=Math.max(0,Math.round((Date.parse(t.pagamento+'T12:00:00Z')-Date.parse(t.vencimento+'T12:00:00Z'))/86400000));const explicito=Number(t.juros||0)+Number(t.multa||0);const acresc=Math.max(0,Number(t.valorPago||0)-Number(t.valorParcela||0));return {...t,dias,custo:explicito>0?explicito:acresc,fonte:explicito>0?'juros/multa informado':'acréscimo pago'}}).filter(t=>t.dias>0).sort((a,b)=>b.custo-a.custo||b.dias-a.dias);
+  const total=rows.reduce((a,t)=>a+t.custo,0), media=rows.length?rows.reduce((a,t)=>a+t.dias,0)/rows.length:0;
+  const porDia=[1,2,3,5,10,9999].map((lim,i)=>{const ant=i?[1,2,3,5,10][i-1]:0,g=rows.filter(t=>t.dias>ant&&t.dias<=lim);return {nome:lim===9999?'mais de 10 dias':lim===1?'1 dia':`${ant+1} a ${lim} dias`,n:g.length,v:g.reduce((a,t)=>a+t.custo,0)}});
+  $('corpo').innerHTML=`<h2>Juros, multas e pagamentos em atraso</h2><div class="row" style="margin-bottom:12px"><button class="btn ${JDIAS===7?'on':''}" onclick="JDIAS=7;render()">7 dias</button><button class="btn ${JDIAS===20?'on':''}" onclick="JDIAS=20;render()">20 dias</button><button class="btn ${JDIAS===30?'on':''}" onclick="JDIAS=30;render()">30 dias</button><button class="btn ${JDIAS===90?'on':''}" onclick="JDIAS=90;render()">90 dias</button></div><div class="grid">${kpi('Custo de juros/acréscimos',brl(total),`${n0(rows.length)} títulos pagos em atraso`,'k-bad')}${kpi('Atraso médio',media.toLocaleString('pt-BR',{maximumFractionDigits:1})+' dias',`período de ${JDIAS} dias`,'k-warn')}${kpi('Maior custo',brl(rows[0]?.custo||0),rows[0]?`${esc(rows[0].fornecedor)} · ${rows[0].dias} dias`:'sem ocorrências')}</div><div class="card" style="margin-top:12px"><h2 style="margin-top:0">Custo por dias de atraso</h2>${porDia.map(x=>`<div class="row" style="margin:7px 0"><span class="small" style="width:105px">${x.nome}</span><div class="bar" style="flex:1"><i style="width:${total?Math.max(1,x.v/total*100):0}%;background:var(--bad)"></i></div><span class="small num" style="width:150px">${brl(x.v)} · ${n0(x.n)}</span></div>`).join('')}</div><div class="tw" style="margin-top:12px"><table><tr><th>Pagamento</th><th>Fornecedor</th><th>Título</th><th>Vencimento</th><th class="num">Dias atraso</th><th class="num">Parcela</th><th class="num">Pago</th><th class="num">Custo</th><th>Leitura</th></tr>${rows.map(t=>`<tr><td>${dBRa(t.pagamento)}</td><td>${esc(t.fornecedor)}</td><td>${esc(t.codigo)}</td><td>${dBRa(t.vencimento)}</td><td class="num"><b>${t.dias}</b></td><td class="num">${brl(t.valorParcela)}</td><td class="num">${brl(t.valorPago)}</td><td class="num"><b>${brl(t.custo)}</b></td><td class="small mut">${t.fonte}</td></tr>`).join('')||'<tr><td colspan="9" class="mut" style="text-align:center;padding:25px">Nenhum pagamento em atraso no período.</td></tr>'}</table></div><div class="small mut" style="margin-top:8px">Quando Sallamo informa juros/multa, usamos o valor explícito. Sem esse campo, mostramos somente o acréscimo entre parcela e valor pago; não presumimos que todo acréscimo seja juros.</div>`;
+}
+'''
+          if 'function jurosAba()' not in s: s=s.replace(marker,fn+'\n'+marker,1)
+          p.write_text(s,encoding='utf-8')
 
-          s = s.replace("['ocorrencias', 'Ocorrências', pend]", "['ocorrencias', 'Caixa de divergências', pend]", 1)
-          s = s.replace(", ['regras', 'Regras e parâmetros']", "", 1)
-          p.write_text(s, encoding='utf-8')
-
-      - name: Validar cinco regras
+      - name: Validar
         shell: bash
         run: |
-          grep -Fq "F01'" financeiro/index.html
-          grep -Fq "F05'" financeiro/index.html
-          grep -Fq '5 regras executivas' financeiro/index.html
-          ! grep -Fq '<h2>Regras de auditoria · clique para ver as ocorrências</h2>' financeiro/index.html
+          grep -Fq 'Duplicidade confirmada' financeiro/revisao.html
+          grep -Fq 'Não é duplicidade' financeiro/revisao.html
+          grep -Fq 'function jurosAba()' financeiro/index.html
+          grep -Fq '20 dias' financeiro/index.html
+          grep -Fq 'Custo por dias de atraso' financeiro/index.html
 
       - name: Publicar
         shell: bash
         run: |
           git config user.name 'Portal Esposende Bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add financeiro/index.html
-          git commit -m 'fix: mostrar somente cinco regras na auditoria financeira'
+          git add financeiro/index.html financeiro/revisao.html
+          git commit -m 'feat: decisao do auditor e busca de juros por periodo'
           git push origin HEAD:main
