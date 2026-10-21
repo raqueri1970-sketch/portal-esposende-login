@@ -1,0 +1,67 @@
+name: Auditor Financeiro Especialista
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/auditor-financeiro-especialista.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Especializar painel e casos
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('financeiro/index.html')
+          s=p.read_text(encoding='utf-8')
+          # cache bust
+          s=s.replace('auditoria.js?v=20261021-2','auditoria.js?v=20261021-4')
+          # nomes executivos: mantém sinais técnicos no motor, mas tela é simples
+          s=s.replace("['G01', 'Duplicidade de pagamento', 'R01 + R02 + Agente'],", "['G01', 'Duplicidade / pagamento em dobro', 'R01 + R02 + Agente'],")
+          s=s.replace("['G02', 'Pagamento divergente', 'R03 + R20 + R22'],", "['G02', 'Atrasos, juros e valor divergente', 'R03 + R20 + R22'],")
+          # botão/aba com linguagem de auditor especialista
+          s=s.replace("['ocorrencias', 'Ocorrências', pend]", "['ocorrencias', '📥 Casos para revisar', pend]")
+          # Enriquece detalhe de duplicidade com próximos títulos do mesmo fornecedor.
+          marker="function painel() {"
+          helper=r'''
+// AUDITOR FINANCEIRO ESPECIALISTA — recomendação preventiva e lastro
+function proximosPagamentosFornecedor(nome, ignorarTitulos=[]) {
+  if (!R || !R.titulos) return [];
+  const hoje=hojeISO(), ign=new Set(ignorarTitulos||[]);
+  return R.titulos.filter(t => t.fornecedor===nome && t.vencimento && t.vencimento>=hoje && t.saldo>0 && !ign.has(t.i))
+    .sort((a,b)=>String(a.vencimento).localeCompare(String(b.vencimento))).slice(0,5);
+}
+function blocoPreventivo(o){
+  if (!o || !(o.dup || ['R01','R02','R23'].includes(o.regra))) return '';
+  const fut=proximosPagamentosFornecedor(o.fornecedor,o.titulos);
+  if(!fut.length) return '<div class="aviso" style="margin-top:10px"><b>Indicação preventiva:</b> não há próximo título em aberto encontrado para este fornecedor no período carregado.</div>';
+  return `<div class="explica" style="margin-top:10px"><b>Indicação preventiva · há pagamentos futuros no Contas a Pagar</b><br>${fut.map(t=>`Cód. ${esc(t.codigo)} · vence ${dBRa(t.vencimento)} · saldo ${brl(t.saldo)}`).join('<br>')}<br><span class="small mut">Se a duplicidade for confirmada, conferir com o Financeiro/fornecedor a possibilidade de compensação antes do próximo pagamento. O sistema apenas recomenda; não baixa nem altera o título automaticamente.</span></div>`;
+}
+'''
+          if 'function proximosPagamentosFornecedor' not in s:
+              s=s.replace(marker,helper+'\n'+marker,1)
+          # Injeta recomendação no modal de ocorrência, junto do histórico, se achar ponto estável.
+          needle="<div class=\"hist\" id=\"hist\">${historico(o)}</div>"
+          if needle in s and 'blocoPreventivo(o)' not in s[s.find(needle)-300:s.find(needle)+300]:
+              s=s.replace(needle,"${blocoPreventivo(o)}\n      "+needle,1)
+          # reforça descrição do painel
+          s=s.replace('Cruzamento automático do Sallamo · <span id="info">','Auditor Financeiro Especialista · Sallamo + comprovantes + cruzamentos · <span id="info">')
+          p.write_text(s,encoding='utf-8')
+      - name: Validar
+        shell: bash
+        run: |
+          grep -Fq 'Auditor Financeiro Especialista' financeiro/index.html
+          grep -Fq 'proximosPagamentosFornecedor' financeiro/index.html
+          grep -Fq 'Indicação preventiva' financeiro/index.html
+          grep -Fq 'auditoria.js?v=20261021-4' financeiro/index.html
+      - name: Publicar
+        shell: bash
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'Portal Esposende Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add financeiro/index.html
+          git commit -m 'feat: auditor financeiro especialista, juros, lastro e compensacao futura'
+          git push origin HEAD:main
