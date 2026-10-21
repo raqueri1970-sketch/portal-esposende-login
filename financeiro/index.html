@@ -252,7 +252,7 @@ function analisar() {
 function render() {
   const pend = R.ocorrencias.filter(o => o.sit === 'pendente' || o.sit === 'em_analise').length;
   const dup = R.ocorrencias.filter(o => o.dup && (o.sit === 'pendente' || o.sit === 'em_analise') && o.sev !== 'baixa').length;
-  const abas = [['painel', 'Painel'], ['duplicidade', '🕵️ Agente de Duplicidade', dup], ['comprovantes', '🧾 Duplicidade nos comprovantes', DC ? DC.filter(c => c.nivel === 'PAGO_A_MAIS' && c.situacao === 'a conferir no extrato').length : null], ['ocorrencias', 'Ocorrências', pend], ['fornecedores', 'Risco por fornecedor', R.riscoFornecedor.length], ['despesas', '💸 Despesas'], ['descontos', '🏷 Descontos e observações', R.ocorrencias.filter(o => o.regra === 'R20' || o.regra === 'R22').length], ['centros', 'Centros de custo'], ['busca', '🔎 Busca de títulos'], ['regras', 'Regras e parâmetros']];
+  const abas = [['painel', 'Painel'], ['duplicidade', '🕵️ Agente de Duplicidade', dup], ['comprovantes', '🧾 Duplicidade nos comprovantes', DC ? DC.filter(c => c.nivel === 'PAGO_A_MAIS' && c.situacao === 'a conferir no extrato').length : null], ['ocorrencias', 'Caixa de divergências', pend], ['fornecedores', 'Risco por fornecedor', R.riscoFornecedor.length], ['despesas', '💸 Despesas'], ['descontos', '🏷 Descontos e observações', R.ocorrencias.filter(o => o.regra === 'R20' || o.regra === 'R22').length], ['centros', 'Centros de custo'], ['busca', '🔎 Busca de títulos']];
   $('tabs').innerHTML = abas.map(([k, t, c]) => `<button class="${ABA === k ? 'on' : ''}" onclick="aba('${k}')">${t}${c != null ? `<span class="cnt">${n0(c)}</span>` : ''}</button>`).join('');
   ({painel, duplicidade: duplicidadeAba, comprovantes: comprovantesAba, ocorrencias, fornecedores, despesas: despesasAba, descontos: descontosAba, centros, busca, regras})[ABA]();
   hidratarFotos();
@@ -333,7 +333,15 @@ function painel() {
   const alta = oc.filter(o => o.sev === 'alta');
   const risco = oc.filter(o => ['R01', 'R23', 'R03', 'R08'].includes(o.regra) && !(A.REGRAS_DUP.includes(o.regra) && o.sev === 'baixa')).reduce((s, o) => s + o.impacto, 0);
   const irreg = oc.filter(o => o.sit === 'irregular');
-  const porRegra = Object.keys(A.REGRAS).map(k => { const g = oc.filter(o => o.regra === k); return {k, n: g.length, alta: g.filter(o => o.sev === 'alta').length, v: g.reduce((s, o) => s + o.impacto, 0), pend: g.filter(o => o.sit === 'pendente').length}; });
+  // Cinco regras executivas. As regras técnicas R01... continuam somente no motor/agentes, por trás da tela.
+  const macroDefs = [
+    {k:'F01', nome:'Pagamento em duplicidade', regras:['R01','R02','R23'], sev:'alta'},
+    {k:'F02', nome:'Pagamento divergente', regras:['R03','R20','R22'], sev:'alta'},
+    {k:'F03', nome:'Pagamento sem comprovação', regras:['R13','R17'], sev:'alta'},
+    {k:'F04', nome:'Dados / status incoerentes', regras:['R04','R05','R18'], sev:'media'},
+    {k:'F05', nome:'Anomalia financeira', regras:Object.keys(A.REGRAS).filter(k => !['R01','R02','R23','R03','R20','R22','R13','R17','R04','R05','R18'].includes(k)), sev:'media'},
+  ];
+  const porRegra = macroDefs.map(m => { const g = oc.filter(o => m.regras.includes(o.regra)); return {...m, n:g.length, alta:g.filter(o => o.sev === 'alta').length, v:g.reduce((s,o)=>s+o.impacto,0), pend:g.filter(o => o.sit === 'pendente' || o.sit === 'em_analise').length}; });
   const maxMes = Math.max(...I.porMes.map(m => m.v), 1), maxAg = Math.max(...I.aging.map(a => a.valor), 1);
   $('corpo').innerHTML = `
   <h2>Visão geral</h2>
@@ -347,10 +355,10 @@ function painel() {
     ${kpi('Confirmadas irregulares', n0(irreg.length), brl(irreg.reduce((s, o) => s + o.impacto, 0)), 'k-pur')}
     ${kpi('Concentração top 10', I.pctTop10.toLocaleString('pt-BR') + '%', `HHI ${n0(I.hhi)} · ${I.hhi > 1500 ? 'concentrado' : 'pulverizado'}`)}
   </div>
-  <h2>Regras de auditoria · clique para ver as ocorrências</h2>
-  <div class="regras">${porRegra.map(r => `<div class="card rg ${r.n ? '' : 'zero'}" onclick="filtrarRegra('${r.k}')">
-    <div class="t"><span>${r.k} · ${esc(A.REGRAS[r.k].nome)}</span>${sevChip(A.REGRAS[r.k].sev)}</div>
-    <div class="q">${n0(r.n)} <span class="i">${r.alta ? `· ${n0(r.alta)} alta` : ''}${r.pend ? ` · ${n0(r.pend)} pendente(s)` : ''}</span></div>
+  <h2>5 regras executivas · agentes fazem os cruzamentos técnicos por trás</h2>
+  <div class="regras">${porRegra.map(r => `<div class="card rg ${r.n ? '' : 'zero'}" onclick="aba('ocorrencias')">
+    <div class="t"><span>${r.k} · ${esc(r.nome)}</span>${sevChip(r.sev)}</div>
+    <div class="q">${n0(r.n)} <span class="i">${r.alta ? `· ${n0(r.alta)} alta` : ''}${r.pend ? ` · ${n0(r.pend)} para revisar` : ''}</span></div>
     <div class="i">impacto ${brl(r.v)}</div></div>`).join('')}</div>
   <div class="g2" style="margin-top:12px">
     <div class="card"><h2 style="margin-top:0">Pagamentos por mês</h2>
