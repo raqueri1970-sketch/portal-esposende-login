@@ -1,0 +1,55 @@
+name: Simplificar Auditoria Financeira
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/simplificar-auditoria-financeira.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar cinco regras executivas
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('financeiro/index.html')
+          s = p.read_text(encoding='utf-8')
+
+          old = "  const porRegra = Object.keys(A.REGRAS).map(k => { const g = oc.filter(o => o.regra === k); return {k, n: g.length, alta: g.filter(o => o.sev === 'alta').length, v: g.reduce((s, o) => s + o.impacto, 0), pend: g.filter(o => o.sit === 'pendente').length}; });"
+          new = """  // Cinco regras executivas. As regras técnicas R01... continuam somente no motor/agentes, por trás da tela.\n  const macroDefs = [\n    {k:'F01', nome:'Pagamento em duplicidade', regras:['R01','R02','R23'], sev:'alta'},\n    {k:'F02', nome:'Pagamento divergente', regras:['R03','R20','R22'], sev:'alta'},\n    {k:'F03', nome:'Pagamento sem comprovação', regras:['R13','R17'], sev:'alta'},\n    {k:'F04', nome:'Dados / status incoerentes', regras:['R04','R05','R18'], sev:'media'},\n    {k:'F05', nome:'Anomalia financeira', regras:Object.keys(A.REGRAS).filter(k => !['R01','R02','R23','R03','R20','R22','R13','R17','R04','R05','R18'].includes(k)), sev:'media'},\n  ];\n  const porRegra = macroDefs.map(m => { const g = oc.filter(o => m.regras.includes(o.regra)); return {...m, n:g.length, alta:g.filter(o => o.sev === 'alta').length, v:g.reduce((s,o)=>s+o.impacto,0), pend:g.filter(o => o.sit === 'pendente' || o.sit === 'em_analise').length}; });"""
+          if old not in s:
+              raise SystemExit('Bloco porRegra não encontrado; abortando sem alterar.')
+          s = s.replace(old, new, 1)
+
+          old2 = """  <h2>Regras de auditoria · clique para ver as ocorrências</h2>\n  <div class=\"regras\">${porRegra.map(r => `<div class=\"card rg ${r.n ? '' : 'zero'}\" onclick=\"filtrarRegra('${r.k}')\">\n    <div class=\"t\"><span>${r.k} · ${esc(A.REGRAS[r.k].nome)}</span>${sevChip(A.REGRAS[r.k].sev)}</div>\n    <div class=\"q\">${n0(r.n)} <span class=\"i\">${r.alta ? `· ${n0(r.alta)} alta` : ''}${r.pend ? ` · ${n0(r.pend)} pendente(s)` : ''}</span></div>\n    <div class=\"i\">impacto ${brl(r.v)}</div></div>`).join('')}</div>"""
+          new2 = """  <h2>5 regras executivas · agentes fazem os cruzamentos técnicos por trás</h2>\n  <div class=\"regras\">${porRegra.map(r => `<div class=\"card rg ${r.n ? '' : 'zero'}\" onclick=\"aba('ocorrencias')\">\n    <div class=\"t\"><span>${r.k} · ${esc(r.nome)}</span>${sevChip(r.sev)}</div>\n    <div class=\"q\">${n0(r.n)} <span class=\"i\">${r.alta ? `· ${n0(r.alta)} alta` : ''}${r.pend ? ` · ${n0(r.pend)} para revisar` : ''}</span></div>\n    <div class=\"i\">impacto ${brl(r.v)}</div></div>`).join('')}</div>"""
+          if old2 not in s:
+              raise SystemExit('Bloco visual de regras não encontrado; abortando sem alterar.')
+          s = s.replace(old2, new2, 1)
+
+          s = s.replace("['ocorrencias', 'Ocorrências', pend]", "['ocorrencias', 'Caixa de divergências', pend]", 1)
+          s = s.replace(", ['regras', 'Regras e parâmetros']", "", 1)
+          p.write_text(s, encoding='utf-8')
+
+      - name: Validar cinco regras
+        shell: bash
+        run: |
+          grep -Fq "F01'" financeiro/index.html
+          grep -Fq "F05'" financeiro/index.html
+          grep -Fq '5 regras executivas' financeiro/index.html
+          ! grep -Fq '<h2>Regras de auditoria · clique para ver as ocorrências</h2>' financeiro/index.html
+
+      - name: Publicar
+        shell: bash
+        run: |
+          git config user.name 'Portal Esposende Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add financeiro/index.html
+          git commit -m 'fix: mostrar somente cinco regras na auditoria financeira'
+          git push origin HEAD:main
