@@ -166,6 +166,16 @@ const brlK = v => { const a = Math.abs(v); return a >= 1e6 ? 'R$ ' + (v / 1e6).t
 const n0 = v => Number(v || 0).toLocaleString('pt-BR');
 const hojeISO = () => new Date().toLocaleDateString('en-CA', {timeZone: 'America/Sao_Paulo'});
 const SEV = {alta: 'Alta', media: 'Média', baixa: 'Baixa'};
+const EXEC = {
+  F01:{nome:'Pagamento em duplicidade',regras:['R01','R02','R23']},
+  F02:{nome:'Pagamento divergente',regras:['R03','R20','R22']},
+  F03:{nome:'Pagamento sem comprovação',regras:['R13','R17']},
+  F04:{nome:'Dados / status incoerentes',regras:['R04','R05','R18']}
+};
+const execKey = r => Object.keys(EXEC).find(k=>EXEC[k].regras.includes(r)) || 'F05';
+const execNome = r => EXEC[execKey(r)]?.nome || 'Anomalia financeira';
+const execRegras = k => k==='F05' ? Object.keys(A.REGRAS).filter(r=>!Object.values(EXEC).flatMap(x=>x.regras).includes(r)) : (EXEC[k]?.regras||[]);
+
 const SIT = {pendente: 'Pendente', em_analise: 'Em análise', justificada: 'Justificada', irregular: 'Irregular', corrigida: 'Corrigida'};
 const sevChip = s => `<span class="chip sv-${s}">${SEV[s]}</span>`;
 const sitChip = s => `<span class="chip st-${s}">${SIT[s]}</span>`;
@@ -352,13 +362,13 @@ function painel() {
     ${kpi('Em aberto', brlK(I.emAberto), `vencido: ${brlK(I.vencido)} (${n0(I.nVencidos)} títulos)`, 'k-warn', `smartCard('aberto')`)}
     ${kpi('Juros/multa pagos', brl(I.juros), `${I.pctPagoAtraso.toLocaleString('pt-BR')}% pagos em atraso · ${I.prazoMedioAtraso.toLocaleString('pt-BR')} dias em média`, 'k-bad', `smartCard('juros')`)}
     ${kpi('Ocorrências de alta gravidade', n0(alta.length), `${n0(oc.length)} ocorrências no total`, 'k-bad', `smartCard('alta')`)}
-    ${kpi('Dinheiro em risco', brlK(risco), 'duplicidade (R01 + Agente) + pago a maior + fracionamento', 'k-bad', `smartCard('risco')`)}
+    ${kpi('Valor em análise', brlK(risco), 'possíveis perdas que ainda precisam de validação', 'k-bad', `smartCard('risco')`)}
     ${kpi('Confirmadas irregulares', n0(irreg.length), brl(irreg.reduce((s, o) => s + o.impacto, 0)), 'k-pur', `smartCard('irreg')`)}
     ${kpi('Concentração top 10', I.pctTop10.toLocaleString('pt-BR') + '%', `HHI ${n0(I.hhi)} · ${I.hhi > 1500 ? 'concentrado' : 'pulverizado'}`, '', `smartCard('top10')`)}
   </div>
   <h2>5 regras executivas · agentes fazem os cruzamentos técnicos por trás</h2>
   <div class="regras">${porRegra.map(r => `<div class="card rg ${r.n ? '' : 'zero'}" onclick="smartMacro('${r.k}')">
-    <div class="t"><span>${r.k} · ${esc(r.nome)}</span>${sevChip(r.sev)}</div>
+    <div class="t"><span>${esc(r.nome)}</span>${sevChip(r.sev)}</div>
     <div class="q">${n0(r.n)} <span class="i">${r.alta ? `· ${n0(r.alta)} alta` : ''}${r.pend ? ` · ${n0(r.pend)} para revisar` : ''}</span></div>
     <div class="i">impacto ${brl(r.v)}</div></div>`).join('')}</div>
   <div class="g2" style="margin-top:12px">
@@ -387,7 +397,7 @@ function abrirSmart(titulo, resumo, corpo) {
   $('modal').classList.remove('hidden');
 }
 function tabelaOcSmart(lista) {
-  return `<div class="tw" style="margin-top:12px;max-height:520px;overflow:auto"><table><tr><th>Regra</th><th>Fornecedor</th><th>O que foi encontrado</th><th class="num">Valor</th><th>Análise</th></tr>${lista.map(o=>`<tr class="clic" onclick="fechar();abrir(${o.n})"><td><b>${o.regra}</b></td><td>${esc(o.fornecedor)}</td><td class="small">${esc(o.detalhe)}</td><td class="num"><b>${brl(o.impacto)}</b></td><td>${sitChip(o.sit)}</td></tr>`).join('')}<tr class="tot"><td colspan="3">TOTAL · ${n0(lista.length)} ocorrência(s)</td><td class="num">${brl(lista.reduce((s,o)=>s+o.impacto,0))}</td><td></td></tr></table></div>`;
+  return `<div class="tw" style="margin-top:12px;max-height:520px;overflow:auto"><table><tr><th>Categoria</th><th>Fornecedor</th><th>O que foi encontrado</th><th class="num">Valor</th><th>Análise</th></tr>${lista.map(o=>`<tr class="clic" onclick="fechar();abrir(${o.n})"><td><b>${esc(execNome(o.regra))}</b></td><td>${esc(o.fornecedor)}</td><td class="small">${esc(o.detalhe)}</td><td class="num"><b>${brl(o.impacto)}</b></td><td>${sitChip(o.sit)}</td></tr>`).join('')}<tr class="tot"><td colspan="3">TOTAL · ${n0(lista.length)} ocorrência(s)</td><td class="num">${brl(lista.reduce((s,o)=>s+o.impacto,0))}</td><td></td></tr></table></div>`;
 }
 window.smartMacro = k => {
   const defs={F01:['Pagamento em duplicidade',['R01','R02','R23']],F02:['Pagamento divergente',['R03','R20','R22']],F03:['Pagamento sem comprovação',['R13','R17']],F04:['Dados / status incoerentes',['R04','R05','R18']]};
@@ -407,7 +417,7 @@ window.smartCard = tipo => {
     return abrirSmart('Juros e multas pagos',`Composição pelos campos de juros e multa do Sallamo. Total detalhado: <b>${brl(total)}</b>.`,tb);
   }
   if(tipo==='alta') { const g=oc.filter(o=>o.sev==='alta'); return abrirSmart('Ocorrências de alta gravidade',`${n0(g.length)} ocorrência(s) classificadas como alta.`,tabelaOcSmart(g)); }
-  if(tipo==='risco') { const g=oc.filter(o=>['R01','R23','R03','R08'].includes(o.regra)&&!(A.REGRAS_DUP.includes(o.regra)&&o.sev==='baixa')); return abrirSmart('Dinheiro em risco',`Composição das regras de duplicidade, pago a maior e fracionamento. Total: <b>${brl(g.reduce((s,o)=>s+o.impacto,0))}</b>.`,tabelaOcSmart(g)); }
+  if(tipo==='risco') { const g=oc.filter(o=>['R01','R23','R03','R08'].includes(o.regra)&&!(A.REGRAS_DUP.includes(o.regra)&&o.sev==='baixa')); return abrirSmart('Valor em análise',`Possíveis perdas apontadas pelos agentes, ainda sujeitas à validação. Total: <b>${brl(g.reduce((s,o)=>s+o.impacto,0))}</b>.`,tabelaOcSmart(g)); }
   if(tipo==='irreg') { const g=oc.filter(o=>o.sit==='irregular'); return abrirSmart('Confirmadas irregulares',`${n0(g.length)} ocorrência(s) já marcadas como irregulares.`,tabelaOcSmart(g)); }
   if(tipo==='top10') { const I=R.indicadores; const tb=`<div class="tw" style="margin-top:12px"><table><tr><th>Fornecedor</th><th class="num">Pago</th><th class="num">Participação</th></tr>${I.top10.map(f=>`<tr class="clic" onclick="fechar();dossie(${fx(f.f)})"><td>${esc(f.f)}</td><td class="num">${brl(f.v)}</td><td class="num">${(f.v/I.totalPago*100).toFixed(2)}%</td></tr>`).join('')}<tr class="tot"><td>TOTAL TOP 10</td><td class="num">${brl(I.top10.reduce((s,f)=>s+f.v,0))}</td><td class="num">${I.pctTop10.toFixed(2)}%</td></tr></table></div>`; return abrirSmart('Concentração top 10',`Mostra exatamente quais fornecedores formam os <b>${I.pctTop10.toFixed(2)}%</b> do card.`,tb); }
 };
@@ -423,7 +433,7 @@ window.filtrarRegra = k => { F = {...F, regra: k, sev: '', sit: '', q: '', pag: 
 
 // ---------- OCORRÊNCIAS ----------
 function filtradas() {
-  let a = R.ocorrencias.filter(o => (!F.regra || o.regra === F.regra) && (!F.sev || o.sev === F.sev) && (!F.sit || o.sit === F.sit)
+  let a = R.ocorrencias.filter(o => (!F.regra || execRegras(F.regra).includes(o.regra)) && (!F.sev || o.sev === F.sev) && (!F.sit || o.sit === F.sit)
     && (!F.cc || o.titulos.some(i => R.titulos[i].cc === F.cc)));
   a = A.filtrarOcorrencias(a, A.interpretarBusca(F.q), R.titulos);
   const P = A.PESO;
@@ -466,12 +476,12 @@ function ocorrenciasPorFornecedor(a) {
   <div class="row" style="justify-content:space-between;margin:10px 0"><div class="small mut">${n0(gs.length)} fornecedor(es) · ${n0(a.length)} ocorrência(s) · valor envolvido (sem repetir) <b>${brl(ttTodos.pago)}</b> · possível duplicidade <b style="color:#fca5a5">${brl(dupTot)}</b></div>
     <button class="btn" onclick="relatorioFornecedores()" ${a.length ? '' : 'disabled'}>🖨 PDF / imprimir esta lista</button></div>
   <div class="tw"><table>
-    <tr><th>Gravidade</th><th>Fornecedor</th><th>Regras e o que foi encontrado</th><th class="num">Valor envolvido<br><span style="text-transform:none;font-weight:500">sem repetir</span></th><th>Duplicidade?</th><th>Análise</th></tr>
+    <tr><th>Gravidade</th><th>Fornecedor</th><th>Achados executivos</th><th class="num">Valor envolvido<br><span style="text-transform:none;font-weight:500">sem repetir</span></th><th>Duplicidade?</th><th>Análise</th></tr>
     ${pg.map((x, k) => (x.i = ini + k, `<tr class="clic" onclick="abrirGrupoN(${ini + k})"><td>${sevChip(x.sev)}</td>
       <td class="small" style="max-width:220px"><b>${esc(x.f)}</b><br><span class="mut">${esc(x.contas.slice(0, 3).join(' / ').slice(0, 90))}</span></td>
       <td class="small">${porRegraNoGrupo(x).map(r => r.g.length === 1
-        ? `<span class="rl" onclick="event.stopPropagation();abrir(${r.g[0].n})"><span class="chip sv-${r.sev}">${r.k}</span> <b>${esc(A.REGRAS[r.k].nome)}</b> — <span class="mut">${esc(r.g[0].detalhe.slice(0, 140))}${r.g[0].detalhe.length > 140 ? '…' : ''}</span></span>`
-        : `<span class="rl" onclick="event.stopPropagation();verRegraDoFornecedor(${x.i},'${r.k}')"><span class="chip sv-${r.sev}">${r.k} ×${r.g.length}</span> <b>${esc(A.REGRAS[r.k].nome)}</b> — <span class="mut">${n0(r.g.length)} ocorrências · ${brl(somaImp(r.g))}${A.REGRAS[r.k].volume ? ' analisados' : ''} · clique para ver</span></span>`).join('')}</td>
+        ? `<span class="rl" onclick="event.stopPropagation();abrir(${r.g[0].n})"><span class="chip sv-${r.sev}">${esc(execNome(r.k))}</span> — <span class="mut">${esc(r.g[0].detalhe.slice(0, 140))}${r.g[0].detalhe.length > 140 ? '…' : ''}</span></span>`
+        : `<span class="rl" onclick="event.stopPropagation();verRegraDoFornecedor(${x.i},'${r.k}')"><span class="chip sv-${r.sev}">${esc(execNome(r.k))} ×${r.g.length}</span> — <span class="mut">${n0(r.g.length)} ocorrências · ${brl(somaImp(r.g))}${A.REGRAS[r.k].volume ? ' analisados' : ''} · clique para ver</span></span>`).join('')}</td>
       <td class="num b">${brl(x.tt.pago)}<div class="small mut" style="font-weight:400">${n0(x.idx.length)} título(s)</div></td>
       <td style="min-width:150px">${colDup(x)}</td><td>${resumoSit(x.g)}</td></tr>`)).join('') || '<tr><td colspan="6" class="mut" style="text-align:center;padding:30px">Nenhuma ocorrência com esses filtros.</td></tr>'}
     ${gs.length ? `<tr class="tot"><td colspan="3">TOTAL (${n0(gs.length)} fornecedores · cada título contado uma vez)</td><td class="num">${brl(ttTodos.pago)}</td><td class="num" style="text-align:left">${brl(dupTot)}</td><td></td></tr>` : ''}
@@ -482,7 +492,7 @@ window.relatorioFornecedores = () => {
   const a = filtradas(), gs = gruposFornecedor(a), idx = [...new Set(a.flatMap(o => o.titulos))], tt = totTitulos(idx), dupTot = gs.reduce((s, x) => s + x.dupV, 0);
   imprimirHTML('Ocorrências por fornecedor (uma linha por fornecedor)', `<div class="desc">Cada título contado uma vez. "Duplicidade" = suspeita de pagamento em dobro (R01 e Agente de Duplicidade). Nas demais regras o valor é o analisado, não perda.</div>
     <div class="k"><div><b>${n0(gs.length)}</b><span>fornecedores</span></div><div><b>${n0(a.length)}</b><span>ocorrências</span></div><div><b>${brl(tt.pago)}</b><span>valor envolvido (sem repetir)</span></div><div><b>${brl(dupTot)}</b><span>possível duplicidade</span></div></div>
-    <table><tr><th style="width:52px">Grav.</th><th style="width:22%">Fornecedor</th><th>Regras e o que foi encontrado</th><th class="n">Valor envolvido</th><th class="n">Possível duplicidade</th></tr>
+    <table><tr><th style="width:52px">Grav.</th><th style="width:22%">Fornecedor</th><th>Achados executivos</th><th class="n">Valor envolvido</th><th class="n">Possível duplicidade</th></tr>
     ${gs.map(x => `<tr><td>${gChip(x.sev)}</td><td><b>${esc(x.f)}</b></td><td>${porRegraNoGrupo(x).map(r => r.g.length === 1 ? `<b>${r.k}</b> ${esc(A.REGRAS[r.k].nome)} — ${esc(r.g[0].detalhe)} <i>(${SIT[r.g[0].sit]})</i>` : `<b>${r.k} ×${r.g.length}</b> ${esc(A.REGRAS[r.k].nome)} — ${brl(somaImp(r.g))}`).join('<br>')}</td><td class="n">${brl(x.tt.pago)}</td><td class="n">${x.dup.length ? brl(x.dupV) : 'não'}</td></tr>`).join('')}
     <tr class="tot"><td colspan="3">TOTAL (${n0(gs.length)} fornecedores)</td><td class="n">${brl(tt.pago)}</td><td class="n">${brl(dupTot)}</td></tr></table>`);
 };
@@ -493,7 +503,7 @@ function ocorrencias() {
   const ccs = [...new Set(R.titulos.map(t => t.cc))].sort();
   $('corpo').innerHTML = `
   <div class="filtros">
-    <select onchange="F.regra=this.value;F.pag=0;render()"><option value="">Todas as regras</option>${Object.entries(A.REGRAS).map(([k, r]) => `<option value="${k}" ${F.regra === k ? 'selected' : ''}>${k} · ${esc(r.nome)}</option>`).join('')}</select>
+    <select onchange="F.regra=this.value;F.pag=0;render()"><option value="">Todas as categorias</option>${[['F01','Pagamento em duplicidade'],['F02','Pagamento divergente'],['F03','Pagamento sem comprovação'],['F04','Dados / status incoerentes'],['F05','Anomalia financeira']].map(([k,n]) => `<option value="${k}" ${F.regra === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
     <select onchange="F.sev=this.value;F.pag=0;render()"><option value="">Toda gravidade</option>${Object.entries(SEV).map(([k, t]) => `<option value="${k}" ${F.sev === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
     <select onchange="F.sit=this.value;F.pag=0;render()"><option value="">Toda situação</option>${Object.entries(SIT).map(([k, t]) => `<option value="${k}" ${F.sit === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
     <select onchange="F.cc=this.value;F.pag=0;render()" style="max-width:220px"><option value="">Todos os centros de custo</option>${ccs.map(c => `<option ${F.cc === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
@@ -501,13 +511,13 @@ function ocorrencias() {
     <select onchange="F.ord=this.value;render()"><option value="sev" ${F.ord === 'sev' ? 'selected' : ''}>Ordenar: gravidade</option><option value="impacto" ${F.ord === 'impacto' ? 'selected' : ''}>Ordenar: impacto</option><option value="fornecedor" ${F.ord === 'fornecedor' ? 'selected' : ''}>Ordenar: fornecedor</option></select>
   </div>
   ${campoBusca('F', F.q)}
-  ${F.regra ? `<div class="aviso" style="border-color:var(--pri);background:rgba(59,130,246,.07)"><b>${F.regra} · ${esc(A.REGRAS[F.regra].nome)}.</b> ${esc(A.REGRAS[F.regra].desc)}</div>` : ''}
+  ${F.regra ? `<div class="aviso" style="border-color:var(--pri);background:rgba(59,130,246,.07)"><b>${esc(F.regra==='F05'?'Anomalia financeira':EXEC[F.regra].nome)}</b> · achados técnicos agrupados pelos agentes.</div>` : ''}
   ${F.vista === 'fornecedor' ? ocorrenciasPorFornecedor(a) : `
   <div class="row" style="justify-content:space-between;margin:10px 0"><div class="small mut">${n0(a.length)} ocorrência(s) · impacto somado <b>${brl(a.reduce((s, o) => s + o.impacto, 0))}</b></div>
     <button class="btn" onclick="relatorioLista()" ${a.length ? '' : 'disabled'}>🖨 PDF / imprimir esta lista</button></div>
   <div class="tw"><table>
-    <tr><th>Gravidade</th><th>Regra</th><th>Fornecedor</th><th>O que foi encontrado</th><th class="num">Impacto</th><th>Análise</th></tr>
-    ${pg.map(o => `<tr class="clic" onclick="abrir(${o.n})"><td>${sevChip(o.sev)}</td><td class="small"><b>${o.regra}</b><br><span class="mut">${esc(o.nome)}</span></td>
+    <tr><th>Gravidade</th><th>Categoria</th><th>Fornecedor</th><th>O que foi encontrado</th><th class="num">Valor em análise</th><th>Análise</th></tr>
+    ${pg.map(o => `<tr class="clic" onclick="abrir(${o.n})"><td>${sevChip(o.sev)}</td><td class="small"><b>${esc(execNome(o.regra))}</b></td>
       <td class="small" style="max-width:240px">${esc(o.fornecedor)}${o.conta ? `<br><span class="mut">${esc(o.conta.slice(0, 60))}</span>` : ''}</td>
       <td class="small">${esc(o.detalhe)}</td><td class="num b">${brl(o.impacto)}${A.REGRAS[o.regra].volume ? '<div class="small mut" style="font-weight:400">valor analisado, não é perda</div>' : ''}</td><td>${sitChip(o.sit)}</td></tr>`).join('') || '<tr><td colspan="6" class="mut" style="text-align:center;padding:30px">Nenhuma ocorrência com esses filtros.</td></tr>'}
     ${a.length ? `<tr class="tot"><td colspan="4">${pags > 1 ? `Subtotal da página (${n0(pg.length)})` : `TOTAL (${n0(a.length)} ocorrências)`}</td><td class="num">${brl(pg.reduce((s, o) => s + o.impacto, 0))}</td><td></td></tr>
@@ -920,10 +930,10 @@ function fornecedores() {
   $('corpo').innerHTML = `
   <div class="aviso" style="border-color:var(--pur);background:rgba(167,139,250,.07)">A nota de risco (0–100) soma <b>indícios diferentes</b> encontrados no mesmo fornecedor — cada regra conta uma vez, pelo peso da sua pior ocorrência (alta 10, média 4, baixa 1). Muitos indícios distintos cruzados no mesmo fornecedor = prioridade de investigação.</div>
   <div class="tw" style="margin-top:12px"><table>
-    <tr><th>#</th><th>Fornecedor</th><th>Risco</th><th>Regras disparadas</th><th class="num">Alta/Média/Baixa</th><th class="num">Total pago</th><th class="num">Impacto</th></tr>
+    <tr><th>#</th><th>Fornecedor</th><th>Risco</th><th>Achados executivos</th><th class="num">Alta/Média/Baixa</th><th class="num">Total pago</th><th class="num">Impacto</th></tr>
     ${a.slice(0, 300).map((f, i) => `<tr class="clic" onclick="dossie(${fx(f.nome)})"><td class="mut">${i + 1}</td><td class="small b">${esc(f.nome)}</td>
       <td style="min-width:120px"><div class="row" style="gap:6px;flex-wrap:nowrap"><div class="bar" style="flex:1"><i style="width:${f.score}%;background:${f.score >= 70 ? 'var(--bad)' : f.score >= 40 ? 'var(--warn)' : 'var(--pri)'}"></i></div><b class="small">${f.score}</b></div></td>
-      <td class="small">${f.regras.map(r => `<span class="chip sv-${f.pior[r]}" title="${esc(A.REGRAS[r].nome)}">${r}</span>`).join(' ')}</td>
+      <td class="small">${[...new Set(f.regras.map(r=>execNome(r)))].map(n => `<span class="chip sv-media">${esc(n)}</span>`).join(' ')}</td>
       <td class="num small">${f.alta}/${f.media}/${f.baixa}</td><td class="num">${brlK(f.pago)}</td><td class="num">${brlK(f.impacto)}</td></tr>`).join('')}
   </table></div>${a.length > 300 ? `<div class="small mut" style="margin-top:6px">Mostrando os 300 de maior risco de ${n0(a.length)}.</div>` : ''}`;
 }
