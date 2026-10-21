@@ -401,10 +401,16 @@ window.smartCard = tipo => {
   if(tipo==='pago') { const idx=ts.map((t,i)=>t.valorPago>0?i:-1).filter(i=>i>=0); return abrirSmart('Total pago',`Soma do valor pago de ${n0(idx.length)} título(s): <b>${brl(totTitulos(idx).pago)}</b>.`,tabTitulos(idx)); }
   if(tipo==='aberto') { const idx=ts.map((t,i)=>t.saldo>0?i:-1).filter(i=>i>=0); return abrirSmart('Em aberto',`Soma dos saldos em aberto: <b>${brl(idx.reduce((s,i)=>s+R.titulos[i].saldo,0))}</b>.`,tabTitulos(idx)); }
   if(tipo==='juros') {
-    const x=ts.map((t,i)=>({t,i,c:Number(t.juros||0)+Number(t.multa||0)})).filter(x=>x.c>0);
+    const x=ts.map((t,i)=>{
+      const explicito=Number(t.juros||0)+Number(t.multa||0);
+      const atrasado=!!(t.pagamento&&t.vencimento&&t.pagamento>t.vencimento);
+      const acrescimo=atrasado?Math.max(0,Number(t.valorPago||0)-Number(t.valorParcela||0)):0;
+      const c=explicito>0?explicito:acrescimo;
+      return {t,i,c,origem:explicito>0?'Juros/multa informado':'Acréscimo detectado'};
+    }).filter(x=>x.c>0);
     const total=x.reduce((s,x)=>s+x.c,0);
-    const tb=`<div class="tw" style="margin-top:12px;max-height:520px;overflow:auto"><table><tr><th>Fornecedor</th><th>Título</th><th>Vencimento</th><th>Pagamento</th><th class="num">Principal</th><th class="num">Pago</th><th class="num">Juros + multa</th></tr>${x.map(x=>`<tr><td>${esc(x.t.fornecedor)}</td><td>${esc(x.t.codigo)}</td><td>${dBRa(x.t.vencimento)}</td><td>${dBRa(x.t.pagamento)}</td><td class="num">${brl(x.t.valorParcela)}</td><td class="num">${brl(x.t.valorPago)}</td><td class="num"><b>${brl(x.c)}</b></td></tr>`).join('')}<tr class="tot"><td colspan="6">TOTAL · ${n0(x.length)} título(s)</td><td class="num">${brl(total)}</td></tr></table></div>`;
-    return abrirSmart('Juros e multas pagos',`Composição pelos campos de juros e multa do Sallamo. Total detalhado: <b>${brl(total)}</b>.`,tb);
+    const tb=`<div class="tw" style="margin-top:12px;max-height:520px;overflow:auto"><table><tr><th>Fornecedor</th><th>Título</th><th>Vencimento</th><th>Pagamento</th><th class="num">Principal</th><th class="num">Pago</th><th class="num">Custo</th><th>Origem</th></tr>${x.map(x=>`<tr><td>${esc(x.t.fornecedor)}</td><td>${esc(x.t.codigo)}</td><td>${dBRa(x.t.vencimento)}</td><td>${dBRa(x.t.pagamento)}</td><td class="num">${brl(x.t.valorParcela)}</td><td class="num">${brl(x.t.valorPago)}</td><td class="num"><b>${brl(x.c)}</b></td><td>${esc(x.origem)}</td></tr>`).join('')}<tr class="tot"><td colspan="6">TOTAL · ${n0(x.length)} título(s)</td><td class="num">${brl(total)}</td><td></td></tr></table></div>`;
+    return abrirSmart('Juros e acréscimos pagos',`Mostra juros/multa quando o Sallamo informa esses campos; caso contrário, mostra apenas o acréscimo detectado em pagamento após o vencimento, sem classificá-lo automaticamente como juros. Total detalhado: <b>${brl(total)}</b>.`,tb);
   }
   if(tipo==='alta') { const g=oc.filter(o=>o.sev==='alta'); return abrirSmart('Ocorrências de alta gravidade',`${n0(g.length)} ocorrência(s) classificadas como alta.`,tabelaOcSmart(g)); }
   if(tipo==='risco') { const g=oc.filter(o=>['R01','R23','R03','R08'].includes(o.regra)&&!(A.REGRAS_DUP.includes(o.regra)&&o.sev==='baixa')); return abrirSmart('Dinheiro em risco',`Composição das regras de duplicidade, pago a maior e fracionamento. Total: <b>${brl(g.reduce((s,o)=>s+o.impacto,0))}</b>.`,tabelaOcSmart(g)); }
