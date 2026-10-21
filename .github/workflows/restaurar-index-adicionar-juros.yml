@@ -12,14 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
-      - name: Restaurar index anterior e adicionar acesso aos juros
+          fetch-depth: 20
+      - name: Restaurar index e adicionar acesso aos juros
         shell: python
         run: |
           import subprocess
           from pathlib import Path
           p=Path('financeiro/index.html')
-          old=subprocess.check_output(['git','show','HEAD^:financeiro/index.html'], text=True)
+          old=subprocess.check_output(['git','show','HEAD~3:financeiro/index.html'], text=True)
           alvo='''      <a class="btn b-warn" href="revisao.html" title="Abrir casos financeiros que precisam de conferência">📥 Caixa de Revisão</a>'''
           novo=alvo+'\n      <a class="btn b-pri" href="juros.html" title="Buscar juros, multas e pagamentos em atraso por período">🔎 Juros e Atrasos</a>'
           if alvo not in old:
@@ -30,5 +30,5 @@ jobs:
           git config user.name "Portal Esposende Bot"
           git config user.email "actions@users.noreply.github.com"
           git add financeiro/index.html
-          git commit -m "fix: exibir buscador de juros e atrasos na auditoria"
+          git commit -m "fix: restaurar auditoria e exibir buscador de juros"
           git push
