@@ -29,7 +29,7 @@ h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .card{background:linear-gradient(180deg,var(--card),#0d1527);border:1px solid var(--line);border-radius:14px;padding:16px}
 .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),1fr))}
 .g2{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(380px,100%),1fr));align-items:start}
-.kpi{text-align:center;padding:16px 12px}
+.kpi{text-align:center;padding:16px 12px;cursor:pointer;transition:transform .12s,border-color .12s}.kpi:hover{transform:translateY(-1px);border-color:var(--line2)}
 .kpi .l{font-size:12px;color:var(--txt2);font-weight:600}
 .kpi .v{font-size:clamp(19px,2vw,25px);font-weight:800;margin-top:5px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .kpi .n{font-size:12px;color:var(--mut);margin-top:3px}
@@ -347,17 +347,17 @@ function painel() {
   $('corpo').innerHTML = `
   <h2>Visão geral</h2>
   <div class="grid">
-    ${kpi('Títulos analisados', n0(I.titulos), `${n0(I.codigos)} documentos · ${n0(I.fornecedores)} fornecedores`)}
-    ${kpi('Total pago', brlK(I.totalPago), `de ${brlK(I.valorTotal)} lançados`, 'k-ok')}
-    ${kpi('Em aberto', brlK(I.emAberto), `vencido: ${brlK(I.vencido)} (${n0(I.nVencidos)} títulos)`, 'k-warn')}
-    ${kpi('Juros/multa pagos', brl(I.juros), `${I.pctPagoAtraso.toLocaleString('pt-BR')}% pagos em atraso · ${I.prazoMedioAtraso.toLocaleString('pt-BR')} dias em média`, 'k-bad')}
-    ${kpi('Ocorrências de alta gravidade', n0(alta.length), `${n0(oc.length)} ocorrências no total`, 'k-bad')}
-    ${kpi('Dinheiro em risco', brlK(risco), 'duplicidade (R01 + Agente) + pago a maior + fracionamento', 'k-bad')}
-    ${kpi('Confirmadas irregulares', n0(irreg.length), brl(irreg.reduce((s, o) => s + o.impacto, 0)), 'k-pur')}
-    ${kpi('Concentração top 10', I.pctTop10.toLocaleString('pt-BR') + '%', `HHI ${n0(I.hhi)} · ${I.hhi > 1500 ? 'concentrado' : 'pulverizado'}`)}
+    ${kpi('Títulos analisados', n0(I.titulos), `${n0(I.codigos)} documentos · ${n0(I.fornecedores)} fornecedores`, '', `smartCard('titulos')`)}
+    ${kpi('Total pago', brlK(I.totalPago), `de ${brlK(I.valorTotal)} lançados`, 'k-ok', `smartCard('pago')`)}
+    ${kpi('Em aberto', brlK(I.emAberto), `vencido: ${brlK(I.vencido)} (${n0(I.nVencidos)} títulos)`, 'k-warn', `smartCard('aberto')`)}
+    ${kpi('Juros/multa pagos', brl(I.juros), `${I.pctPagoAtraso.toLocaleString('pt-BR')}% pagos em atraso · ${I.prazoMedioAtraso.toLocaleString('pt-BR')} dias em média`, 'k-bad', `smartCard('juros')`)}
+    ${kpi('Ocorrências de alta gravidade', n0(alta.length), `${n0(oc.length)} ocorrências no total`, 'k-bad', `smartCard('alta')`)}
+    ${kpi('Dinheiro em risco', brlK(risco), 'duplicidade (R01 + Agente) + pago a maior + fracionamento', 'k-bad', `smartCard('risco')`)}
+    ${kpi('Confirmadas irregulares', n0(irreg.length), brl(irreg.reduce((s, o) => s + o.impacto, 0)), 'k-pur', `smartCard('irreg')`)}
+    ${kpi('Concentração top 10', I.pctTop10.toLocaleString('pt-BR') + '%', `HHI ${n0(I.hhi)} · ${I.hhi > 1500 ? 'concentrado' : 'pulverizado'}`, '', `smartCard('top10')`)}
   </div>
   <h2>5 regras executivas · agentes fazem os cruzamentos técnicos por trás</h2>
-  <div class="regras">${porRegra.map(r => `<div class="card rg ${r.n ? '' : 'zero'}" onclick="aba('ocorrencias')">
+  <div class="regras">${porRegra.map(r => `<div class="card rg ${r.n ? '' : 'zero'}" onclick="smartMacro('${r.k}')">
     <div class="t"><span>${r.k} · ${esc(r.nome)}</span>${sevChip(r.sev)}</div>
     <div class="q">${n0(r.n)} <span class="i">${r.alta ? `· ${n0(r.alta)} alta` : ''}${r.pend ? ` · ${n0(r.pend)} para revisar` : ''}</span></div>
     <div class="i">impacto ${brl(r.v)}</div></div>`).join('')}</div>
@@ -381,7 +381,37 @@ function painel() {
       ${I.porConta.slice(0, 12).map(c => `<tr><td>${esc(c.c)}</td><td class="num">${brlK(c.v)}</td><td class="num">${n0(c.n)}</td></tr>`).join('')}</table></div></div>
   </div>`;
 }
-const kpi = (l, v, n, c = '') => `<div class="card kpi ${c}"><div class="l">${l}</div><div class="v">${v}</div><div class="n">${n}</div></div>`;
+const kpi = (l, v, n, c = '', acao = '') => `<div class="card kpi ${c}" ${acao ? `onclick="${acao}" role="button" tabindex="0" title="Toque para ver como este valor foi composto"` : ''}><div class="l">${l}</div><div class="v">${v}</div><div class="n">${n}</div>${acao ? '<div class="small mut" style="margin-top:7px">Toque para detalhar ›</div>' : ''}</div>`;
+function abrirSmart(titulo, resumo, corpo) {
+  $('mBody').innerHTML = `<button class="btn x" onclick="fechar()">✕</button><h1 style="font-size:19px">${esc(titulo)}</h1><div class="explica"><b>Como este card foi composto.</b> ${resumo}</div>${corpo}`;
+  $('modal').classList.remove('hidden');
+}
+function tabelaOcSmart(lista) {
+  return `<div class="tw" style="margin-top:12px;max-height:520px;overflow:auto"><table><tr><th>Regra</th><th>Fornecedor</th><th>O que foi encontrado</th><th class="num">Valor</th><th>Análise</th></tr>${lista.map(o=>`<tr class="clic" onclick="fechar();abrir(${o.n})"><td><b>${o.regra}</b></td><td>${esc(o.fornecedor)}</td><td class="small">${esc(o.detalhe)}</td><td class="num"><b>${brl(o.impacto)}</b></td><td>${sitChip(o.sit)}</td></tr>`).join('')}<tr class="tot"><td colspan="3">TOTAL · ${n0(lista.length)} ocorrência(s)</td><td class="num">${brl(lista.reduce((s,o)=>s+o.impacto,0))}</td><td></td></tr></table></div>`;
+}
+window.smartMacro = k => {
+  const defs={F01:['Pagamento em duplicidade',['R01','R02','R23']],F02:['Pagamento divergente',['R03','R20','R22']],F03:['Pagamento sem comprovação',['R13','R17']],F04:['Dados / status incoerentes',['R04','R05','R18']]};
+  const d=defs[k]||['Anomalia financeira',Object.keys(A.REGRAS).filter(x=>!['R01','R02','R23','R03','R20','R22','R13','R17','R04','R05','R18'].includes(x))];
+  const g=R.ocorrencias.filter(o=>d[1].includes(o.regra));
+  abrirSmart(d[0],`${n0(g.length)} ocorrência(s). O total abaixo fecha com o impacto mostrado no card.`,tabelaOcSmart(g));
+};
+window.smartCard = tipo => {
+  const ts=R.titulos, oc=R.ocorrencias;
+  if(tipo==='titulos') return abrirSmart('Títulos analisados',`${n0(ts.length)} títulos carregados do Sallamo no período selecionado.`,tabTitulos(ts.map((_,i)=>i)));
+  if(tipo==='pago') { const idx=ts.map((t,i)=>t.valorPago>0?i:-1).filter(i=>i>=0); return abrirSmart('Total pago',`Soma do valor pago de ${n0(idx.length)} título(s): <b>${brl(totTitulos(idx).pago)}</b>.`,tabTitulos(idx)); }
+  if(tipo==='aberto') { const idx=ts.map((t,i)=>t.saldo>0?i:-1).filter(i=>i>=0); return abrirSmart('Em aberto',`Soma dos saldos em aberto: <b>${brl(idx.reduce((s,i)=>s+R.titulos[i].saldo,0))}</b>.`,tabTitulos(idx)); }
+  if(tipo==='juros') {
+    const x=ts.map((t,i)=>({t,i,c:Number(t.juros||0)+Number(t.multa||0)})).filter(x=>x.c>0);
+    const total=x.reduce((s,x)=>s+x.c,0);
+    const tb=`<div class="tw" style="margin-top:12px;max-height:520px;overflow:auto"><table><tr><th>Fornecedor</th><th>Título</th><th>Vencimento</th><th>Pagamento</th><th class="num">Principal</th><th class="num">Pago</th><th class="num">Juros + multa</th></tr>${x.map(x=>`<tr><td>${esc(x.t.fornecedor)}</td><td>${esc(x.t.codigo)}</td><td>${dBRa(x.t.vencimento)}</td><td>${dBRa(x.t.pagamento)}</td><td class="num">${brl(x.t.valorParcela)}</td><td class="num">${brl(x.t.valorPago)}</td><td class="num"><b>${brl(x.c)}</b></td></tr>`).join('')}<tr class="tot"><td colspan="6">TOTAL · ${n0(x.length)} título(s)</td><td class="num">${brl(total)}</td></tr></table></div>`;
+    return abrirSmart('Juros e multas pagos',`Composição pelos campos de juros e multa do Sallamo. Total detalhado: <b>${brl(total)}</b>.`,tb);
+  }
+  if(tipo==='alta') { const g=oc.filter(o=>o.sev==='alta'); return abrirSmart('Ocorrências de alta gravidade',`${n0(g.length)} ocorrência(s) classificadas como alta.`,tabelaOcSmart(g)); }
+  if(tipo==='risco') { const g=oc.filter(o=>['R01','R23','R03','R08'].includes(o.regra)&&!(A.REGRAS_DUP.includes(o.regra)&&o.sev==='baixa')); return abrirSmart('Dinheiro em risco',`Composição das regras de duplicidade, pago a maior e fracionamento. Total: <b>${brl(g.reduce((s,o)=>s+o.impacto,0))}</b>.`,tabelaOcSmart(g)); }
+  if(tipo==='irreg') { const g=oc.filter(o=>o.sit==='irregular'); return abrirSmart('Confirmadas irregulares',`${n0(g.length)} ocorrência(s) já marcadas como irregulares.`,tabelaOcSmart(g)); }
+  if(tipo==='top10') { const I=R.indicadores; const tb=`<div class="tw" style="margin-top:12px"><table><tr><th>Fornecedor</th><th class="num">Pago</th><th class="num">Participação</th></tr>${I.top10.map(f=>`<tr class="clic" onclick="fechar();dossie(${fx(f.f)})"><td>${esc(f.f)}</td><td class="num">${brl(f.v)}</td><td class="num">${(f.v/I.totalPago*100).toFixed(2)}%</td></tr>`).join('')}<tr class="tot"><td>TOTAL TOP 10</td><td class="num">${brl(I.top10.reduce((s,f)=>s+f.v,0))}</td><td class="num">${I.pctTop10.toFixed(2)}%</td></tr></table></div>`; return abrirSmart('Concentração top 10',`Mostra exatamente quais fornecedores formam os <b>${I.pctTop10.toFixed(2)}%</b> do card.`,tb); }
+};
+
 function benfordSVG(b) {
   const W = 360, H = 170, bw = W / 9, max = Math.max(...b.digitos.map(d => Math.max(d.obs, d.esp)), .01);
   const y = v => H - 18 - v / max * (H - 30);
