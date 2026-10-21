@@ -27,7 +27,8 @@
     benfordMAD: 0.015,         // R10: MAD acima disso = não conformidade (Nigrini)
     dupJanela: 7,              // R23: dias entre um pagamento e outro de mesmo valor para ser "o mesmo dinheiro saindo de novo"
     dupAgenteMin: 50,          // R23: valor mínimo (pega reembolso de Uber, vale-transporte, pensão…)
-    dupAgenteNota: 30,         // R23: nota de confiança mínima (0–100) para virar ocorrência
+    dupAgenteNota: 45,         // R23: nota de confiança mínima (0–100) para virar ocorrência (abaixo disso é ruído, não duplicidade)
+    concMin: 5,                // R25: itens de um título lançados numa loja só (fornecedor que costuma ter 1 por loja)
   };
 
   // Situação do título: só é dívida em aberto o que ainda vai ser pago. Renegociado (substituído por outro título),
@@ -38,6 +39,7 @@
 
   // Contas onde certos padrões são normais
   const RX_MERCADORIA = /compras a prazo|compras a vista|frete de compra|adiantamentos? (a|à) fornecedores de mercadoria/i;
+  const RX_COMPRA = /compras a prazo|compras a vista|frete de compra/i;  // nota de mercadoria (sem o adiantamento)
   const RX_ADIANTAMENTO = /adiantamento/i;
   const RX_TRIBUTO = /icms|iss\b|iptu|ipva|tribut|imposto|fgts|inss|pis|cofins|irrf|csll|contribui[cç][aã]o|taxa de|parcelamento|das\b|simples/i;
   const RX_FOLHA = /sal[aá]ri|f[eé]rias|re[cs]+is|pens[aã]o|fgts|13º|d[eé]cimo|pr[oó].?labore|vale transporte|ajuda de custo|pr[eê]mio|bolsa|est[aá]gi|inss|comiss|trabalhist|rpa\b|aut[oô]nomo|di[aá]ria|reembolso/i;
@@ -108,13 +110,13 @@
   ]);
 
   const REGRAS = {
-    R01: {nome: 'Pagamento em duplicidade', sev: 'alta', desc: 'Mesmo fornecedor, mesmo valor, mesmo vencimento e mesmo centro de custo em títulos (códigos) diferentes. Clássico de pagamento em dobro ou nota lançada duas vezes. Alta = mesma competência fora de mercadoria.'},
-    R02: {nome: 'Lançamento repetido no mesmo título', sev: 'media', desc: 'Linhas idênticas (valor, vencimento, conta e centro de custo) dentro do mesmo código. Pode ser rateio legítimo ou lançamento repetido.'},
+    R01: {nome: 'Pagamento em duplicidade', sev: 'alta', desc: 'Mesmo fornecedor, mesmo valor, mesmo vencimento e mesmo centro de custo em títulos (códigos) diferentes, os dois PAGOS. Clássico de nota lançada duas vezes. Alta = mesma competência fora de mercadoria. Compra de mercadoria (compras a prazo/à vista) fica em baixa: dois pedidos iguais da mesma grade são comuns — só o nº da NF ou o comprovante confirma.'},
+    R02: {nome: 'Itens iguais no mesmo título', sev: 'media', desc: 'Linhas idênticas (valor, vencimento, conta e centro de custo) dentro do mesmo código. A API do Sallamo manda uma linha por item da nota, sem nº do item: pode ser a nota com itens iguais (uma maquininha, um funcionário, uma loja por linha) ou um item lançado 2×. NÃO é prova de pagamento em dobro — confira a nota. Média = poucas linhas de valor alto.'},
     R03: {nome: 'Pago a maior', sev: 'alta', desc: 'Valor pago maior que o valor da parcela. Se pago em atraso, a diferença é juros/multa (custo evitável); se em dia, é pagamento indevido.'},
     R04: {nome: 'Status incoerente', sev: 'media', desc: 'Situação do título não bate com os valores: cancelado com pagamento, vencido/renegociado já pago por inteiro, "A vencer" já vencido, pago sem data. (Pago a menor fica na R20.)'},
     R05: {nome: 'Pagamento antecipado', sev: 'media', desc: 'Pago muito antes do vencimento ou antes da própria competência, fora de conta de adiantamento. Antecipar sem desconto é perda financeira e pode indicar favorecimento.'},
     R06: {nome: 'Pagamento em fim de semana/feriado', sev: 'media', desc: 'Baixa registrada em sábado, domingo ou feriado nacional — fora do expediente bancário normal.'},
-    R08: {nome: 'Possível fracionamento', sev: 'alta', desc: 'Vários títulos do mesmo fornecedor pagos no mesmo dia, cada um abaixo da alçada de aprovação, mas que somados passam dela.'},
+    R08: {nome: 'Possível fracionamento', sev: 'alta', desc: 'Vários títulos do mesmo fornecedor pagos no mesmo dia, cada título (somando seus itens) abaixo da alçada de aprovação, mas que somados passam dela.'},
     R09: {nome: 'Valor atípico', sev: 'media', desc: 'Valor muito acima do padrão histórico do mesmo fornecedor na mesma conta contábil.'},
     R10: {nome: 'Lei de Benford', sev: 'baixa', volume: true, desc: 'Teste estatístico, NÃO é duplicidade. Em valores naturais cerca de 30% começam com 1 e só 5% com 9. Quando um fornecedor tem muito mais valores começando por um mesmo número do que o normal, pode haver valores combinados ou ajustados — ou só preço fixo que se repete. O valor mostrado é o total pago ao fornecedor (referência), não perda.'},
     R11: {nome: 'Cadastro de fornecedor duplicado', sev: 'media', volume: true, desc: 'Nomes de fornecedor quase iguais (grafia, espaços, sufixos). Cadastro duplicado facilita pagamento em dobro e desvio.'},
@@ -129,8 +131,9 @@
     R20: {nome: 'Pago a menor (desconto/abatimento)', sev: 'media', desc: 'Duplicata paga por valor menor que a parcela. Se a baixa foi total ("Pago"), a diferença é desconto ou abatimento e precisa de documento (acordo, devolução, nota de crédito); se não, é pagamento parcial com saldo devedor.'},
     R21: {nome: 'Despesa na conta errada', sev: 'media', volume: true, desc: 'O nome do fornecedor indica um tipo de despesa (hotel, posto, Uber, restaurante, companhia aérea…) mas o lançamento está em outra conta contábil. Despesa "escondida" em conta que não é dela.'},
     R22: {nome: 'Duplicata com observação/abatimento', sev: 'media', desc: 'Pagamento com observação, desconto, abatimento, juros ou multa informados no Sallamo. Ler a observação e conferir o documento que justifica a diferença. (Depende da API enviar esses campos.)'},
-    R23: {nome: 'Possível duplicidade (Agente)', sev: 'alta', desc: 'Agente de Duplicidade: o mesmo valor exato PAGO mais de uma vez para o mesmo fornecedor/pessoa — no mesmo dia, em dias próximos, no mesmo título (código), em centros de custo diferentes ou, na folha (pensão, salário, vale-transporte, Uber, reembolso…), na mesma competência. Só entram pagamentos: renegociado, cancelado e em aberto não são duplicidade. Cada caso tem nota de confiança 0–100 e os eventos lado a lado. Impacto = o que pode ter saído a mais.'},
+    R23: {nome: 'Possível duplicidade (Agente)', sev: 'alta', desc: 'Agente de Duplicidade: o mesmo valor exato PAGO mais de uma vez para o mesmo fornecedor/pessoa — em títulos diferentes da MESMA loja repetindo o documento (mesmo vencimento, ou mesma competência na mesma conta, em até 7 dias; na folha, a mesma competência) ou a MESMA parcela (mesmo título + mesmo vencimento) baixada de novo. Parcelas diferentes do mesmo título, itens da mesma baixa, cobrança por loja e pagamento semanal igual NÃO contam. Só vira ocorrência com confiança ≥ 45. Só entram pagamentos: renegociado, cancelado e em aberto não são duplicidade. Cada caso tem nota de confiança 0–100 e os eventos lado a lado. Impacto = o que pode ter saído a mais.'},
     R24: {nome: 'Título a pagar repetido (prevenção)', sev: 'media', desc: 'Ainda NÃO é duplicidade: título em aberto (a vencer/previsto/vencido) que repete outro do mesmo fornecedor e mesmo valor — o mesmo título, o mesmo vencimento ou a mesma competência no mesmo centro. Alta = o outro já foi pago (pagar este é pagar 2×); média = os dois em aberto (cancele um). Renegociado e cancelado não entram.'},
+    R25: {nome: 'Centro de custo concentrado (rateio)', sev: 'media', volume: true, desc: 'NÃO é duplicidade. O fornecedor costuma lançar 1 a 2 itens por loja em cada título, mas um título trouxe muitos itens numa loja só (ex.: as maquininhas da rede inteira lançadas em uma loja). O título foi pago uma vez; o problema é o rateio/centro de custo, que distorce o resultado por loja. O valor é o analisado, não perda.'},
   };
   // Regras de duplicidade (o "impacto" delas é dinheiro que pode ter saído em dobro)
   const REGRAS_DUP = ['R01', 'R23'];
@@ -208,14 +211,14 @@
     for (const [k, g] of porFV) {
       const cods = unicos(g.map(t => t.codigo));
       if (cods.length < 2) continue;
-      const merc = RX_MERCADORIA.test(g[0].conta);
+      const merc = RX_MERCADORIA.test(g[0].conta), compra = RX_COMPRA.test(g[0].conta);
       if (merc && cods.length >= 3) continue;
       if (cods.length >= cfg.dupRecorrente && RX_RECORRENTE.test(g[0].conta)) continue;
       const mesmaComp = new Set(g.map(t => t.competencia)).size === 1;
       const pags = unicos(g.map(t => t.pagamento)).sort();
       const x = g[0];
       add('R01', k + '|' + cods.join('-'), {
-        sev: !merc && mesmaComp ? 'alta' : 'media', fornecedor: x.fornecedor, conta: unicos(g.map(t => t.conta)).join(' / '), cc: unicos(g.map(t => t.cc)).join(' / '),
+        sev: compra ? 'baixa' : !merc && mesmaComp ? 'alta' : 'media', fornecedor: x.fornecedor, conta: unicos(g.map(t => t.conta)).join(' / '), cc: unicos(g.map(t => t.cc)).join(' / '),
         impacto: r2(x.valorPago * (cods.length - 1)), titulos: g.map(t => t.i),
         detalhe: `${brl(x.valorPago)} pago ${cods.length}× com vencimento ${dBRa(x.vencimento)} no ${x.cc} · códigos ${cods.join(', ')} · pago em ${pags.map(dBR).join(', ')}` +
           (mesmaComp ? ' · mesma competência' : ''),
@@ -228,8 +231,8 @@
     for (const [k, g] of porLinha) {
       if (g.length < 2) continue;
       const x = g[0];
-      add('R02', k, {fornecedor: x.fornecedor, conta: x.conta, cc: x.cc, impacto: r2(x.valorParcela * (g.length - 1)), titulos: g.map(t => t.i),
-        detalhe: `Cód. ${x.codigo}: ${g.length} linhas idênticas de ${brl(x.valorParcela)} (venc. ${dBR(x.vencimento)}) · total ${brl(x.valorParcela * g.length)}`});
+      add('R02', k, {sev: g.length <= 3 && x.valorParcela >= 1000 ? 'media' : 'baixa', fornecedor: x.fornecedor, conta: x.conta, cc: x.cc, impacto: r2(x.valorParcela * (g.length - 1)), titulos: g.map(t => t.i),
+        detalhe: `Cód. ${x.codigo}: ${g.length} linhas idênticas de ${brl(x.valorParcela)} (venc. ${dBR(x.vencimento)}) · total ${brl(x.valorParcela * g.length)} · conferir na nota se são ${g.length} itens ou 1 lançado ${g.length}×`});
     }
 
     // R03 — pago a maior
@@ -274,12 +277,14 @@
         detalhe: `Cód. ${t.codigo}: ${brl(t.valorPago)} pago em ${dBR(t.pagamento)} (${fer ? 'feriado nacional' : ds === 0 ? 'domingo' : 'sábado'})`});
     }
 
-    // R08 — fracionamento
-    const porFD = agrupar(pagos.filter(t => !RX_MERCADORIA.test(t.conta) && t.valorPago < cfg.alcada), t => t.fornecedor + '|' + t.pagamento);
+    // R08 — fracionamento: compara o TÍTULO inteiro com a alçada (a API manda uma linha por item; somar itens de um mesmo título
+    // não é fracionar). Pega ≥ fracMin títulos do mesmo fornecedor no mesmo dia, cada um abaixo da alçada, somando acima dela.
+    const porFD = agrupar(pagos.filter(t => !RX_MERCADORIA.test(t.conta)), t => t.fornecedor + '|' + t.pagamento);
     for (const [k, g] of porFD) {
+      const porTit = [...agrupar(g, t => t.codigo).values()].map(x => r2(x.reduce((s, t) => s + t.valorPago, 0)));
       const cods = new Set(g.map(t => t.codigo));
-      const soma = r2(g.reduce((s, t) => s + t.valorPago, 0));
-      if (cods.size < cfg.fracMin || soma < cfg.alcada) continue;
+      const soma = r2(porTit.reduce((s, v) => s + v, 0));
+      if (cods.size < cfg.fracMin || soma < cfg.alcada || Math.max(...porTit) >= cfg.alcada) continue;
       add('R08', k, {sev: soma >= cfg.alcada * 2 ? 'alta' : 'media', fornecedor: g[0].fornecedor, conta: unicos(g.map(t => t.conta)).join(' / '), cc: unicos(g.map(t => t.cc)).join(' / '),
         impacto: soma, titulos: g.map(t => t.i),
         detalhe: `${cods.size} títulos pagos em ${dBR(g[0].pagamento)}, todos abaixo de ${brl(cfg.alcada)}, somando ${brl(soma)}`});
@@ -430,10 +435,31 @@
         detalhe: `Cód. ${t.codigo}: ${partes.join(' · ') || 'observação no pagamento'}${t.obs ? ` · obs.: "${t.obs.slice(0, 200)}"` : ''}`});
     }
 
-    // R23 — Agente de Duplicidade: mesmo fornecedor (cadastro normalizado) + mesmo valor exato saindo mais de uma vez
-    // em datas próximas (≤ dupJanela dias entre um e outro) — ou, nas contas de pessoas (folha, benefício, reembolso),
-    // na mesma competência. SÓ PAGAMENTOS DE VERDADE: duplicidade é quando os dois foram pagos (renegociado, cancelado e
-    // títulos em aberto não entram — os em aberto repetidos vão para a R24, prevenção). Casos já inteiros na R01 não se repetem.
+    // R25 — centro de custo concentrado: o fornecedor costuma ter 1–2 itens por loja em cada título (ex.: mensalidade da
+    // maquininha), mas um título trouxe muitos itens numa loja só (ex.: 20 maquininhas da rede em São Lourenço da Mata).
+    // NÃO é duplicidade (o título foi pago uma vez): é rateio/centro de custo errado, que distorce o resultado por loja.
+    // Folha, sindicato e benefício ficam fora (um item por funcionário é normal).
+    for (const [f, g] of agrupar(T.filter(t => !RX_NAO_DIVIDA.test(t.status) && t.categoria !== 'receita' && !RX_MERCADORIA.test(t.conta) &&
+        !RX_FOLHA_DUP.test(t.conta) && !/sindicato|contribui|benef/i.test(t.conta)), t => t.fornecedor)) {
+      const porTitCC = [...agrupar(g, t => t.codigo + '|' + t.cc).values()];
+      const normais = porTitCC.filter(x => x.length <= 2), lojas = unicos(normais.map(x => x[0].cc)).length;
+      if (lojas < 3 || normais.length < 3) continue;
+      for (const x of porTitCC) {
+        if (x.length < cfg.concMin) continue;
+        const tot = r2(x.reduce((s, t) => s + (t.valorPago || t.valorParcela), 0));
+        add('R25', x[0].codigo + '|' + x[0].cc, {sev: tot >= 1000 ? 'media' : 'baixa', fornecedor: f, conta: x[0].conta, cc: x[0].cc, impacto: tot, titulos: x.map(t => t.i),
+          detalhe: `Cód. ${x[0].codigo}: ${x.length} itens (${brl(tot)}) lançados só em ${x[0].cc} — nos outros títulos este fornecedor tem 1 a 2 itens por loja em ${lojas} lojas: confira o rateio (centro de custo). Não é pagamento em dobro.`});
+      }
+    }
+
+    // R23 — Agente de Duplicidade: mesmo fornecedor (cadastro normalizado) + mesmo valor exato PAGO mais de uma vez.
+    // A API manda UMA LINHA POR ITEM/PARCELA (sem nº do item nem da parcela). Por isso o agente compara PAGAMENTOS, não linhas:
+    //  · linhas do mesmo título + mesmo vencimento + mesma data de pagamento = a MESMA baixa (itens da nota, rateio) → um evento só;
+    //  · parcelas diferentes do mesmo título (vencimentos diferentes) NÃO são duplicidade (ex.: adiantamento diário de R$ 202 mil);
+    //  · liga dois eventos quando são títulos diferentes da mesma loja com o mesmo vencimento/competência (≤ dupJanela dias, ou na
+    //    folha a mesma competência), quando é a MESMA
+    //    parcela (título + vencimento) baixada de novo em outra data, ou — fraco — título com só 2 parcelas iguais coladas (≤3 dias).
+    // SÓ PAGAMENTOS: renegociado, cancelado e em aberto não entram (os em aberto repetidos vão para a R24). Casos já na R01 não se repetem.
     const naR01 = ocorrencias.filter(o => o.regra === 'R01').map(o => new Set(o.titulos));
     const linhasDup = [];
     for (const t of T) {
@@ -443,32 +469,48 @@
     const mesComp = t => (t.competencia || '').slice(0, 7);
     for (const [, g] of agrupar(linhasDup, x => x.chave + '|' + x.valor.toFixed(2))) {
       if (g.length < 2) continue;
-      g.sort((a, b) => a.data.localeCompare(b.data) || a.t.i - b.t.i);
-      const grupos = [[g[0]]];
-      for (let k = 1; k < g.length; k++) {
-        const b = g[k], atual = grupos[grupos.length - 1], a = atual[atual.length - 1];
-        const perto = difDias(b.data, a.data) <= cfg.dupJanela;
-        const mesmaFolha = RX_FOLHA_DUP.test(b.t.conta) && mesComp(b.t) && atual.some(x => x.t.conta === b.t.conta && mesComp(x.t) === mesComp(b.t));
-        if (perto || mesmaFolha) atual.push(b); else grupos.push([b]);
-      }
-      for (const grupo of grupos) {
-        if (grupo.length < 2 || unicos(grupo.map(x => x.t.i)).length < 2) continue;
-        if (naR01.some(s => grupo.every(x => s.has(x.t.i)))) continue;
-        const d = avaliarDuplicidade(grupo);
+      // eventos de pagamento (a mesma baixa com vários itens/lojas vira um evento só)
+      const ev = [...agrupar(g, x => [x.t.codigo, x.t.vencimento, x.data].join('|')).values()]
+        .map(ls => ({rep: ls[0], linhas: ls})).sort((a, b) => a.rep.data.localeCompare(b.rep.data) || a.rep.t.i - b.rep.t.i);
+      if (ev.length < 2) continue;
+      // vencimentos distintos de cada título neste valor (título com muitas parcelas iguais = parcelamento, não duplicidade)
+      const vencsCod = new Map();
+      for (const e of ev) { const c = e.rep.t.codigo; if (!vencsCod.has(c)) vencsCod.set(c, new Set()); vencsCod.get(c).add(e.rep.t.vencimento); }
+      const liga = (a, b) => {
+        const ta = a.rep.t, tb = b.rep.t;
+        const perto = Math.abs(difDias(b.rep.data, a.rep.data)) <= cfg.dupJanela;
+        const mesmaFolha = RX_FOLHA_DUP.test(tb.conta) && RX_FOLHA_DUP.test(ta.conta) && mesComp(tb) && mesComp(ta) === mesComp(tb);   // mesma pessoa, mesma competência (mesmo em contas de pessoal diferentes)
+        // títulos diferentes: só na MESMA loja e repetindo o documento (mesmo vencimento, ou mesma competência na mesma conta).
+        // Mesmo valor em lojas diferentes é cobrança por loja (alarme, dedetização, internet, maquininha) e pagamento semanal
+        // igual tem vencimentos diferentes — nenhum dos dois é duplicidade. Pessoa (folha, pensão, reembolso): mesma competência.
+        if (ta.codigo !== tb.codigo) return mesmaFolha || (perto && ta.cc === tb.cc &&
+          (ta.vencimento && ta.vencimento === tb.vencimento || ta.competencia && ta.competencia === tb.competencia && ta.conta === tb.conta));
+        if (ta.vencimento === tb.vencimento) return true;   // mesma parcela baixada em outra data
+        return perto && vencsCod.get(ta.codigo).size === 2 && !RX_MERCADORIA.test(ta.conta) && ta.vencimento && tb.vencimento &&
+          Math.abs(difDias(tb.vencimento, ta.vencimento)) <= 3;   // fraco: só 2 parcelas iguais coladas (entrada + saldo?)
+      };
+      // componentes ligados (union-find)
+      const pai = ev.map((_, k) => k), raiz = k => pai[k] === k ? k : (pai[k] = raiz(pai[k]));
+      for (let x = 0; x < ev.length; x++) for (let y = x + 1; y < ev.length; y++) if (liga(ev[x], ev[y])) pai[raiz(y)] = raiz(x);
+      for (const comp of agrupar(ev.map((e, k) => k), raiz).values()) {
+        if (comp.length < 2) continue;
+        const evs = comp.map(k => ev[k]), linhas = evs.flatMap(e => e.linhas);
+        if (naR01.some(s => linhas.every(x => s.has(x.t.i)))) continue;
+        const d = avaliarDuplicidade(evs.map(e => e.rep));
         if (d.nota < cfg.dupAgenteNota) continue;
-        const ts = grupo.map(x => x.t), cods = unicos(ts.map(t => t.codigo)).sort();
-        add('R23', [grupo[0].chave, d.valor.toFixed(2), cods.join('-'), grupo[0].data].join('|'), {
+        const ts = linhas.map(x => x.t), cods = unicos(ts.map(t => t.codigo)).sort();
+        add('R23', [evs[0].rep.chave, d.valor.toFixed(2), cods.join('-'), evs[0].rep.data].join('|'), {
           sev: d.nota >= 70 ? 'alta' : d.nota >= 45 ? 'media' : 'baixa',
           fornecedor: unicos(ts.map(t => t.fornecedor)).join(' / '), conta: unicos(ts.map(t => t.conta)).join(' / '), cc: unicos(ts.map(t => t.cc)).join(' / '),
           impacto: d.excesso, titulos: ts.map(t => t.i), dup: d,
           detalhe: `${brl(d.valor)} pago ${d.pagos}× · ` +
-            `${unicos(grupo.map(x => x.data)).map(dBRa).join(', ')} · cód. ${cods.join(', ')} · confiança ${d.nota}/100`,
+            `${unicos(evs.map(e => e.rep.data)).sort().map(dBRa).join(', ')} · cód. ${cods.join(', ')} · confiança ${d.nota}/100`,
         });
       }
     }
 
     // R24 — PREVENÇÃO (ainda não é duplicidade): título realmente EM ABERTO (A vencer, Previsto, Vencido — renegociado e
-    // cancelado não contam) que repete outro do mesmo fornecedor e mesmo valor: o mesmo título com vencimento colado (≤3 dias),
+    // cancelado não contam) que repete outro do mesmo fornecedor e mesmo valor: a mesma parcela do título (mesmo vencimento),
     // ou outro título com o mesmo vencimento no mesmo centro, ou a mesma competência + conta + centro. Se o outro já foi PAGO,
     // pagar este é pagar 2× (alta); se os dois estão em aberto, foi lançado 2× (média) — cancele um antes de pagar.
     const valorDe = t => ehPago(t) ? t.valorPago : t.saldo;
@@ -476,9 +518,14 @@
     const jaPrev = new Set();
     for (const [, g] of agrupar(vivosPrev, t => (chaveNome(t.fornecedor) || t.fornecedor) + '|' + valorDe(t).toFixed(2))) {
       if (g.length < 2 || !g.some(emAberto)) continue;
+      // parcelas do mesmo título: só a MESMA parcela (mesmo vencimento) já paga — ou título com só 2 parcelas iguais coladas;
+      // título com várias parcelas iguais (adiantamento diário, parcelamento) não é repetição
+      const vencsCod = agrupar(g, t => t.codigo);
       for (const a of g.filter(emAberto)) {
+        const nVenc = unicos(vencsCod.get(a.codigo).map(t => t.vencimento)).length;
         const par = g.filter(b => b !== a && (b.codigo === a.codigo
-          ? a.vencimento && b.vencimento && Math.abs(difDias(b.vencimento, a.vencimento)) <= 3
+          ? a.vencimento && b.vencimento && (b.vencimento === a.vencimento ? ehPago(b) && b.cc === a.cc   // itens em aberto da mesma nota ficam na R02
+            : nVenc === 2 && !RX_MERCADORIA.test(a.conta) && Math.abs(difDias(b.vencimento, a.vencimento)) <= 3)
           : !RX_MERCADORIA.test(a.conta) && b.cc === a.cc && ((a.vencimento && b.vencimento === a.vencimento) || (a.competencia && b.competencia === a.competencia && b.conta === a.conta))));
         if (!par.length) continue;
         const S = [a, ...par].sort((x, y) => x.i - y.i), chave = S.map(t => t.i).join(',');
@@ -585,8 +632,10 @@
     const rateio = cods.length === 1 && ccs.length === n && datas.length === 1;  // um título dividido entre lojas no mesmo dia
     if (cods.length === 1 && !rateio) {
       marcas.push('mesmo_titulo');
-      if (vencSpan <= 3) { nota += 25; sinais.push(`mesmo título (cód. ${cods[0]}) baixado ${n}× com o mesmo valor`); }
-      else { nota += 5; alivios.push(`mesmo título (cód. ${cods[0]}) com vencimentos diferentes — podem ser parcelas`); }
+      const somaPago = r2(ts.reduce((s, t) => s + t.valorPago, 0)), parcela = Math.max(...ts.map(t => t.valorParcela));
+      if (vencs.length === 1 && somaPago <= parcela + 1) { nota -= 40; alivios.push(`pagamento parcial: a soma paga (${brl(somaPago)}) não passa do valor da parcela (${brl(parcela)})`); }
+      else if (vencs.length === 1) { nota += 25; marcas.push('mesma_parcela'); sinais.push(`a MESMA parcela (cód. ${cods[0]}, venc. ${dBRa(vencs[0])}) baixada ${n}× em datas diferentes`); }
+      else { nota += 10; alivios.push(`vencimentos diferentes no mesmo título (${vencs.map(dBRa).join(', ')}) — podem ser 2 parcelas (entrada + saldo): confira na nota quantas parcelas o título tem`); }
     }
     if (docs.length === n && unicos(docs).length === 1) { nota += 30; sinais.push(`mesmo nº de documento/NF (${docs[0]})`); }
     if (vencs.length === 1 && ts.every(t => t.vencimento)) { nota += 15; sinais.push(`mesmo vencimento (${dBRa(vencs[0])})`); }
@@ -603,6 +652,7 @@
     }
     // padrões legítimos
     if (ts.every(t => RX_MERCADORIA.test(t.conta)) && cods.length >= 3) { nota -= 35; alivios.push('lote de pedidos iguais de mercadoria (grade de calçado)'); }
+    else if (ts.every(t => RX_COMPRA.test(t.conta)) && cods.length === 2) { nota -= 15; alivios.push('duas notas de mercadoria com o mesmo valor — pedidos iguais da mesma grade são comuns: confira o nº das duas NFs'); }
     if (rateio) { nota -= 40; alivios.push(`mesmo título (cód. ${cods[0]}) dividido entre centros de custo no mesmo dia (rateio)`); }
     else if (cods.length === n && ccs.length === n && contas.every(c => RX_RECORRENTE.test(c) || /monitoramento/i.test(c))) { nota -= n >= 3 ? 45 : 30; alivios.push('cada loja com o seu próprio título de cobrança mensal (pode ser o preço por loja)'); }
     if (datas.length >= 4 && cods.length > 1) { nota -= 25; alivios.push(`${datas.length} datas diferentes em sequência — parece cobrança recorrente`); }
@@ -771,27 +821,53 @@
   }
 
   // ---------- Verificação direta: já houve pagamento em duplicidade? ----------
-  // EXATA = mesmo fornecedor + mesmo título (código) + mesmo valor pago + mesma data de pagamento, no mesmo centro de custo.
-  // Mesmo título dividido entre lojas no mesmo dia é rateio (mostrado à parte). DIAS DIFERENTES = o mesmo, pago de novo até 7 dias depois.
-  function duplicidadeExata(T, dias = 7) {
+  // A API do Sallamo manda UMA LINHA POR ITEM/PARCELA, sem nº do item, da parcela, da NF nem o comprovante. Então:
+  //  · PARCELA = fornecedor + título (código) + VENCIMENTO + valor. Parcelas com vencimentos diferentes pagas no mesmo dia
+  //    são parcelas diferentes (ex.: adiantamento diário Beira Rio) — NÃO é duplicidade (só contadas, em parcelasMesmoDia);
+  //  · mesmaParcela: a mesma parcela baixada em DATAS diferentes e a soma paga passa do valor da parcela → suspeita forte;
+  //  · titulosDiferentes: títulos diferentes, mesmo fornecedor + valor + vencimento + centro, todos pagos → suspeita (nota 2×);
+  //    compra de mercadoria vai à parte (mercadoria): pedidos iguais da mesma grade são comuns, só a NF confirma;
+  //  · itensIguais: linhas iguais do mesmo título, mesmo vencimento e mesmo dia = itens da mesma nota (maquininha, funcionário…)
+  //    — não é prova de pagamento 2×, conferir a nota; rateios: o mesmo, dividido entre lojas.
+  // Nada aqui é "confirmado": confirmado é quando o auditor vê os dois comprovantes/extrato e marca Irregular.
+  function duplicidadeExata(T, opcoes) {
+    const cfg = Object.assign({}, PADRAO, typeof opcoes === 'object' ? opcoes : {});
     const pagos = T.filter(ehPago);
-    const chave = t => [chaveNome(t.fornecedor) || t.fornecedor, t.codigo, t.valorPago.toFixed(2)].join('|');
-    const caso = (g, tipo) => ({tipo, fornecedor: g[0].fornecedor, codigo: g[0].codigo, valor: g[0].valorPago, datas: unicos(g.map(t => t.pagamento)).sort(), ccs: unicos(g.map(t => t.cc)),
-      conta: g[0].conta, titulos: g.map(t => t.i), excesso: r2(g[0].valorPago * (g.length - 1))});
-    const exatas = [], rateios = [], diasDiferentes = [];
-    for (const [, g] of agrupar(pagos, chave)) {
+    const forn = t => chaveNome(t.fornecedor) || t.fornecedor;
+    const caso = (g, tipo, eventos, extra) => Object.assign({tipo, fornecedor: g[0].fornecedor, codigo: unicos(g.map(t => t.codigo)).join(', '), codigos: unicos(g.map(t => t.codigo)),
+      valor: g[0].valorPago, datas: unicos(g.map(t => t.pagamento)).sort(), vencimentos: unicos(g.map(t => t.vencimento)).sort(), ccs: unicos(g.map(t => t.cc)),
+      conta: unicos(g.map(t => t.conta)).join(' / '), competencias: unicos(g.map(t => t.competencia)), titulos: g.map(t => t.i), eventos,
+      excesso: r2(g[0].valorPago * Math.max(0, eventos - 1))}, extra || {});
+    const mesmaParcela = [], titulosDiferentes = [], mercadoria = [], itensIguais = [], rateios = [];
+    let parcelasMesmoDia = 0, parcelasMesmoDiaValor = 0;
+    // 1) dentro do mesmo título
+    for (const [, g] of agrupar(pagos, t => [forn(t), t.codigo, t.valorPago.toFixed(2)].join('|'))) {
       if (g.length < 2) continue;
-      for (const [, d] of agrupar(g, t => t.pagamento)) if (d.length > 1) {
-        const porCC = [...agrupar(d, t => t.cc).values()].filter(x => x.length > 1);
-        if (porCC.length) porCC.forEach(x => exatas.push(caso(x, 'exata'))); else rateios.push(caso(d, 'rateio'));
+      for (const [, p] of agrupar(g, t => t.vencimento || '')) {
+        if (p.length < 2) continue;
+        const porData = agrupar(p, t => t.pagamento);
+        if (porData.size > 1) {
+          const soma = r2(p.reduce((s, t) => s + t.valorPago, 0)), parcela = Math.max(...p.map(t => t.valorParcela));
+          if (soma > parcela + cfg.tolerancia) mesmaParcela.push(caso(p, 'parcela', porData.size, {excesso: r2(Math.min(soma - parcela, p[0].valorPago * (porData.size - 1)))}));
+          continue;   // senão: pagamento parcial (soma não passa da parcela)
+        }
+        if (agrupar(p, t => t.cc).size === p.length) rateios.push(caso(p, 'rateio', 1));
+        else itensIguais.push(caso(p, 'itens', 1, {excesso: 0, aConferir: r2(p[0].valorPago * (p.length - 1)), linhas: p.length}));
       }
-      for (const [, c] of agrupar(g, t => t.cc)) {
-        const ds = c.slice().sort((a, b) => a.pagamento.localeCompare(b.pagamento));
-        for (let n = 1; n < ds.length; n++) { const gap = difDias(ds[n].pagamento, ds[n - 1].pagamento); if (gap >= 1 && gap <= dias) diasDiferentes.push(caso([ds[n - 1], ds[n]], 'dias')); }
-      }
+      for (const [, d] of agrupar(g, t => t.pagamento)) { const nv = unicos(d.map(t => t.vencimento)).length; if (nv > 1) { parcelasMesmoDia += nv; parcelasMesmoDiaValor += d[0].valorPago * nv; } }
+    }
+    // 2) títulos diferentes do mesmo fornecedor, mesmo valor, mesmo vencimento e mesmo centro — todos pagos
+    for (const [, g] of agrupar(pagos.filter(t => t.valorPago >= cfg.dupMin && t.vencimento), t => [forn(t), t.valorPago.toFixed(2), t.vencimento, t.cc].join('|'))) {
+      const nCod = unicos(g.map(t => t.codigo)).length;
+      if (nCod < 2) continue;
+      if (nCod >= cfg.dupRecorrente && RX_RECORRENTE.test(g[0].conta)) continue;   // cobrança por loja/recorrente
+      const mesmaComp = unicos(g.map(t => t.competencia)).length === 1;
+      if (RX_COMPRA.test(g[0].conta)) mercadoria.push(caso(g, 'mercadoria', nCod, {mesmaComp}));
+      else titulosDiferentes.push(caso(g, 'titulos', nCod, {mesmaComp}));
     }
     const ord = a => a.sort((x, y) => y.excesso - x.excesso || y.valor - x.valor);
-    return {exatas: ord(exatas), rateios: ord(rateios), diasDiferentes: ord(diasDiferentes), pagos: pagos.length};
+    return {mesmaParcela: ord(mesmaParcela), titulosDiferentes: ord(titulosDiferentes), mercadoria: ord(mercadoria), itensIguais: itensIguais.sort((x, y) => y.aConferir - x.aConferir),
+      rateios: ord(rateios), parcelasMesmoDia, parcelasMesmoDiaValor: r2(parcelasMesmoDiaValor), pagos: pagos.length};
   }
 
   // 1º algarismo significativo de um valor (Benford)
