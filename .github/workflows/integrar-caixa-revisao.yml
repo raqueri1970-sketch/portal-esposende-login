@@ -1,0 +1,47 @@
+name: Integrar Caixa de Revisao
+
+on:
+  push:
+    branches: [fin-review-integracao]
+    paths:
+      - '.github/workflows/integrar-caixa-revisao.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fin-review-integracao
+      - name: Integrar acesso na Auditoria Financeira
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('financeiro/index.html')
+          s = p.read_text(encoding='utf-8')
+          marker = '📥 Caixa de Revisão'
+          if marker not in s:
+              old = '<button class="btn" onclick="abrirRelatorio()" id="bRel" disabled>🖨 Relatórios PDF</button>'
+              new = old + '\n      <a class="btn b-warn" href="revisao.html" title="Abrir casos financeiros que precisam de conferência">📥 Caixa de Revisão</a>'
+              if old not in s:
+                  raise SystemExit('Ponto de inserção não encontrado em financeiro/index.html')
+              s = s.replace(old, new, 1)
+              p.write_text(s, encoding='utf-8')
+      - name: Validar integração
+        shell: bash
+        run: |
+          test -f financeiro/revisao.html
+          grep -Fq '📥 Caixa de Revisão' financeiro/index.html
+          grep -Fq 'href="revisao.html"' financeiro/index.html
+      - name: Commit da integração
+        shell: bash
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'Portal Esposende Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add financeiro/index.html
+          git commit -m 'feat: integrar caixa de revisão na auditoria financeira'
+          git push origin HEAD:fin-review-integracao
