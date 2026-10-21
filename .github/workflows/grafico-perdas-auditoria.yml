@@ -1,0 +1,65 @@
+name: Grafico Executivo Auditoria Financeira
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/grafico-perdas-auditoria.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Adicionar grafico de indicadores financeiros
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('financeiro/index.html')
+          s=p.read_text(encoding='utf-8')
+          old="""  const maxMes = Math.max(...I.porMes.map(m => m.v), 1), maxAg = Math.max(...I.aging.map(a => a.valor), 1);
+  $('corpo').innerHTML = `"""
+          new="""  const maxMes = Math.max(...I.porMes.map(m => m.v), 1), maxAg = Math.max(...I.aging.map(a => a.valor), 1);
+  // Indicadores executivos: exposição em análise separada de perda já confirmada.
+  const ativos = o => o.sit === 'pendente' || o.sit === 'em_analise';
+  const somaRegras = (regras, filtro=()=>true) => oc.filter(o => regras.includes(o.regra) && filtro(o)).reduce((a,o)=>a+Number(o.impacto||0),0);
+  const dupAnalise = somaRegras(['R01','R02','R23'], ativos);
+  const pagoMaiorAnalise = somaRegras(['R03'], ativos);
+  const semLastroAnalise = somaRegras(['R13','R17'], ativos);
+  const confirmada = regras => somaRegras(regras, o => o.sit === 'irregular');
+  const perdas = [
+    {nome:'Duplicidades', analise:dupAnalise, confirmado:confirmada(['R01','R02','R23'])},
+    {nome:'Juros e multas', analise:Number(I.juros||0), confirmado:Number(I.juros||0)},
+    {nome:'Pago a maior', analise:pagoMaiorAnalise, confirmado:confirmada(['R03'])},
+    {nome:'Sem lastro', analise:semLastroAnalise, confirmado:confirmada(['R13','R17'])},
+  ];
+  const maxPerda=Math.max(...perdas.flatMap(x=>[x.analise,x.confirmado]),1);
+  const totalConfirmado=perdas.reduce((a,x)=>a+x.confirmado,0);
+  $('corpo').innerHTML = `"""
+          if old not in s: raise SystemExit('ponto de insercao nao encontrado')
+          s=s.replace(old,new,1)
+          needle="""  <h2>5 regras executivas · agentes fazem os cruzamentos técnicos por trás</h2>"""
+          chart="""  <h2>Onde estamos perdendo dinheiro · indicadores auditados</h2>
+  <div class=\"card\">
+    <div class=\"row\" style=\"justify-content:space-between;margin-bottom:12px\"><div><b>Perdas e valores em análise</b><div class=\"small mut\">Barras claras = valor em análise. Barras fortes = perda confirmada. Juros/multas pagos são custo realizado.</div></div><div class=\"num\"><span class=\"small mut\">Perda/custo confirmado</span><br><b style=\"font-size:20px;color:#fca5a5\">${brl(totalConfirmado)}</b></div></div>
+    ${perdas.map(x=>`<div style=\"margin:11px 0\"><div class=\"row\" style=\"justify-content:space-between\"><b class=\"small\">${x.nome}</b><span class=\"small num\">em análise ${brl(x.analise)} · <b>confirmado ${brl(x.confirmado)}</b></span></div><div style=\"display:grid;gap:3px;margin-top:5px\"><div class=\"bar\"><i style=\"width:${(x.analise/maxPerda*100).toFixed(1)}%;background:var(--warn);opacity:.55\"></i></div><div class=\"bar\"><i style=\"width:${(x.confirmado/maxPerda*100).toFixed(1)}%;background:var(--bad)\"></i></div></div></div>`).join('')}
+    <div class=\"small mut\" style=\"margin-top:10px\">Não somamos suspeitas como prejuízo. Duplicidade, pago a maior e sem lastro só entram como perda confirmada depois da revisão do auditor.</div>
+  </div>
+  <h2>5 regras executivas · agentes fazem os cruzamentos técnicos por trás</h2>"""
+          if needle not in s: raise SystemExit('cabecalho das regras nao encontrado')
+          s=s.replace(needle,chart,1)
+          p.write_text(s,encoding='utf-8')
+      - name: Validar
+        shell: bash
+        run: |
+          grep -Fq 'Onde estamos perdendo dinheiro' financeiro/index.html
+          grep -Fq 'Perda/custo confirmado' financeiro/index.html
+          grep -Fq 'Não somamos suspeitas como prejuízo' financeiro/index.html
+      - name: Publicar
+        shell: bash
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'Portal Esposende Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add financeiro/index.html
+          git commit -m 'feat: grafico executivo de perdas e valores em analise'
+          git push origin HEAD:main
