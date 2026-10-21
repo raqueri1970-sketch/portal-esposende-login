@@ -1,0 +1,58 @@
+name: Cards inteligentes auditoria
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/cards-inteligentes-auditoria.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar cards inteligentes
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('financeiro/index.html')
+          s=p.read_text(encoding='utf-8')
+          old="const kpi = (l, v, n, c = '') => `<div class=\"card kpi ${c}\"><div class=\"l\">${l}</div><div class=\"v\">${v}</div><div class=\"n\">${n}</div></div>`;"
+          new="""const kpi = (l, v, n, c = '') => `<div class=\"card kpi ${c}\" style=\"cursor:pointer\" onclick=\"cardInteligente('${l.replace(/'/g, "\\\\'")}')\" title=\"Toque para ver como este valor foi composto\"><div class=\"l\">${l}</div><div class=\"v\">${v}</div><div class=\"n\">${n}</div><div class=\"small mut\" style=\"margin-top:7px\">Toque para detalhar ›</div></div>`;
+function cardInteligente(tipo) {
+  const T=R.titulos||[], O=R.ocorrencias||[], I=R.indicadores||{};
+  const pago=t=>Number(t.valorPago||0), principal=t=>Number(t.valorParcela||t.valor||0), juros=t=>Number(t.juros||0)+Number(t.multa||0);
+  let titulo=tipo, linhas=[], total=0, cab='Fornecedor|Título|Vencimento|Pagamento|Valor';
+  if(tipo==='Títulos analisados'){ linhas=T.map(t=>[t.fornecedor,t.codigo||t.documento||'',dBRa(t.vencimento),dBRa(t.pagamento),principal(t)]); total=linhas.reduce((s,x)=>s+x[4],0); }
+  else if(tipo==='Total pago'){ linhas=T.filter(t=>pago(t)>0).map(t=>[t.fornecedor,t.codigo||t.documento||'',dBRa(t.vencimento),dBRa(t.pagamento),pago(t)]); total=linhas.reduce((s,x)=>s+x[4],0); }
+  else if(tipo==='Em aberto'){ linhas=T.filter(t=>Number(t.saldo||0)>0).map(t=>[t.fornecedor,t.codigo||t.documento||'',dBRa(t.vencimento),'—',Number(t.saldo||0)]); total=linhas.reduce((s,x)=>s+x[4],0); }
+  else if(tipo==='Juros/multa pagos'){ cab='Fornecedor|Título|Vencimento|Pagamento|Juros + multa'; linhas=T.filter(t=>juros(t)>0).map(t=>[t.fornecedor,t.codigo||t.documento||'',dBRa(t.vencimento),dBRa(t.pagamento),juros(t)]); total=linhas.reduce((s,x)=>s+x[4],0); }
+  else if(tipo==='Ocorrências de alta gravidade'){ cab='Fornecedor|Regra|Motivo|Situação|Impacto'; linhas=O.filter(o=>o.sev==='alta').map(o=>[o.fornecedor,o.regra,o.detalhe||o.motivo||'',SIT[o.sit]||o.sit,Number(o.impacto||0)]); total=linhas.reduce((s,x)=>s+x[4],0); }
+  else if(tipo==='Dinheiro em risco'){ cab='Fornecedor|Regra|Motivo|Situação|Impacto'; linhas=O.filter(o=>['R01','R23','R03','R08'].includes(o.regra)&&!(A.REGRAS_DUP.includes(o.regra)&&o.sev==='baixa')).map(o=>[o.fornecedor,o.regra,o.detalhe||o.motivo||'',SIT[o.sit]||o.sit,Number(o.impacto||0)]); total=linhas.reduce((s,x)=>s+x[4],0); }
+  else if(tipo==='Confirmadas irregulares'){ cab='Fornecedor|Regra|Motivo|Situação|Impacto'; linhas=O.filter(o=>o.sit==='irregular').map(o=>[o.fornecedor,o.regra,o.detalhe||o.motivo||'',SIT[o.sit]||o.sit,Number(o.impacto||0)]); total=linhas.reduce((s,x)=>s+x[4],0); }
+  else if(tipo==='Concentração top 10'){ cab='Fornecedor|Posição|Participação|—|Pago'; linhas=(I.top10||[]).map((f,i)=>[f.f,String(i+1),(I.totalPago?((f.v/I.totalPago)*100).toFixed(1)+'%':'—'),'—',Number(f.v||0)]); total=linhas.reduce((s,x)=>s+x[4],0); }
+  const th=cab.split('|');
+  $('mBody').innerHTML=`<button class=\"btn x\" onclick=\"fechar()\">✕</button><h1>${esc(titulo)}</h1><div class=\"sub\">Composição do card · ${n0(linhas.length)} itens</div><div class=\"card\" style=\"margin:12px 0\"><b>Total detalhado: ${brl(total)}</b><div class=\"small mut\">O detalhamento abaixo mostra os registros que formam este indicador.</div></div><div class=\"tw\"><table><tr>${th.map(x=>`<th>${esc(x)}</th>`).join('')}</tr>${linhas.map(x=>`<tr><td>${esc(x[0])}</td><td>${esc(x[1])}</td><td>${esc(x[2])}</td><td>${esc(x[3])}</td><td class=\"num\">${brl(x[4])}</td></tr>`).join('')}</table></div>`;
+  $('modal').classList.remove('hidden');
+}
+window.cardInteligente=cardInteligente;"""
+          if old not in s: raise SystemExit('assinatura kpi não encontrada')
+          s=s.replace(old,new,1)
+          s=s.replace("onclick=\"aba('ocorrencias')\"", "onclick=\"cardMacro('${r.k}')\"", 1)
+          marker="window.filtrarRegra = k =>"
+          macro="""window.cardMacro = k => { const defs={F01:['R01','R02','R23'],F02:['R03','R20','R22'],F03:['R13','R17'],F04:['R04','R05','R18']}; const regras=defs[k]||Object.keys(A.REGRAS).filter(x=>!['R01','R02','R23','R03','R20','R22','R13','R17','R04','R05','R18'].includes(x)); const os=R.ocorrencias.filter(o=>regras.includes(o.regra)); const total=os.reduce((a,o)=>a+Number(o.impacto||0),0); $('mBody').innerHTML=`<button class=\"btn x\" onclick=\"fechar()\">✕</button><h1>${k} · composição</h1><div class=\"card\" style=\"margin:12px 0\"><b>${n0(os.length)} ocorrências · ${brl(total)} de impacto em análise</b></div><div class=\"tw\"><table><tr><th>Fornecedor</th><th>Regra técnica</th><th>Motivo</th><th>Situação</th><th class=\"num\">Impacto</th></tr>${os.map(o=>`<tr class=\"clic\" onclick=\"fechar();abrir(${o.n})\"><td>${esc(o.fornecedor)}</td><td>${esc(o.regra)}</td><td>${esc(o.detalhe||o.motivo||'')}</td><td>${esc(SIT[o.sit]||o.sit)}</td><td class=\"num\">${brl(o.impacto||0)}</td></tr>`).join('')}</table></div>`; $('modal').classList.remove('hidden'); };
+"""
+          if marker not in s: raise SystemExit('marcador não encontrado')
+          s=s.replace(marker,macro+marker,1)
+          p.write_text(s,encoding='utf-8')
+      - name: Validar JavaScript básico
+        run: |
+          grep -q "cardInteligente" financeiro/index.html
+          grep -q "cardMacro" financeiro/index.html
+      - name: Commit
+        run: |
+          git config user.name "Portal Esposende Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add financeiro/index.html
+          git commit -m "feat: todos os cards explicam sua composição"
+          git push
