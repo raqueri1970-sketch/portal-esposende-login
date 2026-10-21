@@ -176,12 +176,18 @@
         '@media(max-width:600px){.aud2-lista{margin-left:6px}.aud2-it{grid-template-columns:1fr auto}.aud2-it .dt{display:none}}';
       document.head.appendChild(css);
       // conta corrente (saldos) e pontos do Agente Auditor do servidor: carregados à parte e guardados por 1 min
-      var X={saldos:[],achados:[],em:0,carregando:false};
+      // 21/10/2026 (pedido do Ricardo): o que já foi APROVADO sai do painel do Agente Auditor — despesa paga ou num pagamento
+      // aprovado pelo Presidente, duplicidade aprovada, ou conferida por uma pessoa ("revisado"). O ponto continua no banco.
+      var X={saldos:[],achados:[],aprovados:{},em:0,carregando:false};
       function carregarExtra(){
         if(X.carregando||Date.now()-X.em<60000||typeof sb==='undefined')return;X.carregando=true;
         Promise.all([sb.from('obras_saldo_prestador').select('prestador,em_aberto,adiantamento_disponivel,saldo_devedor,total_pago'),
-          sb.from('obras_auditoria_achados').select('id,comprovante_id,regra,nivel,mensagem').eq('resolvido',false).not('comprovante_id','is',null).limit(5000)])
-        .then(function(r){X.saldos=(r[0]&&r[0].data)||[];X.achados=(r[1]&&r[1].data)||[];X.em=Date.now();X.carregando=false;try{renderGeral()}catch(e){}})
+          sb.from('obras_auditoria_achados').select('id,comprovante_id,regra,nivel,mensagem,c:obras_comprovantes!obras_auditoria_achados_comprovante_id_fkey(situacao_pagamento,revisado,dup_decisao)').eq('resolvido',false).not('comprovante_id','is',null).limit(5000),
+          sb.from('obras_pagamento_itens').select('comprovante_id,p:obras_pagamentos!inner(status)').in('p.status',['aprovado','pago','auditado']).limit(10000)])
+        .then(function(r){
+          var ap={};((r[2]&&r[2].data)||[]).forEach(function(i){if(i.comprovante_id)ap[i.comprovante_id]=1});
+          ((r[1]&&r[1].data)||[]).forEach(function(a){var c=a.c||{};if(c.situacao_pagamento==='pago'||c.revisado||c.dup_decisao==='aprovada')ap[a.comprovante_id]=1});
+          X.saldos=(r[0]&&r[0].data)||[];X.achados=(r[1]&&r[1].data)||[];X.aprovados=ap;X.em=Date.now();X.carregando=false;try{renderGeral()}catch(e){}})
         .catch(function(){X.carregando=false;X.em=Date.now()});
       }
       var SRV={duplicidade_autenticacao:['⛔','Pagamento repetido (mesma autenticação)'],duplicidade_valor_data_fornecedor:['⛔','Possível duplicidade (valor, data e fornecedor)'],
@@ -205,7 +211,7 @@
         var gv=function(id){return Math.max.apply(null,(AUD[id]||[]).map(function(k){return (REGRAS[k]||{}).g||1}))};
         var gr=com.filter(function(id){return gv(id)>=3}),md=com.filter(function(id){return gv(id)===2}),lv=com.filter(function(id){return gv(id)<=1});
         var vl=function(l){return l.reduce(function(t,id){return t+(Number(ids[id].valor)||0)},0)};
-        var ach=X.achados.filter(function(a){return ids[a.comprovante_id]});
+        var ach=X.achados.filter(function(a){var r=ids[a.comprovante_id];return r&&!r.revisado&&!X.aprovados[a.comprovante_id]});
         var crit=ach.filter(function(a){return a.nivel==='critico'});
         var vivos=C.filter(function(r){return r.status!=='cancelado'}),conf=vivos.filter(function(r){return r.revisado}).length,pct=vivos.length?Math.round(conf/vivos.length*100):100;
         var porRegra={};ach.forEach(function(a){(porRegra[a.regra]=porRegra[a.regra]||[]).push(a)});
@@ -226,7 +232,7 @@
             '<div class="v" data-irsrv="1"><span>Agente Auditor</span><b>'+ach.length+'</b><small>'+crit.length+' crítico(s)</small></div>'+
             '<div class="g" data-revisar="1"><span>Conferidos</span><b>'+pct+'%</b><small>'+(vivos.length-conf)+' a revisar</small></div></div>'+
           (dp.length?'<div class="aud2-t">Prestações de contas</div><div class="aud-r alta" data-tab="prest"><span class="ic">⚖</span><div class="tx"><b>Diferença entre declarado e comprovado <em>'+dp.length+'</em></b><small>'+dp.map(function(x){return esc(x.p.numero)+': '+(x.dif<0?'faltam ':'sobram ')+brl(Math.abs(x.dif))}).join(' · ')+'</small></div><span class="vv">'+brl(dp.reduce(function(s,x){return s+Math.abs(x.dif)},0))+'</span></div>':'')+
-          '<div class="aud2-t" id="audSrv">🤖 Agente Auditor <small>'+(X.em?ach.length+' ponto(s) em aberto':'carregando…')+'</small></div>'+
+          '<div class="aud2-t" id="audSrv">🤖 Agente Auditor <small>'+(X.em?ach.length+' ponto(s) em aberto · já aprovados não aparecem':'carregando…')+'</small></div>'+
           (srv.length?srv.map(function(x){var s=SRV[x.k]||['•',x.k];return '<div class="aud-r '+(x.crit?'alta':'media')+'" data-srv="'+x.k+'"><span class="ic">'+s[0]+'</span><div class="tx"><b>'+s[1]+' <em>'+x.l.length+'</em></b><small>'+(x.crit?'crítico':'atenção')+' · toque para '+(ABERTO[x.k]?'fechar':'ver a lista')+'</small></div><span class="vv">'+brl(x.v)+'</span></div>'+itens(x)}).join(''):(X.em?'<div class="empty">Nenhum ponto em aberto do Agente Auditor.</div>':''))+
           grupo('⛔ Graves',lin.filter(function(x){return x.R.g>=3}))+grupo('⚠ Atenção',lin.filter(function(x){return x.R.g==2}))+grupo('ℹ Leves',lin.filter(function(x){return x.R.g<=1}))+
           (!lin.length&&!dp.length&&!srv.length&&X.em?'<div class="empty">Nenhum alerta nos comprovantes.</div>':'')+
