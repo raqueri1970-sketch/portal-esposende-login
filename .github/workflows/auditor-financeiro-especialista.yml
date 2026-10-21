@@ -10,58 +10,50 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Especializar painel e casos
+      - name: Especializar painel e caixa de revisao
         shell: python
         run: |
           from pathlib import Path
-          p=Path('financeiro/index.html')
-          s=p.read_text(encoding='utf-8')
-          # cache bust
-          s=s.replace('auditoria.js?v=20261021-2','auditoria.js?v=20261021-4')
-          # nomes executivos: mantém sinais técnicos no motor, mas tela é simples
-          s=s.replace("['G01', 'Duplicidade de pagamento', 'R01 + R02 + Agente'],", "['G01', 'Duplicidade / pagamento em dobro', 'R01 + R02 + Agente'],")
-          s=s.replace("['G02', 'Pagamento divergente', 'R03 + R20 + R22'],", "['G02', 'Atrasos, juros e valor divergente', 'R03 + R20 + R22'],")
-          # botão/aba com linguagem de auditor especialista
-          s=s.replace("['ocorrencias', 'Ocorrências', pend]", "['ocorrencias', '📥 Casos para revisar', pend]")
-          # Enriquece detalhe de duplicidade com próximos títulos do mesmo fornecedor.
-          marker="function painel() {"
-          helper=r'''
-// AUDITOR FINANCEIRO ESPECIALISTA — recomendação preventiva e lastro
-function proximosPagamentosFornecedor(nome, ignorarTitulos=[]) {
-  if (!R || !R.titulos) return [];
-  const hoje=hojeISO(), ign=new Set(ignorarTitulos||[]);
-  return R.titulos.filter(t => t.fornecedor===nome && t.vencimento && t.vencimento>=hoje && t.saldo>0 && !ign.has(t.i))
-    .sort((a,b)=>String(a.vencimento).localeCompare(String(b.vencimento))).slice(0,5);
-}
-function blocoPreventivo(o){
-  if (!o || !(o.dup || ['R01','R02','R23'].includes(o.regra))) return '';
-  const fut=proximosPagamentosFornecedor(o.fornecedor,o.titulos);
-  if(!fut.length) return '<div class="aviso" style="margin-top:10px"><b>Indicação preventiva:</b> não há próximo título em aberto encontrado para este fornecedor no período carregado.</div>';
-  return `<div class="explica" style="margin-top:10px"><b>Indicação preventiva · há pagamentos futuros no Contas a Pagar</b><br>${fut.map(t=>`Cód. ${esc(t.codigo)} · vence ${dBRa(t.vencimento)} · saldo ${brl(t.saldo)}`).join('<br>')}<br><span class="small mut">Se a duplicidade for confirmada, conferir com o Financeiro/fornecedor a possibilidade de compensação antes do próximo pagamento. O sistema apenas recomenda; não baixa nem altera o título automaticamente.</span></div>`;
-}
-'''
-          if 'function proximosPagamentosFornecedor' not in s:
-              s=s.replace(marker,helper+'\n'+marker,1)
-          # Injeta recomendação no modal de ocorrência, junto do histórico, se achar ponto estável.
-          needle="<div class=\"hist\" id=\"hist\">${historico(o)}</div>"
-          if needle in s and 'blocoPreventivo(o)' not in s[s.find(needle)-300:s.find(needle)+300]:
-              s=s.replace(needle,"${blocoPreventivo(o)}\n      "+needle,1)
-          # reforça descrição do painel
+          p=Path('financeiro/index.html'); s=p.read_text(encoding='utf-8')
+          s=s.replace('auditoria.js?v=20261021-2','auditoria.js?v=20261021-5').replace('auditoria.js?v=20261021-4','auditoria.js?v=20261021-5')
           s=s.replace('Cruzamento automático do Sallamo · <span id="info">','Auditor Financeiro Especialista · Sallamo + comprovantes + cruzamentos · <span id="info">')
+          s=s.replace("${kpi('Juros/multa pagos', brl(I.juros), `${I.pctPagoAtraso.toLocaleString('pt-BR')}% pagos em atraso · ${I.prazoMedioAtraso.toLocaleString('pt-BR')} dias em média`, 'k-bad')}","${kpi('Duplicatas em atraso · juros/multa', brl(I.juros), `${I.pctPagoAtraso.toLocaleString('pt-BR')}% pagos em atraso · ${I.prazoMedioAtraso.toLocaleString('pt-BR')} dias em média`, 'k-bad')}")
+          s=s.replace("${kpi('Dinheiro em risco', brlK(risco), 'duplicidade (R01 + Agente) + pago a maior + fracionamento', 'k-bad')}","${kpi('Valor em análise', brlK(risco), 'exposição apontada pelos agentes · não é prejuízo confirmado', 'k-bad')}")
+          marker='function painel() {'
+          helper=r'''function proximosPagamentosFornecedor(nome, ignorarTitulos=[]) { if(!R||!R.titulos)return []; const hoje=hojeISO(),ign=new Set(ignorarTitulos||[]); return R.titulos.filter(t=>t.fornecedor===nome&&t.vencimento&&t.vencimento>=hoje&&t.saldo>0&&!ign.has(t.i)).sort((a,b)=>String(a.vencimento).localeCompare(String(b.vencimento))).slice(0,5); }
+function blocoPreventivo(o){ if(!o||!(o.dup||['R01','R02','R23'].includes(o.regra)))return ''; const fut=proximosPagamentosFornecedor(o.fornecedor,o.titulos); if(!fut.length)return '<div class="aviso" style="margin-top:10px"><b>Indicação preventiva:</b> nenhum próximo título em aberto encontrado no período carregado.</div>'; return `<div class="explica" style="margin-top:10px"><b>Há pagamentos futuros para este fornecedor</b><br>${fut.map(t=>`Cód. ${esc(t.codigo)} · vence ${dBRa(t.vencimento)} · saldo ${brl(t.saldo)}`).join('<br>')}<br><span class="small mut">Se a duplicidade for confirmada, verificar compensação antes do próximo pagamento. O sistema recomenda; não baixa o título automaticamente.</span></div>`; }'''
+          if 'function proximosPagamentosFornecedor' not in s:s=s.replace(marker,helper+'\n'+marker,1)
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('financeiro/revisao.html'); s=p.read_text(encoding='utf-8')
+          s=s.replace('.photos{display:flex;gap:8px;overflow:auto;margin-top:8px}', '.photos{display:flex;gap:8px;overflow:auto;margin-top:8px}.photos.compare{display:grid;grid-template-columns:1fr 1fr;overflow:visible}.photos.compare .photo{min-width:0}.photos.compare .photo img{width:100%;height:240px}.side{display:block;font-weight:800;margin-bottom:5px}.future{border-left:3px solid var(--blue)}')
+          s=s.replace('<div class="kpis"><div class="card k"><b id="nTotal">—</b><span>Para revisar</span></div><div class="card k"><b id="nCrit">—</b><span>Críticos</span></div><div class="card k"><b id="vRisco">—</b><span>Valor crítico indicado</span></div></div>','<div class="kpis"><div class="card k"><b id="nTotal">—</b><span>Para revisar</span></div><div class="card k"><b id="nCrit">—</b><span>Duplicidades críticas</span></div><div class="card k"><b id="vRisco">—</b><span>Valor em análise · não confirmado</span></div></div><div class="card"><b>Auditor Financeiro Especialista</b><div class="sub">Cruza Sallamo, comprovantes e evidências. Em duplicidade, mostra os pagamentos e procura próximos títulos para possível compensação.</div></div>')
+          s=s.replace('a.forEach(x=>fotos(x.id))','a.forEach(x=>{fotos(x.id);proximos(x)})')
+          s=s.replace('</div></div><textarea id="o${x.id}"','</div></div><div class="box future" id="p${x.id}"><b>Próximos títulos no Sallamo</b><div class="mut">Procurando…</div></div><textarea id="o${x.id}"')
+          s=s.replace("const r=await sb.from('fin_evidencias').select('*').eq('ocorrencia_id','DUP-COMP-'+id);","let r=await sb.from('fin_evidencias').select('*').eq('ocorrencia_id','DUP-'+id);if(!r.error&&!r.data?.length)r=await sb.from('fin_evidencias').select('*').eq('ocorrencia_id','DUP-COMP-'+id);")
+          s=s.replace("let h='';for(const e of r.data){","let h='';const ev=[...(r.data||[])].sort((a,b)=>String(a.lado||'').localeCompare(String(b.lado||'')));for(const e of ev){")
+          s=s.replace("const u=s.data?.signedUrl;if(u&&", "const u=s.data?.signedUrl,rot=e.lado==='A'?'Pagamento A':e.lado==='B'?'Pagamento B':'Comprovante';if(u&&")
+          s=s.replace("h+=`<a class=\"photo\" href=\"${u}\" target=\"_blank\"><img src=\"${u}\"><div class=\"mut\">${esc(e.lado||'')} ${esc(e.arquivo_nome||'')}</div></a>`", "h+=`<a class=\"photo\" href=\"${u}\" target=\"_blank\"><span class=\"side\">${rot}</span><img src=\"${u}\"><div class=\"mut\">${esc(e.arquivo_nome||'')}</div></a>`")
+          s=s.replace("el.innerHTML=h||'<span class=\"mut\">Evidência registrada sem arquivo visual.</span>'", "el.classList.toggle('compare',ev.filter(e=>e.arquivo_path).length>=2);el.innerHTML=h||'<span class=\"mut\">Evidência registrada sem arquivo visual.</span>'")
+          marker='async function acao(id,a){'
+          fn=r'''async function proximos(x){const el=$('p'+x.id);if(!el)return;try{const ses=(await sb.auth.getSession()).data.session;if(!ses)throw 0;const hoje=new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'}),d=new Date();d.setMonth(d.getMonth()+6);const ate=d.toISOString().slice(0,10);const resp=await fetch(`${URL}/functions/v1/financeiro-sallamo?dataInicio=${hoje}&dataFim=${ate}`,{headers:{Authorization:'Bearer '+ses.access_token,apikey:KEY}}),j=await resp.json();if(!resp.ok)throw 0;const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,''),alvo=norm(x.fornecedor);const rows=(j.dados||[]).filter(t=>{const f=norm(t.fornecedor||t.nomeFornecedor||t.razaoSocial||''),v=String(t.vencimento||t.dataVencimento||'').slice(0,10),st=String(t.status||t.situacao||'');return f&&alvo&&(f===alvo||f.includes(alvo)||alvo.includes(f))&&v>=hoje&&!/pago|cancel|estorn/i.test(st)}).sort((a,b)=>String(a.vencimento||a.dataVencimento).localeCompare(String(b.vencimento||b.dataVencimento))).slice(0,5);if(!rows.length){el.innerHTML='<b>Próximos títulos no Sallamo</b><div class="mut">Nenhum título futuro localizado nos próximos seis meses.</div>';return}const val=t=>Number(t.valorParcela??t.valor??t.valorTitulo??t.saldo??0),venc=t=>String(t.vencimento||t.dataVencimento||'').slice(0,10).split('-').reverse().join('/');el.innerHTML='<b>⚠ Há pagamentos futuros para este fornecedor</b>'+rows.map(t=>`<div style="margin-top:6px"><b>${venc(t)}</b> · ${brl(val(t))} · título ${esc(t.codigo||t.id||t.numeroDocumento||'—')}</div>`).join('')+`<div class="sub">Se a duplicidade for confirmada, verificar compensação de ${brl(x.valor_a_mais||x.valor)} antes do próximo pagamento. Não baixar automaticamente.</div>`}catch(e){el.innerHTML='<b>Próximos títulos no Sallamo</b><div class="mut">Consulta indisponível agora.</div>'}}
+'''
+          if 'async function proximos(x)' not in s:s=s.replace(marker,fn+marker,1)
           p.write_text(s,encoding='utf-8')
       - name: Validar
         shell: bash
         run: |
-          grep -Fq 'Auditor Financeiro Especialista' financeiro/index.html
-          grep -Fq 'proximosPagamentosFornecedor' financeiro/index.html
-          grep -Fq 'Indicação preventiva' financeiro/index.html
-          grep -Fq 'auditoria.js?v=20261021-4' financeiro/index.html
+          grep -Fq 'Auditor Financeiro Especialista' financeiro/revisao.html
+          grep -Fq "eq('ocorrencia_id','DUP-'+id)" financeiro/revisao.html
+          grep -Fq 'Pagamento A' financeiro/revisao.html
+          grep -Fq 'Próximos títulos no Sallamo' financeiro/revisao.html
+          grep -Fq 'Duplicatas em atraso · juros/multa' financeiro/index.html
       - name: Publicar
         shell: bash
         run: |
           if git diff --quiet; then exit 0; fi
           git config user.name 'Portal Esposende Bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add financeiro/index.html
-          git commit -m 'feat: auditor financeiro especialista, juros, lastro e compensacao futura'
+          git add financeiro/index.html financeiro/revisao.html
+          git commit -m 'feat: auditor financeiro especialista com comprovantes e compensacao futura'
           git push origin HEAD:main
