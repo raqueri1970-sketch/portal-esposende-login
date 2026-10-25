@@ -1,0 +1,1820 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Desconto em Folha · Crediário</title>
+<meta name="theme-color" content="#0b1020">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="../obras-contas-pagar/comum.css?v=20261025-3">
+<style>
+  .topo-comp{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .topo-comp select{width:auto;margin:0;padding:8px 10px;font-size:14px}
+  .tabs{margin-top:16px}
+  .fonte{display:flex;flex-direction:column;gap:6px}
+  .fonte h3{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .fonte .o{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}
+  .drop{border:1.5px dashed var(--line2);border-radius:12px;padding:16px 10px;text-align:center;color:var(--txt2);font-size:13.5px;cursor:pointer;background:rgba(148,163,184,.04)}
+  .drop:hover,.drop.on{border-color:var(--pri);background:rgba(59,130,246,.08)}
+  .drop input{display:none}
+  .central{margin-top:14px;border-color:rgba(59,130,246,.45);background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(15,23,42,.5) 70%)}
+  .central h3{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+  .central .o{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}
+  .drop-g{display:block;padding:26px 12px;font-size:15px;margin-top:10px}
+  .cl-tab .row{flex-wrap:nowrap}
+  .cl-tab select,.cl-tab input{margin:0;padding:6px 8px;font-size:13px;width:auto;max-width:200px}
+  .cl-tab td{vertical-align:top}
+  .cl-av{font-size:12px;color:#fde68a;margin-top:3px}.cl-av.b{color:#fca5a5}
+  .okt{color:#86efac}.badt{color:#fca5a5}.wt{color:#fcd34d}
+  .regra{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:12px;padding:10px 12px;font-size:13.5px;color:#bfdbfe;margin:10px 0}
+  .aviso{background:rgba(245,179,1,.08);border:1px solid rgba(245,179,1,.28);border-radius:12px;padding:10px 12px;font-size:13.5px;color:#fde68a;margin:10px 0}
+  .perigo{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:10px 12px;font-size:13.5px;color:#fecaca;margin:10px 0}
+  .cfg{display:grid;gap:10px 14px;grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),1fr));align-items:end}
+  .cfg input,.cfg select{margin:4px 0 0}
+  .map{display:grid;gap:8px 12px;grid-template-columns:repeat(auto-fill,minmax(min(170px,100%),1fr));margin-top:8px}
+  .map select,.map input{margin:3px 0 0;padding:8px 10px;font-size:14px}
+  .evs{display:flex;flex-wrap:wrap;gap:6px 14px;margin:6px 0}
+  .evs label{display:flex;gap:6px;align-items:center;color:var(--txt2);font-size:13px}
+  .evs input{width:16px;height:16px;margin:0}
+  .st{font-size:11.5px;padding:2px 9px;border-radius:999px;font-weight:700;white-space:nowrap;display:inline-block;border:1px solid transparent}
+  .st-ok,.st-resolvido,.st-justificado{background:rgba(34,197,94,.13);color:#86efac;border-color:rgba(34,197,94,.3)}
+  .st-menos,.st-nao,.st-alta{background:rgba(239,68,68,.14);color:#fca5a5;border-color:rgba(239,68,68,.34)}
+  .st-mais,.st-semcompra,.st-cobrar,.st-devolver{background:rgba(249,115,22,.15);color:#fdba74;border-color:rgba(249,115,22,.35)}
+  .st-verif,.st-media{background:rgba(245,179,1,.13);color:#fcd34d;border-color:rgba(245,179,1,.32)}
+  .st-prev,.st-baixa,.st-pendente{background:rgba(148,163,184,.12);color:#cbd5e1;border-color:rgba(148,163,184,.25)}
+  .mtz{font-size:12.5px}
+  .mtz th,.mtz td{padding:6px 7px;white-space:nowrap}
+  .mtz th:first-child,.mtz td:first-child{position:sticky;left:0;background:var(--card);z-index:1;white-space:normal;min-width:170px;max-width:240px}
+  .mtz td.c{text-align:right;font-variant-numeric:tabular-nums;cursor:pointer;border-left:1px solid var(--line)}
+  .mtz td.c small{display:block;color:var(--mut);font-size:11px}
+  .mtz td.c-ok{background:rgba(34,197,94,.07)}.mtz td.c-menos,.mtz td.c-nao{background:rgba(239,68,68,.12)}
+  .mtz td.c-mais,.mtz td.c-semcompra{background:rgba(249,115,22,.12)}.mtz td.c-verif{background:rgba(245,179,1,.09)}
+  .mtz th.foco,.mtz td.foco{outline:1px solid rgba(59,130,246,.55);outline-offset:-1px}
+  tr.clicavel{cursor:pointer}
+  .leg{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .busca{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .busca input,.busca select{width:auto;flex:1;min-width:160px;margin:0}
+  .pq{font-size:12.5px}
+  .kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(160px,100%),1fr));gap:6px 14px;font-size:13px;margin:6px 0 10px}
+  .kv span{color:var(--mut);display:block;font-size:11.5px}
+  .chk-mes{display:grid;gap:8px}
+  .chk-mes div{display:flex;gap:10px;align-items:flex-start;font-size:14px;padding:8px 10px;border-radius:10px;background:var(--card2);border:1px solid var(--line)}
+  .chk-mes b{min-width:22px;text-align:center}
+  .rel{display:flex;flex-direction:column;gap:8px}
+  .rel .row .btn{flex:1;justify-content:center}
+  #preview{margin-top:14px}
+  .acoes-aba{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin:14px 0 -2px}
+  .hero{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;align-items:center;margin-top:14px;background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(15,23,42,.6) 60%);border-color:rgba(59,130,246,.35)}
+  .hero .t{font-size:13px;color:var(--txt2);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+  .hero .c{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:4px 0}
+  .hero .f{font-size:13.5px;color:var(--txt2);line-height:1.6}
+  .gauge{text-align:center}.gauge .v{font-size:44px;font-weight:900;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .gauge .l{font-size:12.5px;color:var(--txt2)}.gauge .barra{height:12px;border-radius:8px;background:var(--card2);overflow:hidden;margin:8px auto 4px;max-width:320px}
+  .gauge .barra i{display:block;height:100%;border-radius:8px}
+  .kp4{grid-template-columns:repeat(4,minmax(0,1fr))!important;margin-top:14px}
+  .sitb{display:grid;gap:10px;margin-top:10px}
+  .sitb div{display:grid;grid-template-columns:150px 1fr 110px;gap:10px;align-items:center;font-size:13.5px}
+  .sitb .b{height:14px;border-radius:7px;background:var(--card2);overflow:hidden}.sitb .b i{display:block;height:100%;border-radius:7px}
+  .sitb b{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .achados{display:grid;gap:8px;margin-top:10px}
+  #gLoja svg{max-width:640px;margin:0 auto}
+  .obs-graf{margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.22);font-size:12.8px;color:var(--txt2);line-height:1.5}
+  .obs-graf b{color:var(--txt)}.obs-graf ul{margin:4px 0 0;padding-left:18px}
+  .achados>div{display:grid;grid-template-columns:14px 1fr;gap:10px;font-size:13.5px;line-height:1.45;padding:9px 10px;border-radius:10px;background:var(--card2);border:1px solid var(--line)}
+  .achados i{width:10px;height:10px;border-radius:50%;margin-top:5px}
+  .achados .acao{color:var(--mut);font-size:12.5px;margin-top:2px}
+  @media (max-width:900px){.hero{grid-template-columns:1fr}.kp4{grid-template-columns:repeat(2,minmax(0,1fr))!important}.sitb div{grid-template-columns:110px 1fr 90px}}
+  .embutido .modal{position:fixed!important}.embutido .toast{position:fixed!important}
+  @media (max-width:620px){.busca input,.busca select{min-width:0;width:100%;flex:auto}.topo-comp{width:100%}.topo-comp select{flex:1}}
+  @media print{
+    *{color:#111!important;background:transparent!important;box-shadow:none!important;border-color:#ccc!important}
+    .tabs,.btn,.topo-comp,.drop,#vLogin,.busca,.leg{display:none!important}
+    section.hidden{display:none!important}
+    .mtz th:first-child,.mtz td:first-child{position:static}
+    .tw{overflow:visible}
+  }
+</style>
+</head>
+<body>
+
+<div id="vLogin" class="hidden" style="max-width:420px;margin:40px auto">
+  <h1>🧾 Desconto em Folha</h1><div class="sub">Entre com o mesmo usuário do Portal Esposende</div>
+  <div class="card" style="margin-top:16px">
+    <label class="small">Email do Portal</label><input id="lEmail" type="email" autocomplete="username" inputmode="email">
+    <label class="small">Senha</label><input id="lSenha" type="password" autocomplete="current-password">
+    <div id="lErr" class="err"></div>
+    <button class="btn b-pri" style="width:100%;padding:14px" onclick="entrar()">Entrar</button>
+  </div>
+</div>
+
+<div id="vApp" class="hidden">
+  <div class="top">
+    <div><h1>🧾 Desconto em Folha · Crediário</h1>
+      <div class="sub" id="origem">Compras dos funcionários × folha de pagamento</div></div>
+    <div class="topo-comp">
+      <label class="small" for="selComp">Competência</label><select id="selComp"></select>
+      <button class="btn b-pri" onclick="abrirCentral()">📥 Carregar arquivos</button><button class="btn" onclick="recarregar()">Atualizar</button><button class="btn" onclick="sair()">Sair</button>
+    </div>
+  </div>
+  <div class="tabs" id="abas">
+    <button data-aba="painel" class="on">Painel</button>
+    <button data-aba="pend">Erros e faltas graves <span id="nPend"></span></button>
+    <button data-aba="dup">Duplicidades <span id="nDup"></span></button>
+    <button data-aba="meses">Mês a mês</button>
+    <button data-aba="func">Funcionários</button>
+    <button data-aba="ex">Ex-funcionários <span id="nEx"></span></button>
+    <button data-aba="rel">Relatórios e PDF</button>
+    <button data-aba="arq">Arquivos do mês</button>
+  </div>
+  <div id="avisoTopo"></div>
+
+  <!-- PAINEL -->
+  <section id="a-painel">
+    <div class="card hero" id="hero"></div>
+    <div class="grid kp4" id="kpis"></div>
+    <div class="g2" style="margin-top:14px">
+      <div class="card viz"><h3>Devido × descontado por competência <span id="legCol"></span></h3><div id="gCol"></div><div class="obs-graf" id="obsCol"></div></div>
+      <div class="card"><h3>Situação dos funcionários na competência</h3><div class="sitb" id="gSit"></div></div>
+    </div>
+    <div class="g2" style="margin-top:14px">
+      <div class="card viz"><h3>Diferença por loja (a menos + a mais)</h3><div id="gLoja"></div></div>
+      <div class="card"><h3>Pendências abertas por tipo</h3><div id="gTipo"></div></div>
+    </div>
+    <div class="g2" style="margin-top:14px">
+      <div class="card"><h3>Principais achados</h3><div class="achados" id="achados"></div></div>
+      <div class="card"><h3>O que falta para fechar o mês</h3><div class="chk-mes" id="checklist" style="margin-top:10px"></div></div>
+    </div>
+    <h2>Maiores diferenças da competência</h2>
+    <div class="card tw" id="topDif"></div>
+  </section>
+
+  <!-- PENDÊNCIAS -->
+  <section id="a-pend" class="hidden">
+    <div class="regra">Tudo o que o cruzamento achou de errado: desconto que não aconteceu ou veio errado, comprador fora do cadastro, afastado sem salário, CPF com nome de outra pessoa, arquivo incompleto, folha do mês não importada. Cada linha pode receber uma tratativa (fica gravado quem decidiu, quando e por quê).</div>
+    <div class="card">
+      <div class="busca">
+        <input id="pBusca" placeholder="Buscar nome, CPF, matrícula ou loja">
+        <select id="pCat"><option value="">Todas as categorias</option><option value="desconto">Desconto em folha</option><option value="cadastro">Cadastro</option><option value="politica">Política de crédito (parcelamento)</option><option value="integridade">Arquivos e integridade</option></select>
+        <select id="pGrav"><option value="">Todas as gravidades</option><option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option></select>
+        <select id="pSit"><option value="abertas">Abertas e em tratamento</option><option value="">Todas</option><option value="encerradas">Encerradas</option></select>
+        <select id="pComp"><option value="sel">Só a competência selecionada</option><option value="">Todas as competências</option></select>
+      </div>
+      <div class="leg" id="pCont"></div>
+      <div class="tw" id="tPend"></div>
+    </div>
+  </section>
+
+  <!-- DUPLICIDADES -->
+  <section id="a-dup" class="hidden">
+    <div class="regra">Possíveis duplicidades: desconto lançado duas vezes na folha, a mesma folha importada em dois arquivos, a mesma parcela com dois vencimentos (seria cobrada duas vezes), compra repetida no mesmo dia e parcela baixada duas vezes.</div>
+    <div class="card">
+      <div class="busca">
+        <input id="dBusca" placeholder="Buscar nome, CPF, documento">
+        <select id="dSit"><option value="abertas">Abertas e em tratamento</option><option value="">Todas</option><option value="encerradas">Encerradas</option></select>
+      </div>
+      <div class="tw" id="tDup"></div>
+    </div>
+  </section>
+
+  <!-- MÊS A MÊS -->
+  <section id="a-meses" class="hidden">
+    <div class="regra">Cada competência mostra o devido (parcelas do crediário que caem naquela folha), o descontado (evento da folha) e a data em que a folha foi paga. Depois de tratar as pendências, feche a competência: os números do dia ficam gravados e, se algo mudar depois, a tela avisa.</div>
+    <div class="card tw" id="tMeses"></div>
+  </section>
+
+  <!-- FUNCIONÁRIOS -->
+  <section id="a-func" class="hidden">
+    <div class="card">
+      <div class="busca">
+        <input id="fBusca" placeholder="Buscar nome, CPF, matrícula ou loja">
+        <select id="fLoja"><option value="">Todas as lojas</option></select>
+        <select id="fSt"><option value="">Todos</option><option value="div">Só com divergência</option><option value="alerta">Só com pendência</option></select>
+      </div>
+      <div class="leg" id="legenda"></div>
+      <div class="small mut">Em cada mês: <b>devido</b> em cima e <b>descontado</b> embaixo. Clique para ver as parcelas, a folha e baixar o extrato do funcionário.</div>
+      <div class="tw" id="tFunc"></div>
+    </div>
+  </section>
+
+  <!-- EX-FUNCIONÁRIOS -->
+  <section id="a-ex" class="hidden">
+    <div class="regra" id="exRegra"></div>
+    <div class="grid kp4" id="exKpis"></div>
+    <div class="g2" style="margin-top:14px">
+      <div class="card viz"><h3>Saldo em aberto por mês de desligamento</h3><div id="gExMes"></div></div>
+      <div class="card viz"><h3>Saldo em aberto por vencimento</h3><div id="gExVenc"></div></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="busca">
+        <input id="eBusca" placeholder="Buscar nome, CPF, matrícula, cargo ou empresa">
+        <select id="eSt"><option value="">Todos os ex-funcionários com crediário</option><option value="aberto">Só com débito em aberto</option><option value="folha">Só descontados na folha depois da saída</option><option value="quitado">Só quitados</option></select>
+      </div>
+      <div class="small mut">Saída e natureza vêm do relatório de desligados. Débito em aberto = parcelas que ainda estão no crediário (não foram descontadas na rescisão nem baixadas). Clique no nome para ver o extrato.</div>
+      <div class="tw" id="tEx"></div>
+    </div>
+    <h2>Readmitidos (desligados que voltaram e estão no cadastro de ativos)</h2>
+    <div class="card tw" id="tReadm"></div>
+  </section>
+
+  <!-- RELATÓRIOS -->
+  <section id="a-rel" class="hidden">
+    <div class="pgrid" style="margin-top:16px">
+      <div class="card rel" style="border-color:rgba(124,58,237,.45)"><h3>Relatório executivo (Diretoria)</h3><div class="small mut">Uma visão da competência para a diretoria: números, evolução, achados com a ação recomendada, maiores riscos e situação dos funcionários.</div>
+        <div class="row"><button class="btn" onclick="relatorio('exec','ver')">Ver</button><button class="btn b-pri" onclick="relatorio('exec','pdf')">PDF</button><button class="btn" onclick="relatorio('exec','imprimir')">Imprimir</button></div></div>
+      <div class="card rel"><h3>Auditoria da competência</h3><div class="small mut">Resumo, gráficos, divergências de desconto, duplicidades, faltas graves e resumo por loja, com assinaturas.</div>
+        <div class="row"><button class="btn" onclick="relatorio('comp','ver')">Ver</button><button class="btn b-pri" onclick="relatorio('comp','pdf')">PDF</button><button class="btn" onclick="relatorio('comp','imprimir')">Imprimir</button></div></div>
+      <div class="card rel"><h3>Erros e faltas graves</h3><div class="small mut">Todas as pendências abertas, da mais grave para a menos grave, com a tratativa.</div>
+        <div class="row"><button class="btn" onclick="relatorio('pend','ver')">Ver</button><button class="btn b-pri" onclick="relatorio('pend','pdf')">PDF</button><button class="btn" onclick="relatorio('pend','imprimir')">Imprimir</button></div></div>
+      <div class="card rel"><h3>Duplicidades</h3><div class="small mut">Descontos, parcelas, compras e baixas repetidas.</div>
+        <div class="row"><button class="btn" onclick="relatorio('dup','ver')">Ver</button><button class="btn b-pri" onclick="relatorio('dup','pdf')">PDF</button><button class="btn" onclick="relatorio('dup','imprimir')">Imprimir</button></div></div>
+      <div class="card rel"><h3>Divergências por loja</h3><div class="small mut">Uma seção por loja com os funcionários que descontaram errado — para cobrar o gerente.</div>
+        <div class="row"><button class="btn" onclick="relatorio('loja','ver')">Ver</button><button class="btn b-pri" onclick="relatorio('loja','pdf')">PDF</button><button class="btn" onclick="relatorio('loja','imprimir')">Imprimir</button></div></div>
+      <div class="card rel"><h3>Lista para o RH lançar na folha</h3><div class="small mut">Quanto descontar de cada funcionário na competência selecionada (matrícula, nome, loja, valor).</div>
+        <div class="row"><button class="btn" onclick="relatorio('rh','ver')">Ver</button><button class="btn b-pri" onclick="relatorio('rh','pdf')">PDF</button><button class="btn" onclick="relatorio('rh','imprimir')">Imprimir</button><button class="btn" onclick="excelRH()">Excel</button></div></div>
+      <div class="card rel"><h3>Funcionários: compras × descontos</h3><div class="small mut">Todos os funcionários, com as compras, o devido e o descontado de cada mês e a situação (OK, a menos, não descontou, a mais, verificar, previsto).</div>
+        <div class="row"><button class="btn" onclick="relatorio('func','ver')">Ver</button><button class="btn b-pri" onclick="relatorio('func','pdf')">PDF</button><button class="btn" onclick="relatorio('func','imprimir')">Imprimir</button><button class="btn" onclick="excelFuncionarios()">Planilha</button></div></div>
+      <div class="card rel"><h3>Ex-funcionários</h3><div class="small mut">Quem saiu com compra no crediário: débito em aberto (vencido e a vencer), desconto em folha depois da saída e compras depois de sair.</div>
+        <div class="row"><button class="btn" onclick="relatorio('ex','ver')">Ver</button><button class="btn b-pri" onclick="relatorio('ex','pdf')">PDF</button><button class="btn" onclick="relatorio('ex','imprimir')">Imprimir</button><button class="btn" onclick="excelEx()">Planilha</button></div></div>
+      <div class="card rel"><h3>Base completa</h3><div class="small mut">Planilha com resumo, funcionário × mês, matriz, pendências, duplicidades e parcelas.</div>
+        <div class="row"><button class="btn b-pri" onclick="exportar()">Excel completo</button></div></div>
+    </div>
+    <div id="preview"></div>
+  </section>
+
+  <!-- ARQUIVOS -->
+  <section id="a-arq" class="hidden">
+    <div class="card central" id="central">
+      <h3>📥 Central de carregamento <span class="o">todos os arquivos de uma vez</span></h3>
+      <div class="small mut">Solte aqui todos os arquivos do mês juntos: <b>compras no crediário</b> (relatório do Seta — o devido), <b>crediário dos funcionários</b> (relatório do RH — o que foi descontado na folha), <b>ativos</b>, <b>inativos/desligados</b>, planilha <b>desconto de FOLHA</b> e baixas. A tela reconhece cada um pelo nome e pelas colunas, mostra o que leu e grava tudo de uma vez (arquivo já importado é pulado).</div>
+      <label class="drop drop-g" id="dropCentral">Soltar os arquivos aqui ou clicar para escolher (pode marcar vários)<input type="file" id="inpCentral" multiple accept=".csv,.txt,.xlsx,.xls"></label>
+      <div id="centralLista"></div>
+    </div>
+    <div class="regra">Todo mês: <b>1)</b> compras no crediário (Seta — é o devido), <b>2)</b> cadastro de ativos e o relatório de desligados atualizados, <b>3)</b> o desconto da folha — "crediário dos funcionários" do RH (parcela a parcela) ou a planilha "desconto de FOLHA" (aba <b>crediario</b>) — e, se tiver, <b>4)</b> as baixas do crediário. O mesmo arquivo não entra duas vezes; antes de gravar a tela mostra o que leu para conferir. Os cards abaixo importam um arquivo de cada vez.</div>
+    <div class="pgrid">
+      <div class="card fonte"><h3>Compras no crediário <span class="o">todo mês</span></h3>
+        <div class="small mut">Relatório do Seta ("compras no crediário", "COMPRA EM LOJA" — CSV ou Excel). Parcelas repetidas entre relatórios viram uma só; valor diferente vira alerta.</div>
+        <label class="drop" data-tipo="compras">Soltar ou escolher arquivo<input type="file" accept=".csv,.txt,.xlsx,.xls"></label></div>
+      <div class="card fonte"><h3>Cadastro de funcionários <span class="o">todo mês</span></h3>
+        <div class="small mut">Relação de ativos e afastados (CPF, matrícula, loja, situação). Quem sair do cadastro passa a ser tratado como desligado.</div>
+        <label class="drop" data-tipo="cadastro">Soltar ou escolher arquivo<input type="file" accept=".csv,.txt,.xlsx,.xls"></label></div>
+      <div class="card fonte"><h3>Desligados (inativos) <span class="o">todo mês</span></h3>
+        <div class="small mut">Relatório "Desligados no Período" (CPF, admissão, saída, natureza). Mostra se o crediário de quem saiu foi descontado e o que ainda está em aberto.</div>
+        <label class="drop" data-tipo="desligados">Soltar ou escolher arquivo<input type="file" accept=".csv,.txt,.xlsx,.xls"></label></div>
+      <div class="card fonte"><h3>Descontos da folha <span class="o">todo mês</span></h3>
+        <div class="small mut">"Crediário dos funcionários" do RH (parcela a parcela: cada parcela descontada é conferida com a compra) ou a planilha "desconto de FOLHA" (vale a aba <b>crediario</b>).</div>
+        <label class="drop" data-tipo="folha">Soltar ou escolher arquivo<input type="file" accept=".csv,.txt,.xlsx,.xls"></label></div>
+      <div class="card fonte"><h3>Baixas do crediário <span class="o">opcional</span></h3>
+        <div class="small mut">Parcelas recebidas (documento, parcela, data da baixa, valor). Mostra quando cada parcela foi quitada.</div>
+        <label class="drop" data-tipo="baixas">Soltar ou escolher arquivo<input type="file" accept=".csv,.txt,.xlsx,.xls"></label></div>
+    </div>
+    <h2>Arquivos importados</h2>
+    <div class="card tw" id="tArq"></div>
+    <h2>Regra de competência</h2>
+    <div class="card">
+      <div class="cfg">
+        <div><label>Como a parcela cai na folha</label>
+          <select id="cRegra"><option value="ciclo">Compra de 21 a 20 → folha do mês + 1 mês por parcela</option><option value="venc_ant">Vencimento de 21 a 20 → folha do mês em que começa</option><option value="venc">Pelo vencimento da parcela (com corte)</option></select></div>
+        <div><label>Dia de corte do ciclo</label><input id="cCorte" type="number" min="1" max="31"></div>
+        <div><label>Tolerância de arredondamento (R$)</label><input id="cTol" type="number" min="0" step="0.01"></div>
+        <div><label>Máximo de parcelas permitido</label><input id="cMax" type="number" min="1" max="24"></div>
+        <div><button class="btn b-pri" onclick="salvarConfig()">Salvar regra</button></div>
+      </div>
+      <div class="regra" id="regraTxt"></div>
+      <div id="calib"></div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="../obras-contas-pagar/comum.js?v=20261025-3"></script>
+<script>
+'use strict';
+/* =====================================================================================================
+   Auditoria de Desconto em Folha do Crediário (23/10/2026)
+   Banco: cred_* (supabase/migrations/20261023_cred_desconto_folha.sql). O cruzamento roda aqui, com tudo o que já
+   foi importado: parcela → competência da folha (regra configurável) × desconto efetivo × cadastro × baixas.
+   ===================================================================================================== */
+// rd2 (e não r2): o comum.js também declara r2 no escopo global — o mesmo nome derrubava a tela inteira
+const rd2 = v => Math.round((Number(v) || 0) * 100) / 100;
+const nfm = v => Number(v || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const compBR = c => c ? MESES[+c.slice(5, 7) - 1] + '/' + c.slice(0, 4) : '';
+const addMes = (c, n) => { const t = +c.slice(0, 4) * 12 + (+c.slice(5, 7) - 1) + n; return Math.floor(t / 12) + '-' + String(t % 12 + 1).padStart(2, '0'); };
+const difMes = (a, b) => (+b.slice(0, 4) * 12 + +b.slice(5, 7)) - (+a.slice(0, 4) * 12 + +a.slice(5, 7));
+const soDig = s => String(s ?? '').replace(/\D/g, '');
+const cpfN = s => { const d = soDig(s); return d ? d.padStart(11, '0') : ''; };
+const cpfF = c => c && c.length === 11 ? `${c.slice(0, 3)}.${c.slice(3, 6)}.${c.slice(6, 9)}-${c.slice(9)}` : (c || '');
+const matN = s => soDig(s).replace(/^0+/, '');
+const semAc = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+const nomeN = s => semAc(s).toUpperCase().replace(/[^A-Z ]/g, ' ').replace(/\s+/g, ' ').trim();
+const dataBR = d => d ? dBRano(d) : '';
+const qtd = n => Number(n || 0).toLocaleString('pt-BR');
+
+/* ---------- leitura de números, datas e competências ---------- */
+function numero(v) {
+  if (typeof v === 'number') return v;
+  let s = String(v ?? '').trim().replace(/[R$\s]/g, '');
+  if (!s) return NaN;
+  const neg = /^\(.*\)$/.test(s) || /-$/.test(s) || /^-/.test(s); s = s.replace(/[()-]/g, '');
+  if (/,\d{1,2}$/.test(s) || (/,/.test(s) && !/\./.test(s))) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/,/g, '');
+  const n = Number(s); return isFinite(n) ? (neg ? -n : n) : NaN;
+}
+const iso = (y, m, d) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+function serialISO(n) { const p = XLSX.SSF.parse_date_code(n); return p ? iso(p.y, p.m, p.d) : ''; }
+function dataISO(v) {
+  if (v == null || v === '') return '';
+  if (typeof v === 'number') return v > 20000 && v < 80000 ? serialISO(v) : '';
+  if (v instanceof Date) return iso(v.getFullYear(), v.getMonth() + 1, v.getDate());
+  const s = String(v).trim();
+  let m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
+  if (m) { let y = +m[3]; if (y < 100) y += 2000; return +m[2] >= 1 && +m[2] <= 12 && +m[1] >= 1 && +m[1] <= 31 ? iso(y, +m[2], +m[1]) : ''; }
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return iso(+m[1], +m[2], +m[3]);
+  // "23-Jul-26" / "23-out-2026" (Excel antigo do sistema do crediário)
+  m = semAc(s).toLowerCase().match(/^(\d{1,2})[\s\/.-]+([a-z]{3})[a-z]*[\s\/.-]+(\d{2,4})/);
+  if (m && MES3[m[2]]) { let y = +m[3]; if (y < 100) y += 2000; return iso(y, MES3[m[2]], +m[1]); }
+  if (/^\d{5}$/.test(s)) return serialISO(+s);
+  return '';
+}
+// meses abreviados em português e inglês
+const MES3 = {jan: 1, fev: 2, feb: 2, mar: 3, abr: 4, apr: 4, mai: 5, may: 5, jun: 6, jul: 7, ago: 8, aug: 8, set: 9, sep: 9, out: 10, oct: 10, nov: 11, dez: 12, dec: 12};
+const MESN = {jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6, jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12};
+function compDe(v) {
+  if (v == null || v === '') return '';
+  if (typeof v === 'number') {
+    if (v > 20000 && v < 80000) return serialISO(v).slice(0, 7);
+    if (v >= 190001 && v <= 210012) return String(v).slice(0, 4) + '-' + String(v).slice(4, 6);
+    return '';
+  }
+  const s = semAc(String(v).trim().toLowerCase());
+  let m = s.match(/^(\d{1,2})[\/.-](\d{4})/); if (m && +m[1] <= 12) return m[2] + '-' + m[1].padStart(2, '0');
+  m = s.match(/^(\d{1,2})[\/.-](\d{2})(?:-\d+)?$/); if (m && +m[1] <= 12) return '20' + m[2] + '-' + m[1].padStart(2, '0');   // "06/26-1" do Portal
+  m = s.match(/^(\d{4})[\/.-](\d{1,2})$/); if (m) return m[1] + '-' + m[2].padStart(2, '0');
+  m = s.match(/^(\d{4})(\d{2})$/); if (m && +m[2] <= 12) return m[1] + '-' + m[2];
+  m = s.match(/^([a-z]{3})[a-z]*[\s\/.-]*(\d{2,4})$/); if (m && MES3[m[1]]) { let y = +m[2]; if (y < 100) y += 2000; return y + "-" + String(MES3[m[1]]).padStart(2, '0'); }
+  const d = dataISO(v); return d ? d.slice(0, 7) : '';
+}
+function compDoNome(n) {
+  const s = semAc(n.toLowerCase());
+  let m = s.match(/(\d{2})[._-](\d{4})/); if (m && +m[1] <= 12) return m[2] + '-' + m[1];
+  m = s.match(/(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)[a-z]*[._ -]*(\d{4})/); if (m) return m[2] + '-' + String(MESN[m[1]]).padStart(2, '0');
+  return '';
+}
+
+/* ---------- leitura de arquivos ---------- */
+function decodificar(buf) { try { return new TextDecoder('utf-8', {fatal: true}).decode(buf); } catch (e) { return new TextDecoder('windows-1252').decode(buf); } }
+function lerCSV(txt) {
+  const linhas = txt.replace(/^﻿/, '').split(/\r?\n/);
+  const amostra = linhas.slice(0, 10).join('\n');
+  const sep = [';', '\t', ',', '|'].map(s => [s, amostra.split(s).length]).sort((a, b) => b[1] - a[1])[0][0];
+  return linhas.map(l => {
+    const out = []; let cur = '', q = false;
+    for (let i = 0; i < l.length; i++) {
+      const ch = l[i];
+      if (q) { if (ch === '"') { if (l[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if (ch === '"') q = true; else if (ch === sep) { out.push(cur); cur = ''; } else cur += ch;
+    }
+    out.push(cur); return out.map(x => x.trim());
+  });
+}
+async function lerArquivo(file) {
+  const buf = await file.arrayBuffer();
+  const h = await crypto.subtle.digest('SHA-256', buf);
+  const hash = [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join('');
+  let abas;
+  if (/\.(xlsx|xlsm|xls)$/i.test(file.name)) {
+    const wb = XLSX.read(buf, {type: 'array', cellDates: false});
+    abas = wb.SheetNames.map(n => ({nome: n, rows: XLSX.utils.sheet_to_json(wb.Sheets[n], {header: 1, raw: true, defval: ''})})).filter(a => a.rows.some(r => r.some(c => c !== '')));
+  } else abas = [{nome: 'CSV', rows: lerCSV(decodificar(buf))}];
+  return {abas, hash};
+}
+// colunas reconhecidas pelo nome do cabeçalho (dá para corrigir na conferência)
+const COLUNAS = {
+  compras: {cpf: /cpf/, nome: /^nome|cliente/, doc: /documento|^doc|titulo|contrato/, parcela: /^parc/, lanc: /lanc|emiss|compra|data venda/, venc: /venc/, valor: /valor|vlr/},
+  cadastro: {cpf: /^cpf/, matricula: /matr|chapa|registro|cod.*func/, nome: /^nome$|^nome func|^funcion|^colaborador/, loja: /ccusto|centro|loja|setor|lotac/, cidade: /cidade/, funcao: /func[aã]o|cargo/, admissao: /admiss/, situacao: /situa/},
+  // o "crediário dos funcionários" do RH vem parcela a parcela (documento CE..-3/5, parcela, vencimento): cada desconto é conferido com a compra
+  folha: {cpf: /cpf/, matricula: /matr|chapa|registro|cod.*func/, nome: /^nome|funcion|colaborador/, comp: /compet|^m[eê]s|per[ií]odo|mes.?ano|ano.?mes/, evento: /evento|rubrica|verba|descri|hist/, valor: /valor|desconto|vlr|total/, dataPag: /pagamento|dt.*pag|data.*pag|cr[eé]dito|liquid/,
+    doc: /^documento|^doc$/, parcela: /^parcela$/, venc: /^venc/, lanc: /^lanc|^emiss/},
+  baixas: {cpf: /cpf/, doc: /documento|^doc|titulo|contrato/, parcela: /^parc/, dataBaixa: /baixa|pagamento|receb|liquid|dt.*pag|data.*pag/, valor: /valor.*(pago|receb|baixa)|^valor|vlr/},
+  // relatório "Desligados no Período": Estab, Descrição, Código, Nome, CPF, PIS, Admissão, Cargo, Saída, Natureza
+  desligados: {cpf: /^cpf/, saida: /saida|deslig|demiss|rescis/, matricula: /^codigo$|^cod\b|^cod\.|matr|chapa/, nome: /^nome/, estab: /^descri|^empresa|^loja|ccusto/, cargo: /cargo|^func/, admissao: /admiss/, natureza: /natureza|motivo|causa/}
+};
+const OBRIG = {compras: ['cpf', 'doc', 'valor', 'venc'], cadastro: ['cpf'], folha: ['valor'], baixas: ['doc'], desligados: ['cpf', 'saida']};
+const ROT = {cpf: 'CPF', matricula: 'Matrícula', nome: 'Nome', comp: 'Competência', evento: 'Evento/rubrica', valor: 'Valor', dataPag: 'Data do pagamento', doc: 'Documento',
+  parcela: 'Parcela', dataBaixa: 'Data da baixa', venc: 'Vencimento', lanc: 'Lançamento', loja: 'Loja/C.Custo', cidade: 'Cidade', funcao: 'Função', admissao: 'Admissão', situacao: 'Situação',
+  saida: 'Saída', estab: 'Empresa/estab.', cargo: 'Cargo', natureza: 'Natureza'};
+const TIPO_NOME = {compras: 'Compras no crediário', cadastro: 'Cadastro de funcionários', folha: 'Descontos da folha', baixas: 'Baixas do crediário', desligados: 'Desligados (ex-funcionários)'};
+function detectar(rows, tipo) {
+  let melhor = {i: 0, map: {}, n: 0};
+  for (let i = 0; i < Math.min(rows.length, 40); i++) {
+    const cab = rows[i].map(c => semAc(String(c ?? '')).toLowerCase().trim()); const map = {}; const usados = new Set();
+    for (const [k, re] of Object.entries(COLUNAS[tipo])) { const j = cab.findIndex((c, jj) => c && !usados.has(jj) && re.test(c)); if (j >= 0) { map[k] = j; usados.add(j); } }
+    const n = Object.keys(map).length; if (n > melhor.n) melhor = {i, map, n};
+  }
+  return {cab: melhor.i, map: melhor.map, header: (rows[melhor.i] || []).map(String)};
+}
+const cel = (row, map, k) => map[k] == null ? '' : row[map[k]];
+
+/* ---------- dados ---------- */
+let D = null, R = null, COMP = '', COMP_ESCOLHIDA = false;  // COMP_ESCOLHIDA: o usuário trocou a competência no seletor
+async function carregarDados() {
+  const sel = (t, c, o) => todos(() => sb.from(t).select(c).order(o));
+  const [arquivos, parcelas, funcionarios, folha, baixas, cfg, tratativas, fechamentos, desligados] = await Promise.all([
+    sel('cred_arquivos', '*', 'id'),
+    sel('cred_parcelas', 'chave,cpf,nome,documento,contrato,parcela,n_parcelas,lancamento,vencimento,valor,valor_anterior,alterado_em,arquivo_id', 'chave'),
+    sel('cred_funcionarios', '*', 'cpf'), sel('cred_folha', '*', 'id'), sel('cred_baixas', '*', 'chave'),
+    sb.from('cred_config').select('*').eq('id', 1).maybeSingle().then(r => { if (r.error) throw r.error; return r.data; }),
+    sel('cred_tratativas', '*', 'id'), sel('cred_fechamentos', '*', 'competencia'),
+    todos(() => sb.from('cred_desligados').select('*').order('cpf').order('saida'))]);
+  D = {arquivos, parcelas, funcionarios, folha, baixas, cfg: cfg || {regra: 'ciclo', corte: 20, tolerancia: 0.05}, tratativas, fechamentos, desligados};
+}
+
+/* ---------- regra de competência ---------- */
+const cicloDe = (d, corte) => +d.slice(8, 10) > corte ? addMes(d.slice(0, 7), 1) : d.slice(0, 7);
+function compDaParcela(p, regra, corte) {
+  if (regra === 'venc') return cicloDe(p.vencimento, corte);
+  // vencimento do dia 21 de um mês ao dia 20 do seguinte → folha do 1º mês (ex.: 21/09 a 20/10 → folha 09)
+  if (regra === 'venc_ant') return addMes(cicloDe(p.vencimento, corte), -1);
+  return addMes(cicloDe(p.lancamento || p.vencimento, corte), (p.parcela || 1) - 1);
+}
+// regra da empresa: compra de 21/09 a 20/10 → folha de outubro (1ª parcela), paga no 5º dia útil de novembro; cada parcela seguinte, um mês depois
+const REGRAS = [
+  {regra: 'ciclo', corte: 20, txt: 'Compra de 21 a 20 → folha do mês (21/09 a 20/10 = folha de outubro) + 1 mês por parcela'},
+  {regra: 'venc_ant', corte: 20, txt: 'Vencimento de 21 a 20 → folha do mês em que começa (21/09 a 20/10 = folha 09)'},
+  {regra: 'venc', corte: 20, txt: 'Vencimento com corte no dia 20'},
+  {regra: 'venc', corte: 31, txt: 'Mês do vencimento (calendário)'},
+  {regra: 'ciclo', corte: 31, txt: 'Mês da compra + parcela'}
+];
+const SEM_SAL = /doen|acid|invalid|aposent|resc|susp|inss/i;
+const STAT = {
+  ok: ['OK', 'st-ok'], menos: ['Descontou a menos', 'st-menos'], nao: ['Não descontou', 'st-nao'], mais: ['Descontou a mais', 'st-mais'],
+  semcompra: ['Desconto sem compra', 'st-semcompra'], verif: ['Verificar (faltam compras anteriores)', 'st-verif'], prev: ['Previsto (folha não importada)', 'st-prev']
+};
+const stChip = s => `<span class="st ${STAT[s][1]}">${STAT[s][0]}</span>`;
+const TRAT = {pendente: 'Pendente', cobrar: 'Cobrar do funcionário', devolver: 'Devolver ao funcionário', justificado: 'Justificado', resolvido: 'Resolvido'};
+const tratChip = t => t ? `<span class="st st-${t.status}" title="${esc((t.observacao || '') + ' — ' + quemCurto(t.usuario) + ' ' + dtBR(t.criado_em))}">${TRAT[t.status]}</span>` : '<span class="st st-pendente">Sem tratativa</span>';
+const encerrada = p => p.trat && ['justificado', 'resolvido'].includes(p.trat.status);
+const GRAV = {alta: 0, media: 1, baixa: 2};
+const gravChip = g => `<span class="st st-${g}">${g === 'media' ? 'média' : g}</span>`;
+
+const grpConta = (arr, f) => { const m = new Map(); arr.forEach(x => { const k = f(x); if (!m.has(k)) m.set(k, []); m.get(k).push(x); }); return m; };
+/* semelhança de nomes (tolera erro de digitação e abreviação) */
+function lev1(a, b) {
+  if (a === b) return true; if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0, j = 0, e = 0;
+  while (i < a.length && j < b.length) { if (a[i] === b[j]) { i++; j++; continue; } if (++e > 1) return false; if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; } }
+  return e + (a.length - i) + (b.length - j) <= 1;
+}
+function simNome(x, y) {
+  const st = new Set(['DA', 'DE', 'DO', 'DAS', 'DOS', 'E']);
+  const a = nomeN(x).split(' ').filter(t => t && !st.has(t)), b = nomeN(y).split(' ').filter(t => t && !st.has(t));
+  if (!a.length || !b.length) return 1;
+  const [m, M] = a.length <= b.length ? [a, b] : [b, a];
+  return m.filter(t => M.some(u => lev1(t, u) || (t.length === 1 && u[0] === t) || (u.length === 1 && t[0] === u))).length / m.length;
+}
+// "dez/2025 a set/2026, nov/2026"
+function faixas(cs) {
+  const out = []; let ini = null, ant = null;
+  const fecha = () => { if (ini) out.push(ini === ant ? compBR(ini) : compBR(ini) + ' a ' + compBR(ant)); };
+  for (const c of cs.slice().sort()) { if (ant && difMes(ant, c) === 1) { ant = c; continue; } fecha(); ini = ant = c; }
+  fecha(); return out.join(', ');
+}
+
+/* =====================================================================================================
+   CRUZAMENTO
+   ===================================================================================================== */
+function cruzar() {
+  const cfg = {regra: D.cfg.regra, corte: +D.cfg.corte, tol: +D.cfg.tolerancia, maxParc: +(D.cfg.max_parcelas || 5)};
+  const hoje = hojeISO(), compHoje = cicloDe(hoje, cfg.corte);
+  const arqPorId = new Map(D.arquivos.map(a => [a.id, a]));
+  const cadAtual = Math.max(0, ...D.arquivos.filter(a => a.tipo === 'cadastro').map(a => a.id));
+  const porCpf = new Map(), porMat = new Map(), porNome = new Map();
+  D.funcionarios.forEach(f => { const x = {...f, noCadastro: f.arquivo_id === cadAtual}; porCpf.set(f.cpf, x); if (f.matricula) porMat.set(matN(f.matricula), x); porNome.set(nomeN(f.nome), x); });
+  // desligados: vale a saída mais recente de cada CPF
+  const desl = new Map(); (D.desligados || []).forEach(d => { const o = desl.get(d.cpf); if (!o || o.saida < d.saida) desl.set(d.cpf, d); });
+
+  // baixas por documento|parcela
+  const bx = new Map(); D.baixas.forEach(b => { const k = b.documento + '|' + b.parcela; if (!bx.has(k)) bx.set(k, []); bx.get(k).push(b); });
+  // A carteira do crediário só traz parcelas em aberto. As parcelas já pagas de um contrato ainda aberto são reconstruídas
+  // (mesmo valor da 1ª parcela em aberto, vencimento 30 dias antes a cada parcela) para auditar as folhas passadas.
+  const base = D.parcelas.map(p => ({...p, valor: Number(p.valor)})), rec = [];
+  const porContrato = new Map(); base.forEach(p => { if (!p.n_parcelas) return; const k = p.cpf + '|' + p.contrato + '|' + (p.lancamento || ''); if (!porContrato.has(k)) porContrato.set(k, []); porContrato.get(k).push(p); });
+  for (const ps of porContrato.values()) {
+    ps.sort((a, b) => a.parcela - b.parcela); const pk = ps[0]; if (pk.parcela <= 1) continue;
+    const tem = new Set(ps.map(p => p.parcela));
+    for (let j = 1; j < pk.parcela; j++) { if (tem.has(j)) continue;
+      const d = new Date(pk.vencimento + 'T12:00:00'); d.setDate(d.getDate() - 30 * (pk.parcela - j));
+      // se a única em aberto é a última, o valor dela leva o arredondamento do contrato: as anteriores ficam aproximadas
+      rec.push({...pk, chave: 'rec|' + pk.chave + '|' + j, documento: `${pk.contrato}-${j}/${pk.n_parcelas}`, parcela: j, vencimento: d.toISOString().slice(0, 10), valor_anterior: null, rec: true, aprox: pk.parcela === pk.n_parcelas}); }
+  }
+  const par = base.concat(rec).map(p => {
+    const x = {...p, comp: compDaParcela(p, cfg.regra, cfg.corte), ck: p.cpf + '|' + p.contrato + '|' + (p.lancamento || ''), descontos: []};
+    const b = bx.get(p.documento + '|' + p.parcela) || bx.get(p.contrato + '|' + p.parcela); x.baixas = b || []; x.baixa = b ? b[0] : null;
+    return x;
+  });
+  const ident = l => {
+    let cpf = l.cpf; const m = matN(l.matricula);
+    if (!cpf && m && porMat.has(m)) cpf = porMat.get(m).cpf;
+    if (!cpf && l.nome && porNome.has(nomeN(l.nome))) cpf = porNome.get(nomeN(l.nome)).cpf;
+    const a = arqPorId.get(l.arquivo_id);
+    return {...l, cpf, comp: l.competencia, valor: Number(l.valor), arq: a ? a.nome : ''};
+  };
+  const folha = D.folha.map(ident);
+  // desconto parcela a parcela (arquivo do RH com documento): cada linha é ligada à parcela da compra
+  // chave CPF + documento + parcela (documentos da BRA Benefícios se repetem entre pessoas); sem CPF, só se o documento for único
+  const kParc = (cpf, doc, n) => cpf + '|' + doc + '|' + n, parPorDoc = new Map(), docUnico = new Map();
+  par.forEach(p => { const k = kParc(p.cpf, p.documento, p.parcela); if (!parPorDoc.has(k)) parPorDoc.set(k, p); docUnico.set(p.documento, docUnico.has(p.documento) ? null : p); });
+  folha.forEach(l => { if (!l.documento) return; const p = (l.cpf ? parPorDoc.get(kParc(l.cpf, l.documento, l.parcela)) : docUnico.get(l.documento)) || null; l.par = p;
+    // a lista do RH diz em que folha a parcela entra: a parcela passa para essa folha (a da regra fica guardada em compRegra)
+    if (p) { if (!l.cpf) l.cpf = p.cpf; p.descontos.push(l); if (p.compRegra == null) p.compRegra = p.comp; p.comp = l.comp; } });
+  const folhaOk = folha.filter(l => l.cpf), semId = folha.filter(l => !l.cpf);
+  const folhaResumo = folhaOk.filter(l => !l.documento), folhaParc = folhaOk.filter(l => l.documento);
+  // a lista do RH parcela a parcela vale como a lista inteira da folha: parcela da folha que não está nela = não vai ser descontada.
+  // janelas = vencimentos que a lista traz (ex.: 21/10 a 23/10), para mostrar quando ela foi tirada com o período curto
+  const compsResumo = new Set(folhaResumo.map(l => l.comp)), janelas = new Map();
+  for (const [, ls] of grpConta(folhaParc, l => l.arquivo_id)) {
+    const vs = ls.map(l => l.vencimento || (l.par && l.par.vencimento)).filter(Boolean).sort(); if (!vs.length) continue;
+    const j = {ini: vs[0], fim: vs[vs.length - 1], arq: ls[0].arq};
+    new Set(ls.map(l => l.comp)).forEach(c => { if (!janelas.has(c)) janelas.set(c, []); janelas.get(c).push(j); });
+  }
+  // parcela reconstruída = já paga (não está mais na carteira em aberto): não entra na conferência da lista do RH
+  const auditada = p => !(p.rec && janelas.has(p.comp) && !compsResumo.has(p.comp));
+  const naJanela = p => janelas.get(p.comp).some(j => p.vencimento >= j.ini && p.vencimento <= j.fim);
+  const foraJanela = new Map();
+
+  // cobertura: ciclos de compra importados
+  // só conta como ciclo importado a compra que veio inteira (com a 1ª parcela); o relatório de parcelas em aberto
+  // traz pedaços de compras antigas e não pode dar a cobertura por completa
+  const ciclos = new Set(par.filter(p => p.parcela === 1 && !p.rec).map(p => cicloDe(p.lancamento || p.vencimento, cfg.corte)));
+  const maxParc = Math.min(12, Math.max(1, ...par.map(p => p.n_parcelas || p.parcela || 1)));
+  // "carteira em aberto" = relatório com compras de muitos meses e só parcelas a vencer (lançamento bem anterior ao 1º vencimento);
+  // tirada antes do início da janela de vencimentos da folha, ela traz TODAS as parcelas dessa folha
+  const porArq = new Map(); par.filter(p => !p.rec).forEach(p => { const o = porArq.get(p.arquivo_id) || {mv: '9', ml: '9'}; porArq.set(p.arquivo_id, o);
+    if (p.vencimento < o.mv) o.mv = p.vencimento; if (p.lancamento && p.lancamento < o.ml) o.ml = p.lancamento; });
+  const menos45 = d => { const x = new Date(d + 'T12:00:00'); x.setDate(x.getDate() - 45); return x.toISOString().slice(0, 10); };
+  const carteiras = [...porArq.values()].filter(o => o.ml < menos45(o.mv)).map(o => o.mv);
+  const dia = String(Math.min(28, cfg.corte + 1)).padStart(2, '0');
+  // parcelas da folha M vencem a partir do dia 21 de M (regra do ciclo e venc_ant) ou de M-1 (vencimento com corte)
+  const inicioJanela = comp => cfg.regra === 'venc' ? addMes(comp, -1) + '-' + dia : comp + '-' + dia;
+  const cobertura = comp => {
+    const ini = inicioJanela(comp);
+    if (carteiras.length) return carteiras.some(mv => mv <= ini) ? [] : [comp];   // completa se a carteira em aberto cobre a janela
+    const falt = []; for (let k = maxParc; k >= 0; k--) { const c = addMes(comp, -k); if (!ciclos.has(c)) falt.push(c); } return falt; };
+  const compsFolha = new Set([...compsResumo, ...janelas.keys()]);
+  const compLinha = l => l.comp;
+  const dataPagComp = {}; folhaOk.forEach(l => { if (l.data_pagamento) (dataPagComp[compLinha(l)] = dataPagComp[compLinha(l)] || new Set()).add(l.data_pagamento); });
+
+  // funcionário × competência
+  const celulas = new Map(); const G = k => { if (!celulas.has(k)) celulas.set(k, {devido: 0, desc: 0, parcelas: [], folha: []}); return celulas.get(k); };
+  par.forEach(p => { if (!auditada(p)) { p.paga = true; return; }
+    // parcela da folha que ficou fora da lista do RH porque vence fora do período que a lista traz
+    if (janelas.has(p.comp) && !compsResumo.has(p.comp) && !p.descontos.length && !naJanela(p)) { const o = foraJanela.get(p.comp) || {n: 0, valor: 0, pessoas: new Set(), vs: []}; o.n++; o.valor += p.valor; o.pessoas.add(p.cpf); o.vs.push(p.vencimento); foraJanela.set(p.comp, o); p.fora = true; }
+    const c = G(p.cpf + '|' + p.comp); c.devido += p.valor; c.parcelas.push(p); });
+  folhaOk.forEach(l => { const c = G(l.cpf + '|' + compLinha(l)); c.desc += l.valor; c.folha.push(l); });
+  const pessoas = new Map();
+  const P = (cpf, nome) => {
+    if (!pessoas.has(cpf)) { const f = porCpf.get(cpf), d = desl.get(cpf) || null;
+      // readmitido: saiu e voltou (está no cadastro atual com admissão depois da saída)
+      const readm = !!(d && f && f.noCadastro && f.admissao && f.admissao > d.saida);
+      pessoas.set(cpf, {cpf, nome: f ? f.nome : d ? d.nome : nome, nomeCred: '', cad: f || null, desl: d, readm, ex: !!(d && !readm), celulas: {}, pend: [], parcelas: [], folha: [], devido: 0, desc: 0, menos: 0, mais: 0, verif: 0, nDiv: 0}); }
+    const x = pessoas.get(cpf); if (nome && !x.nomeCred) x.nomeCred = nome; if (!x.nome) x.nome = nome || ''; return x;
+  };
+  par.forEach(p => P(p.cpf, p.nome).parcelas.push(p)); folhaOk.forEach(l => P(l.cpf, l.nome).folha.push(l));
+  const linhas = [];
+  for (const [k, c] of celulas) {
+    const [cpf, comp] = k.split('|'); const pe = pessoas.get(cpf);
+    c.devido = rd2(c.devido); c.desc = rd2(c.desc); c.dif = rd2(c.desc - c.devido);
+    c.faltam = cobertura(comp); c.completa = !c.faltam.length;
+    // parcela reconstruída a partir da última parcela do contrato: aceita até R$ 1 por parcela do contrato de arredondamento
+    c.tolRec = rd2(c.parcelas.filter(p => p.aprox).reduce((s, p) => s + (p.n_parcelas || 1), 0));
+    if (!compsFolha.has(comp)) c.st = 'prev';
+    else if (Math.abs(c.dif) <= cfg.tol || (c.tolRec && Math.abs(c.dif) <= cfg.tol + c.tolRec)) c.st = 'ok';
+    else if (c.devido > 0 && c.desc === 0) c.st = 'nao';
+    else if (c.dif < 0) c.st = 'menos';
+    else if (!c.completa) c.st = 'verif';
+    else c.st = c.devido === 0 ? 'semcompra' : 'mais';
+    c.dataPag = [...new Set(c.folha.map(l => l.data_pagamento).filter(Boolean))].sort();
+    if (!c.dataPag.length && dataPagComp[comp]) c.dataPag = [...dataPagComp[comp]].sort();
+    c.baixadas = c.parcelas.filter(p => p.baixa).length;
+    c.dataBaixa = [...new Set(c.parcelas.map(p => p.baixa && p.baixa.data_baixa).filter(Boolean))].sort();
+    pe.celulas[comp] = c;
+    if (c.st !== 'prev') { pe.devido += c.devido; pe.desc += c.desc; }
+    if (['menos', 'nao'].includes(c.st)) { pe.menos += -c.dif; pe.nDiv++; }
+    if (['mais', 'semcompra'].includes(c.st)) { pe.mais += c.dif; pe.nDiv++; }
+    if (c.st === 'verif') { pe.verif += c.dif; pe.nDiv++; }
+    linhas.push({cpf, comp, ...c});
+  }
+
+  // tratativas (a mais recente de cada pendência vale)
+  const trat = new Map(); D.tratativas.forEach(t => trat.set(t.pendencia, t));
+  const pend = [];
+  const add = (cat, grav, tipo, cpf, comp, txt, valor = 0, extra = {}) => {
+    const id = `${tipo}|${cpf || ''}|${comp || ''}${extra.sufixo ? '|' + extra.sufixo : ''}`;
+    const pe = cpf ? pessoas.get(cpf) : null; const f = pe && pe.cad;
+    const p = {id, cat, grav, tipo, cpf: cpf || '', comp: comp || '', txt, valor: rd2(valor), nome: pe ? pe.nome : (extra.nome || ''), matricula: f ? f.matricula : '', loja: f ? f.loja : (cpf ? 'FORA DO CADASTRO' : ''), trat: trat.get(id) || null};
+    pend.push(p); if (pe) pe.pend.push(p); return p;
+  };
+  const ultFolha = [...compsFolha].sort().pop() || '';
+  const emAberto = pe => rd2(pe.parcelas.filter(p => !p.baixa && (!ultFolha || p.comp > ultFolha)).reduce((s, p) => s + p.valor, 0));
+  // depois do desligamento não há folha: a folha de M só existe para quem estava na empresa no início de M
+  const depoisDaSaida = (pe, comp) => pe && pe.ex && comp + '-01' > pe.desl.saida;
+
+  // 1) desconto em folha
+  for (const l of linhas) {
+    // ex-funcionário: a folha depois da saída não desconta — a cobrança é a do saldo na rescisão (pendência de cadastro)
+    if (l.st === 'nao' && depoisDaSaida(pessoas.get(l.cpf), l.comp)) continue;
+    if (l.st === 'nao') add('desconto', 'alta', janelas.has(l.comp) && !compsResumo.has(l.comp) ? 'Fora da lista do RH' : 'Não descontou', l.cpf, l.comp, janelas.has(l.comp) && !compsResumo.has(l.comp) ? `Devia descontar ${brl(l.devido)} na folha de ${compBR(l.comp)} e não está na lista de desconto do RH (${l.parcelas.map(p => p.documento + ' venc. ' + dataBR(p.vencimento)).slice(0, 4).join(', ')}${l.parcelas.length > 4 ? '…' : ''}).` : `Devia descontar ${brl(l.devido)} na folha de ${compBR(l.comp)} e nada foi descontado.`, -l.dif);
+    else if (l.st === 'menos' && janelas.has(l.comp) && !compsResumo.has(l.comp)) { const falt = l.parcelas.filter(p => !p.descontos.length);
+      add('desconto', 'alta', 'Lista do RH a menos', l.cpf, l.comp, `Devido ${brl(l.devido)} × na lista do RH ${brl(l.desc)} na folha de ${compBR(l.comp)}. Fora da lista: ${falt.map(p => p.documento + ' venc. ' + dataBR(p.vencimento)).slice(0, 4).join(', ')}${falt.length > 4 ? '…' : ''}.`, -l.dif); }
+    else if (l.st === 'menos') add('desconto', 'alta', 'Descontou a menos', l.cpf, l.comp, `Devido ${brl(l.devido)} × descontado ${brl(l.desc)} na folha de ${compBR(l.comp)}.`, -l.dif);
+    else if (l.st === 'mais') add('desconto', 'alta', 'Descontou a mais', l.cpf, l.comp, `Devido ${brl(l.devido)} × descontado ${brl(l.desc)} — devolver ${brl(l.dif)} ao funcionário.`, l.dif);
+    else if (l.st === 'semcompra') add('desconto', 'alta', 'Desconto sem compra', l.cpf, l.comp, `Descontou ${brl(l.desc)} sem parcela no crediário para ${compBR(l.comp)}.`, l.dif);
+    else if (l.st === 'verif') add('desconto', 'media', 'Desconto acima do previsto', l.cpf, l.comp, `Descontou ${brl(l.dif)} a mais que o previsto, mas faltam compras de ${faixas(l.faltam)} — importe esses relatórios para confirmar.`, l.dif);
+  }
+  // 2) cadastro
+  // ex-funcionários: o que ficou em aberto no crediário depois da saída (devia sair na rescisão)
+  const hojeD = hojeISO(), exs = [];
+  for (const pe of pessoas.values()) {
+    if (!pe.ex) continue;
+    const d = pe.desl, reais = pe.parcelas.filter(p => !p.rec);
+    // desconto em folha depois da saída não acontece: a parcela continua em aberto
+    const abertas = reais.filter(p => !p.baixa && !p.descontos.some(l => l.comp + '-01' <= d.saida)).sort((a, b) => a.vencimento.localeCompare(b.vencimento));
+    const vencido = rd2(abertas.filter(p => p.vencimento < hojeD).reduce((s, p) => s + p.valor, 0)), aVencer = rd2(abertas.filter(p => p.vencimento >= hojeD).reduce((s, p) => s + p.valor, 0));
+    const aposCompra = reais.filter(p => p.lancamento && p.lancamento > d.saida);
+    // a folha em que o desconto foi feito (a informada no arquivo), não a da regra
+    const folhaApos = pe.folha.filter(l => l.comp + '-01' > d.saida), descApos = rd2(folhaApos.reduce((s, l) => s + l.valor, 0));
+    const o = {pe, d, abertas, vencido, aVencer, aberto: rd2(vencido + aVencer), aposCompra, folhaApos, descApos, desc: rd2(pe.folha.reduce((s, l) => s + l.valor, 0)),
+      compras: rd2(reais.reduce((s, p) => s + p.valor, 0)), contratos: new Set(abertas.map(p => p.contrato)).size, prox: abertas.length ? abertas[0].vencimento : '', ult: abertas.length ? abertas[abertas.length - 1].vencimento : ''};
+    o.st = o.aberto > 0.009 ? 'aberto' : 'quitado'; pe.exInfo = o; exs.push(o);
+    if (o.aberto > 0.009) add('cadastro', 'alta', 'Ex-funcionário com débito em aberto', pe.cpf, '', `Desligado em ${dataBR(d.saida)} (${d.natureza || 'natureza não informada'}). ${abertas.length} parcela(s) de ${o.contratos} compra(s) ainda em aberto no crediário: ${brl(vencido)} vencidas e ${brl(aVencer)} a vencer (até ${dataBR(o.ult)}). O saldo devia ter sido descontado na rescisão — conferir o TRCT: se descontou, dar baixa no crediário; se não, cobrar.`, o.aberto);
+    if (aposCompra.length) add('cadastro', 'alta', 'Compra depois do desligamento', pe.cpf, '', `Saiu em ${dataBR(d.saida)} e tem ${new Set(aposCompra.map(p => p.contrato)).size} compra(s) no crediário de funcionário depois disso (${[...new Set(aposCompra.map(p => dataBR(p.lancamento)))].join(', ')}), ${brl(aposCompra.reduce((s, p) => s + p.valor, 0))} — a loja vendeu como funcionário a quem já tinha saído.`, aposCompra.reduce((s, p) => s + p.valor, 0));
+    for (const [comp, ls] of grpConta(folhaApos, l => l.comp)) add('desconto', 'alta', 'Desconto em folha depois do desligamento', pe.cpf, comp, `Saiu em ${dataBR(d.saida)} (${d.natureza || ''}) e aparece com ${brl(ls.reduce((s, l) => s + l.valor, 0))} de desconto na folha de ${compBR(comp)} (${[...new Set(ls.map(l => l.arq))].join(', ')}). Depois do desligamento não há folha: esse desconto não acontece — o saldo tinha de sair na rescisão.`, ls.reduce((s, l) => s + l.valor, 0));
+    // compra nos 30 dias antes da saída: o saldo inteiro fica para a rescisão (risco de compra "de despedida")
+    const d30 = new Date(d.saida + 'T12:00:00'); d30.setDate(d30.getDate() - 30); const lim30 = d30.toISOString().slice(0, 10);
+    const vespera = reais.filter(p => p.lancamento && p.lancamento >= lim30 && p.lancamento <= d.saida);
+    if (vespera.length) add('cadastro', 'media', 'Compra às vésperas do desligamento', pe.cpf, '', `Comprou ${[...new Set(vespera.map(p => dataBR(p.lancamento)))].join(', ')} e saiu em ${dataBR(d.saida)} (${d.natureza || ''}): ${brl(vespera.reduce((s, p) => s + p.valor, 0))} em ${new Set(vespera.map(p => p.contrato)).size} compra(s) — conferir se o saldo entrou na rescisão.`, vespera.reduce((s, p) => s + p.valor, 0));
+    if (pe.cad && pe.cad.noCadastro) add('cadastro', 'media', 'Desligado ainda no cadastro de ativos', pe.cpf, '', `Saiu em ${dataBR(d.saida)}, mas continua no cadastro de ativos (admissão ${dataBR(pe.cad.admissao) || '—'}). Conferir qual dos dois relatórios está desatualizado.`);
+  }
+  exs.sort((a, b) => b.aberto - a.aberto || b.descApos - a.descApos || a.pe.nome.localeCompare(b.pe.nome));
+  if (cadAtual || desl.size) for (const pe of pessoas.values()) {
+    if (!pe.parcelas.length) continue;
+    const ab = emAberto(pe);
+    if (pe.ex) { /* ex-funcionário: tratado acima com a data de saída */ }
+    else if (!pe.cad) add('cadastro', 'alta', 'Comprador fora do cadastro', pe.cpf, '', `CPF não está no cadastro de funcionários${desl.size ? ' nem no relatório de desligados' : ''} (terceiro ou desligado antes do período). Sem folha não há desconto — cobrar por boleto ou na rescisão. Saldo em aberto ${brl(ab)}.`, ab);
+    else if (!pe.cad.noCadastro) add('cadastro', 'alta', 'Saiu do cadastro', pe.cpf, '', `Estava no cadastro de ${dataBR((pe.cad.atualizado_em || '').slice(0, 10))} e não veio no último — provável desligamento. Conferir o desconto do saldo ${brl(ab)} na rescisão.`, ab);
+    else if (SEM_SAL.test(pe.cad.situacao || '')) add('cadastro', 'alta', 'Afastado sem salário', pe.cpf, '', `Situação "${pe.cad.situacao}" — sem remuneração na empresa a parcela não é descontada. Saldo em aberto ${brl(ab)}.`, ab);
+    else if (pe.cad.situacao && !/^ativo$/i.test(pe.cad.situacao)) add('cadastro', 'baixa', 'Situação especial', pe.cpf, '', `Situação "${pe.cad.situacao}" — conferir se o desconto entrou na folha do mês.`, ab);
+    const ref = pe.cad || pe.desl;
+    if (ref && pe.nomeCred && simNome(pe.nomeCred, ref.nome) < 0.6) add('cadastro', 'alta', 'Nome diferente no CPF', pe.cpf, '', `Crediário: "${pe.nomeCred}" × ${pe.cad ? 'Cadastro' : 'Desligados'}: "${ref.nome}". Possível compra de outra pessoa no CPF do funcionário.`);
+    // readmitido: compra entre a saída e a volta também é anterior à admissão atual, mas foi feita no contrato antigo
+    const adm = pe.readm ? '' : ref && ref.admissao;
+    if (pe.readm) { const fora = pe.parcelas.filter(p => !p.rec && p.lancamento && p.lancamento > pe.desl.saida && p.lancamento < pe.cad.admissao);
+      if (fora.length) add('cadastro', 'alta', 'Compra fora do vínculo (readmitido)', pe.cpf, '', `Saiu em ${dataBR(pe.desl.saida)} e voltou em ${dataBR(pe.cad.admissao)}; ${fora.length} parcela(s) de compra feita nesse intervalo, sem vínculo com a empresa.`, fora.reduce((s, p) => s + p.valor, 0)); }
+    if (adm) { const antes = pe.parcelas.filter(p => p.lancamento && p.lancamento < adm); if (antes.length) add('cadastro', 'media', 'Compra antes da admissão', pe.cpf, '', `${antes.length} parcela(s) de compra anterior à admissão (${dataBR(adm)}).`, antes.reduce((s, p) => s + p.valor, 0)); }
+  }
+  // 3) integridade dos arquivos e do crediário
+  const contr = new Map(); par.forEach(p => { if (!contr.has(p.ck)) contr.set(p.ck, []); contr.get(p.ck).push(p); });
+  const maxVencArq = new Map(); par.filter(p => !p.rec).forEach(p => { if ((maxVencArq.get(p.arquivo_id) || '') < p.vencimento) maxVencArq.set(p.arquivo_id, p.vencimento); });
+  for (const ps of contr.values()) {
+    // relatório de parcelas em aberto traz só a parcela do mês: só confere o contrato que veio desde a 1ª parcela
+    const n = ps[0].n_parcelas; if (!n || !ps.some(p => p.parcela === 1)) continue;
+    // parcela que venceria depois do último vencimento do relatório não "falta": o relatório é que termina antes (ex.: carteira até 31/12)
+    const lim = maxVencArq.get(ps[0].arquivo_id) || '', venceria = i => { const d = new Date(ps[0].lancamento + 'T12:00:00'); d.setDate(d.getDate() + 30 * i); return d.toISOString().slice(0, 10); };
+    const tem = new Set(ps.map(p => p.parcela)); const falt = []; for (let i = 1; i <= n; i++) if (!tem.has(i) && (!ps[0].lancamento || venceria(i) <= lim)) falt.push(i);
+    if (falt.length) add('integridade', 'media', 'Parcela faltando no contrato', ps[0].cpf, '', `${ps[0].contrato} de ${dataBR(ps[0].lancamento)}: contrato de ${n} parcelas, falta(m) a(s) parcela(s) ${falt.join(', ')} no relatório — estorno, quitação antecipada ou relatório cortado?`, 0, {sufixo: ps[0].contrato});
+  }
+  par.filter(p => p.valor_anterior != null).forEach(p => add('integridade', 'media', 'Parcela com valor alterado', p.cpf, p.comp, `${p.documento}: era ${brl(p.valor_anterior)} e um relatório mais novo trouxe ${brl(p.valor)} (${dtBR(p.alterado_em)}).`, p.valor - p.valor_anterior, {sufixo: p.documento}));
+  D.arquivos.filter(a => a.tipo === 'compras' && a.rodape != null && Math.abs(Number(a.rodape) - Number(a.total)) > 0.01)
+    .forEach(a => add('integridade', 'alta', 'Arquivo incompleto', '', '', `${a.nome}: soma das linhas ${brl(a.total)} ≠ total do rodapé ${brl(a.rodape)}.`, Number(a.rodape) - Number(a.total), {sufixo: a.id, nome: a.nome}));
+  // arquivo parcela a parcela: parcelas que não estão nas compras e competência informada diferente da regra
+  for (const [aid, ls] of grpConta(folha.filter(l => l.documento), l => l.arquivo_id)) {
+    const a = arqPorId.get(aid) || {nome: '?'}, sem = ls.filter(l => !l.par), dif = ls.filter(l => l.par && l.par.compRegra !== l.comp);
+    if (sem.length) add('integridade', 'media', 'Desconto de parcela fora das compras', '', '', `${a.nome}: ${sem.length} parcela(s) descontada(s) que não estão nas compras importadas (${brl(sem.reduce((s, l) => s + l.valor, 0))}) — compra já quitada fora do relatório ou documento errado. Ex.: ${sem.slice(0, 4).map(l => l.documento).join(', ')}.`, sem.reduce((s, l) => s + l.valor, 0), {sufixo: 'sem|' + aid, nome: a.nome});
+    if (dif.length) { const cs = [...new Set(dif.map(l => l.par.compRegra))].sort(), inf = [...new Set(dif.map(l => l.comp))].sort();
+      add('integridade', 'media', 'Competência do arquivo diferente da regra', '', '', `${a.nome}: informado como folha de ${inf.map(compBR).join(', ')}, mas ${dif.length} parcela(s) pela regra são da folha de ${cs.map(compBR).join(', ')} (vencimentos de ${dataBR(dif.map(l => l.par.vencimento).sort()[0])} a ${dataBR(dif.map(l => l.par.vencimento).sort().pop())}). Cada desconto foi conferido com a sua parcela; confira se a competência informada está certa.`, 0, {sufixo: 'comp|' + aid, nome: a.nome}); }
+  }
+  D.arquivos.filter(a => a.tipo === 'folha' && /compra/i.test(a.nome) && !/desc|folha|credi/i.test(a.nome)).forEach(a => add('integridade', 'alta', 'Relatório de compras importado como desconto', '', (a.competencias || [])[0] || '', `${a.nome} parece ser o relatório de COMPRAS e foi importado como desconto da folha (${brl(a.total)}). Exclua-o em "Arquivos do mês" e importe-o como compras.`, Number(a.total) || 0, {sufixo: a.id, nome: a.nome}));
+  semId.forEach(l => add('integridade', 'media', 'Desconto sem funcionário', '', l.competencia, `${l.arq}: ${l.nome || 'matrícula ' + (l.matricula || '?')} — ${brl(l.valor)} sem CPF/matrícula no cadastro.`, l.valor, {sufixo: l.id, nome: l.nome || l.matricula}));
+  // competências que já deviam ter folha
+  const compsDevido = [...new Set(par.map(p => p.comp))].sort();
+  const compsReais = new Set(par.filter(p => !p.rec).map(p => p.comp));
+  const folhaJaPaga = c => hoje > quintoDiaUtil(c);
+  compsDevido.filter(c => folhaJaPaga(c) && !compsFolha.has(c) && compsReais.has(c)).forEach(c => {
+    const dv = rd2(par.filter(p => p.comp === c).reduce((s, p) => s + p.valor, 0));
+    add('integridade', 'alta', 'Folha não importada', '', c, `A folha de ${compBR(c)} já passou e não foi importada — ${brl(dv)} deviam ter sido descontados.`, dv, {nome: 'Folha ' + compBR(c)});
+  });
+  // ciclos de compra sem relatório entre o primeiro e o último
+  const cs = [...ciclos].sort();
+  if (cs.length > 1 && !carteiras.length) for (let c = cs[0]; c < cs[cs.length - 1]; c = addMes(c, 1)) if (!ciclos.has(c))
+    add('integridade', 'media', 'Compras do ciclo não importadas', '', c, `Não há compras do ciclo de ${compBR(c)} (dia ${cfg.corte + 1} a ${cfg.corte}) — importe o relatório para o devido ficar completo.`, 0, {nome: 'Ciclo ' + compBR(c)});
+  // baixas
+  if (D.baixas.length) {
+    // só cobra a baixa de cada parcela nos meses que o arquivo de baixas cobre (≥ 50% das parcelas baixadas);
+    // arquivo parcial vira um aviso só, em vez de centenas de "descontado e não baixado"
+    const cob = grpConta(par, p => p.comp), compsComBaixa = new Set();
+    for (const [comp, ps] of cob) { const nb = ps.filter(p => p.baixa).length; if (!nb || !compsFolha.has(comp)) continue;
+      if (nb / ps.length >= 0.5) compsComBaixa.add(comp);
+      else add('integridade', 'baixa', 'Baixas parciais', '', comp, `O arquivo de baixas cobre só ${nb} de ${ps.length} parcelas de ${compBR(comp)} — a conferência parcela a parcela fica desligada neste mês.`, 0, {nome: 'Baixas ' + compBR(comp)}); }
+    for (const l of linhas) if (l.st !== 'prev' && compsComBaixa.has(l.comp)) {
+      const naoBx = l.parcelas.filter(p => !p.baixa);
+      if (l.desc > 0 && naoBx.length) add('integridade', 'alta', 'Descontado e não baixado', l.cpf, l.comp, `Descontou ${brl(l.desc)} na folha de ${compBR(l.comp)}, mas ${naoBx.length} parcela(s) seguem em aberto no crediário — risco de cobrar duas vezes.`, naoBx.reduce((s, p) => s + p.valor, 0));
+      if (l.desc === 0 && l.baixadas) add('integridade', 'media', 'Baixado sem desconto', l.cpf, l.comp, `${l.baixadas} parcela(s) baixada(s) no crediário sem desconto na folha de ${compBR(l.comp)} — confirmar o recebimento.`, l.parcelas.filter(p => p.baixa).reduce((s, p) => s + p.valor, 0));
+    }
+  }
+
+  // 3b) política de crédito: compra parcelada acima do limite (ex.: funcionário só pode dividir em até 5x)
+  const acima = new Map();
+  for (const ps of contr.values()) { const n = ps[0].n_parcelas; if (!n || n <= cfg.maxParc) continue;
+    const o = acima.get(ps[0].cpf) || {n: 0, aberto: 0, por: {}, ex: []}; acima.set(ps[0].cpf, o);
+    o.n++; o.por[n] = (o.por[n] || 0) + 1; o.aberto += ps.filter(p => !p.rec).reduce((s, p) => s + p.valor, 0); if (o.ex.length < 3) o.ex.push(`${ps[0].contrato} ${n}x (${dataBR(ps[0].lancamento)})`); }
+  for (const [cpf, o] of acima) add('politica', 'alta', `Parcelado acima de ${cfg.maxParc}x`, cpf, '', `${o.n} compra(s) acima do limite de ${cfg.maxParc}x: ${Object.entries(o.por).map(([n, q]) => `${q} em ${n}x`).join(', ')} — ex.: ${o.ex.join(', ')}. Em aberto ${brl(o.aberto)}.`, o.aberto);
+  // 4) duplicidades
+  const grp = grpConta;
+  for (const [, ls] of grp(folhaResumo, l => l.cpf + '|' + l.comp + '|' + (l.evento || ''))) {
+    if (ls.length < 2) continue;
+    const iguais = [...grp(ls, l => l.valor.toFixed(2)).values()].filter(g => g.length > 1);
+    if (iguais.length) add('duplicidade', 'alta', 'Desconto lançado 2x na folha', ls[0].cpf, ls[0].comp, `${ls.length} lançamentos de "${ls[0].evento || 'desconto'}" em ${compBR(ls[0].comp)}: ${ls.map(l => brl(l.valor) + ' (' + l.arq + ')').join(', ')}.`, iguais.reduce((s, g) => s + g.slice(1).reduce((t, l) => t + l.valor, 0), 0));
+    else add('duplicidade', 'media', 'Mais de um desconto no mês', ls[0].cpf, ls[0].comp, `${ls.length} lançamentos de valores diferentes em ${compBR(ls[0].comp)}: ${ls.map(l => brl(l.valor)).join(' + ')}.`, 0);
+  }
+  for (const [, ls] of grp(folhaParc, l => l.cpf + '|' + l.documento + '|' + l.parcela)) {
+    if (ls.length < 2) continue;
+    add('duplicidade', 'alta', 'Parcela descontada 2x', ls[0].cpf, compLinha(ls[0]), `${ls[0].documento} descontada ${ls.length} vezes: ${ls.map(l => brl(l.valor) + ' na folha de ' + compBR(l.comp) + ' (' + l.arq + ')').join(', ')}.`, ls.slice(1).reduce((s, l) => s + l.valor, 0), {sufixo: ls[0].documento});
+  }
+  for (const [comp, ls] of grp(folhaResumo, l => l.comp)) {
+    const arqs = [...new Set(ls.map(l => l.arquivo_id))];
+    if (arqs.length > 1) add('duplicidade', 'alta', 'Folha importada em dois arquivos', '', comp, `A folha de ${compBR(comp)} veio em ${arqs.length} arquivos (${arqs.map(i => (arqPorId.get(i) || {}).nome).join(', ')}). Se forem a mesma folha, exclua um em "Arquivos do mês".`, 0, {nome: 'Folha ' + compBR(comp)});
+  }
+  for (const [, ps] of grp(par, p => p.cpf + '|' + p.contrato + '|' + (p.lancamento || '') + '|' + p.parcela)) {
+    if (ps.length < 2 || !ps[0].n_parcelas) continue;
+    add('duplicidade', 'alta', 'Parcela com dois vencimentos', ps[0].cpf, ps[0].comp, `${ps[0].documento} aparece com ${ps.length} vencimentos (${ps.map(p => dataBR(p.vencimento)).join(', ')}) — entra duas vezes no devido. Ver se foi renegociada.`, ps.slice(1).reduce((s, p) => s + p.valor, 0), {sufixo: ps[0].documento});
+  }
+  const contratos = [...contr.values()].filter(ps => ps[0].n_parcelas).map(ps => ({cpf: ps[0].cpf, contrato: ps[0].contrato, lanc: ps[0].lancamento, n: ps[0].n_parcelas, total: rd2(ps.reduce((s, p) => s + p.valor, 0)), comp: ps[0].comp}));
+  for (const [, cs2] of grp(contratos, c => c.cpf + '|' + c.lanc + '|' + c.n + '|' + c.total.toFixed(2))) {
+    if (cs2.length < 2) continue;
+    // várias compras do mesmo funcionário (inclusive no mesmo dia) são normais e as parcelas se acumulam no mês: só informativo
+    add('integridade', 'baixa', 'Compras iguais no mesmo dia', cs2[0].cpf, '', `${cs2.length} compras com o mesmo valor e parcelas em ${dataBR(cs2[0].lanc)}: ${cs2.map(c => c.contrato).join(', ')} — ${cs2[0].n}x, total ${brl(cs2[0].total)} cada. Informativo (comprar várias vezes é permitido).`, 0, {sufixo: cs2.map(c => c.contrato).join('+')});
+  }
+  for (const [k, bs] of bx) if (bs.length > 1) {
+    const p = par.find(x => x.documento + '|' + x.parcela === k);
+    add('duplicidade', 'alta', 'Parcela baixada 2x', p ? p.cpf : (bs[0].cpf || ''), p ? p.comp : '', `${bs[0].documento} parcela ${bs[0].parcela} baixada ${bs.length} vezes: ${bs.map(b => dataBR(b.data_baixa) + ' ' + brl(b.valor)).join(', ')}.`, bs.slice(1).reduce((s, b) => s + Number(b.valor || 0), 0), {sufixo: k, nome: bs[0].documento});
+  }
+  pend.sort((a, b) => GRAV[a.grav] - GRAV[b.grav] || Math.abs(b.valor) - Math.abs(a.valor));
+
+  // resumo por competência
+  const comps = [...new Set(linhas.map(l => l.comp))].sort();
+  const fech = new Map(D.fechamentos.map(f => [f.competencia, f]));
+  const porComp = comps.map(comp => {
+    const ls = linhas.filter(l => l.comp === comp);
+    const o = {comp, folha: compsFolha.has(comp), devido: 0, desc: 0, menos: 0, mais: 0, n: new Set(ls.map(l => l.cpf)).size, cont: {}, fech: fech.get(comp) || null};
+    ls.forEach(l => { o.devido += l.devido; o.desc += l.desc; o.cont[l.st] = (o.cont[l.st] || 0) + 1; if (['menos', 'nao'].includes(l.st)) o.menos += -l.dif; if (['mais', 'semcompra'].includes(l.st)) o.mais += l.dif; });
+    ['devido', 'desc', 'menos', 'mais'].forEach(k => o[k] = rd2(o[k]));
+    o.faltam = cobertura(comp); o.dataPag = [...(dataPagComp[comp] || [])].sort();
+    o.abertas = pend.filter(p => p.comp === comp && !encerrada(p)).length;
+    return o;
+  });
+
+  // calibração da regra
+  let calib = null;
+  // a calibração só vale para a folha resumida (o arquivo parcela a parcela já diz qual parcela foi descontada)
+  if (folhaResumo.length) {
+    const desc = new Map(); folhaResumo.forEach(l => desc.set(l.cpf + '|' + l.comp, (desc.get(l.cpf + '|' + l.comp) || 0) + l.valor));
+    calib = REGRAS.map(rg => {
+      const dev = new Map(), tolR = new Map();
+      par.forEach(p => { const c = compDaParcela(p, rg.regra, rg.corte); if (!compsResumo.has(c)) return; const k = p.cpf + '|' + c;
+        dev.set(k, (dev.get(k) || 0) + p.valor); if (p.aprox) tolR.set(k, (tolR.get(k) || 0) + (p.n_parcelas || 1)); });
+      let ok = 0, tot = 0; new Set([...dev.keys(), ...desc.keys()]).forEach(k => { tot++; if (Math.abs((dev.get(k) || 0) - (desc.get(k) || 0)) <= cfg.tol + (tolR.get(k) || 0)) ok++; });
+      return {...rg, ok, tot, pct: tot ? ok / tot : 0};
+    }).sort((a, b) => b.pct - a.pct);
+  }
+  R = {cfg, par, nRec: rec.length, compsReais, acima, folha: folhaOk, semId, linhas, pessoas, pend, comps, porComp, calib, compsFolha, ciclos, compHoje, cadAtual, arqPorId, cobertura,
+    desl, exs, janelas, foraJanela, compsResumo, compLinha};
+}
+
+/* =====================================================================================================
+   TELAS
+   ===================================================================================================== */
+function irPara(aba) {
+  if (!$('a-' + aba)) aba = 'painel';
+  document.querySelectorAll('#abas button').forEach(b => b.classList.toggle('on', b.dataset.aba === aba));
+  document.querySelectorAll('section[id^="a-"]').forEach(s => s.classList.toggle('hidden', s.id !== 'a-' + aba));
+  history.replaceState(null, '', '#' + aba);
+  if (R) ({painel: telaPainel, pend: telaPend, dup: telaDup, meses: telaMeses, func: telaFunc, ex: telaEx, rel: () => {}, arq: telaArquivos})[aba]();
+}
+$('abas').addEventListener('click', e => { const b = e.target.closest('button'); if (b) irPara(b.dataset.aba); });
+window.addEventListener('hashchange', () => { if (R) irPara(location.hash.replace('#', '')); });   // card "Ex-funcionários" do Portal abre #ex
+const abaAtual = () => { const b = document.querySelector('#abas button.on'); return b ? b.dataset.aba : 'painel'; };
+
+async function recarregar() {
+  try {
+    toast('Carregando…', 20000);
+    await carregarDados(); cruzar();
+    const opts = [...new Set([...R.comps, ...R.compsFolha])].sort();
+    // abre na última folha que tem devido para comparar; se nenhuma tiver (ex.: só compras em aberto, de meses depois da folha),
+    // abre na primeira competência com parcela a descontar
+    const comDevido = new Set(R.porComp.filter(c => c.devido > 0).map(c => c.comp));
+    // entre as folhas importadas, a que tem mais lançamentos (um arquivo parcela a parcela pode jogar poucas parcelas no mês seguinte)
+    const nLanc = {}; R.folha.forEach(l => { const c = R.compLinha(l); nLanc[c] = (nLanc[c] || 0) + 1; });
+    const ultFolhas = [...R.compsFolha].filter(c => comDevido.has(c)).sort(), maxL = Math.max(0, ...ultFolhas.map(c => nLanc[c] || 0));
+    if (!COMP_ESCOLHIDA || !opts.includes(COMP)) COMP = ultFolhas.filter(c => (nLanc[c] || 0) >= maxL * 0.2).pop()
+      || [...comDevido].sort().find(c => c >= addMes(R.compHoje, -1)) || [...R.compsFolha].sort().pop() || (opts.includes(R.compHoje) ? R.compHoje : opts[0] || R.compHoje);
+    $('selComp').innerHTML = (opts.length ? opts : [COMP]).map(c => `<option value="${c}" ${c === COMP ? 'selected' : ''}>${compBR(c)}${R.compsFolha.has(c) ? '' : R.compsReais.has(c) ? ' (prevista)' : ' (só reconstruída)'}</option>`).join('');
+    const abertas = R.pend.filter(p => !encerrada(p) && p.cat !== 'duplicidade' && p.grav === 'alta').length;
+    const dups = R.pend.filter(p => !encerrada(p) && p.cat === 'duplicidade').length;
+    $('nPend').textContent = abertas ? `(${abertas})` : ''; $('nDup').textContent = dups ? `(${dups})` : '';
+    const nEx = R.exs.filter(o => o.st === 'aberto').length; $('nEx').textContent = nEx ? `(${nEx})` : '';
+    const ult = D.arquivos.slice().sort((a, b) => b.importado_em.localeCompare(a.importado_em))[0];
+    $('origem').textContent = `${qtd(D.parcelas.length)} parcelas · ${qtd(R.pessoas.size)} funcionários · ${R.compsFolha.size} folha(s) importada(s)` + (ult ? ` · último arquivo em ${dtBR(ult.importado_em)}` : '');
+    $('avisoTopo').innerHTML = !D.arquivos.length ? `<div class="aviso">Nenhum arquivo importado ainda. Comece em <a href="javascript:void(0)" onclick="irPara('arq')">Arquivos do mês</a>.</div>` : '';
+    $('toast').style.display = 'none';
+    irPara(location.hash.replace('#', '') || 'painel');
+  } catch (e) { toast('Erro ao carregar: ' + msgErro(e), 8000); }
+}
+$('selComp').addEventListener('change', () => { COMP = $('selComp').value; COMP_ESCOLHIDA = true; irPara(abaAtual()); });
+
+/* ---------- PAINEL ---------- */
+const kpi = (l, v, n, tipo = '', click = '') => `<div class="card kpi ${tipo} ${click ? 'clic' : ''}" ${click ? `onclick="${click}"` : ''}><div class="l">${l}</div><div class="v">${v}</div>${n ? `<div class="n">${n}</div>` : ''}</div>`;
+const pc = (comp = COMP) => R.porComp.find(c => c.comp === comp) || {comp, folha: false, devido: 0, desc: 0, menos: 0, mais: 0, n: 0, cont: {}, faltam: R.cobertura(comp), dataPag: [], abertas: 0, fech: null};
+const pct = (a, b) => b ? Math.round(a / b * 1000) / 10 : 0;
+// a folha da competência M é paga no 5º dia útil de M+1 (segunda a sexta; feriados não entram na conta)
+function quintoDiaUtil(comp) { const d = new Date(addMes(comp, 1) + '-01T12:00:00'); let n = 0;
+  while (true) { const w = d.getDay(); if (w > 0 && w < 6 && ++n === 5) return d.toISOString().slice(0, 10); d.setDate(d.getDate() + 1); } }
+const pctTxt = v => v.toLocaleString('pt-BR', {maximumFractionDigits: 1}) + '%';
+// números da competência usados no painel, no PDF executivo e nos relatórios
+// % descontado é somado funcionário a funcionário: o desconto a mais de um não cobre o a menos de outro
+function numeros(comp = COMP) {
+  const c = pc(comp), ls = R.linhas.filter(l => l.comp === comp);
+  const aud = ls.filter(l => l.st !== 'prev'), ok = aud.filter(l => l.st === 'ok').length;
+  const pend = R.pend.filter(p => (p.comp === comp || !p.comp) && !encerrada(p));
+  const vRec = rd2(R.par.filter(p => p.rec && !p.paga && p.comp === comp).reduce((s, p) => s + p.valor, 0));
+  const parcial = vRec > 0.009 || c.faltam.length > 0, verif = aud.filter(l => l.st === 'verif').length;
+  const gravesMes = pend.filter(p => p.grav === 'alta' && p.cat !== 'duplicidade' && p.comp === comp).length;
+  const jan = R.janelas.get(comp) || null, fora = R.foraJanela.get(comp) || null;
+  return {c, ls, aud, ok, vRec, parcial, verif, gravesMes, jan, fora, pctFunc: pct(ok, aud.length), pctValor: c.folha ? pct(aud.reduce((t, l) => t + Math.min(l.desc, l.devido), 0), c.devido) : 0, liquida: rd2(c.desc - c.devido), pend,
+    graves: pend.filter(p => p.grav === 'alta' && p.cat !== 'duplicidade'), dups: pend.filter(p => p.cat === 'duplicidade'),
+    nMenos: (c.cont.menos || 0) + (c.cont.nao || 0), nMais: (c.cont.mais || 0) + (c.cont.semcompra || 0)};
+}
+// achados automáticos (painel e PDF executivo): {grav, txt, acao}
+function achados(comp = COMP) {
+  const N = numeros(comp), c = N.c, out = [], a = (grav, txt, acao) => out.push({grav, txt, acao});
+  const tipo = t => N.pend.filter(p => p.tipo === t), soma = ps => ps.reduce((s, p) => s + Math.abs(p.valor || 0), 0);
+  if (!c.folha) a('media', `A folha de ${compBR(comp)} ainda não foi importada — os números são a previsão (${brl(c.devido)} a descontar de ${qtd(c.n)} funcionários).`, 'Importar a planilha de desconto da folha do mês.');
+  else {
+    a(N.pctValor >= 99.5 ? 'ok' : N.pctValor >= 95 ? 'media' : 'alta', `${pctTxt(N.pctValor)} do valor devido foi descontado na folha (${brl(c.desc)} de ${brl(c.devido)}); ${qtd(N.ok)} de ${qtd(N.aud.length)} funcionários batem exatamente.`, N.pctValor >= 99.5 ? 'Manter a rotina.' : 'Tratar as divergências abaixo antes de fechar o mês.');
+    if (c.menos > 0.009) a('alta', `${qtd(N.nMenos)} funcionário(s) sem desconto ou com desconto menor: ${brl(c.menos)} deixaram de ser descontados.`, 'Lançar a diferença na próxima folha ou cobrar do funcionário.');
+    if (c.mais > 0.009) a('alta', `${qtd(N.nMais)} funcionário(s) com desconto acima do devido: ${brl(c.mais)} a mais.`, 'Devolver ao funcionário na próxima folha (risco trabalhista).');
+    if (!c.dataPag.length) a('media', `A folha de ${compBR(comp)} foi importada sem data de pagamento.`, 'Informar a data de pagamento em "Arquivos do mês".');
+  }
+  if (N.fora) { const vs = N.fora.vs.slice().sort();
+    a('alta', `A lista de desconto do RH de ${compBR(comp)} só traz parcelas que vencem de ${N.jan.map(j => dataBR(j.ini) + ' a ' + dataBR(j.fim)).join(', ')}. ${qtd(N.fora.n)} parcela(s) desta folha, ${brl(N.fora.valor)} de ${qtd(N.fora.pessoas.size)} funcionário(s), vencem de ${dataBR(vs[0])} a ${dataBR(vs[vs.length - 1])} e não estão na lista — não seriam descontadas.`, 'Tirar de novo a listagem do crediário com o período de vencimento do ciclo inteiro (dia 21 a dia 20) e conferir antes de lançar na folha.'); }
+  if (N.vRec > 0.009) a('media', `${brl(N.vRec)} do devido de ${compBR(comp)} são parcelas já pagas reconstruídas a partir dos contratos em aberto; compras já quitadas não aparecem na carteira, então o devido é um mínimo e desconto acima dele fica como "verificar".`, 'Para o valor exato, importar o relatório de parcelas por vencimento (abertas e pagas) ou o "COMPRA EM LOJA" de cada mês.');
+  else if (c.faltam.length) a('media', `O devido de ${compBR(comp)} pode estar incompleto: faltam as compras de ${faixas(c.faltam)}.`, 'Importar a listagem de compras que cobre esses meses.');
+  if (c.folha && c.devido === 0) a('alta', `A folha de ${compBR(comp)} tem ${brl(c.desc)} descontados, mas nenhuma parcela das compras importadas cai nessa competência.`, 'Importar as compras do período (as parcelas já pagas saem da LISTAGEM DO RH) ou conferir a regra de competência em "Arquivos do mês".');
+  const fora = [...tipo('Comprador fora do cadastro'), ...tipo('Saiu do cadastro')];
+  if (fora.length) a('alta', `${qtd(fora.length)} comprador(es) não estão no cadastro de funcionários (desligados ou terceiros), com ${brl(soma(fora))} em aberto.`, 'Descontar na rescisão ou cobrar por boleto; bloquear novas compras.');
+  const pol = N.pend.filter(p => p.cat === 'politica');
+  if (pol.length) { const nc = [...R.acima.values()].reduce((s, o) => s + o.n, 0), por = {}; R.acima.forEach(o => Object.entries(o.por).forEach(([n, q]) => por[n] = (por[n] || 0) + q));
+    a('alta', `${qtd(nc)} compra(s) de ${qtd(pol.length)} funcionário(s) parceladas acima do limite de ${R.cfg.maxParc}x (${Object.entries(por).map(([n, q]) => `${qtd(q)} em ${n}x`).join(', ')}), ${brl(soma(pol))} em aberto.`, `Bloquear no sistema do crediário parcelamento acima de ${R.cfg.maxParc}x para funcionário e cobrar das lojas que liberaram.`); }
+  if (c.folha && N.parcial && N.liquida > 0.009) a('media', `${brl(N.liquida)} descontados na folha não têm compra correspondente no arquivo: são compras já quitadas, que o relatório do crediário não traz.`, 'Para fechar centavo a centavo, pedir ao crediário o relatório de parcelas por vencimento (abertas e pagas) do período da folha.');
+  const afa = tipo('Afastado sem salário'); if (afa.length) a('alta', `${qtd(afa.length)} afastado(s) sem salário com ${brl(soma(afa))} em aberto — o desconto em folha não acontece.`, 'Combinar cobrança direta ou suspender as parcelas.');
+  const nome = tipo('Nome diferente no CPF'); if (nome.length) a('alta', `${qtd(nome.length)} CPF(s) de funcionário com compra em nome de outra pessoa.`, 'Confirmar com a loja quem comprou.');
+  if (N.dups.length) a('alta', `${qtd(N.dups.length)} possível(is) duplicidade(s), ${brl(soma(N.dups))} envolvidos.`, 'Conferir em "Duplicidades" e estornar o que for repetido.');
+  if (!out.some(x => x.grav === 'alta')) a('ok', 'Nenhuma falta grave aberta nesta competência.', 'Fechar a competência.');
+  return out;
+}
+// observação que acompanha o gráfico devido × descontado: a regra da folha e como ler as barras
+function observacaoGrafico() {
+  const ciclo = R.cfg.regra === 'ciclo', dia = R.cfg.corte, prox = c => compBR(addMes(c, 1));
+  const completa = R.porComp.find(x => !x.faltam.length && x.devido > 0), parcial = R.porComp.some(x => x.faltam.length && x.devido > 0);
+  const ex = completa ? completa.comp : COMP;
+  return [
+    ciclo ? `Compra feita do dia ${dia + 1} de um mês ao dia ${dia} do mês seguinte entra na folha desse mês (ex.: compras de ${dia + 1}/${addMes(ex, -1).slice(5)} a ${dia}/${ex.slice(5)} → folha de ${compBR(ex)}, paga no 5º dia útil de ${prox(ex)}); cada parcela seguinte entra na folha do mês seguinte, até ${R.cfg.maxParc}x.`
+      : `A parcela entra na folha pela data de vencimento (dia ${dia + 1} a ${dia}); a folha é paga no 5º dia útil do mês seguinte. Limite de ${R.cfg.maxParc}x.`,
+    `O funcionário pode comprar todo mês e várias vezes: as parcelas de compras diferentes se somam na mesma folha — isso não é duplicidade.`,
+    ...(parcial ? [`A planilha do crediário traz só parcelas em aberto. Nos meses em que parte já foi descontada, as parcelas pagas são reconstruídas a partir do contrato e o devido (azul) é um <b>mínimo</b>: compras já quitadas não vêm na planilha, por isso o descontado (laranja) pode ficar maior sem ser erro.`] : []),
+    ...(completa ? [`A partir de <b>${compBR(completa.comp)}</b> o devido é completo (a planilha tem todas as parcelas): diferença entre azul e laranja é erro de desconto.`] : [])];
+}
+const COR_GRAV = {alta: '#ef4444', media: '#f5b301', ok: '#22c55e', baixa: '#94a3b8'};
+function telaPainel() {
+  const N = numeros(), c = N.c;
+  const fechada = c.fech && c.fech.status === 'fechada';
+  const corG = N.pctValor >= 99.5 ? '#22c55e' : N.pctValor >= 95 ? '#f5b301' : '#ef4444';
+  $('hero').innerHTML = `<div><div class="t">Competência</div><div class="c">${compBR(COMP)}${fechada ? ' <span class="st st-ok">fechada</span>' : ''}</div>
+    <div class="f">Devido = parcelas das compras no crediário${N.vRec > 0.009 ? ` <span class="wt">(${brl(N.vRec)} reconstruídos de contratos ainda abertos — compras já quitadas não vêm no arquivo, então é o mínimo)</span>` : c.faltam.length ? ' <span class="wt">(faltam compras de ' + faixas(c.faltam) + ')</span>' : ''}<br>
+    ${N.fora ? `<span class="badt">Lista do RH só com vencimentos de ${N.jan.map(j => dataBR(j.ini) + ' a ' + dataBR(j.fim)).join(', ')} — ${qtd(N.fora.n)} parcelas (${brl(N.fora.valor)}) desta folha ficaram fora da lista.</span><br>` : ''}
+    ${c.folha ? `Folha importada · ${c.dataPag.length ? 'paga em <b>' + c.dataPag.map(dataBR).join(', ') + '</b>' : `<span class="wt">sem data de pagamento</span> (previsto: 5º dia útil, ${dataBR(quintoDiaUtil(COMP))}) · <a href="javascript:void(0)" onclick="irPara(\'arq\')">informar</a>`}` : `<span class="wt">Folha ainda não importada</span> · pagamento previsto no 5º dia útil: ${dataBR(quintoDiaUtil(COMP))}`}
+    ${fechada ? `<br>Fechada por ${esc(quemCurto(c.fech.fechado_por))} em ${dtBR(c.fech.fechado_em)}` : ''}</div></div>
+    <div class="gauge">${c.folha ? `<div class="v" style="color:${corG}">${pctTxt(N.pctValor)}</div><div class="barra"><i style="width:${Math.min(100, N.pctValor)}%;background:${corG}"></i></div>
+      <div class="l">do valor devido${N.parcial ? ' (mínimo)' : ''} foi descontado · ${qtd(N.ok)} de ${qtd(N.aud.length)} funcionários batem (${pctTxt(N.pctFunc)})</div>`
+      : `<div class="v" style="color:#c4b5fd">${brl(c.devido)}</div><div class="l">a descontar na folha de ${compBR(COMP)} · ${qtd(c.n)} funcionários</div>`}</div>`;
+  $('kpis').innerHTML =
+    kpi('Total devido', brl(c.devido), c.devido > 0 ? (N.vRec > 0.009 ? `inclui ${brl(N.vRec)} reconstruídos (mínimo)` : 'parcelas das compras no crediário') : '<span class="wt">nenhuma parcela das compras importadas cai nesta competência</span>', c.devido > 0 ? 't-roxo' : 't-laranja', c.devido > 0 ? '' : "irPara('arq')") +
+    kpi('Descontado na folha', c.folha ? brl(c.desc) : '—', c.folha ? `${qtd(c.n)} funcionários` : 'folha não importada', c.folha ? 't-verde' : 't-cinza', c.folha ? '' : "irPara('arq')") +
+    (N.parcial && c.folha && N.liquida > 0.009
+      ? kpi('Descontado sem compra no arquivo', brl(N.liquida), 'compras já quitadas não vêm no relatório do crediário — não é erro', 't-cinza', "irPara('arq')")
+      : kpi('Diferença líquida', c.folha ? brl(N.liquida) : '—', c.folha ? (N.liquida < -0.009 ? 'descontado a menos no total' : N.liquida > 0.009 ? 'descontado a mais no total' : 'confere') : '', !c.folha ? 't-cinza' : Math.abs(N.liquida) > 0.009 ? 't-laranja' : 't-verde')) +
+    kpi('Funcionários que batem', c.folha ? `${qtd(N.ok)} de ${qtd(N.aud.length)}` : '—', c.folha ? `${pctTxt(N.pctFunc)}${N.verif ? ` · ${qtd(N.verif)} a verificar (compra quitada fora do arquivo)` : ''}` : '', c.folha ? (N.pctFunc >= 99 ? 't-verde' : N.verif ? 't-cinza' : 't-laranja') : 't-cinza') +
+    kpi('Deixou de descontar', brl(c.menos), `${qtd(N.nMenos)} funcionário(s) — perda`, c.menos > 0.009 ? 't-vermelho' : 't-verde', "irPara('pend')") +
+    kpi('Descontou a mais', brl(c.mais), `${qtd(N.nMais)} funcionário(s) — devolver`, c.mais > 0.009 ? 't-laranja' : 't-verde', "irPara('pend')") +
+    kpi('Erros e faltas graves', qtd(N.graves.length), `${qtd(N.gravesMes)} deste mês · ${qtd(N.graves.length - N.gravesMes)} de cadastro e política (valem para todos os meses)`, N.graves.length ? 't-vermelho' : 't-verde', "irPara('pend')") +
+    kpi('Duplicidades', qtd(N.dups.length), brl(N.dups.reduce((s, p) => s + Math.abs(p.valor || 0), 0)), N.dups.length ? 't-vermelho' : 't-verde', "irPara('dup')");
+
+  // situação dos funcionários
+  const ordem = ['ok', 'nao', 'menos', 'mais', 'semcompra', 'verif', 'prev'], corSt = {ok: '#22c55e', nao: '#ef4444', menos: '#f87171', mais: '#f97316', semcompra: '#fb923c', verif: '#f5b301', prev: '#94a3b8'};
+  const tot = N.ls.length || 1;
+  $('gSit').innerHTML = ordem.filter(k => c.cont[k]).map(k => { const ls = N.ls.filter(l => l.st === k), v = ls.reduce((s, l) => s + Math.abs(k === 'ok' || k === 'prev' ? l.devido : l.dif), 0);
+    return `<div><span>${STAT[k][0]}</span><span class="b"><i style="width:${Math.max(2, c.cont[k] / tot * 100)}%;background:${corSt[k]}"></i></span><b>${qtd(c.cont[k])} · ${brlCurto(v)}</b></div>`; }).join('') || '<div class="vazio">Sem dados na competência.</div>';
+  $('achados').innerHTML = achados().map(x => `<div><i style="background:${COR_GRAV[x.grav]}"></i><span>${esc(x.txt)}<div class="acao">→ ${esc(x.acao)}</div></span></div>`).join('');
+
+  // checklist do mês
+  const cad = R.arqPorId.get(R.cadAtual), fArqs = D.arquivos.filter(a => a.tipo === 'folha' && (a.competencias || []).includes(COMP));
+  const regraUso = R.calib && R.calib.find(x => x.regra === R.cfg.regra && x.corte === R.cfg.corte), regraMelhor = R.calib && R.calib[0] === regraUso;
+  const item = (ok, txt, acao = '') => `<div><b class="${ok === true ? 'okt' : ok === false ? 'badt' : 'wt'}">${ok === true ? '✔' : ok === false ? '✖' : '!'}</b><span>${txt}${acao}</span></div>`;
+  const ir = t => ` · <a href="javascript:void(0)" onclick="irPara('${t}')">resolver</a>`;
+  const gravesComp = N.pend.filter(p => p.grav === 'alta');
+  $('checklist').innerHTML = [
+    item(fArqs.length === 1 ? true : fArqs.length > 1 ? null : false, fArqs.length ? `Folha de ${compBR(COMP)} importada (${fArqs.map(a => esc(a.nome)).join(', ')})` : `Folha de ${compBR(COMP)} não importada`, fArqs.length === 1 ? '' : ir('arq')),
+    ...(fArqs.length ? [item(c.dataPag.length ? true : false, c.dataPag.length ? `Folha paga em ${c.dataPag.map(dataBR).join(', ')}` : 'Data de pagamento da folha não informada', c.dataPag.length ? '' : ir('arq'))] : []),
+    item(!!cad, cad ? `Cadastro de funcionários de ${dtBR(cad.importado_em)} (${esc(cad.nome)})` : 'Cadastro de funcionários não importado', cad ? '' : ir('arq')),
+    item(c.devido > 0 && !c.faltam.length ? true : c.devido > 0 ? null : false, c.devido > 0 ? (c.faltam.length ? (c.faltam.length === 1 && c.faltam[0] === COMP && R.cfg.regra !== 'ciclo' ? 'A carteira importada foi tirada depois do início desta folha: parcelas já pagas não estão no arquivo (devido mínimo)' : `Compras importadas, mas faltam as de ${faixas(c.faltam)} para o devido ficar completo`) : 'Compras de todos os meses que geram parcela nesta folha importadas') : `Nenhuma parcela das compras importadas cai em ${compBR(COMP)}`, c.faltam.length || !c.devido ? ir('arq') : ''),
+    item(R.calib ? (regraMelhor && regraUso.pct >= 0.9 ? true : null) : null, R.calib ? `Regra de competência explica ${((regraUso ? regraUso.pct : 0) * 100).toFixed(1)}% dos descontos${regraMelhor ? (regraUso.pct < 0.9 ? ' — baixo porque o devido dos meses passados é mínimo (compras quitadas fora da planilha)' : '') : ' — existe regra melhor'}` : 'Regra de competência ainda não conferida com a folha', R.calib && !regraMelhor ? ir('arq') : ''),
+    item(D.baixas.length ? true : null, D.baixas.length ? 'Baixas do crediário importadas' : 'Baixas do crediário (opcional) não importadas'),
+    item(gravesComp.length === 0, gravesComp.length ? `${gravesComp.length} pendência(s) grave(s) sem tratativa` : 'Nenhuma pendência grave aberta', gravesComp.length ? ir('pend') : ''),
+    item(fechada ? true : null, fechada ? `Competência fechada por ${esc(quemCurto(c.fech.fechado_por))} em ${dtBR(c.fech.fechado_em)}` : 'Competência ainda não fechada', fechada ? '' : ir('meses'))
+  ].join('');
+
+  // gráficos
+  const serie = R.porComp.filter(x => x.comp <= COMP).slice(-12);
+  $('legCol').innerHTML = legenda(['Devido', 'Descontado']);
+  $('obsCol').innerHTML = `<b>Como ler:</b><ul>${observacaoGrafico().map(t => `<li>${t}</li>`).join('')}</ul>`;
+  graficoColunas($('gCol'), serie.map(x => ({rotulo: MESES[+x.comp.slice(5) - 1] + '/' + x.comp.slice(2, 4), titulo: compBR(x.comp), a: x.devido, b: x.folha ? x.desc : 0,
+    det: x.folha ? `<div><span>Diferença</span><span>${brl(x.desc - x.devido)}</span></div>` : '<div><span>Folha</span><span>não importada</span></div>'})), ['Devido', 'Descontado']);
+  const lojas = porLoja(COMP).filter(l => l.menos + l.mais > 0.009).sort((a, b) => b.menos + b.mais - a.menos - a.mais).slice(0, 10);
+  graficoBarrasH($('gLoja'), lojas.map(l => ({rotulo: l.loja, valor: rd2(l.menos + l.mais), det: `<div><span>A menos</span><span>${brl(l.menos)}</span></div><div><span>A mais</span><span>${brl(l.mais)}</span></div><div><span>Funcionários</span><span>${l.nDiv}</span></div>`})), {vazio: c.folha ? 'Nenhuma diferença nesta competência.' : 'Importe a folha para comparar.'});
+  const tipos = {}; N.pend.forEach(p => tipos[p.tipo] = (tipos[p.tipo] || 0) + (Math.abs(p.valor) || 0));
+  graficoRosca($('gTipo'), Object.entries(tipos).sort((a, b) => b[1] - a[1]).map(([rotulo, valor]) => ({rotulo, valor})), {vazio: 'Nenhuma pendência aberta com valor.', centro: 'Em jogo', aoClicar: () => irPara('pend')});
+  const top = N.ls.filter(l => !['ok', 'prev'].includes(l.st)).sort((a, b) => Math.abs(b.dif) - Math.abs(a.dif)).slice(0, 10);
+  $('topDif').innerHTML = top.length ? tabelaLinhas(top) : `<div class="vazio">${c.folha ? 'Nenhuma diferença nesta competência. ✔' : 'Folha de ' + compBR(COMP) + ' ainda não importada — o painel mostra a previsão.'}</div>`;
+}
+function tabelaLinhas(ls) {
+  return `<table><thead><tr><th>Funcionário</th><th>Loja</th><th class="r">Devido</th><th class="r">Descontado</th><th class="r">Diferença</th><th>Situação</th><th>Pago em</th></tr></thead><tbody>` +
+    ls.map(l => { const p = R.pessoas.get(l.cpf); return `<tr class="clicavel" data-pes="${l.cpf}" data-c="${l.comp}"><td><b>${esc(p.nome)}</b><br><span class="mut small">${cpfF(l.cpf)}${p.cad ? ' · ' + esc(p.cad.matricula || '') : ''}</span></td><td class="small">${p.cad ? esc(p.cad.loja) : '<span class="badt">fora do cadastro</span>'}</td>
+      <td class="r">${nfm(l.devido)}</td><td class="r">${nfm(l.desc)}</td><td class="r ${l.dif < 0 ? 'badt' : 'wt'}">${l.dif > 0 ? '+' : ''}${nfm(l.dif)}</td><td>${stChip(l.st)}</td><td class="small">${l.dataPag.map(dataBR).join(', ')}</td></tr>`; }).join('') + `</tbody></table>`;
+}
+function porLoja(comp) {
+  const m = new Map();
+  R.linhas.filter(l => l.comp === comp).forEach(l => {
+    const p = R.pessoas.get(l.cpf), loja = p.cad ? p.cad.loja || '(sem loja)' : 'FORA DO CADASTRO';
+    const o = m.get(loja) || {loja, n: 0, nDiv: 0, devido: 0, desc: 0, menos: 0, mais: 0}; m.set(loja, o);
+    o.n++; o.devido += l.devido; o.desc += l.st === 'prev' ? 0 : l.desc;
+    if (['menos', 'nao'].includes(l.st)) { o.menos += -l.dif; o.nDiv++; } if (['mais', 'semcompra'].includes(l.st)) { o.mais += l.dif; o.nDiv++; }
+  });
+  return [...m.values()].map(o => ({...o, devido: rd2(o.devido), desc: rd2(o.desc), menos: rd2(o.menos), mais: rd2(o.mais)}));
+}
+
+/* ---------- PENDÊNCIAS e DUPLICIDADES ---------- */
+function filtrar(lista, busca, sit) {
+  const q = nomeN(busca), qd = soDig(busca);
+  return lista.filter(p => {
+    if (sit === 'abertas' && encerrada(p)) return false;
+    if (sit === 'encerradas' && !encerrada(p)) return false;
+    if (!q && !qd) return true;
+    return (q && nomeN(p.nome + ' ' + p.loja + ' ' + p.tipo + ' ' + p.txt).includes(q)) || (qd && (p.cpf.includes(qd) || String(p.matricula || '').includes(qd)));
+  });
+}
+function tabelaPend(ls) {
+  if (!ls.length) return `<div class="vazio">Nada com esse filtro. ✔</div>`;
+  return `<table><thead><tr><th>Gravidade</th><th>Tipo</th><th>Funcionário</th><th>Comp.</th><th>Detalhe</th><th class="r">Valor</th><th>Tratativa</th><th></th></tr></thead><tbody>` +
+    ls.slice(0, 600).map(p => `<tr><td>${gravChip(p.grav)}</td><td><b>${esc(p.tipo)}</b></td>
+      <td>${p.cpf ? `<a href="javascript:void(0)" data-pes="${p.cpf}" data-c="${p.comp}">${esc(p.nome)}</a><br><span class="mut small">${cpfF(p.cpf)}${p.matricula ? ' · ' + esc(p.matricula) : ''}${p.loja ? ' · ' + esc(p.loja) : ''}</span>` : `<span class="mut">${esc(p.nome || '—')}</span>`}</td>
+      <td class="small">${compBR(p.comp)}</td><td class="small">${esc(p.txt)}${p.trat && p.trat.observacao ? `<div class="mut">↳ ${esc(p.trat.observacao)} — ${esc(quemCurto(p.trat.usuario))} ${dtBR(p.trat.criado_em)}</div>` : ''}</td>
+      <td class="r">${p.valor ? nfm(p.valor) : ''}</td><td>${tratChip(p.trat)}</td><td><button class="btn" data-tratar="${esc(p.id)}">Tratar</button></td></tr>`).join('') + `</tbody></table>` +
+    (ls.length > 600 ? `<div class="small mut">Mostrando 600 de ${ls.length}. O PDF e o Excel trazem todas.</div>` : '');
+}
+function listaPend() {
+  const comp = $('pComp').value === 'sel' ? COMP : '';
+  return filtrar(R.pend.filter(p => p.cat !== 'duplicidade' && (!$('pCat').value || p.cat === $('pCat').value) && (!$('pGrav').value || p.grav === $('pGrav').value) && (!comp || p.comp === comp || !p.comp)), $('pBusca').value, $('pSit').value);
+}
+function telaPend() {
+  const ls = listaPend(); const cont = {}; ls.forEach(p => cont[p.tipo] = (cont[p.tipo] || 0) + 1);
+  $('pCont').innerHTML = Object.entries(cont).sort((a, b) => b[1] - a[1]).map(([t, n]) => `<span class="chip s-cinza">${esc(t)}: ${n}</span>`).join('');
+  $('tPend').innerHTML = tabelaPend(ls);
+}
+const listaDup = () => filtrar(R.pend.filter(p => p.cat === 'duplicidade'), $('dBusca').value, $('dSit').value);
+function telaDup() { $('tDup').innerHTML = tabelaPend(listaDup()); }
+['pBusca', 'pCat', 'pGrav', 'pSit', 'pComp'].forEach(id => $(id).addEventListener('input', telaPend));
+['dBusca', 'dSit'].forEach(id => $(id).addEventListener('input', telaDup));
+
+function tratar(id) {
+  const p = R.pend.find(x => x.id === id); if (!p) return;
+  abrirModal(`<h3>${esc(p.tipo)}</h3><div class="small">${p.nome ? `<b>${esc(p.nome)}</b> · ` : ''}${p.cpf ? cpfF(p.cpf) + ' · ' : ''}${compBR(p.comp)}</div>
+    <div class="aviso">${esc(p.txt)}</div>
+    ${D.tratativas.filter(t => t.pendencia === id).map(t => `<div class="small mut">${dtBR(t.criado_em)} · ${esc(quemCurto(t.usuario))} · <b>${TRAT[t.status]}</b> ${esc(t.observacao || '')}</div>`).join('')}
+    <label>Decisão</label><select id="tStatus">${Object.entries(TRAT).map(([k, v]) => `<option value="${k}" ${p.trat && p.trat.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+    <label>Observação (o que foi feito, quem confirmou)</label><textarea id="tObs" rows="3"></textarea>
+    <div class="row"><button class="btn b-pri" id="bTrat">Gravar</button><button class="btn" onclick="fecharModal()">Cancelar</button></div>`);
+  $('bTrat').onclick = () => salvarTratativa(id);
+}
+async function salvarTratativa(id) {
+  const p = R.pend.find(x => x.id === id); const status = $('tStatus').value, obs = $('tObs').value.trim();
+  if (['justificado', 'resolvido'].includes(status) && !obs) { toast('Escreva a justificativa antes de encerrar.'); return; }
+  const r = await sb.from('cred_tratativas').insert({pendencia: id, cpf: p.cpf || null, competencia: p.comp || null, status, observacao: obs || null, valor: p.valor || null});
+  if (r.error) { toast('Não gravou: ' + msgErro(r.error), 6000); return; }
+  fecharModal(); toast('Tratativa gravada.'); await recarregar();
+}
+
+/* ---------- MÊS A MÊS ---------- */
+function telaMeses() {
+  if (!R.porComp.length) { $('tMeses').innerHTML = `<div class="vazio">Importe o relatório de compras para começar.</div>`; return; }
+  $('tMeses').innerHTML = `<table><thead><tr><th>Competência</th><th class="r">Funcionários</th><th class="r">Devido</th><th class="r">Descontado</th><th class="r">A menos</th><th class="r">A mais</th><th>Situação</th><th>Pago em</th><th>Compras</th><th>Fechamento</th></tr></thead><tbody>` +
+    R.porComp.slice().reverse().map(c => {
+      const f = c.fech, fechada = f && f.status === 'fechada';
+      const mudou = fechada && (Math.abs(Number(f.devido) - c.devido) > 0.01 || Math.abs(Number(f.descontado) - c.desc) > 0.01);
+      return `<tr class="${c.comp === COMP ? 'semrow' : ''}"><td><a href="javascript:void(0)" data-ircomp="${c.comp}"><b>${compBR(c.comp)}</b></a></td><td class="r">${c.n}</td><td class="r">${nfm(c.devido)}</td><td class="r">${c.folha ? nfm(c.desc) : '—'}</td>
+      <td class="r ${c.menos > 0.009 ? 'badt' : ''}">${c.folha ? nfm(c.menos) : '—'}</td><td class="r ${c.mais > 0.009 ? 'wt' : ''}">${c.folha ? nfm(c.mais) : '—'}</td>
+      <td>${Object.entries(c.cont).map(([s, n]) => `<span class="st ${STAT[s][1]}">${n} ${STAT[s][0].toLowerCase()}</span>`).join(' ')}</td>
+      <td class="small">${c.dataPag.map(dataBR).join(', ') || (c.folha ? '<span class="wt">sem data</span>' : '—')}</td>
+      <td class="small">${c.faltam.length ? `<span class="wt">parcial</span><br><span class="mut">faltam ${faixas(c.faltam)}</span>` : '<span class="okt">completas</span>'}${R.foraJanela.get(c.comp) ? `<br><span class="badt">${qtd(R.foraJanela.get(c.comp).n)} parcelas fora da lista do RH</span>` : ''}</td>
+      <td class="small">${fechada ? `<span class="okt">Fechada</span> por ${esc(quemCurto(f.fechado_por))}<br>${dtBR(f.fechado_em)}${mudou ? '<br><span class="badt">números mudaram depois do fechamento</span>' : ''}<br><button class="btn" data-reabrir="${c.comp}">Reabrir</button>`
+        : c.folha ? `<button class="btn b-ok" data-fechar="${c.comp}">Fechar</button>${f ? '<br><span class="mut">reaberta</span>' : ''}` : '<span class="mut">aguardando folha</span>'}</td></tr>`;
+    }).join('') + `</tbody></table>`;
+}
+function fecharComp(comp) {
+  const c = R.porComp.find(x => x.comp === comp); const ab = R.pend.filter(p => p.comp === comp && !encerrada(p));
+  abrirModal(`<h3>Fechar ${compBR(comp)}</h3>
+    <div class="kv"><div><span>Devido</span>${brl(c.devido)}</div><div><span>Descontado</span>${brl(c.desc)}</div><div><span>A menos</span>${brl(c.menos)}</div><div><span>A mais</span>${brl(c.mais)}</div><div><span>Pendências abertas</span>${ab.length}</div></div>
+    ${ab.length ? `<div class="perigo">Ainda há ${ab.length} pendência(s) sem tratativa nesta competência. Dá para fechar assim mesmo — elas continuam abertas na lista.</div>` : ''}
+    <label>Observação do fechamento</label><textarea id="fObs" rows="3"></textarea>
+    <div class="row"><button class="btn b-ok" id="bFech">Fechar competência</button><button class="btn" onclick="fecharModal()">Cancelar</button></div>`);
+  $('bFech').onclick = () => gravarFechamento(comp);
+}
+async function gravarFechamento(comp) {
+  const c = R.porComp.find(x => x.comp === comp); const ab = R.pend.filter(p => p.comp === comp && !encerrada(p));
+  const u = (await sb.auth.getUser()).data.user;
+  const resumo = {status: c.cont, funcionarios: c.n, pago_em: c.dataPag, cobertura: c.faltam, regra: R.cfg,
+    divergencias: R.linhas.filter(l => l.comp === comp && !['ok', 'prev'].includes(l.st)).map(l => ({cpf: l.cpf, devido: l.devido, descontado: l.desc, dif: l.dif, st: l.st}))};
+  const r = await sb.from('cred_fechamentos').upsert({competencia: comp, status: 'fechada', devido: c.devido, descontado: c.desc, a_menos: c.menos, a_mais: c.mais, pendencias: ab.length,
+    resumo, observacao: $('fObs').value.trim() || null, fechado_por: u ? u.email : null, fechado_em: new Date().toISOString()}, {onConflict: 'competencia'});
+  if (r.error) { toast('Não gravou: ' + msgErro(r.error), 6000); return; }
+  fecharModal(); toast(`${compBR(comp)} fechada.`); await recarregar();
+}
+async function reabrir(comp) {
+  if (!confirm(`Reabrir ${compBR(comp)}? O fechamento anterior fica registrado como reaberto.`)) return;
+  const r = await sb.from('cred_fechamentos').update({status: 'reaberta'}).eq('competencia', comp);
+  if (r.error) { toast('Não gravou: ' + msgErro(r.error), 6000); return; }
+  await recarregar();
+}
+
+/* ---------- FUNCIONÁRIOS ---------- */
+function listaFunc() {
+  const q = nomeN($('fBusca').value), qd = soDig($('fBusca').value), loja = $('fLoja').value, st = $('fSt').value;
+  return [...R.pessoas.values()].filter(p => {
+    if (loja && (p.cad ? p.cad.loja || '(sem loja)' : 'FORA DO CADASTRO') !== loja) return false;
+    if (st === 'div' && !p.nDiv) return false;
+    if (st === 'alerta' && !p.pend.some(x => !encerrada(x))) return false;
+    if (!q && !qd) return true;
+    return (q && nomeN(p.nome + ' ' + p.nomeCred + ' ' + (p.cad ? p.cad.loja : '')).includes(q)) || (qd && (p.cpf.includes(qd) || (p.cad && String(p.cad.matricula || '').includes(qd))));
+  }).sort((a, b) => (b.menos + b.mais + b.verif) - (a.menos + a.mais + a.verif) || a.nome.localeCompare(b.nome));
+}
+function telaFunc() {
+  const lojas = [...new Set([...R.pessoas.values()].map(p => p.cad ? p.cad.loja || '(sem loja)' : 'FORA DO CADASTRO'))].sort();
+  const sel = $('fLoja').value;
+  $('fLoja').innerHTML = `<option value="">Todas as lojas</option>` + lojas.map(l => `<option ${l === sel ? 'selected' : ''}>${esc(l)}</option>`).join('');
+  $('legenda').innerHTML = Object.keys(STAT).map(stChip).join('');
+  const ps = listaFunc();
+  const comps = R.comps.filter(c => difMes(c, COMP) <= 5 && difMes(COMP, c) <= 6);
+  if (!ps.length) { $('tFunc').innerHTML = `<div class="vazio">Nenhum funcionário.</div>`; return; }
+  const lim = ps.slice(0, 300);
+  $('tFunc').innerHTML = `<table class="mtz"><thead><tr><th>Funcionário</th>${comps.map(c => `<th class="r ${c === COMP ? 'foco' : ''}">${compBR(c)}</th>`).join('')}<th class="r">Diferença</th></tr></thead><tbody>` +
+    lim.map(p => `<tr><td><a href="javascript:void(0)" data-pes="${p.cpf}"><b>${esc(p.nome)}</b></a><br><span class="mut small">${cpfF(p.cpf)}${p.cad ? ' · ' + esc(p.cad.matricula || '') + ' · ' + esc(p.cad.loja || '') : ' · <span class="badt">fora do cadastro</span>'}</span>${p.pend.some(x => !encerrada(x)) ? ` <span class="st st-verif">${p.pend.filter(x => !encerrada(x)).length} pendência(s)</span>` : ''}</td>` +
+      comps.map(c => { const x = p.celulas[c]; if (!x) return `<td class="c ${c === COMP ? 'foco' : ''}"></td>`; return `<td class="c c-${x.st} ${c === COMP ? 'foco' : ''}" data-pes="${p.cpf}" data-c="${c}" title="${STAT[x.st][0]}">${nfm(x.devido)}<small>${x.st === 'prev' ? '—' : nfm(x.desc)}</small></td>`; }).join('') +
+      `<td class="r ${p.menos > 0.009 ? 'badt' : p.mais + p.verif > 0.009 ? 'wt' : ''}">${p.menos > 0.009 ? '−' + nfm(p.menos) : p.mais + p.verif > 0.009 ? '+' + nfm(p.mais + p.verif) : '—'}</td></tr>`).join('') + `</tbody></table>` +
+    (ps.length > lim.length ? `<div class="small mut">Mostrando ${lim.length} de ${ps.length}. Use a busca ou o Excel.</div>` : '');
+}
+['fBusca', 'fLoja', 'fSt'].forEach(id => $(id).addEventListener('input', telaFunc));
+
+function abrirPessoa(cpf, foco) {
+  const p = R.pessoas.get(cpf); if (!p) return;
+  const comps = Object.keys(p.celulas).sort(), f = p.cad;
+  let h = `<div class="row" style="justify-content:space-between"><h3>${esc(p.nome)}</h3><div class="row"><button class="btn b-pri" data-pdfpes="${cpf}">PDF do extrato</button><button class="btn" data-imppes="${cpf}">Imprimir</button><button class="btn" onclick="fecharModal()">Fechar</button></div></div>
+  <div class="kv"><div><span>CPF</span>${cpfF(cpf)}</div><div><span>Matrícula</span>${f ? esc(f.matricula || '—') : '—'}</div><div><span>Loja</span>${f ? esc(f.loja || '—') : '<span class="badt">fora do cadastro</span>'}</div>
+  <div><span>Função</span>${f ? esc(f.funcao || '—') : '—'}</div><div><span>Admissão</span>${f ? dataBR(f.admissao) || '—' : '—'}</div><div><span>Situação</span>${f ? esc(f.situacao || '—') + (f.noCadastro ? '' : ' <span class="badt">(saiu do cadastro)</span>') : '—'}</div>
+  ${p.nomeCred && f && nomeN(p.nomeCred) !== nomeN(f.nome) ? `<div><span>Nome no crediário</span>${esc(p.nomeCred)}</div>` : ''}
+  ${p.desl ? `<div><span>${p.readm ? 'Saiu (readmitido depois)' : 'Desligado em'}</span><b class="${p.ex ? 'badt' : ''}">${dataBR(p.desl.saida)}</b> ${esc(p.desl.natureza || '')}</div>` : ''}
+  ${p.exInfo ? `<div><span>Em aberto no crediário</span><b class="${p.exInfo.aberto > 0.009 ? 'badt' : 'okt'}">${brl(p.exInfo.aberto)}</b> (${brl(p.exInfo.vencido)} vencido · ${brl(p.exInfo.aVencer)} a vencer)</div>` : ''}</div>`;
+  h += p.pend.map(a => `<div class="${a.grav === 'alta' ? 'perigo' : 'aviso'}"><b>${esc(a.tipo)}${a.comp ? ' · ' + compBR(a.comp) : ''}:</b> ${esc(a.txt)} ${tratChip(a.trat)} <a href="javascript:void(0)" data-tratar="${esc(a.id)}">tratar</a></div>`).join('');
+  h += `<div class="tw"><table><thead><tr><th>Competência</th><th class="r">Devido</th><th class="r">Descontado</th><th class="r">Diferença</th><th>Situação</th><th>Pago na folha</th>${D.baixas.length ? '<th>Baixa no crediário</th>' : ''}</tr></thead><tbody>` +
+    comps.map(c => { const x = p.celulas[c]; return `<tr ${c === foco ? 'class="semrow"' : ''}><td><b>${compBR(c)}</b></td><td class="r">${nfm(x.devido)}</td><td class="r">${x.st === 'prev' ? '—' : nfm(x.desc)}</td><td class="r">${x.st === 'prev' ? '' : nfm(x.dif)}</td><td>${stChip(x.st)}</td><td class="small">${x.dataPag.map(dataBR).join(', ')}</td>${D.baixas.length ? `<td class="small">${x.baixadas}/${x.parcelas.length} ${x.dataBaixa.map(dataBR).join(', ')}</td>` : ''}</tr>`; }).join('') + `</tbody></table></div>`;
+  const temDescP = p.parcelas.some(x => x.descontos.length) || p.folha.some(l => l.documento);
+  h += `<h2>Parcelas do crediário</h2><div class="tw"><table class="pq"><thead><tr><th>Folha</th><th>Documento</th><th>Compra</th><th>Vencimento</th><th class="r">Valor</th>${temDescP ? '<th>Desconto da parcela</th>' : ''}${D.baixas.length ? '<th>Baixa</th>' : ''}</tr></thead><tbody>` +
+    p.parcelas.slice().sort((a, b) => a.comp.localeCompare(b.comp) || a.documento.localeCompare(b.documento)).map(x => `<tr ${x.comp === foco ? 'class="semrow"' : ''}><td>${compBR(x.comp)}</td><td>${esc(x.documento)}${x.rec ? ' <span class="st st-prev" title="parcela já paga, reconstruída a partir do contrato">reconstruída</span>' : ''}${x.fora ? ' <span class="st st-prev" title="vence fora do período que a lista de desconto do RH traz">fora da lista do RH</span>' : ''}${x.valor_anterior != null ? ` <span class="wt small">(era ${nfm(x.valor_anterior)})</span>` : ''}${p.desl && x.lancamento > p.desl.saida && !p.readm ? ' <span class="st st-alta">depois da saída</span>' : ''}</td><td>${dataBR(x.lancamento)}</td><td>${dataBR(x.vencimento)}</td><td class="r">${nfm(x.valor)}</td>${temDescP ? `<td class="small">${x.descontos.map(l => `${nfm(l.valor)} na folha de ${compBR(l.comp)}`).join('<br>')}</td>` : ''}${D.baixas.length ? `<td>${x.baixa ? dataBR(x.baixa.data_baixa) + ' · ' + nfm(x.baixa.valor) : '<span class="wt">em aberto</span>'}</td>` : ''}</tr>`).join('') + `</tbody></table></div>`;
+  if (p.folha.length) h += `<h2>Lançamentos na folha</h2><div class="tw"><table class="pq"><thead><tr><th>Competência</th><th>Evento / parcela</th><th class="r">Valor</th><th>Pago em</th><th>Arquivo</th></tr></thead><tbody>` +
+    p.folha.slice().sort((a, b) => a.comp.localeCompare(b.comp)).map(l => `<tr><td>${compBR(l.comp)}</td><td>${esc(l.evento || l.documento || '')}${l.documento && !l.par ? ' <span class="st st-alta">não está nas compras</span>' : ''}</td><td class="r">${nfm(l.valor)}</td><td>${dataBR(l.data_pagamento)}</td><td class="small mut">${esc(l.arq)}</td></tr>`).join('') + `</tbody></table></div>`;
+  abrirModal(h, 'larga');
+}
+
+/* ---------- EX-FUNCIONÁRIOS ---------- */
+// quem saiu (relatório de desligados) e tem crediário: foi descontado? ficou débito em aberto (vencido / a vencer)?
+const EX_ST = {aberto: ['Débito em aberto', 'st-alta'], quitado: ['Quitado', 'st-ok']};
+function listaEx() {
+  const q = nomeN($('eBusca').value), qd = soDig($('eBusca').value), st = $('eSt').value;
+  return R.exs.filter(o => {
+    if (st === 'aberto' && o.st !== 'aberto') return false;
+    if (st === 'quitado' && o.st !== 'quitado') return false;
+    if (st === 'folha' && !o.folhaApos.length) return false;
+    if (!q && !qd) return true;
+    return (q && nomeN([o.pe.nome, o.d.cargo, o.d.estab, o.d.natureza].join(' ')).includes(q)) || (qd && (o.pe.cpf.includes(qd) || String(o.d.matricula || '').includes(qd)));
+  });
+}
+function numerosEx(ls = R.exs) {
+  const s = k => rd2(ls.reduce((t, o) => t + o[k], 0));
+  return {n: ls.length, nAberto: ls.filter(o => o.st === 'aberto').length, aberto: s('aberto'), vencido: s('vencido'), aVencer: s('aVencer'), nFolha: ls.filter(o => o.folhaApos.length).length, descApos: s('descApos'),
+    nCompra: ls.filter(o => o.aposCompra.length).length, compraApos: rd2(ls.reduce((t, o) => t + o.aposCompra.reduce((u, p) => u + p.valor, 0), 0)), nParc: ls.reduce((t, o) => t + o.abertas.length, 0)};
+}
+const readmitidos = () => [...R.pessoas.values()].filter(p => p.readm).sort((a, b) => a.nome.localeCompare(b.nome));
+function telaEx() {
+  if (!R.desl.size) {
+    $('exRegra').innerHTML = 'Importe o relatório de <b>desligados</b> (inativos) em <a href="javascript:void(0)" onclick="irPara(\'arq\')">Arquivos do mês</a> — a tela cruza a data de saída com as compras no crediário e com os descontos da folha.';
+    ['exKpis', 'gExMes', 'gExVenc', 'tEx', 'tReadm'].forEach(id => $(id).innerHTML = ''); return;
+  }
+  const dsl = D.arquivos.filter(a => a.tipo === 'desligados').sort((a, b) => b.id - a.id)[0], ss = [...R.desl.values()].map(d => d.saida).sort();
+  $('exRegra').innerHTML = `${qtd(R.desl.size)} desligados de ${dataBR(ss[0])} a ${dataBR(ss[ss.length - 1])} (${esc(dsl ? dsl.nome : '')}). Para cada um com compra no crediário: o que ainda está em aberto (devia ter sido descontado na rescisão), o que vence depois da saída (débito futuro), desconto em folha depois da saída e compra feita depois de sair.`;
+  const N = numerosEx();
+  $('exKpis').innerHTML =
+    kpi('Ex-funcionários com débito', qtd(N.nAberto), `de ${qtd(N.n)} com crediário · ${qtd(N.nParc)} parcelas`, N.nAberto ? 't-vermelho' : 't-verde', "$('eSt').value='aberto';telaEx()") +
+    kpi('Débito em aberto', brl(N.aberto), 'não descontado na rescisão nem baixado', N.aberto > 0.009 ? 't-vermelho' : 't-verde') +
+    kpi('Já vencido', brl(N.vencido), 'parcelas vencidas e não pagas', N.vencido > 0.009 ? 't-laranja' : 't-verde') +
+    kpi('Débito futuro (a vencer)', brl(N.aVencer), 'parcelas que ainda vão vencer', N.aVencer > 0.009 ? 't-roxo' : 't-verde') +
+    kpi('Descontados na folha depois da saída', qtd(N.nFolha), brl(N.descApos), N.nFolha ? 't-vermelho' : 't-verde', "$('eSt').value='folha';telaEx()") +
+    kpi('Compras depois da saída', qtd(N.nCompra), brl(N.compraApos), N.nCompra ? 't-vermelho' : 't-verde') +
+    kpi('Readmitidos com crediário', qtd(readmitidos().length), 'saíram e voltaram — tratados como ativos', 't-cinza') +
+    kpi('Quitados', qtd(N.n - N.nAberto), 'sem parcela em aberto', 't-verde');
+  const porMes = new Map(); R.exs.filter(o => o.aberto > 0.009).forEach(o => { const m = o.d.saida.slice(0, 7); const x = porMes.get(m) || {n: 0, v: 0}; x.n++; x.v += o.aberto; porMes.set(m, x); });
+  graficoBarrasH($('gExMes'), [...porMes.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([m, x]) => ({rotulo: compBR(m), valor: rd2(x.v), det: `<div><span>Ex-funcionários</span><span>${x.n}</span></div>`})), {vazio: 'Nenhum débito em aberto.'});
+  const porV = new Map(); R.exs.forEach(o => o.abertas.forEach(p => { const m = p.vencimento.slice(0, 7); porV.set(m, (porV.get(m) || 0) + p.valor); }));
+  graficoBarrasH($('gExVenc'), [...porV.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([m, v]) => ({rotulo: (m < hojeISO().slice(0, 7) ? 'Vencido ' : 'Vence ') + compBR(m), valor: rd2(v)})), {vazio: 'Nenhuma parcela em aberto.'});
+  const ls = listaEx();
+  $('tEx').innerHTML = ls.length ? `<table><thead><tr><th>Ex-funcionário</th><th>Saída</th><th>Natureza</th><th class="r">Parcelas</th><th class="r">Vencido</th><th class="r">A vencer</th><th class="r">Em aberto</th><th>Último venc.</th><th class="r">Desc. folha após saída</th><th>Situação</th></tr></thead><tbody>` +
+    ls.map(o => `<tr class="clicavel" data-pes="${o.pe.cpf}"><td><b>${esc(o.pe.nome)}</b><br><span class="mut small">${cpfF(o.pe.cpf)} · ${esc(o.d.matricula || '')} · ${esc(o.d.cargo || '')}<br>${esc(o.d.estab || '')}</span></td>
+      <td>${dataBR(o.d.saida)}</td><td class="small">${esc(o.d.natureza || '')}</td><td class="r">${o.abertas.length}</td><td class="r ${o.vencido > 0.009 ? 'badt' : ''}">${nfm(o.vencido)}</td><td class="r">${nfm(o.aVencer)}</td><td class="r"><b>${nfm(o.aberto)}</b></td>
+      <td class="small">${dataBR(o.ult)}</td><td class="r ${o.descApos > 0.009 ? 'badt' : ''}">${o.descApos ? nfm(o.descApos) : ''}</td>
+      <td><span class="st ${EX_ST[o.st][1]}">${EX_ST[o.st][0]}</span>${o.aposCompra.length ? ' <span class="st st-alta">comprou depois de sair</span>' : ''}</td></tr>`).join('') +
+    `</tbody><tfoot><tr><td>Total (${ls.length})</td><td></td><td></td><td class="r">${ls.reduce((t, o) => t + o.abertas.length, 0)}</td><td class="r">${nfm(ls.reduce((t, o) => t + o.vencido, 0))}</td><td class="r">${nfm(ls.reduce((t, o) => t + o.aVencer, 0))}</td><td class="r">${nfm(ls.reduce((t, o) => t + o.aberto, 0))}</td><td></td><td class="r">${nfm(ls.reduce((t, o) => t + o.descApos, 0))}</td><td></td></tr></tfoot></table>`
+    : `<div class="vazio">${R.exs.length ? 'Nada com esse filtro.' : 'Nenhum desligado tem compra no crediário ou desconto na folha. ✔'}</div>`;
+  const rd = readmitidos();
+  $('tReadm').innerHTML = rd.length ? `<table><thead><tr><th>Funcionário</th><th>Saída</th><th>Readmissão</th><th>Loja atual</th><th class="r">Em aberto no crediário</th></tr></thead><tbody>` +
+    rd.map(p => `<tr class="clicavel" data-pes="${p.cpf}"><td><b>${esc(p.nome)}</b><br><span class="mut small">${cpfF(p.cpf)}</span></td><td>${dataBR(p.desl.saida)}</td><td>${dataBR(p.cad.admissao)}</td><td class="small">${esc(p.cad.loja || '')}</td><td class="r">${nfm(p.parcelas.filter(x => !x.rec && !x.baixa && !x.descontos.length).reduce((t, x) => t + x.valor, 0))}</td></tr>`).join('') + `</tbody></table>`
+    : '<div class="vazio">Nenhum readmitido com crediário.</div>';
+}
+['eBusca', 'eSt'].forEach(id => $(id).addEventListener('input', telaEx));
+function modeloEx(ls = R.exs) {
+  const N = numerosEx(ls), ss = [...R.desl.values()].map(d => d.saida).sort();
+  const porMes = new Map(); ls.filter(o => o.aberto > 0.009).forEach(o => { const m = o.d.saida.slice(0, 7); porMes.set(m, (porMes.get(m) || 0) + o.aberto); });
+  const parcelas = ls.flatMap(o => o.abertas.map(p => [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), p.documento, dataBR(p.lancamento), dataBR(p.vencimento), p.vencimento < hojeISO() ? 'Vencida' : 'A vencer', V(p.valor)]));
+  const apos = ls.filter(o => o.folhaApos.length || o.aposCompra.length);
+  return {titulo: 'Ex-funcionários - crediário e desconto em folha', subtitulo: `Desligados de ${dataBR(ss[0])} a ${dataBR(ss[ss.length - 1])} com compra no crediário - posição de ${dataBR(hojeISO())}`, marca: MARCA, paisagem: true, arquivo: `ex_funcionarios_crediario_${hojeISO()}`,
+    resumo: [['Ex-funcionários com crediário', qtd(N.n)], ['Com débito em aberto', qtd(N.nAberto)], ['Débito em aberto - pendência', brl(N.aberto)], ['Já vencido', brl(N.vencido)],
+      ['Débito futuro (a vencer)', brl(N.aVencer)], ['Descontados na folha depois da saída', `${qtd(N.nFolha)} - ${brl(N.descApos)}`], ['Compras depois da saída', `${qtd(N.nCompra)} - ${brl(N.compraApos)}`], ['Readmitidos com crediário', qtd(readmitidos().length)]],
+    graficos: [{titulo: 'Débito em aberto por mês de desligamento', tipo: 'barras', itens: [...porMes.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([m, v]) => ({rotulo: compBR(m), a: rd2(v)}))}],
+    secoes: [
+      {titulo: `Ex-funcionários (${ls.length})`, cab: ['Ex-funcionário', 'CPF', 'Matrícula', 'Cargo', 'Saída', 'Natureza', 'Parcelas', 'Vencido', 'A vencer', 'Em aberto', 'Último venc.', 'Desc. folha após saída', 'Situação'], direita: [6, 7, 8, 9, 11],
+        linhas: ls.map(o => [o.pe.nome, cpfF(o.pe.cpf), o.d.matricula || '', o.d.cargo || '', dataBR(o.d.saida), o.d.natureza || '', o.abertas.length, V(o.vencido), V(o.aVencer), V(o.aberto), dataBR(o.ult), o.descApos ? V(o.descApos) : '', EX_ST[o.st][0] + (o.aposCompra.length ? ' - comprou depois de sair' : '')]),
+        rodape: ['Total', '', '', '', '', '', N.nParc, V(N.vencido), V(N.aVencer), V(N.aberto), '', V(N.descApos), '']},
+      {titulo: `Desconto em folha ou compra depois da saída (${apos.length})`, cab: ['Ex-funcionário', 'Saída', 'Ocorrência', 'Valor'], direita: [3],
+        linhas: apos.flatMap(o => [...[...grpConta(o.folhaApos, l => l.comp).entries()].map(([c, xs]) => [o.pe.nome, dataBR(o.d.saida), `Desconto na folha de ${compBR(c)}`, V(xs.reduce((t, l) => t + l.valor, 0))]),
+          ...(o.aposCompra.length ? [[o.pe.nome, dataBR(o.d.saida), `Compra em ${[...new Set(o.aposCompra.map(p => dataBR(p.lancamento)))].join(', ')}`, V(o.aposCompra.reduce((t, p) => t + p.valor, 0))]] : [])])},
+      {titulo: `Parcelas em aberto (${parcelas.length})`, cab: ['Ex-funcionário', 'CPF', 'Saída', 'Documento', 'Compra', 'Vencimento', 'Situação', 'Valor'], direita: [7], linhas: parcelas, rodape: ['Total', '', '', '', '', '', '', V(N.aberto)]}],
+    assinaturas: ['Auditoria', 'RH / Departamento Pessoal', 'Financeiro / Crediário']};
+}
+function excelEx() {
+  if (!R || !R.exs.length) { toast('Nenhum ex-funcionário com crediário (importe o relatório de desligados).'); return; }
+  const ls = listaEx(), wb = XLSX.utils.book_new();
+  const add = (nome, linhas, larg) => { const ws = XLSX.utils.json_to_sheet(linhas.length ? linhas : [{'': 'Nada a listar'}]); if (larg) ws['!cols'] = larg.map(w => ({wch: w})); ws['!autofilter'] = {ref: ws['!ref']}; XLSX.utils.book_append_sheet(wb, ws, nome); };
+  const id = o => ({'Matrícula': o.d.matricula || '', 'Nome': o.pe.nome, 'CPF': cpfF(o.pe.cpf), 'Cargo': o.d.cargo || '', 'Empresa': o.d.estab || '', 'Admissão': dataBR(o.d.admissao), 'Saída': dataBR(o.d.saida), 'Natureza': o.d.natureza || ''});
+  add('Ex-funcionários', ls.map(o => ({...id(o), 'Parcelas em aberto': o.abertas.length, 'Vencido': o.vencido, 'A vencer': o.aVencer, 'Em aberto': o.aberto, 'Próximo vencimento': dataBR(o.prox), 'Último vencimento': dataBR(o.ult),
+    'Descontado na folha (total)': o.desc, 'Descontado na folha depois da saída': o.descApos, 'Compras depois da saída': rd2(o.aposCompra.reduce((t, p) => t + p.valor, 0)), 'Situação': EX_ST[o.st][0]})),
+    [11, 34, 15, 22, 30, 11, 11, 26, 9, 11, 11, 11, 12, 12, 12, 14, 14, 16]);
+  add('Parcelas em aberto', ls.flatMap(o => o.abertas.map(p => ({...id(o), 'Documento': p.documento, 'Compra em': dataBR(p.lancamento), 'Vencimento': dataBR(p.vencimento), 'Situação': p.vencimento < hojeISO() ? 'Vencida' : 'A vencer', 'Valor': p.valor}))),
+    [11, 34, 15, 22, 30, 11, 11, 26, 16, 11, 11, 10, 10]);
+  add('Desconto após a saída', ls.flatMap(o => o.folhaApos.map(l => ({...id(o), 'Folha': compBR(l.comp), 'Documento': l.documento || '', 'Valor': l.valor, 'Arquivo': l.arq}))), [11, 34, 15, 22, 30, 11, 11, 26, 10, 16, 10, 36]);
+  add('Readmitidos', readmitidos().map(p => ({'Nome': p.nome, 'CPF': cpfF(p.cpf), 'Saída': dataBR(p.desl.saida), 'Readmissão': dataBR(p.cad.admissao), 'Loja': p.cad.loja || ''})), [34, 15, 11, 11, 30]);
+  XLSX.writeFile(wb, `ex_funcionarios_crediario_${hojeISO()}.xlsx`);
+}
+
+/* ---------- ARQUIVOS ---------- */
+function telaArquivos() {
+  const as = D.arquivos.slice().sort((a, b) => b.id - a.id);
+  $('tArq').innerHTML = as.length ? `<table><thead><tr><th>Tipo</th><th>Arquivo</th><th class="r">Linhas</th><th class="r">Total</th><th>Conferência</th><th>Importado</th><th></th></tr></thead><tbody>` +
+    as.map(a => `<tr><td>${TIPO_NOME[a.tipo]}${a.tipo === 'cadastro' && a.id === R.cadAtual ? ' <span class="st st-ok">atual</span>' : ''}</td><td>${esc(a.nome)}${a.competencias && a.competencias.length ? `<br><span class="mut small">${a.competencias.map(compBR).join(', ')}</span>` : ''}${a.eventos && a.eventos.length ? `<br><span class="mut small">eventos: ${esc(a.eventos.join(', '))}</span>` : ''}</td>
+      <td class="r">${qtd(a.linhas)}</td><td class="r">${a.total != null ? nfm(a.total) : ''}</td>
+      <td class="small">${a.rodape == null ? '' : Math.abs(Number(a.rodape) - Number(a.total)) <= 0.01 ? '<span class="okt">confere com o rodapé</span>' : `<span class="badt">rodapé ${nfm(a.rodape)} não confere</span>`}</td>
+      <td class="small">${dtBR(a.importado_em)}<br><span class="mut">${esc(quemCurto(a.importado_por))}</span></td>
+      <td class="row">${a.tipo === 'folha' ? `<button class="btn" data-datapag="${a.id}">Data de pagamento</button>` : ''}${a.tipo === 'cadastro' ? '' : `<button class="btn" data-excluir="${a.id}">Excluir</button>`}</td></tr>`).join('') + `</tbody></table>` : `<div class="vazio">Nenhum arquivo importado.</div>`;
+  $('cRegra').value = R.cfg.regra; $('cCorte').value = R.cfg.corte; $('cTol').value = R.cfg.tol; $('cMax').value = R.cfg.maxParc;
+  const ex = R.par.find(p => p.n_parcelas > 1);
+  $('regraTxt').innerHTML = (R.cfg.regra === 'ciclo'
+    ? `Compra feita do dia ${R.cfg.corte + 1} de um mês ao dia ${R.cfg.corte} do mês seguinte entra na folha desse mês seguinte (ex.: 21/09 a 20/10 → folha de outubro, paga no 5º dia útil de novembro); cada parcela seguinte cai um mês depois.`
+    : R.cfg.regra === 'venc_ant' ? `A parcela que vence do dia ${R.cfg.corte + 1} de um mês ao dia ${R.cfg.corte} do mês seguinte é descontada na folha do primeiro mês (ex.: vencimentos de 21/09 a 20/10 → folha de setembro).`
+    : `A parcela entra na folha do mês do vencimento; vencimento depois do dia ${R.cfg.corte} vai para a folha do mês seguinte.`)
+    + (R.nRec ? `<br>${qtd(R.nRec)} parcelas já pagas foram <b>reconstruídas</b> a partir dos contratos em aberto (mesmo valor, vencimento a cada 30 dias). Compras já quitadas não aparecem na carteira, então o devido das folhas passadas é um <b>mínimo</b>.` : '')
+    + (ex ? `<br>Exemplo: ${esc(ex.documento)} comprada em ${dataBR(ex.lancamento)}, vence ${dataBR(ex.vencimento)} → folha de <b>${compBR(ex.comp)}</b>.` : '')
+    + (D.cfg.atualizado_por ? `<br><span class="mut small">Regra salva por ${esc(quemCurto(D.cfg.atualizado_por))} em ${dtBR(D.cfg.atualizado_em)}</span>` : '');
+  $('calib').innerHTML = R.calib ? `<div class="small mut" style="margin-top:6px">Qual regra explica melhor as folhas importadas (funcionário × mês batendo exatamente):</div>
+    <div class="tw"><table><thead><tr><th>Regra</th><th class="r">Batem</th><th class="r">%</th><th></th></tr></thead><tbody>${R.calib.map((c, i) => `<tr><td>${c.txt}${i === 0 ? ' <span class="st st-ok">melhor</span>' : ''}</td><td class="r">${c.ok}/${c.tot}</td><td class="r">${(c.pct * 100).toFixed(1)}%</td><td class="r">${c.regra === R.cfg.regra && c.corte === R.cfg.corte ? '<span class="mut small">em uso</span>' : `<button class="btn" data-usar="${c.regra}|${c.corte}">Usar</button>`}</td></tr>`).join('')}</tbody></table></div>`
+    : `<div class="aviso">Importe a folha para o sistema medir qual regra a empresa realmente usa. Sem folha, a tela mostra a <b>previsão</b> do desconto mês a mês.</div>`;
+}
+async function salvarConfig(regra, corte) {
+  const u = (await sb.auth.getUser()).data.user;
+  const v = {id: 1, regra: regra || $('cRegra').value, corte: corte || Math.min(31, Math.max(1, +$('cCorte').value || 20)), tolerancia: Math.max(0, +$('cTol').value || 0), max_parcelas: Math.min(24, Math.max(1, +$('cMax').value || 5)),
+    atualizado_em: new Date().toISOString(), atualizado_por: u ? u.email : null};
+  const r = await sb.from('cred_config').upsert(v, {onConflict: 'id'});
+  if (r.error) { toast('Não gravou: ' + msgErro(r.error), 6000); return; }
+  toast('Regra salva.'); await recarregar();
+}
+function dataPagamento(id) {
+  const a = D.arquivos.find(x => x.id === id), atual = (D.folha.find(l => l.arquivo_id === id && l.data_pagamento) || {}).data_pagamento || '';
+  abrirModal(`<h3>Data de pagamento da folha</h3><div class="small mut">${esc(a.nome)} · ${(a.competencias || []).map(compBR).join(', ')}</div>
+    <label>Data em que a folha foi paga</label><input type="date" id="dpData" value="${esc(atual)}">
+    <div class="row"><button class="btn b-pri" id="bDp">Gravar</button><button class="btn" onclick="fecharModal()">Cancelar</button></div>`);
+  $('bDp').onclick = async () => {
+    const v = $('dpData').value; if (!v) { toast('Escolha a data.'); return; }
+    const r = await sb.from('cred_folha').update({data_pagamento: v}).eq('arquivo_id', id);
+    if (r.error) { toast('Não gravou: ' + msgErro(r.error), 6000); return; }
+    fecharModal(); toast('Data de pagamento gravada.'); await recarregar();
+  };
+}
+async function excluirArquivo(id) {
+  const a = D.arquivos.find(x => x.id === id);
+  const n = {compras: D.parcelas.filter(p => p.arquivo_id === id).length, folha: D.folha.filter(l => l.arquivo_id === id).length, baixas: D.baixas.filter(b => b.arquivo_id === id).length, desligados: D.desligados.filter(d => d.arquivo_id === id).length}[a.tipo];
+  if (!confirm(`Excluir "${a.nome}"? ${n} linha(s) que vieram dele saem da base.`)) return;
+  const r = await sb.from('cred_arquivos').delete().eq('id', id);
+  if (r.error) { toast('Não excluiu: ' + msgErro(r.error), 6000); return; }
+  toast('Arquivo excluído.'); await recarregar();
+}
+
+// Importação: lê → mostra o que entendeu → grava (cred_importar, tudo ou nada)
+let IMP = null;
+async function importar(tipo, file) {
+  try {
+    toast('Lendo ' + file.name + '…', 20000);
+    const {abas, hash} = await lerArquivo(file);
+    IMP = {tipo, arquivo: file.name, hashArq: hash, abas, dataPagFixa: ''};
+    // a primeira aba ainda não importada; na folha, a aba "crediario" é a que vale (o que foi descontado)
+    const livres = abas.map((a, k) => k).filter(k => !abaImportada(k));
+    if (!livres.length) { const ja = D.arquivos.find(a => a.tipo === tipo && a.hash === hashAba(0)); toast(`Este arquivo já foi importado${ja ? ` em ${dtBR(ja.importado_em)} por ${quemCurto(ja.importado_por)} (como "${ja.nome}")` : ''}.`, 9000); return; }
+    const credi = livres.find(k => /credi/i.test(abas[k].nome));
+    $('toast').style.display = 'none';
+    abrirAba(tipo === 'folha' && credi != null ? credi : livres[0]);
+  } catch (e) { toast(`${file.name}: não consegui ler (${msgErro(e)})`, 8000); }
+}
+// cada aba de uma planilha conta como um arquivo (a 1ª aba usa o hash do arquivo, as outras hash + nome da aba)
+const hashAba = k => k === 0 ? IMP.hashArq : IMP.hashArq + ':' + IMP.abas[k].nome;
+const abaImportada = k => D.arquivos.some(a => a.tipo === IMP.tipo && a.hash === hashAba(k));
+function abrirAba(k) { prepararAba(k); conferir(); }
+function prepararAba(k) {
+  const rows = IMP.abas[k].rows, det = detectar(rows, IMP.tipo);
+  Object.assign(IMP, {aba: k, rows, ...det, hash: hashAba(k), nome: IMP.abas.length > 1 ? `${IMP.arquivo} › ${IMP.abas[k].nome}` : IMP.arquivo,
+    compFixa: det.map.comp == null ? compDoNome(IMP.arquivo) : '', eventos: null});
+  // parcela a parcela sem competência no nome: cada parcela vai para a folha em que cai pela regra
+  IMP.compModo = IMP.tipo === 'folha' && det.map.doc != null && det.map.comp == null && !IMP.compFixa ? 'regra' : 'fixa';
+  if (IMP.tipo === 'folha') { const evs = eventosDe(); const sel = evs.filter(e => /1260|compra.?loja|credi|compra|loja|conv|merc/i.test(e)); IMP.eventos = sel.length ? sel : evs.slice(); }
+}
+function eventosDe() {
+  if (IMP.map.evento == null) return [];
+  const s = new Map(); for (let i = IMP.cab + 1; i < IMP.rows.length; i++) { const e = String(IMP.rows[i][IMP.map.evento] ?? '').trim(); if (e) s.set(e, (s.get(e) || 0) + 1); }
+  return [...s.entries()].sort((x, y) => y[1] - x[1]).map(x => x[0]);
+}
+// transforma as linhas do arquivo no formato do banco
+function montarLinhas() {
+  const {tipo, rows, cab, map} = IMP; const out = []; const avisos = []; let soma = 0, rodape = null;
+  const porMat = new Map(D.funcionarios.map(f => [matN(f.matricula), f.cpf]));
+  const okEv = IMP.eventos ? new Set(IMP.eventos) : null;
+  for (let i = cab + 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (tipo === 'compras') {
+      const cpf = cpfN(cel(row, map, 'cpf')), v = numero(cel(row, map, 'valor'));
+      if (!cpf) { if (isFinite(v) && v > 0 && rodape == null) rodape = rd2(v); continue; }
+      const venc = dataISO(cel(row, map, 'venc')); if (!venc || !isFinite(v)) continue;
+      const doc = String(cel(row, map, 'doc')).trim(), lanc = dataISO(cel(row, map, 'lanc')) || null;
+      const m = doc.match(/^(.*?)-(\d+)\/(\d+)$/);
+      const parcela = +cel(row, map, 'parcela') || (m ? +m[2] : 1);
+      out.push({chave: [cpf, doc, parcela, lanc || '', venc].join('|'), cpf, nome: String(cel(row, map, 'nome')).trim(), documento: doc, contrato: m ? m[1] : (doc.match(/^[A-Za-z]+/) || [doc])[0],
+        parcela, n_parcelas: m ? +m[3] : null, lancamento: lanc, vencimento: venc, valor: rd2(v)});
+      soma += v;
+    } else if (tipo === 'cadastro') {
+      const cpf = cpfN(cel(row, map, 'cpf')); if (!cpf) continue;
+      out.push({cpf, matricula: String(cel(row, map, 'matricula') ?? '').trim() || null, nome: String(cel(row, map, 'nome')).trim(), loja: String(cel(row, map, 'loja')).trim() || null,
+        cidade: String(cel(row, map, 'cidade')).trim() || null, funcao: String(cel(row, map, 'funcao')).trim() || null, admissao: dataISO(cel(row, map, 'admissao')) || null, situacao: String(cel(row, map, 'situacao')).trim() || 'Ativo'});
+    } else if (tipo === 'folha') {
+      const ev = map.evento != null ? String(row[map.evento] ?? '').trim() : '';
+      if (okEv && map.evento != null && !okEv.has(ev)) continue;
+      if (row.some(c => /^\s*total/i.test(String(c))) && !cpfN(cel(row, map, 'cpf')) && !soDig(cel(row, map, 'matricula'))) continue;  // linha de total
+      const v = numero(cel(row, map, 'valor')); if (!isFinite(v) || v === 0) continue;
+      let cpf = cpfN(cel(row, map, 'cpf')); const mat = String(cel(row, map, 'matricula') ?? '').trim();
+      if (!cpf && !soDig(mat) && !String(cel(row, map, 'nome') ?? '').trim()) { if (rodape == null) rodape = rd2(Math.abs(v)); continue; }  // linha de total do relatório
+      if (!cpf && mat && porMat.has(matN(mat))) cpf = porMat.get(matN(mat));
+      // parcela a parcela: documento "CE201785-3/5", parcela, vencimento (e lançamento) de cada desconto
+      const doc = map.doc != null ? String(cel(row, map, 'doc') ?? '').trim() : '', md = doc.match(/^(.*?)-(\d+)\/(\d+)$/);
+      const parc = doc ? (+cel(row, map, 'parcela') || (md ? +md[2] : 1)) : null, venc = doc ? dataISO(cel(row, map, 'venc')) || null : null, lanc = doc ? dataISO(cel(row, map, 'lanc')) || null : null;
+      const comp = compDe(cel(row, map, 'comp')) || (doc && IMP.compModo === 'regra' && venc ? compDaParcela({lancamento: lanc, vencimento: venc, parcela: parc}, D.cfg.regra, +D.cfg.corte) : IMP.compFixa);
+      out.push({cpf: cpf || null, matricula: mat || null, nome: String(cel(row, map, 'nome')).trim() || null, competencia: comp, evento: ev || null, valor: rd2(Math.abs(v)), data_pagamento: dataISO(cel(row, map, 'dataPag')) || IMP.dataPagFixa || null,
+        documento: doc || null, parcela: parc, vencimento: venc});
+      soma += Math.abs(v);
+    } else if (tipo === 'desligados') {
+      const cpf = cpfN(cel(row, map, 'cpf')), saida = dataISO(cel(row, map, 'saida')); if (!cpf || cpf.length !== 11 || !saida) continue;
+      const t = k => String(cel(row, map, k) ?? '').trim() || null;
+      out.push({cpf, matricula: t('matricula'), nome: t('nome'), estab: t('estab'), cargo: t('cargo'), admissao: dataISO(cel(row, map, 'admissao')) || null, saida, natureza: t('natureza')});
+    } else if (tipo === 'baixas') {
+      const doc = String(cel(row, map, 'doc')).trim(); if (!doc) continue;
+      const m = doc.match(/^(.*?)-(\d+)\/(\d+)$/), parcela = +cel(row, map, 'parcela') || (m ? +m[2] : 1);
+      const cpf = cpfN(cel(row, map, 'cpf')) || null, data = dataISO(cel(row, map, 'dataBaixa')) || null, v = rd2(Math.abs(numero(cel(row, map, 'valor')) || 0));
+      out.push({chave: [doc, parcela, cpf || '', data || '', v.toFixed(2)].join('|'), documento: doc, parcela, cpf, data_baixa: data, valor: v}); soma += v;
+    }
+  }
+  if (tipo === 'folha') {
+    // relatório de compras/parcelas (documento CE..-1/5, parcela, vencimento) colocado no card da folha
+    // pela regra: a lista é de uma folha só — a da maioria das parcelas (parcela com numeração fora do padrão vai junto)
+    if (IMP.compModo === 'regra') { const cnt = {}; out.forEach(l => { if (l.documento && l.competencia) cnt[l.competencia] = (cnt[l.competencia] || 0) + 1; });
+      const mc = Object.keys(cnt).sort((x, y) => cnt[y] - cnt[x] || x.localeCompare(y))[0]; if (mc) out.forEach(l => { if (l.documento) l.competencia = mc; }); }
+    // relatório parcela a parcela: o "crediário dos funcionários" do RH entra aqui; o de COMPRAS (Seta / "COMPRA EM LOJA") não
+    const porParcela = out.filter(l => l.documento).length >= Math.max(1, out.length / 2);
+    IMP.ehCompras = porParcela && /compra/i.test(IMP.arquivo) && !/desc|folha|credi.*func|\brh\b/i.test(IMP.arquivo);
+    if (IMP.ehCompras) avisos.unshift('Pelo nome, este arquivo é o relatório de COMPRAS do crediário (o devido), não o desconto da folha. Importe-o como "Compras no crediário". Aqui entra o "crediário dos funcionários" do RH ou a planilha "desconto de FOLHA" (aba crediario).');
+    else if (porParcela) { const vs = out.map(l => l.vencimento).filter(Boolean).sort();
+      avisos.unshift(`Desconto parcela a parcela (${qtd(out.length)} parcelas, vencimentos de ${dataBR(vs[0])} a ${dataBR(vs[vs.length - 1])}): cada parcela é conferida com a compra pelo documento. A lista vale como a lista inteira da folha: parcela da folha que não estiver nela aparece como "fora da lista do RH".`); }
+    const semComp = out.filter(l => !l.competencia).length; if (semComp) avisos.push(`${semComp} linha(s) sem competência — informe a competência do arquivo.`);
+    const semCpf = out.filter(l => !l.cpf).length; if (semCpf) avisos.push(`${semCpf} desconto(s) sem CPF e sem matrícula no cadastro — entram como "Desconto sem funcionário". Importe o cadastro antes da folha.`);
+    const semData = out.filter(l => !l.data_pagamento).length; if (semData) avisos.push(`${semData} linha(s) sem data de pagamento — informe a data em que a folha foi paga.`);
+  }
+  if (tipo === 'desligados') { const repet = out.length - new Set(out.map(l => l.cpf)).size; if (repet) avisos.push(`${repet} CPF(s) com mais de uma saída no período (vale a mais recente para o crediário).`); }
+  if (tipo === 'compras' && rodape != null && Math.abs(rodape - soma) > 0.01) avisos.push(`Soma das linhas ${brl(soma)} ≠ total do rodapé ${brl(rodape)} — o relatório pode ter vindo cortado.`);
+  const obrig = OBRIG[tipo].filter(k => map[k] == null); if (obrig.length) avisos.unshift(`Coluna obrigatória não encontrada: ${obrig.map(k => ROT[k]).join(', ')}.`);
+  return {linhas: out, soma: rd2(soma), rodape, avisos};
+}
+function conferir() {
+  const {linhas, soma, rodape, avisos} = montarLinhas(); const t = IMP.tipo;
+  const opts = j => `<option value="">—</option>` + IMP.header.map((h, i) => `<option value="${i}" ${j === i ? 'selected' : ''}>${esc(h || 'coluna ' + (i + 1))}</option>`).join('');
+  const amostra = linhas.slice(0, 6), ks = amostra[0] ? Object.keys(amostra[0]).filter(k => k !== 'chave') : [];
+  const lancs = linhas.map(l => l.lancamento).filter(Boolean).sort();
+  let h = `<h3>Conferir: ${TIPO_NOME[t]}</h3><div class="small mut">${esc(IMP.nome)}</div>
+    ${IMP.abas.length > 1 ? `<div class="map"><label>Aba da planilha${t === 'folha' ? ' (vale a "crediario")' : ''}<select id="iAba">${IMP.abas.map((a, k) => `<option value="${k}" ${k === IMP.aba ? 'selected' : ''}>${esc(a.nome)}${abaImportada(k) ? ' (já importada)' : ''}</option>`).join('')}</select></label></div>` : ''}
+    ${abaImportada(IMP.aba) ? '<div class="perigo">Esta aba já foi importada.</div>' : ''}
+    <div class="kv"><div><span>Linhas lidas</span>${qtd(linhas.length)}</div>${soma ? `<div><span>Total</span>${brl(soma)}</div>` : ''}${rodape != null ? `<div><span>Rodapé do relatório</span>${brl(rodape)} ${Math.abs(rodape - soma) <= 0.01 ? '<span class="okt">confere</span>' : '<span class="badt">não confere</span>'}</div>` : ''}
+    ${t === 'folha' ? `<div><span>Competências</span>${[...new Set(linhas.map(l => l.competencia).filter(Boolean))].sort().map(compBR).join(', ') || '—'}</div><div><span>Funcionários</span>${new Set(linhas.map(l => l.cpf || l.matricula)).size}</div>` : ''}
+    ${t === 'desligados' ? (() => { const ss = linhas.map(l => l.saida).sort(); return `<div><span>Desligados</span>${qtd(new Set(linhas.map(l => l.cpf)).size)}</div>${ss.length ? `<div><span>Saídas de</span>${dataBR(ss[0])} a ${dataBR(ss[ss.length - 1])}</div>` : ''}`; })() : ''}
+    ${t === 'compras' ? `<div><span>Funcionários</span>${new Set(linhas.map(l => l.cpf)).size}</div>${lancs.length ? `<div><span>Compras de</span>${dataBR(lancs[0])} a ${dataBR(lancs[lancs.length - 1])}</div>` : ''}<div><span>Vencimentos</span>${linhas.length ? dataBR(linhas.map(l => l.vencimento).sort()[0]) + ' a ' + dataBR(linhas.map(l => l.vencimento).sort().pop()) : '—'}</div>` : ''}</div>
+    ${avisos.map(a => `<div class="aviso">${esc(a)}</div>`).join('')}
+    <details ${OBRIG[t].some(k => IMP.map[k] == null) ? 'open' : ''}><summary class="small" style="cursor:pointer;color:#93c5fd">Colunas do arquivo</summary><div class="map">
+    ${Object.keys(COLUNAS[t]).map(k => `<label>${ROT[k]}<select data-imap="${k}">${opts(IMP.map[k])}</select></label>`).join('')}</div></details>`;
+  if (t === 'folha') {
+    const regraC = IMP.map.doc != null && IMP.map.comp == null;
+    if (regraC) { const cs = {}; linhas.forEach(l => { if (IMP.compModo === 'regra') cs[l.competencia] = (cs[l.competencia] || 0) + 1; });
+      h += `<div class="map"><label>Em que folha estas parcelas foram descontadas?<select id="iCompModo"><option value="regra" ${IMP.compModo === 'regra' ? 'selected' : ''}>Pela regra — cada parcela na folha em que cai${Object.keys(cs).length ? ' (' + Object.keys(cs).sort().map(c => compBR(c) + ': ' + cs[c]).join(', ') + ')' : ''}</option><option value="fixa" ${IMP.compModo === 'fixa' ? 'selected' : ''}>Todas na mesma folha (informar abaixo)</option></select></label></div>`; }
+    h += `<div class="map">${!regraC || IMP.compModo === 'fixa' ? `<label>Competência do arquivo${IMP.map.comp != null ? ' (só se a coluna vier vazia)' : ''}<input type="month" id="iComp" value="${esc(IMP.compFixa)}"></label>` : ''}
+      <label>Data de pagamento da folha${IMP.map.dataPag != null ? ' (só se a coluna vier vazia)' : ''}<input type="date" id="iData" value="${esc(IMP.dataPagFixa)}"></label></div>`;
+    const evs = eventosDe();
+    if (evs.length) h += `<div class="small mut" style="margin-top:6px">Eventos que são desconto do crediário:</div><div class="evs">${evs.map(e => `<label><input type="checkbox" data-iev="1" value="${esc(e)}" ${(IMP.eventos || []).includes(e) ? 'checked' : ''}>${esc(e)}</label>`).join('')}</div>`;
+  }
+  if (amostra.length) h += `<div class="small mut" style="margin-top:8px">Primeiras linhas como serão gravadas:</div><div class="tw"><table class="pq"><thead><tr>${ks.map(k => `<th>${esc(k)}</th>`).join('')}</tr></thead><tbody>${amostra.map(l => `<tr>${ks.map(k => `<td>${esc(l[k] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  const bloqueia = (t === 'folha' && IMP.ehCompras) || abaImportada(IMP.aba) || OBRIG[t].some(k => IMP.map[k] == null) || !linhas.length || (t === 'folha' && linhas.some(l => !l.competencia));
+  h += `<div class="row" style="margin-top:12px"><button class="btn b-pri" id="bGravar" ${bloqueia ? 'disabled' : ''}>Gravar ${qtd(linhas.length)} linha(s)</button><button class="btn" onclick="fecharModal()">Cancelar</button></div>`;
+  abrirModal(h, 'larga');
+  $('bGravar').onclick = gravarImportacao;
+}
+document.body.addEventListener('change', e => {
+  const t = e.target; if (!IMP || !t.closest('#modal')) return;
+  if (t.dataset.imap) { if (t.value === '') delete IMP.map[t.dataset.imap]; else IMP.map[t.dataset.imap] = +t.value; if (t.dataset.imap === 'evento') IMP.eventos = eventosDe(); conferir(); }
+  else if (t.id === 'iAba') abrirAba(+t.value);
+  else if (t.id === 'iComp') { IMP.compFixa = t.value; conferir(); }
+  else if (t.id === 'iCompModo') { IMP.compModo = t.value; conferir(); }
+  else if (t.id === 'iData') { IMP.dataPagFixa = t.value; conferir(); }
+  else if (t.dataset.iev) { IMP.eventos = [...document.querySelectorAll('[data-iev]:checked')].map(x => x.value); conferir(); }
+});
+// folha de competência que já tem arquivo (o resumo da folha somaria duas vezes; o parcela a parcela acusa a parcela repetida)
+const folhaJaExiste = linhas => { const comps = [...new Set(linhas.map(l => l.competencia))].sort();
+  return {comps, antes: D.arquivos.filter(a => a.tipo === 'folha' && (a.competencias || []).some(c => comps.includes(c)))}; };
+// grava o arquivo preparado em IMP (cred_importar: tudo ou nada)
+async function gravarIMP() {
+  const {linhas, soma, rodape} = montarLinhas(); const t = IMP.tipo;
+  const comps = t === 'folha' ? [...new Set(linhas.map(l => l.competencia))].sort() : [];
+  const unicas = t === 'compras' || t === 'baixas' ? [...new Map(linhas.map(l => [l.chave, l])).values()] : linhas;
+  const {data, error} = await sb.rpc('cred_importar', {p_arquivo: {tipo: t, nome: IMP.nome, hash: IMP.hash, total: soma || null, rodape, competencias: comps, eventos: IMP.eventos || []}, p_linhas: unicas});
+  if (error) throw error;
+  return `${TIPO_NOME[t]}: ${qtd(data.novas)} nova(s)` + (data.atualizadas ? `, ${qtd(data.atualizadas)} já existiam` : '') + (data.alteradas ? `, ${qtd(data.alteradas)} com valor alterado` : '') + (data.ignoradas ? `, ${qtd(data.ignoradas)} repetida(s)` : '');
+}
+async function gravarImportacao() {
+  if (IMP.tipo === 'folha' && IMP.map.doc == null) {
+    const {comps, antes} = folhaJaExiste(montarLinhas().linhas);
+    if (antes.length && !confirm(`Já existe folha de ${comps.map(compBR).join(', ')} importada (${antes.map(a => a.nome).join(', ')}).\n\nOK = importar mesmo assim (os dois arquivos somam; a tela vai apontar a duplicidade).\nCancelar = não importar.\n\nPara trocar o arquivo, exclua o anterior em "Arquivos importados" antes.`)) return;
+  }
+  try {
+    $('bGravar').disabled = true; toast('Gravando…', 60000);
+    const msg = await gravarIMP();
+    fecharModal(); IMP = null;
+    await recarregar(); if (CENTRAL.length) telaCentral();
+    toast(msg + '.', 9000);
+  } catch (e) { toast('Não gravou: ' + msgErro(e), 9000); const b = $('bGravar'); if (b) b.disabled = false; }
+}
+
+/* ---------- CENTRAL DE CARREGAMENTO: vários arquivos de uma vez ---------- */
+let CENTRAL = [];
+const ORDEM_TIPO = ['cadastro', 'desligados', 'compras', 'folha', 'baixas'];
+function abrirCentral() { irPara('arq'); $('central').scrollIntoView({behavior: 'smooth', block: 'start'}); $('inpCentral').click(); }
+// tipo pelo nome do arquivo e, se o nome não disser, pelas colunas
+function adivinharTipo(nome, abas) {
+  const n = semAc(nome).toLowerCase();
+  if (/deslig|inativ|demiti|demissa|rescis/.test(n)) return 'desligados';
+  if (/baixa|recebiment/.test(n)) return 'baixas';
+  if (/desconto.*folha|folha|credi.*func|listagem.*rh|\brh\b/.test(n)) return 'folha';
+  if (/compra/.test(n)) return 'compras';
+  if (/ativos|cadastro|colaborador|quadro/.test(n)) return 'cadastro';
+  const tem = (t, a) => OBRIG[t].every(k => detectar(a.rows, t).map[k] != null);
+  for (const t of ['desligados', 'compras', 'cadastro', 'folha', 'baixas']) if (abas.some(a => tem(t, a))) {
+    if (t === 'cadastro' && abas.some(a => detectar(a.rows, 'compras').map.doc != null)) continue;
+    return t; }
+  return '';
+}
+const novoId = () => Math.random().toString(36).slice(2);
+async function receberCentral(files) {
+  for (const file of files) {
+    try { toast('Lendo ' + file.name + '…', 20000);
+      const {abas, hash} = await lerArquivo(file);
+      CENTRAL.push({id: novoId(), nome: file.name, abas, hashArq: hash, tipo: adivinharTipo(file.name, abas), aba: null, compModo: null, compFixa: null, st: '', msg: ''});
+    } catch (e) { CENTRAL.push({id: novoId(), nome: file.name, abas: [], tipo: '', st: 'erro', msg: 'não consegui ler: ' + msgErro(e)}); }
+  }
+  $('toast').style.display = 'none'; telaCentral();
+}
+// prepara o item no IMP (a mesma leitura do card de cada tipo) e diz se pode gravar
+function prepararItem(it) {
+  if (!it.tipo || !it.abas.length) return null;
+  IMP = {tipo: it.tipo, arquivo: it.nome, hashArq: it.hashArq, abas: it.abas, dataPagFixa: ''};
+  const livres = it.abas.map((a, k) => k).filter(k => !abaImportada(k)), credi = livres.find(k => /credi/i.test(it.abas[k].nome));
+  const k = it.aba != null ? it.aba : it.tipo === 'folha' && credi != null ? credi : livres.length ? livres[0] : 0;
+  prepararAba(k); it.aba = k;
+  if (it.compModo) IMP.compModo = it.compModo;
+  if (it.compFixa != null) IMP.compFixa = it.compFixa;
+  const r = montarLinhas(), t = it.tipo, falta = OBRIG[t].filter(c => IMP.map[c] == null);
+  const motivo = abaImportada(k) ? 'já importado' : IMP.ehCompras ? 'é relatório de compras' : falta.length ? 'falta coluna: ' + falta.map(c => ROT[c]).join(', ')
+    : !r.linhas.length ? 'nenhuma linha lida' : t === 'folha' && r.linhas.some(l => !l.competencia) ? 'informe a competência' : '';
+  return {imp: IMP, r, motivo};
+}
+function telaCentral() {
+  const box = $('centralLista'); if (!CENTRAL.length) { box.innerHTML = ''; return; }
+  const linhas = CENTRAL.map(it => {
+    const p = it.st === 'erro' && !it.abas.length ? null : prepararItem(it); IMP = null; it.prep = p;
+    const imp = p && p.imp, r = p && p.r, t = it.tipo;
+    let det = '';
+    if (r && t === 'folha') {
+      const cs = [...new Set(r.linhas.map(l => l.competencia).filter(Boolean))].sort(), parc = imp.map.doc != null && imp.map.comp == null;
+      det = (parc ? `<select data-ccmodo="${it.id}"><option value="regra" ${imp.compModo === 'regra' ? 'selected' : ''}>Folha pela regra (cada parcela)</option><option value="fixa" ${imp.compModo === 'fixa' ? 'selected' : ''}>Todas numa folha só</option></select> ` : '')
+        + (!parc || imp.compModo === 'fixa' ? `<input type="month" data-cccomp="${it.id}" value="${esc(imp.compFixa || '')}"> ` : '') + `<div class="small mut">folha de ${cs.map(compBR).join(', ') || '—'}</div>`;
+    } else if (r && t === 'compras') { const vs = r.linhas.map(l => l.vencimento).sort(); det = vs.length ? `<span class="small mut">vencimentos ${dataBR(vs[0])} a ${dataBR(vs[vs.length - 1])}</span>` : ''; }
+    else if (r && t === 'desligados') { const ss = r.linhas.map(l => l.saida).sort(); det = ss.length ? `<span class="small mut">${qtd(new Set(r.linhas.map(l => l.cpf)).size)} pessoas · saídas ${dataBR(ss[0])} a ${dataBR(ss[ss.length - 1])}</span>` : ''; }
+    else if (r && t === 'cadastro') det = `<span class="small mut">${qtd(r.linhas.filter(l => /^ativo$/i.test(l.situacao || '')).length)} ativos · ${qtd(r.linhas.filter(l => !/^ativo$/i.test(l.situacao || '')).length)} afastados/férias/outras</span>`;
+    const st = it.st === 'ok' ? `<span class="st st-ok">gravado</span><div class="small mut">${esc(it.msg)}</div>` : it.st === 'erro' ? `<span class="st st-alta">erro</span><div class="cl-av b">${esc(it.msg)}</div>`
+      : !t ? '<span class="st st-media">escolha o tipo</span>' : p && p.motivo ? `<span class="st ${p.motivo === 'já importado' ? 'st-prev' : 'st-media'}">${esc(p.motivo)}</span>` : '<span class="st st-ok">pronto</span>';
+    return `<tr><td><b>${esc(it.nome)}</b>${it.abas.length > 1 ? `<div><select data-ccaba="${it.id}">${it.abas.map((a, k) => `<option value="${k}" ${k === it.aba ? 'selected' : ''}>aba ${esc(a.nome)}</option>`).join('')}</select></div>` : ''}</td>
+      <td><select data-cctipo="${it.id}" ${it.st === 'ok' ? 'disabled' : ''}><option value="">— tipo —</option>${ORDEM_TIPO.map(x => `<option value="${x}" ${x === t ? 'selected' : ''}>${TIPO_NOME[x]}</option>`).join('')}</select></td>
+      <td class="r">${r ? qtd(r.linhas.length) : ''}</td><td class="r">${r && r.soma ? nfm(r.soma) : ''}</td><td>${det}</td>
+      <td>${st}${r && it.st !== 'ok' ? r.avisos.map(a => `<div class="cl-av">${esc(a)}</div>`).join('') : ''}</td>
+      <td><div class="row">${p && it.st !== 'ok' ? `<button class="btn" data-ccver="${it.id}">Conferir</button>` : ''}<button class="btn" data-cctirar="${it.id}">Tirar</button></div></td></tr>`;
+  });
+  const prontos = CENTRAL.filter(it => it.prep && !it.prep.motivo && it.st !== 'ok');
+  box.innerHTML = `<div class="tw" style="margin-top:12px"><table class="cl-tab"><thead><tr><th>Arquivo</th><th>Tipo</th><th class="r">Linhas</th><th class="r">Total</th><th>Período / competência</th><th>Situação</th><th></th></tr></thead><tbody>${linhas.join('')}</tbody></table></div>
+    <div class="row" style="margin-top:10px;align-items:center"><button class="btn b-pri" id="bCentral" ${prontos.length ? '' : 'disabled'}>Gravar ${prontos.length} arquivo(s)</button><button class="btn" id="bCentralLimpar">Limpar lista</button>
+    <span class="small mut">Ordem da gravação: cadastro → desligados → compras → descontos da folha → baixas.</span></div>`;
+  $('bCentral').onclick = gravarCentral; $('bCentralLimpar').onclick = () => { CENTRAL = []; telaCentral(); };
+}
+async function gravarCentral() {
+  const fila = CENTRAL.filter(it => it.prep && !it.prep.motivo && it.st !== 'ok').sort((a, b) => ORDEM_TIPO.indexOf(a.tipo) - ORDEM_TIPO.indexOf(b.tipo));
+  const conflito = fila.filter(it => it.tipo === 'folha' && it.prep.imp.map.doc == null).map(it => ({it, ...folhaJaExiste(it.prep.r.linhas)})).filter(x => x.antes.length);
+  if (conflito.length && !confirm(`Já existe folha importada para: ${conflito.map(x => `${x.it.nome} (${x.comps.map(compBR).join(', ')} — já tem ${x.antes.map(a => a.nome).join(', ')})`).join('; ')}.\n\nOK = gravar mesmo assim (a tela aponta a duplicidade). Cancelar = não gravar nada.`)) return;
+  $('bCentral').disabled = true; let n = 0;
+  for (const it of fila) {
+    try { toast(`Gravando ${it.nome} (${++n} de ${fila.length})…`, 60000);
+      const p = prepararItem(it);
+      if (!p || p.motivo) { it.st = p && p.motivo === 'já importado' ? 'ok' : 'erro'; it.msg = p ? p.motivo : 'sem tipo'; IMP = null; continue; }
+      it.msg = await gravarIMP(); it.st = 'ok'; IMP = null;
+      // cadastro e desligados entram antes da folha: a folha por matrícula precisa do cadastro para achar o CPF
+      if (it.tipo === 'cadastro' || it.tipo === 'desligados') await carregarDados();
+    } catch (e) { it.st = 'erro'; it.msg = msgErro(e); IMP = null; }
+  }
+  const ok = fila.filter(it => it.st === 'ok').length, err = fila.length - ok;
+  await recarregar(); telaCentral();
+  toast(`${ok} arquivo(s) gravado(s)${err ? `, ${err} com erro` : ''}.`, 9000);
+}
+$('inpCentral').addEventListener('change', e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) receberCentral(fs); });
+(d => { d.addEventListener('dragover', e => { e.preventDefault(); d.classList.add('on'); }); d.addEventListener('dragleave', () => d.classList.remove('on'));
+  d.addEventListener('drop', e => { e.preventDefault(); d.classList.remove('on'); const fs = [...e.dataTransfer.files]; if (fs.length) receberCentral(fs); }); })($('dropCentral'));
+document.body.addEventListener('change', e => {
+  const t = e.target, id = t.dataset.cctipo || t.dataset.ccaba || t.dataset.ccmodo || t.dataset.cccomp; if (!id) return;
+  const it = CENTRAL.find(x => x.id === id); if (!it) return;
+  if (t.dataset.cctipo) Object.assign(it, {tipo: t.value, aba: null, compModo: null, compFixa: null});
+  else if (t.dataset.ccaba) it.aba = +t.value;
+  else if (t.dataset.ccmodo) it.compModo = t.value;
+  else it.compFixa = t.value;
+  telaCentral();
+});
+document.body.addEventListener('click', e => {
+  const b = e.target.closest('[data-ccver],[data-cctirar]'); if (!b) return;
+  if (b.dataset.cctirar) { CENTRAL = CENTRAL.filter(x => x.id !== b.dataset.cctirar); return telaCentral(); }
+  const it = CENTRAL.find(x => x.id === b.dataset.ccver); if (it && prepararItem(it)) conferir();   // a mesma conferência do card, com as escolhas da central
+});
+document.querySelectorAll('.drop[data-tipo]').forEach(d => {
+  const tipo = d.dataset.tipo, inp = d.querySelector('input');
+  inp.addEventListener('change', () => { if (inp.files[0]) importar(tipo, inp.files[0]); inp.value = ''; });
+  d.addEventListener('dragover', e => { e.preventDefault(); d.classList.add('on'); });
+  d.addEventListener('dragleave', () => d.classList.remove('on'));
+  d.addEventListener('drop', e => { e.preventDefault(); d.classList.remove('on'); if (e.dataTransfer.files[0]) importar(tipo, e.dataTransfer.files[0]); });
+});
+
+/* =====================================================================================================
+   RELATÓRIOS (mesmo modelo para tela, PDF e impressão — gerarPDF do comum.js)
+   ===================================================================================================== */
+const MARCA = 'Esposende - Auditoria de Desconto em Folha';
+const linhaPend = p => [p.grav === 'media' ? 'média' : p.grav, p.tipo, p.nome || '', p.cpf ? cpfF(p.cpf) : '', p.matricula || '', p.loja || '', compBR(p.comp), p.txt, p.valor ? V(p.valor) : '', p.trat ? TRAT[p.trat.status] + (p.trat.observacao ? ' - ' + p.trat.observacao : '') : 'Sem tratativa'];
+const CAB_PEND = ['Grav.', 'Tipo', 'Funcionário', 'CPF', 'Matrícula', 'Loja', 'Comp.', 'Detalhe', 'Valor', 'Tratativa'];
+function modeloCompetencia(comp) {
+  const c = R.porComp.find(x => x.comp === comp) || pc();
+  const div = R.linhas.filter(l => l.comp === comp && !['ok', 'prev'].includes(l.st)).sort((a, b) => Math.abs(b.dif) - Math.abs(a.dif));
+  const pendC = R.pend.filter(p => (p.comp === comp || !p.comp) && !encerrada(p));
+  const dups = pendC.filter(p => p.cat === 'duplicidade'), graves = pendC.filter(p => p.cat !== 'duplicidade' && p.cat !== 'desconto');
+  const lojas = porLoja(comp).sort((a, b) => b.menos + b.mais - a.menos - a.mais || a.loja.localeCompare(b.loja));
+  const serie = R.porComp.filter(x => x.comp <= comp).slice(-12);
+  const pes = l => R.pessoas.get(l.cpf) || {};
+  return {titulo: `Auditoria de Desconto em Folha - ${compBR(comp)}`, subtitulo: `Crediário dos funcionários x folha de pagamento - ${c.folha ? 'folha paga em ' + (c.dataPag.map(dataBR).join(', ') || 'data não informada') : 'folha não importada (previsão)'}`,
+    marca: MARCA, paisagem: true, arquivo: `auditoria_desconto_folha_${comp}`,
+    resumo: [['Total devido', brl(c.devido)], ['Total descontado - pago na folha', c.folha ? brl(c.desc) : '-'], ['Deixou de descontar - pendência', brl(c.menos)], ['Descontou a mais - pago a mais', brl(c.mais)],
+      ['Funcionários', qtd(c.n)], ['Pendências graves abertas', qtd(pendC.filter(p => p.grav === 'alta').length)], ['Duplicidades', qtd(dups.length)], ['Cobertura das compras', c.faltam.length ? 'Parcial' : 'Completa']],
+    graficos: [{titulo: 'Devido x descontado por competência', tipo: 'colunas', series: ['Devido', 'Descontado'], itens: serie.map(x => ({rotulo: MESES[+x.comp.slice(5) - 1] + '/' + x.comp.slice(2, 4), a: x.devido, b: x.folha ? x.desc : 0}))},
+      {titulo: 'Deixou de descontar por loja', tipo: 'barras', itens: lojas.filter(l => l.menos > 0).sort((a, b) => b.menos - a.menos).map(l => ({rotulo: l.loja, a: l.menos}))}],
+    secoes: [
+      {titulo: `Divergências de desconto (${div.length})`, cab: ['Funcionário', 'CPF', 'Matrícula', 'Loja', 'Devido', 'Descontado', 'Diferença', 'Situação', 'Tratativa'], direita: [4, 5, 6],
+        linhas: div.map(l => { const p = pes(l), pd = R.pend.find(x => x.cpf === l.cpf && x.comp === comp && x.cat === 'desconto');
+          return [p.nome, cpfF(l.cpf), p.cad ? p.cad.matricula || '' : '', p.cad ? p.cad.loja || '' : 'FORA DO CADASTRO', V(l.devido), V(l.desc), V(l.dif), STAT[l.st][0], pd && pd.trat ? TRAT[pd.trat.status] : 'Sem tratativa']; }),
+        rodape: ['Total', '', '', '', V(div.reduce((s, l) => s + l.devido, 0)), V(div.reduce((s, l) => s + l.desc, 0)), V(div.reduce((s, l) => s + l.dif, 0)), '', '']},
+      {titulo: `Duplicidades (${dups.length})`, cab: CAB_PEND, linhas: dups.map(linhaPend), direita: [8]},
+      {titulo: `Faltas graves de cadastro e de arquivos (${graves.length})`, cab: CAB_PEND, linhas: graves.map(linhaPend), direita: [8]},
+      {titulo: 'Resumo por loja', cab: ['Loja', 'Funcionários', 'Com divergência', 'Devido', 'Descontado', 'A menos', 'A mais'], direita: [3, 4, 5, 6],
+        linhas: lojas.map(l => [l.loja, l.n, l.nDiv, V(l.devido), V(l.desc), V(l.menos), V(l.mais)]),
+        rodape: ['Total', lojas.reduce((s, l) => s + l.n, 0), lojas.reduce((s, l) => s + l.nDiv, 0), V(c.devido), V(c.desc), V(c.menos), V(c.mais)]}],
+    assinaturas: ['Auditoria', 'RH / Departamento Pessoal', 'Controladoria']};
+}
+function modeloPendencias(lista) {
+  const ls = lista || R.pend.filter(p => p.cat !== 'duplicidade' && !encerrada(p));
+  const soma = g => ls.filter(p => p.grav === g).length;
+  return {titulo: 'Erros e faltas graves - desconto em folha', subtitulo: `Pendências abertas e em tratamento - todas as competências (selecionada: ${compBR(COMP)})`, marca: MARCA, paisagem: true, arquivo: `pendencias_desconto_folha_${hojeISO()}`,
+    resumo: [['Pendências graves', qtd(soma('alta'))], ['Pendências médias', qtd(soma('media'))], ['Pendências baixas', qtd(soma('baixa'))], ['Total em jogo', brl(ls.reduce((s, p) => s + Math.abs(p.valor || 0), 0))]],
+    secoes: ['desconto', 'cadastro', 'politica', 'integridade'].map(cat => ({titulo: {desconto: 'Desconto em folha', cadastro: 'Cadastro', politica: 'Política de crédito (parcelamento)', integridade: 'Arquivos e integridade'}[cat] + ` (${ls.filter(p => p.cat === cat).length})`,
+      cab: CAB_PEND, linhas: ls.filter(p => p.cat === cat).map(linhaPend), direita: [8]})),
+    assinaturas: ['Auditoria', 'RH / Departamento Pessoal']};
+}
+function modeloDuplicidades(lista) {
+  const ls = lista || R.pend.filter(p => p.cat === 'duplicidade' && !encerrada(p));
+  return {titulo: 'Duplicidades - desconto em folha e crediário', subtitulo: 'Descontos, parcelas, compras e baixas repetidas (abertas e em tratamento)', marca: MARCA, paisagem: true, arquivo: `duplicidades_desconto_folha_${hojeISO()}`,
+    resumo: [['Duplicidades', qtd(ls.length)], ['Graves', qtd(ls.filter(p => p.grav === 'alta').length)], ['Valor em duplicidade', brl(ls.reduce((s, p) => s + Math.abs(p.valor || 0), 0))]],
+    secoes: [{titulo: `Duplicidades (${ls.length})`, cab: CAB_PEND, linhas: ls.map(linhaPend), direita: [8]}], assinaturas: ['Auditoria', 'RH / Departamento Pessoal']};
+}
+function modeloLojas(comp) {
+  const div = R.linhas.filter(l => l.comp === comp && !['ok', 'prev'].includes(l.st));
+  const m = new Map(); div.forEach(l => { const p = R.pessoas.get(l.cpf), loja = p.cad ? p.cad.loja || '(sem loja)' : 'FORA DO CADASTRO'; if (!m.has(loja)) m.set(loja, []); m.get(loja).push([p.nome, cpfF(l.cpf), p.cad ? p.cad.matricula || '' : '', V(l.devido), V(l.desc), V(l.dif), STAT[l.st][0]]); });
+  const lojas = [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  return {titulo: `Divergências de desconto por loja - ${compBR(comp)}`, subtitulo: 'Funcionários com desconto em folha diferente do crediário', marca: MARCA, paisagem: false, arquivo: `divergencias_por_loja_${comp}`,
+    resumo: [['Lojas com divergência', qtd(lojas.length)], ['Funcionários', qtd(div.length)], ['Deixou de descontar - pendência', brl(div.filter(l => l.dif < 0).reduce((s, l) => s - l.dif, 0))], ['Descontou a mais - pago a mais', brl(div.filter(l => l.dif > 0).reduce((s, l) => s + l.dif, 0))]],
+    secoes: lojas.length ? lojas.map(([loja, ls]) => ({titulo: `${loja} (${ls.length})`, cab: ['Funcionário', 'CPF', 'Matrícula', 'Devido', 'Descontado', 'Diferença', 'Situação'], linhas: ls, direita: [3, 4, 5]}))
+      : [{titulo: 'Nenhuma divergência', cab: ['Situação'], linhas: [[R.compsFolha.has(comp) ? 'Todos os descontos conferem.' : 'Folha da competência não importada.']]}],
+    assinaturas: ['Auditoria', 'Gerente da loja']};
+}
+function linhasRH(comp) {
+  const m = new Map();
+  R.par.filter(p => p.comp === comp).forEach(p => { const o = m.get(p.cpf) || {cpf: p.cpf, valor: 0, n: 0}; o.valor += p.valor; o.n++; m.set(p.cpf, o); });
+  return [...m.values()].map(o => { const pe = R.pessoas.get(o.cpf), f = pe.cad;
+    const obs = pe.ex ? `DESLIGADO EM ${dataBR(pe.desl.saida)} - descontar na rescisão / cobrar` : !f ? (R.cadAtual ? 'FORA DO CADASTRO' : '') : !f.noCadastro ? 'SAIU DO CADASTRO' : SEM_SAL.test(f.situacao || '') ? 'AFASTADO: ' + f.situacao : (f.situacao && !/^ativo$/i.test(f.situacao) ? f.situacao : '');
+    return {cpf: o.cpf, matricula: f ? f.matricula || '' : '', nome: pe.nome, loja: f ? f.loja || '' : '', valor: rd2(o.valor), n: o.n, obs}; })
+    .sort((a, b) => a.loja.localeCompare(b.loja) || a.nome.localeCompare(b.nome));
+}
+function modeloRH(comp) {
+  const ls = linhasRH(comp), tot = ls.reduce((s, l) => s + l.valor, 0);
+  return {titulo: `Desconto do crediário para lançar na folha - ${compBR(comp)}`, subtitulo: `Evento de desconto do crediário (Compra Loja) - regra: ${(REGRAS.find(x => x.regra === R.cfg.regra && x.corte === R.cfg.corte) || {txt: R.cfg.regra}).txt}`, marca: MARCA, paisagem: false, arquivo: `lancar_folha_${comp}`,
+    resumo: [['Total a descontar', brl(tot)], ['Funcionários', qtd(ls.length)], ['Sem folha para descontar', qtd(ls.filter(l => /FORA|SAIU|AFASTADO|DESLIGADO/.test(l.obs)).length)], ['Cobertura das compras', R.cobertura(comp).length ? 'Parcial' : 'Completa']],
+    secoes: [{titulo: `Funcionários (${ls.length})`, cab: ['Matrícula', 'Nome', 'CPF', 'Loja', 'Parcelas', 'Valor', 'Observação'], direita: [5],
+      linhas: ls.map(l => [l.matricula, l.nome, cpfF(l.cpf), l.loja, l.n, V(l.valor), l.obs]), rodape: ['', 'Total', '', '', ls.reduce((s, l) => s + l.n, 0), V(tot), '']}],
+    assinaturas: ['Auditoria', 'RH / Departamento Pessoal']};
+}
+function modeloFuncionario(cpf) {
+  const p = R.pessoas.get(cpf), f = p.cad, comps = Object.keys(p.celulas).sort();
+  const total = p.parcelas.reduce((s, x) => s + x.valor, 0), desc = p.folha.reduce((s, l) => s + l.valor, 0);
+  const aDesc = p.parcelas.filter(x => !R.compsFolha.has(x.comp)).reduce((s, x) => s + x.valor, 0);
+  return {titulo: `Extrato do crediário - ${p.nome}`, subtitulo: `CPF ${cpfF(cpf)}${f ? ` - matrícula ${f.matricula || '-'} - ${f.loja || ''} - ${f.situacao || ''}` : ' - fora do cadastro'}`, marca: MARCA, paisagem: false, arquivo: `extrato_crediario_${nomeN(p.nome).replace(/ /g, '_')}`,
+    resumo: [['Total das parcelas', brl(total)], ['Total descontado - pago na folha', brl(desc)], ['A descontar nas próximas folhas', brl(aDesc)], ['Diferença nas folhas auditadas', brl(p.desc - p.devido)]],
+    secoes: [{titulo: 'Mês a mês', cab: ['Competência', 'Devido', 'Descontado', 'Diferença', 'Situação', 'Pago na folha em'], direita: [1, 2, 3],
+        linhas: comps.map(c => { const x = p.celulas[c]; return [compBR(c), V(x.devido), x.st === 'prev' ? '-' : V(x.desc), x.st === 'prev' ? '' : V(x.dif), STAT[x.st][0], x.dataPag.map(dataBR).join(', ')]; })},
+      {titulo: `Parcelas do crediário (${p.parcelas.length})`, cab: ['Folha', 'Documento', 'Compra', 'Vencimento', 'Valor', 'Baixa'], direita: [4],
+        linhas: p.parcelas.slice().sort((a, b) => a.comp.localeCompare(b.comp) || a.documento.localeCompare(b.documento)).map(x => [compBR(x.comp), x.documento, dataBR(x.lancamento), dataBR(x.vencimento), V(x.valor), x.baixa ? dataBR(x.baixa.data_baixa) : '']),
+        rodape: ['', 'Total', '', '', V(total), '']},
+      ...(p.pend.length ? [{titulo: 'Pendências', cab: ['Tipo', 'Comp.', 'Detalhe', 'Tratativa'], linhas: p.pend.map(a => [a.tipo, compBR(a.comp), a.txt, a.trat ? TRAT[a.trat.status] : 'Sem tratativa'])}] : [])],
+    assinaturas: ['Auditoria', `Funcionário: ${p.nome}`]};
+}
+// PDF executivo para a Diretoria: números da competência, evolução, achados com a ação recomendada e os maiores riscos
+function modeloExecutivo(comp) {
+  const N = numeros(comp), c = N.c, fechada = c.fech && c.fech.status === 'fechada';
+  const serie = R.porComp.filter(x => x.comp <= comp).slice(-12);
+  const lojas = porLoja(comp).filter(l => l.menos + l.mais > 0.009).sort((a, b) => b.menos + b.mais - a.menos - a.mais);
+  const riscos = R.pend.filter(p => !encerrada(p) && (p.comp === comp || !p.comp) && p.valor).sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor)).slice(0, 12);
+  const sit = ['ok', 'nao', 'menos', 'mais', 'semcompra', 'verif', 'prev'].filter(k => c.cont[k]).map(k => { const ls = N.ls.filter(l => l.st === k);
+    return [STAT[k][0], qtd(ls.length), pctTxt(pct(ls.length, N.ls.length)), V(ls.reduce((s, l) => s + (k === 'ok' || k === 'prev' ? l.devido : Math.abs(l.dif)), 0))]; });
+  const GR = {alta: 'Alta', media: 'Média', ok: 'OK', baixa: 'Baixa'};
+  return {titulo: `Relatório Executivo - Desconto em Folha do Crediário - ${compBR(comp)}`,
+    subtitulo: `Para a Diretoria - ${c.folha ? 'folha ' + (c.dataPag.length ? 'paga em ' + c.dataPag.map(dataBR).join(', ') : 'sem data de pagamento') : 'folha ainda não importada (previsão)'}${fechada ? ' - competência fechada em ' + dtBR(c.fech.fechado_em) : ''}`,
+    marca: MARCA, paisagem: true, arquivo: `relatorio_executivo_desconto_folha_${comp}`,
+    resumo: [['Total devido', brl(c.devido)], ['Total descontado - pago na folha', c.folha ? brl(c.desc) : '-'], ['Valor descontado / devido', c.folha ? pctTxt(N.pctValor) : '-'], ['Funcionários que batem', c.folha ? `${qtd(N.ok)} de ${qtd(N.aud.length)}` : '-'],
+      ['Deixou de descontar - pendência', brl(c.menos)], ['Descontou a mais - pago a mais', brl(c.mais)], ['Pendências graves abertas', qtd(N.graves.length)], ['Duplicidades', qtd(N.dups.length)]],
+    graficos: [{titulo: 'Devido x descontado por competência', tipo: 'colunas', series: ['Devido', 'Descontado'], itens: serie.map(x => ({rotulo: MESES[+x.comp.slice(5) - 1] + '/' + x.comp.slice(2, 4), a: x.devido, b: x.folha ? x.desc : 0}))},
+      {titulo: 'Diferença por loja (a menos + a mais)', tipo: 'barras', itens: lojas.slice(0, 10).map(l => ({rotulo: l.loja, a: rd2(l.menos + l.mais)}))}],
+    secoes: [
+      {titulo: 'Como ler os números', cab: ['Observação'], linhas: observacaoGrafico().map(t => [t.replace(/<[^>]+>/g, '')])},
+      {titulo: 'Principais achados e ação recomendada', cab: ['Gravidade', 'Achado', 'Ação recomendada'], linhas: achados(comp).map(x => [GR[x.grav], x.txt, x.acao])},
+      {titulo: 'Situação dos funcionários', cab: ['Situação', 'Funcionários', '%', 'Valor'], direita: [1, 2, 3], linhas: sit},
+      {titulo: `Maiores riscos em aberto (${riscos.length})`, cab: ['Tipo', 'Funcionário', 'Loja', 'Comp.', 'Valor', 'Tratativa'], direita: [4],
+        linhas: riscos.map(p => [p.tipo, p.nome, p.loja, compBR(p.comp), V(Math.abs(p.valor)), p.trat ? TRAT[p.trat.status] : 'Sem tratativa'])},
+      {titulo: 'Evolução mensal', cab: ['Competência', 'Devido', 'Descontado', 'Diferença', '% descontado', 'Fechamento'], direita: [1, 2, 3, 4],
+        linhas: serie.map(x => [compBR(x.comp), V(x.devido), x.folha ? V(x.desc) : '-', x.folha ? V(x.desc - x.devido) : '-', x.folha ? pctTxt(pct(Math.min(x.desc, x.devido), x.devido)) : '-', x.fech && x.fech.status === 'fechada' ? 'Fechada' : 'Aberta'])}],
+    assinaturas: ['Auditoria', 'Controladoria', 'Diretoria']};
+}
+function modeloMeses() {
+  const cs = R.porComp;
+  return {titulo: 'Desconto em Folha - mês a mês', subtitulo: 'Devido (parcelas das compras) x descontado na folha, por competência', marca: MARCA, paisagem: true, arquivo: `mes_a_mes_desconto_folha_${hojeISO()}`,
+    graficos: [{titulo: 'Devido x descontado por competência', tipo: 'colunas', series: ['Devido', 'Descontado'], itens: cs.slice(-14).map(x => ({rotulo: MESES[+x.comp.slice(5) - 1] + '/' + x.comp.slice(2, 4), a: x.devido, b: x.folha ? x.desc : 0}))}],
+    secoes: [{titulo: `Competências (${cs.length})`, cab: ['Competência', 'Funcionários', 'Devido', 'Descontado', 'A menos', 'A mais', '% descontado', 'Pago em', 'Compras', 'Fechamento'], direita: [1, 2, 3, 4, 5, 6],
+      linhas: cs.slice().reverse().map(x => [compBR(x.comp), x.n, V(x.devido), x.folha ? V(x.desc) : '-', x.folha ? V(x.menos) : '-', x.folha ? V(x.mais) : '-', x.folha ? pctTxt(pct(Math.min(x.desc, x.devido), x.devido)) : '-',
+        x.dataPag.map(dataBR).join(', '), x.faltam.length ? 'Parcial - faltam ' + faixas(x.faltam) : 'Completas', x.fech ? (x.fech.status === 'fechada' ? 'Fechada por ' + quemCurto(x.fech.fechado_por) + ' ' + dtBR(x.fech.fechado_em) : 'Reaberta') : (x.folha ? 'Aberta' : 'Aguardando folha')]),
+      rodape: ['Total', '', V(cs.reduce((s, x) => s + x.devido, 0)), V(cs.reduce((s, x) => s + (x.folha ? x.desc : 0), 0)), V(cs.reduce((s, x) => s + x.menos, 0)), V(cs.reduce((s, x) => s + x.mais, 0)), '', '', '', '']}],
+    assinaturas: ['Auditoria', 'Controladoria']};
+}
+function modeloFuncionarios(ps) {
+  const L = ps.map(p => { const x = p.celulas[COMP], f = p.cad;
+    return [p.nome, cpfF(p.cpf), f ? f.matricula || '' : '', f ? f.loja || '' : 'FORA DO CADASTRO', f ? f.situacao || '' : '', x ? V(x.devido) : '', x && x.st !== 'prev' ? V(x.desc) : '-', x && x.st !== 'prev' ? V(x.dif) : '', x ? STAT[x.st][0] : '-', p.pend.filter(a => !encerrada(a)).length]; });
+  return {titulo: `Funcionários - desconto em folha - ${compBR(COMP)}`, subtitulo: `${ps.length} funcionário(s) no filtro da tela`, marca: MARCA, paisagem: true, arquivo: `funcionarios_desconto_folha_${COMP}`,
+    resumo: [['Funcionários', qtd(ps.length)], ['Total devido', brl(ps.reduce((s, p) => s + ((p.celulas[COMP] || {}).devido || 0), 0))], ['Total descontado - pago', brl(ps.reduce((s, p) => s + ((p.celulas[COMP] || {}).desc || 0), 0))], ['Com pendência', qtd(ps.filter(p => p.pend.some(a => !encerrada(a))).length)]],
+    secoes: [{titulo: `Funcionários (${ps.length})`, cab: ['Funcionário', 'CPF', 'Matrícula', 'Loja', 'Situação cad.', 'Devido', 'Descontado', 'Diferença', 'Situação', 'Pendências'], direita: [5, 6, 7, 9], linhas: L}],
+    assinaturas: ['Auditoria']};
+}
+function modeloArquivos() {
+  const as = D.arquivos.slice().sort((a, b) => b.id - a.id), rg = REGRAS.find(x => x.regra === R.cfg.regra && x.corte === R.cfg.corte);
+  return {titulo: 'Desconto em Folha - arquivos importados', subtitulo: `Regra de competência: ${rg ? rg.txt : R.cfg.regra + ' / corte ' + R.cfg.corte} - tolerância ${brl(R.cfg.tol)}`, marca: MARCA, paisagem: true, arquivo: `arquivos_desconto_folha_${hojeISO()}`,
+    secoes: [{titulo: `Arquivos (${as.length})`, cab: ['Tipo', 'Arquivo', 'Competências', 'Linhas', 'Total', 'Rodapé', 'Importado em', 'Por'], direita: [3, 4, 5],
+      linhas: as.map(a => [TIPO_NOME[a.tipo], a.nome, (a.competencias || []).map(compBR).join(', '), qtd(a.linhas), a.total != null ? V(a.total) : '', a.rodape != null ? V(a.rodape) : '', dtBR(a.importado_em), quemCurto(a.importado_por)])},
+      ...(R.calib ? [{titulo: 'Qual regra explica a folha', cab: ['Regra', 'Funcionário x mês que batem', '%'], direita: [1, 2], linhas: R.calib.map(c => [c.txt, `${c.ok}/${c.tot}`, pctTxt(c.pct * 100)])}] : [])]};
+}
+const MODELOS = {ex: () => modeloEx(), func: () => modeloFuncionariosCompleto([...R.pessoas.values()].sort((a, b) => a.nome.localeCompare(b.nome))), exec: () => modeloExecutivo(COMP), comp: () => modeloCompetencia(COMP), pend: () => modeloPendencias(), dup: () => modeloDuplicidades(), loja: () => modeloLojas(COMP), rh: () => modeloRH(COMP)};
+// PDF / impressão de cada menu (o que está na tela, com os filtros)
+// Relatório de todos os funcionários: compras (parcelas) × descontos, mês a mês, com a situação de cada mês
+const ST_CURTO = {ok: 'OK', menos: 'A MENOS', nao: 'NÃO DESCONTOU', mais: 'A MAIS', semcompra: 'SEM COMPRA', verif: 'VERIFICAR', prev: 'PREVISTO'};
+const ST_ORDEM = ['nao', 'menos', 'mais', 'semcompra', 'verif', 'ok', 'prev'];
+function resumoFunc(p) {
+  const cs = Object.values(p.celulas), cont = {}; cs.forEach(x => cont[x.st] = (cont[x.st] || 0) + 1);
+  const pior = ST_ORDEM.find(k => cont[k]) || 'prev', aud = cs.filter(x => x.st !== 'prev');
+  return {cont, pior, compras: rd2(p.parcelas.filter(x => !x.rec).reduce((t, x) => t + x.valor, 0)), pagasRec: rd2(p.parcelas.filter(x => x.rec).reduce((t, x) => t + x.valor, 0)),
+    devido: rd2(aud.reduce((t, x) => t + x.devido, 0)), desc: rd2(aud.reduce((t, x) => t + x.desc, 0)), aDescontar: rd2(cs.filter(x => x.st === 'prev').reduce((t, x) => t + x.devido, 0))};
+}
+const compsRelatorio = () => { const fol = [...R.compsFolha].sort(), prox = R.comps.filter(c => !R.compsFolha.has(c) && c > (fol[fol.length - 1] || '')).slice(0, 2);
+  return [...fol.slice(-4), ...prox]; };
+function modeloFuncionariosCompleto(ps) {
+  const comps = compsRelatorio(), L = ps.map(p => ({p, r: resumoFunc(p)}));
+  const soma = k => L.reduce((t, x) => t + x.r[k], 0), qtdSt = k => L.filter(x => x.r.pior === k).length;
+  return {titulo: 'Funcionários - compras no crediário x desconto em folha', subtitulo: `${ps.length} funcionário(s) · folhas ${comps.filter(c => R.compsFolha.has(c)).map(compBR).join(', ') || '-'} · previstas ${comps.filter(c => !R.compsFolha.has(c)).map(compBR).join(', ') || '-'}`,
+    marca: MARCA, paisagem: true, arquivo: `funcionarios_compras_x_descontos_${hojeISO()}`,
+    resumo: [['Funcionários', qtd(ps.length)], ['Total das compras em aberto', brl(soma('compras'))], ['Total devido nas folhas auditadas', brl(soma('devido'))], ['Total descontado - pago na folha', brl(soma('desc'))],
+      ['Todos os meses OK', qtd(qtdSt('ok'))], ['Com desconto a menos ou sem desconto - pendência', qtd(qtdSt('nao') + qtdSt('menos'))], ['Com desconto a mais - pago a mais', qtd(qtdSt('mais') + qtdSt('semcompra'))], ['A verificar (compra quitada fora do arquivo)', qtd(qtdSt('verif'))]],
+    secoes: [
+      {titulo: `Resumo por funcionário (${ps.length})`, cab: ['Funcionário', 'Matrícula', 'Loja', 'Situação cad.', 'Compras em aberto', 'Devido (folhas)', 'Descontado', 'Diferença', 'A descontar', 'Meses OK', 'Situação'], direita: [4, 5, 6, 7, 8, 9],
+        linhas: L.map(({p, r}) => [p.nome, p.cad ? p.cad.matricula || '' : '', p.cad ? p.cad.loja || '' : 'FORA DO CADASTRO', p.cad ? p.cad.situacao || '' : '', V(r.compras), V(r.devido), V(r.desc), V(r.desc - r.devido), V(r.aDescontar), `${r.cont.ok || 0}/${Object.values(r.cont).reduce((a, b) => a + b, 0) - (r.cont.prev || 0)}`, ST_CURTO[r.pior]]),
+        rodape: ['Total', '', '', '', V(soma('compras')), V(soma('devido')), V(soma('desc')), V(soma('desc') - soma('devido')), V(soma('aDescontar')), '', '']},
+      {titulo: 'Mês a mês (devido / descontado · situação)', cab: ['Funcionário', 'Matrícula', ...comps.map(compBR)], direita: comps.map((c, i) => i + 2),
+        linhas: L.map(({p}) => [p.nome, p.cad ? p.cad.matricula || '' : '', ...comps.map(c => { const x = p.celulas[c]; return !x ? '' : x.st === 'prev' ? `${nfm(x.devido)} · PREVISTO` : `${nfm(x.devido)} / ${nfm(x.desc)} · ${ST_CURTO[x.st]}`; })])}],
+    assinaturas: ['Auditoria', 'RH / Departamento Pessoal']};
+}
+function excelFuncionarios() {
+  if (!R || !D.arquivos.length) { toast('Importe os arquivos primeiro.'); return; }
+  const ps = listaFunc(), comps = R.comps, wb = XLSX.utils.book_new();
+  const add = (nome, linhas, larg) => { const ws = XLSX.utils.json_to_sheet(linhas.length ? linhas : [{'': 'Nada a listar'}]); if (larg) ws['!cols'] = larg.map(w => ({wch: w})); ws['!autofilter'] = {ref: ws['!ref']}; XLSX.utils.book_append_sheet(wb, ws, nome); };
+  const cad = p => ({'Matrícula': p.cad ? p.cad.matricula : '', 'Nome': p.nome, 'CPF': cpfF(p.cpf), 'Loja': p.cad ? p.cad.loja : 'FORA DO CADASTRO', 'Situação cadastro': p.cad ? p.cad.situacao : ''});
+  add('Resumo por funcionário', ps.map(p => { const r = resumoFunc(p); return {...cad(p), 'Compras em aberto': r.compras, 'Parcelas já pagas (reconstruídas)': r.pagasRec, 'Devido nas folhas auditadas': r.devido, 'Descontado': r.desc, 'Diferença': rd2(r.desc - r.devido), 'A descontar (folhas futuras)': r.aDescontar,
+    'Meses OK': r.cont.ok || 0, 'Meses a menos': r.cont.menos || 0, 'Meses sem desconto': r.cont.nao || 0, 'Meses a mais': (r.cont.mais || 0) + (r.cont.semcompra || 0), 'Meses a verificar': r.cont.verif || 0, 'Situação geral': ST_CURTO[r.pior], 'Pendências abertas': p.pend.filter(a => !encerrada(a)).length}; }),
+    [11, 36, 15, 28, 14, 14, 12, 14, 12, 11, 14, 9, 11, 12, 10, 12, 16, 11]);
+  add('Funcionário x mês', ps.flatMap(p => Object.keys(p.celulas).sort().map(c => { const x = p.celulas[c]; return {...cad(p), 'Competência': compBR(c), 'Compras (devido)': x.devido, 'Descontado': x.st === 'prev' ? null : x.desc, 'Diferença': x.st === 'prev' ? null : x.dif, 'Situação': ST_CURTO[x.st], 'Pago em': x.dataPag.map(dataBR).join(', '), 'Parcelas': x.parcelas.length, 'Parcelas reconstruídas': x.parcelas.filter(q => q.rec).length, 'Documentos': x.parcelas.map(q => q.documento).join(' ')}; })),
+    [11, 36, 15, 28, 14, 11, 12, 11, 10, 14, 12, 8, 10, 50]);
+  add('Matriz', ps.map(p => { const o = cad(p); comps.forEach(c => { const x = p.celulas[c]; o['Devido ' + compBR(c)] = x ? x.devido : null; if (R.compsFolha.has(c)) { o['Desc. ' + compBR(c)] = x ? x.desc : null; o['Sit. ' + compBR(c)] = x ? ST_CURTO[x.st] : ''; } }); return o; }));
+  add('Compras (parcelas)', ps.flatMap(p => p.parcelas.slice().sort((a, b) => a.comp.localeCompare(b.comp)).map(x => ({...cad(p), 'Documento': x.documento, 'Compra em': dataBR(x.lancamento), 'Vencimento': dataBR(x.vencimento), 'Valor': x.valor, 'Folha': compBR(x.comp), 'Origem': x.rec ? 'Já paga (reconstruída)' : 'Em aberto (planilha do crediário)'}))),
+    [11, 36, 15, 28, 14, 16, 11, 11, 9, 11, 28]);
+  XLSX.writeFile(wb, `funcionarios_compras_x_descontos_${hojeISO()}.xlsx`);
+}
+const MODELO_ABA = {painel: () => modeloExecutivo(COMP), pend: () => modeloPendencias(listaPend()), dup: () => modeloDuplicidades(listaDup()), meses: modeloMeses, func: () => modeloFuncionariosCompleto(listaFunc()), ex: () => modeloEx(listaEx()), arq: modeloArquivos};
+function relatorioAba(aba, acao) {
+  if (!R || !D.arquivos.length) { toast('Importe os arquivos primeiro.'); return; }
+  const m = MODELO_ABA[aba](); return acao === 'imprimir' ? imprimirModelo(m) : baixarPDF(m);
+}
+const ROT_ABA = {painel: 'PDF executivo (Diretoria)', pend: 'PDF desta lista', dup: 'PDF desta lista', meses: 'PDF mês a mês', func: 'PDF de todos os funcionários (mês a mês)', ex: 'PDF dos ex-funcionários', arq: 'PDF dos arquivos'};
+Object.keys(MODELO_ABA).forEach(a => { const d = document.createElement('div'); d.className = 'acoes-aba';
+  d.innerHTML = `<button class="btn b-pri" data-pdfaba="${a}">📄 ${ROT_ABA[a]}</button>${a === 'func' ? '<button class="btn" onclick="excelFuncionarios()">📊 Planilha de todos os funcionários</button>' : ''}${a === 'ex' ? '<button class="btn" onclick="excelEx()">📊 Planilha dos ex-funcionários</button>' : ''}<button class="btn" data-impaba="${a}">🖨 Imprimir</button>`; $('a-' + a).prepend(d); });
+async function relatorio(tipo, acao) {
+  if (!R || !D.arquivos.length) { toast('Importe os arquivos primeiro.'); return; }
+  const m = MODELOS[tipo]();
+  if (acao === 'ver') { $('preview').innerHTML = `<div class="card"><h3>${esc(m.titulo)}</h3><div class="small mut">${esc(m.subtitulo)}</div>${htmlModelo(m)}</div>`; $('preview').scrollIntoView({behavior: 'smooth'}); return; }
+  if (acao === 'imprimir') return imprimirModelo(m);
+  return baixarPDF(m);
+}
+async function baixarPDF(m) { try { toast('Gerando PDF…', 30000); await gerarPDF(m); toast('PDF pronto.'); } catch (e) { toast('Erro no PDF: ' + msgErro(e), 6000); } }
+
+// Impressão: o mesmo modelo do PDF em página branca (logo, resumo, gráficos, tabelas, assinaturas)
+function imprimirModelo(m) {
+  const logo = new URL('../obras-contas-pagar/logo-esposende.jpg', location.href).href;
+  const td = (c, i, s) => `<td class="${(s.direita || []).includes(i) ? 'r' : ''}">${esc(celTxt(c))}</td>`;
+  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(m.titulo)}</title><style>
+    @page{size:A4 ${m.paisagem ? 'landscape' : 'portrait'};margin:12mm}
+    body{font:11px/1.35 Helvetica,Arial,sans-serif;color:#111;margin:0}
+    .cab{display:flex;align-items:center;gap:12px;border-bottom:2px solid #0e4a6b;padding-bottom:8px;margin-bottom:12px}
+    .cab img{width:46px;height:46px}.cab h1{font-size:16px;margin:0}.cab .s{color:#555;font-size:10.5px}.cab .e{margin-left:auto;color:#555;font-size:10px;text-align:right}
+    .res{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+    .res div{border:1px solid #cbd5e1;border-left:4px solid #3987e5;border-radius:6px;padding:6px;text-align:center}
+    .res span{display:block;color:#555;font-size:9.5px}.res b{font-size:13px}
+    .gr{display:grid;grid-template-columns:${m.paisagem ? '1fr 1fr' : '1fr'};gap:10px;margin-bottom:10px}.gr svg{width:100%;height:auto}
+    h2{font-size:12px;margin:14px 0 4px;page-break-after:avoid}
+    table{width:100%;border-collapse:collapse;font-size:9.5px}
+    th{background:#2563eb;color:#fff;text-align:left;padding:4px}td{padding:3px 4px;border-bottom:1px solid #e5e7eb;vertical-align:top}
+    tr:nth-child(even) td{background:#f7f8fc}tfoot td{font-weight:700;background:#eef0f5}.r{text-align:right;white-space:nowrap}
+    thead{display:table-header-group}tr{page-break-inside:avoid}
+    .ass{display:flex;gap:24px;margin-top:46px}.ass div{flex:1;border-top:1px solid #777;text-align:center;padding-top:4px;font-size:10px}
+    .rod{margin-top:16px;color:#777;font-size:9px}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  </style></head><body>
+  <div class="cab"><img src="${logo}" alt=""><div><h1>${esc(m.titulo)}</h1><div class="s">${esc(m.subtitulo || '')}</div></div><div class="e">Emitido em ${new Date().toLocaleString('pt-BR')}</div></div>
+  ${m.resumo ? `<div class="res">${m.resumo.map(([l, v]) => `<div style="border-left-color:rgb(${TONS[tomResumo(l, v)].bar.join(',')})"><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join('')}</div>` : ''}
+  ${m.graficos && m.graficos.length ? `<div class="gr">${m.graficos.map(g => svgGrafico(g)).join('')}</div>` : ''}
+  ${(m.secoes || []).map(s => `<h2>${esc(s.titulo || '')}</h2>${s.linhas.length ? `<table><thead><tr>${s.cab.map((h, i) => `<th class="${(s.direita || []).includes(i) ? 'r' : ''}">${esc(h)}</th>`).join('')}</tr></thead>
+    <tbody>${s.linhas.map(l => `<tr>${l.map((c, i) => td(c, i, s)).join('')}</tr>`).join('')}</tbody>${s.rodape ? `<tfoot><tr>${s.rodape.map((c, i) => td(c, i, s)).join('')}</tr></tfoot>` : ''}</table>` : '<div style="color:#777">Nada a listar.</div>'}`).join('')}
+  ${m.assinaturas ? `<div class="ass">${m.assinaturas.map(a => `<div>${esc(a)}</div>`).join('')}</div>` : ''}
+  <div class="rod">${esc(m.marca || MARCA)}</div></body></html>`;
+  const f = document.createElement('iframe'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  f.onload = () => { setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { toast('Não consegui abrir a impressão: ' + msgErro(e)); } setTimeout(() => f.remove(), 60000); }, 300); };
+  f.srcdoc = html; document.body.appendChild(f);
+}
+
+/* ---------- Excel ---------- */
+function excelRH() {
+  if (!R || !R.par.length) { toast('Importe os arquivos primeiro.'); return; }
+  const ls = linhasRH(COMP); const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(ls.map(l => ({'Matrícula': l.matricula, 'Nome': l.nome, 'CPF': cpfF(l.cpf), 'Loja': l.loja, 'Competência': compBR(COMP), 'Parcelas': l.n, 'Valor a descontar': l.valor, 'Observação': l.obs})));
+  ws['!cols'] = [11, 36, 15, 30, 11, 8, 14, 30].map(w => ({wch: w})); XLSX.utils.book_append_sheet(wb, ws, 'Lançar na folha');
+  XLSX.writeFile(wb, `lancar_folha_${COMP}.xlsx`);
+}
+function exportar() {
+  if (!R || !R.par.length) { toast('Importe os arquivos primeiro.'); return; }
+  const wb = XLSX.utils.book_new();
+  const add = (nome, linhas, larg) => { const ws = XLSX.utils.json_to_sheet(linhas.length ? linhas : [{'': 'Nada a listar'}]); if (larg) ws['!cols'] = larg.map(w => ({wch: w})); XLSX.utils.book_append_sheet(wb, ws, nome); };
+  const pes = cpf => R.pessoas.get(cpf) || {};
+  add('Resumo por competência', R.porComp.map(c => ({'Competência': compBR(c.comp), 'Folha importada': c.folha ? 'Sim' : 'Não (previsão)', 'Funcionários': c.n, 'Devido': c.devido, 'Descontado': c.folha ? c.desc : null,
+    'Descontou a menos': c.folha ? c.menos : null, 'Descontou a mais': c.folha ? c.mais : null, 'OK': c.cont.ok || 0, 'Divergências': (c.cont.menos || 0) + (c.cont.nao || 0) + (c.cont.mais || 0) + (c.cont.semcompra || 0), 'Verificar': c.cont.verif || 0,
+    'Pago em': c.dataPag.map(dataBR).join(', '), 'Cobertura': c.faltam.length ? 'Parcial - faltam compras de ' + faixas(c.faltam) : 'Completa', 'Fechamento': c.fech ? `${c.fech.status} por ${c.fech.fechado_por || ''} em ${dtBR(c.fech.fechado_em)}` : ''})), [14, 16, 12, 12, 12, 16, 16, 6, 12, 10, 14, 50, 40]);
+  add('Funcionário x mês', R.linhas.slice().sort((a, b) => (pes(a.cpf).nome || '').localeCompare(pes(b.cpf).nome || '') || a.comp.localeCompare(b.comp)).map(l => { const p = pes(l.cpf); return {
+    'CPF': cpfF(l.cpf), 'Matrícula': p.cad ? p.cad.matricula : '', 'Nome': p.nome, 'Loja': p.cad ? p.cad.loja : 'FORA DO CADASTRO', 'Situação cadastro': p.cad ? p.cad.situacao : '', 'Competência': compBR(l.comp),
+    'Devido': l.devido, 'Descontado': l.st === 'prev' ? null : l.desc, 'Diferença': l.st === 'prev' ? null : l.dif, 'Status': STAT[l.st][0], 'Pago na folha em': l.dataPag.map(dataBR).join(', '),
+    'Parcelas': l.parcelas.length, 'Parcelas baixadas': D.baixas.length ? l.baixadas : '', 'Data da baixa': l.dataBaixa.map(dataBR).join(', '), 'Documentos': l.parcelas.map(p => p.documento).join(' ')}; }), [15, 11, 34, 28, 14, 11, 10, 11, 10, 30, 14, 8, 9, 14, 40]);
+  add('Matriz mensal', [...R.pessoas.values()].sort((a, b) => a.nome.localeCompare(b.nome)).map(p => { const o = {'CPF': cpfF(p.cpf), 'Matrícula': p.cad ? p.cad.matricula : '', 'Nome': p.nome, 'Loja': p.cad ? p.cad.loja : 'FORA DO CADASTRO'};
+    R.comps.forEach(c => { const x = p.celulas[c]; o['Devido ' + compBR(c)] = x ? x.devido : null; if (R.compsFolha.has(c)) o['Desc. ' + compBR(c)] = x ? x.desc : null; }); o['A menos'] = rd2(p.menos); o['A mais'] = rd2(p.mais); o['A verificar'] = rd2(p.verif); return o; }));
+  const pl = p => ({'Categoria': p.cat, 'Gravidade': p.grav, 'Tipo': p.tipo, 'CPF': cpfF(p.cpf), 'Matrícula': p.matricula, 'Nome': p.nome, 'Loja': p.loja, 'Competência': compBR(p.comp), 'Detalhe': p.txt, 'Valor': p.valor || null,
+    'Tratativa': p.trat ? TRAT[p.trat.status] : 'Sem tratativa', 'Observação': p.trat ? p.trat.observacao || '' : '', 'Por': p.trat ? p.trat.usuario || '' : '', 'Em': p.trat ? dtBR(p.trat.criado_em) : ''});
+  add('Erros e faltas graves', R.pend.filter(p => p.cat !== 'duplicidade').map(pl), [12, 9, 28, 15, 11, 34, 28, 11, 90, 10, 20, 40, 24, 16]);
+  add('Duplicidades', R.pend.filter(p => p.cat === 'duplicidade').map(pl), [12, 9, 28, 15, 11, 34, 28, 11, 90, 10, 20, 40, 24, 16]);
+  add('Parcelas', R.par.slice().sort((a, b) => a.cpf.localeCompare(b.cpf) || a.comp.localeCompare(b.comp)).map(p => ({'CPF': cpfF(p.cpf), 'Nome': p.nome, 'Documento': p.documento, 'Parcela': p.parcela, 'Lançamento': dataBR(p.lancamento), 'Vencimento': dataBR(p.vencimento), 'Valor': p.valor, 'Valor anterior': p.valor_anterior, 'Competência folha': compBR(p.comp), 'Origem': p.rec ? 'Reconstruída (já paga)' : 'Relatório do crediário', 'Baixa': p.baixa ? dataBR(p.baixa.data_baixa) : '', 'Valor baixado': p.baixa ? Number(p.baixa.valor) : null})), [15, 34, 16, 8, 11, 11, 9, 10, 12, 11, 11]);
+  add('Folha importada', R.folha.concat(R.semId).map(l => ({'CPF': cpfF(l.cpf || ''), 'Matrícula': l.matricula, 'Nome': l.nome || pes(l.cpf).nome, 'Competência': compBR(l.competencia), 'Evento': l.evento, 'Valor': l.valor, 'Pago em': dataBR(l.data_pagamento), 'Arquivo': l.arq})));
+  add('Arquivos', D.arquivos.map(a => ({'Tipo': TIPO_NOME[a.tipo], 'Arquivo': a.nome, 'Linhas': a.linhas, 'Total': a.total != null ? Number(a.total) : null, 'Rodapé': a.rodape != null ? Number(a.rodape) : null, 'Competências': (a.competencias || []).map(compBR).join(', '), 'Importado por': a.importado_por, 'Em': dtBR(a.importado_em)})));
+  XLSX.writeFile(wb, `auditoria_desconto_folha_${hojeISO()}.xlsx`);
+}
+
+/* ---------- cliques ---------- */
+document.body.addEventListener('click', e => {
+  const t = e.target.closest('[data-tratar],[data-pes],[data-fechar],[data-reabrir],[data-excluir],[data-usar],[data-ircomp],[data-pdfpes],[data-imppes],[data-datapag],[data-pdfaba],[data-impaba]'); if (!t) return;
+  if (t.dataset.datapag) return dataPagamento(+t.dataset.datapag);
+  if (t.dataset.pdfaba) return relatorioAba(t.dataset.pdfaba, 'pdf');
+  if (t.dataset.impaba) return relatorioAba(t.dataset.impaba, 'imprimir');
+  if (t.dataset.tratar) return tratar(t.dataset.tratar);
+  if (t.dataset.fechar) return fecharComp(t.dataset.fechar);
+  if (t.dataset.reabrir) return reabrir(t.dataset.reabrir);
+  if (t.dataset.excluir) return excluirArquivo(+t.dataset.excluir);
+  if (t.dataset.usar) { const [r, c] = t.dataset.usar.split('|'); return salvarConfig(r, +c); }
+  if (t.dataset.ircomp) { COMP = t.dataset.ircomp; COMP_ESCOLHIDA = true; $('selComp').value = COMP; return irPara('painel'); }
+  if (t.dataset.pdfpes) return baixarPDF(modeloFuncionario(t.dataset.pdfpes));
+  if (t.dataset.imppes) return imprimirModelo(modeloFuncionario(t.dataset.imppes));
+  if (t.dataset.pes) return abrirPessoa(t.dataset.pes, t.dataset.c);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModal(); });
+
+iniciarLogin(async () => {
+  const pode = await sb.rpc('cred_pode_auditar').then(r => r.data === true, () => false);
+  if (!pode) return semPermissao('Este usuário não tem acesso à Auditoria de Desconto em Folha (perfis: administrador, controladoria, diretoria).');
+  recarregar();
+});
+</script>
+</body>
+</html>
