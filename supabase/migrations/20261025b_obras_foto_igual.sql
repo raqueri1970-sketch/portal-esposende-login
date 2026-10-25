@@ -1,0 +1,10 @@
+-- 25/10/2026 (pedido do Ricardo) — JÁ APLICADA no projeto "sistema de auditoria" (registro).
+-- 1) obras_interno.foto_igual_trigger (BEFORE INSERT/UPDATE de arquivo_path, arquivo_hash, duplicado_de):
+--    foto reenviada idêntica (mesmo hash) não é subida de novo pelo robô; o caminho dela passa a apontar para a foto
+--    idêntica que existe no Storage (acabou o "Object not found") e a descrição ganha a data/hora dos dois envios.
+-- 2) obras_interno.bloqueia_foto_igual_trigger (BEFORE UPDATE de status): não deixa voltar para Lançado um comprovante cuja
+--    foto idêntica já está lançada (vários recibos da mesma mensagem #0, #1... continuam liberados). Erro "FOTO_IGUAL: ...".
+-- 3) Glosa de R$ 60,00 do Jhony: PATRICIA SEVERINA DA SILVA de 09/10 paga 2x (pagamentos nº 11 e nº 20);
+--    a cópia (id af4bf8f6-96e3-453e-8045-1fe2034e6fcf) voltou para duplicada (dup_decisao = 'glosada').
+-- O código das funções está no banco: select pg_get_functiondef('obras_interno.foto_igual_trigger'::regproc);
+--                                     select pg_get_functiondef('obras_interno.bloqueia_foto_igual_trigger'::regproc);

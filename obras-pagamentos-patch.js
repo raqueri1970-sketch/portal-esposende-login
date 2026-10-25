@@ -421,6 +421,7 @@
         var t=btn.textContent;btn.disabled=true;btn.textContent='Salvando…';
         var upd={status:novo,status_motivo:motivo||null,revisado:true,updated_at:new Date().toISOString()};
         var res=await sb.from('obras_comprovantes').update(upd).eq('id',r.id).select('id');
+        if(res.error&&/FOTO_IGUAL/.test(res.error.message)){alert('Bloqueado: '+res.error.message.replace(/^FOTO_IGUAL:\s*/,''));btn.disabled=false;btn.textContent=t;return}
         if(res.error||!res.data||!res.data.length){alert('Não salvou: '+(res.error?res.error.message:'sem permissão')+'\n(Só administrador/controladoria/diretoria pode alterar.)');btn.disabled=false;btn.textContent=t;return}
         Object.assign(r,upd);renderGeral();renderLista();renderPrest();
       }
@@ -429,6 +430,49 @@
         if(res.error){box.textContent='Histórico do status indisponível ('+res.error.message+')';return}
         var l=res.data||[];
         box.innerHTML='<b>Histórico do status</b>'+(l.length?l.map(function(h){return '<div>'+new Date(h.alterado_em).toLocaleString('pt-BR')+' · <b>'+esc2(STS[h.status_de]||h.status_de||'—')+' → '+esc2(STS[h.status_para]||h.status_para)+'</b> · '+esc2(h.alterado_por||'')+(h.motivo?' · motivo: “'+esc2(h.motivo)+'”':'')+'</div>'}).join(''):'<div>Nenhuma troca de status registrada (o registro começou em 19/10/2026).</div>');
+      }
+      // Foto igual já lançada (25/10/2026, caso Patricia R$ 60 do Jhony paga 2x): mostra o lançamento que já existe com a
+      // MESMA foto e trava o "Voltar para Lançado". O banco também bloqueia (trigger obras_bloqueia_foto_igual_trg).
+      // Vários recibos da mesma mensagem (#0, #1...) não contam como foto igual.
+      var dtBR=function(v,hora){if(!v)return '—';var d=new Date(String(v).length<=10?v+'T12:00:00':v);return hora?d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}):d.toLocaleDateString('pt-BR')};
+      var brl2=function(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})};
+      var base=function(m,id){return String(m||id||'').split('#')[0]};
+      async function fotoIgual(r,box){
+        try{
+          var eu=await sb.from('obras_comprovantes').select('arquivo_hash,wa_msg_id,wa_data').eq('id',r.id).maybeSingle();
+          if(eu.error||!eu.data||!eu.data.arquivo_hash)return;
+          var ig=await sb.from('obras_comprovantes').select('id,wa_msg_id').eq('arquivo_hash',eu.data.arquivo_hash).eq('status','lancado').neq('id',r.id);
+          var ids=(ig.data||[]).filter(function(x){return base(x.wa_msg_id,x.id)!==base(eu.data.wa_msg_id,r.id)}).map(function(x){return x.id});
+          if(!ids.length)return;
+          var det=await sb.from('obras_despesas_pagamento').select('id,prestador,fornecedor,valor,data_despesa,hora_documento,wa_data,situacao,ultimo_pagamento_numero,pago_em,arquivo_path').in('id',ids);
+          var l=det.data||[];if(!l.length)return;
+          var bt=box.querySelector('[data-rev]');if(bt){bt.disabled=true;bt.textContent='↩ Voltar para Lançado — BLOQUEADO (foto igual já lançada)';bt.title='Já existe lançamento com a mesma foto'}
+          var av=document.createElement('div');
+          av.style.cssText='flex-basis:100%;margin-top:6px;padding:10px 12px;border:1px solid #ef4444;border-radius:10px;background:rgba(239,68,68,.10)';
+          av.innerHTML='<div style="font-weight:700;color:#fca5a5;margin-bottom:6px">⛔ Já existe lançamento com a MESMA foto — não pode voltar para Lançado (pagaria duas vezes)</div>'+
+            '<div style="font-size:13px;margin-bottom:6px">Esta foto foi enviada em <b>'+esc2(dtBR(eu.data.wa_data,true))+'</b>.</div>'+
+            l.map(function(x){var pago=x.situacao==='pago'||x.ultimo_pagamento_numero;
+              return '<div data-ig="'+esc2(x.id)+'" style="padding:8px 0;border-top:1px solid rgba(255,255,255,.1);font-size:13px;line-height:1.6">'+
+                '<b>'+esc2(x.fornecedor||'Fornecedor não lido')+'</b> · <b>'+brl2(x.valor)+'</b> · '+esc2(x.prestador||'')+'<br>'+
+                'Despesa de '+esc2(dtBR(x.data_despesa))+(x.hora_documento?' '+esc2(String(x.hora_documento).slice(0,8)):'')+' · enviada em <b>'+esc2(dtBR(x.wa_data,true))+'</b><br>'+
+                (pago?'<span style="color:#86efac">JÁ PAGO'+(x.ultimo_pagamento_numero?' no pagamento nº '+esc2(x.ultimo_pagamento_numero):'')+(x.pago_em?' em '+esc2(dtBR(x.pago_em)):'')+'</span>':'<span style="color:#fcd34d">Lançado, ainda a pagar</span>')+
+                '<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">'+(x.arquivo_path?'<button class="btn" data-igfoto="'+esc2(x.arquivo_path)+'">Ver a foto do lançamento</button>':'')+
+                '<button class="btn" data-igabrir="'+esc2(x.id)+'">Abrir o lançamento</button></div></div>'}).join('')+
+            '<div style="font-size:12px;color:#cbd5e1;margin-top:6px">Se este aqui é o certo, cancele o outro primeiro.</div>';
+          box.appendChild(av);
+          av.querySelectorAll('[data-igfoto]').forEach(function(b){b.onclick=async function(ev){ev.stopPropagation();
+            var cx=b.parentNode.parentNode,ja=cx.querySelector('.igimg');if(ja){ja.remove();b.textContent='Ver a foto do lançamento';return}
+            var p=b.getAttribute('data-igfoto'),s=await sb.storage.from('obras-comprovantes').createSignedUrl(p,600);
+            if(s.error||!s.data){alert('Foto indisponível: '+(s.error?s.error.message:''));return}
+            var dv=document.createElement('div');dv.className='igimg';dv.style.marginTop='8px';
+            dv.innerHTML=/\.pdf$/i.test(p)?'<a class="btn" target="_blank" rel="noopener" href="'+esc2(s.data.signedUrl)+'">Abrir o PDF</a>'
+              :'<img src="'+esc2(s.data.signedUrl)+'" alt="foto do lançamento" style="max-width:100%;max-height:520px;border-radius:8px;border:1px solid rgba(255,255,255,.15)">';
+            cx.appendChild(dv);b.textContent='Esconder a foto'}});
+          av.querySelectorAll('[data-igabrir]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();
+            var el=document.querySelector('[data-id="'+b.getAttribute('data-igabrir')+'"]');
+            if(!el){alert('O lançamento não está na lista atual (filtro). Procure por: '+(l[0].fornecedor||'')+' '+brl2(l[0].valor));return}
+            if(!el.classList.contains('open'))abrir(el);el.scrollIntoView({behavior:'smooth',block:'start'})}});
+        }catch(e){console.warn('foto igual',e)}
       }
       var origAbrir=abrir;
       abrir=function(row){
@@ -454,6 +498,7 @@
           box.querySelector('[data-rev]').onclick=function(ev){ev.stopPropagation();mudarStatus(r,'lancado',ev.currentTarget)};
           var b2=box.querySelector('[data-rev2]');if(b2)b2.onclick=function(ev){ev.stopPropagation();mudarStatus(r,box.querySelector('[data-revsel]').value,b2)};
           box.onclick=function(ev){ev.stopPropagation()};
+          fotoIgual(r,box);
         }
         var hb=document.createElement('div');hb.className='revhist';hb.textContent='Carregando histórico do status…';rd.appendChild(hb);historico(r,hb);
       };
