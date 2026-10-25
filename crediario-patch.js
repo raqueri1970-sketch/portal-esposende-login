@@ -4,30 +4,33 @@
 */
 (function(){
   if(window.__credPortal)return;window.__credPortal=true;
-  var V='20261025-1';
+  var V='20261025-2';
   var BASE=(function(){try{return new URL('./',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/'}})();
   var URL_MOD=BASE+'obras/desconto-folha/?v='+V;
   var CARDS=[
-    {id:'cred',aba:'painel',icone:'💳',titulo:'Desconto em Folha · Crediário',capa:BASE+'desconto-folha-capa.jpg?v=1'},
-    {id:'ex',aba:'ex',icone:'🚪',titulo:'Ex-funcionários · Crediário',capa:BASE+'ex-funcionarios-capa.jpg?v=1'}
+    {id:'cred',aba:'painel',modo:'',icone:'💳',menu:'Desconto em Folha',titulo:'Desconto em Folha · Crediário',capa:BASE+'desconto-folha-capa.jpg?v=1'},
+    // módulo só de ex-funcionários e de quem não está no cadastro (a mesma tela no modo "ex")
+    {id:'ex',aba:'ex',modo:'ex',icone:'🚪',menu:'Ex-funcionários e fora do cadastro',titulo:'Ex-funcionários e fora do cadastro',capa:BASE+'ex-funcionarios-capa.jpg?v=2'}
   ];
 
-  function abrir(d,aba){
+  function abrir(d,c){
     var ov=d.getElementById('cred-portal');
     if(!ov){
       ov=d.createElement('div');ov.id='cred-portal';
       ov.style.cssText='position:fixed;inset:0;z-index:2147483000;background:#070b16;display:flex;flex-direction:column';
       ov.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid #1e2a44;background:#0b1222;color:#e5edf8;font:600 14px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif">'
         +'<button type="button" data-cred-fechar style="background:#101a2e;border:1px solid #1e2a44;color:#e5edf8;border-radius:9px;padding:8px 13px;font:inherit;cursor:pointer">← Voltar ao Portal</button>'
-        +'<span>💳 Desconto em Folha · Crediário</span></div>'
+        +'<span data-cred-titulo>💳 Desconto em Folha · Crediário</span></div>'
         +'<iframe title="Desconto em Folha · Crediário" allow="clipboard-write" style="flex:1;width:100%;border:0;background:#070b16"></iframe>';
       ov.querySelector('[data-cred-fechar]').onclick=function(){ov.style.display='none';try{d.documentElement.style.overflow=''}catch(e){}};
       d.body.appendChild(ov);
     }
     var ifr=ov.querySelector('iframe');
     // a tela troca de aba pelo #: já aberta, só muda o endereço depois do # (não recarrega)
-    if(!ifr.getAttribute('src'))ifr.setAttribute('src',URL_MOD+'#'+aba);
-    else try{ifr.contentWindow.location.hash=aba}catch(e){ifr.setAttribute('src',URL_MOD+'#'+aba)}
+    ov.querySelector('[data-cred-titulo]').textContent=c.icone+' '+c.titulo;
+    // mesmo módulo já aberto: só troca a aba pelo #; outro módulo (modo): abre de novo
+    if(!ifr.getAttribute('src')||ifr.getAttribute('data-modo')!==c.modo){ifr.setAttribute('data-modo',c.modo);ifr.setAttribute('src',URL_MOD+(c.modo?'&modo='+c.modo:'')+'#'+c.aba)}
+    else try{ifr.contentWindow.location.hash=c.aba}catch(e){ifr.setAttribute('src',URL_MOD+(c.modo?'&modo='+c.modo:'')+'#'+c.aba)}
     ov.style.display='flex';
     try{d.documentElement.style.overflow='hidden'}catch(e){}
   }
@@ -40,12 +43,12 @@
     var sb=d.getElementById('sb');
     if(!sb||sb.querySelector('[data-cred-menu]'))return;
     var grupo=d.createElement('div');grupo.className='sg';
-    grupo.innerHTML='<div class="sgl">Crediário</div>'+CARDS.map(function(c){return '<button class="ni" data-cred-menu="'+c.aba+'" type="button"><span class="nii">'+c.icone+'</span><span class="nil">'+c.titulo.replace(' · Crediário','')+'</span></button>'}).join('');
+    grupo.innerHTML='<div class="sgl">Crediário</div>'+CARDS.map(function(c){return '<button class="ni" data-cred-menu="'+c.id+'" type="button"><span class="nii">'+c.icone+'</span><span class="nil">'+c.menu+'</span></button>'}).join('');
     var div=d.createElement('div');div.className='ndv';
     var alvo=null;[].forEach.call(sb.querySelectorAll('.sg'),function(g){var l=g.querySelector('.sgl');if(!alvo&&l&&/campanhas/i.test(l.textContent))alvo=g});
     if(!alvo)alvo=sb.querySelector('.sbft');
     if(alvo){sb.insertBefore(grupo,alvo);sb.insertBefore(div,alvo)}else{sb.appendChild(div);sb.appendChild(grupo)}
-    [].forEach.call(grupo.querySelectorAll('[data-cred-menu]'),function(b){b.addEventListener('click',function(e){e.preventDefault();fecharMenu(d);abrir(d,b.getAttribute('data-cred-menu'))})});
+    [].forEach.call(grupo.querySelectorAll('[data-cred-menu]'),function(b){b.addEventListener('click',function(e){e.preventDefault();fecharMenu(d);var id=b.getAttribute('data-cred-menu');abrir(d,CARDS.filter(function(c){return c.id===id})[0])})});
   }
 
   // Cards da visão geral: cópia de um card vizinho com foto (fica igual aos demais), com a capa própria
@@ -85,7 +88,7 @@
       var tt=card.querySelector('.octtl');if(tt)tt.textContent=c.titulo;
     }
     card.style.cursor='pointer';card.title=c.titulo;
-    card.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();abrir(d,c.aba)},true);
+    card.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();abrir(d,c)},true);
     return card;
   }
   function cards(d){
