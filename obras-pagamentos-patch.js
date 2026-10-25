@@ -251,7 +251,7 @@
         var kp=function(cls,l,its,f,tab){return '<div class="kpi '+cls+'" '+(tab?'data-tab="'+tab+'"':'data-f="'+dd(f)+'"')+'><span>'+l+'</span><b>'+its.length+'</b><small>'+brl(soma(its))+'</small></div>'};
         $('kpis').innerHTML='<div class="heroes">'+
           hero('g','Despesas comprovadas',kbrl(soma(lan)),lan.length+' comprovantes lançados',{st:'lancado'})+
-          '<div class="hero '+(aPagar>0.005?'w':'g')+'" data-pag="1"><div class="hl">A pagar hoje</div><div class="hv">'+(X.em?brl(aPagar):'…')+'</div><div class="hn">caixa com os prestadores '+(X.em?brl(caixa):'…')+'</div></div>'+
+          '<div class="hero '+(aPagar>0.005?'w':'g')+'" data-pag="1"><div class="hl">Recarga a pagar</div><div class="hv">'+(X.em?brl(aPagar):'…')+'</div><div class="hn">para cada um voltar a R$ 10 mil · saldo com eles '+(X.em?brl(caixa):'…')+'</div></div>'+
           hero(graves.length?'b':'w','Alertas de auditoria',alertas.length,graves.length+' graves · '+brl(soma(graves))+' em risco',{tab:'aud'})+
           '<div class="hero n" data-f="'+dd({st:'revisar'})+'"><div class="hl">Conferidos por uma pessoa</div><div class="hv">'+pct+'%</div><div class="hbar"><i style="width:'+pct+'%"></i></div><div class="hn">'+rev.length+' a revisar de '+vivos.length+'</div></div>'+
           '</div><div class="kpis">'+
