@@ -172,7 +172,7 @@
         '.aud-r .ib{background:none;border:1px solid var(--border);color:#cfd6ee;border-radius:999px;width:24px;height:24px;font-size:13px;cursor:pointer;margin-left:6px;font-family:inherit}.aud-r .ib:hover{border-color:var(--neon);color:#fff}'+
         '.aud-r small.ex{display:none}.aud-r.ver small.ex{display:block}'+
         '.aud2-lista{margin:0 0 6px 54px;border-left:2px solid var(--border);padding:4px 0 4px 12px}.aud2-it{display:grid;grid-template-columns:82px 1fr auto auto;gap:10px;align-items:center;padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.07);font-size:14px}'+
-        '.aud2-it .m{color:#cfd6ee;font-size:13px;display:block}.aud2-it .vl{font-weight:800;white-space:nowrap}.aud2-it button{background:#262a44;border:1px solid var(--border);color:#fff;border-radius:8px;padding:5px 10px;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px}'+
+        '.aud2-it .m{color:#cfd6ee;font-size:13px;display:block}.aud2-it .vl{font-weight:800;white-space:nowrap}.aud2-it button{background:#262a44;border:1px solid var(--border);color:#fff;border-radius:8px;padding:5px 10px;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px}'+'.aud2-it .bts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.aud2-it button.revok{background:#15803d;border-color:#16a34a}.aud2-it button.revok:hover{background:#16a34a}.aud2-it button:disabled{opacity:.6;cursor:wait}'+
         '@media(max-width:600px){.aud2-lista{margin-left:6px}.aud2-it{grid-template-columns:1fr auto}.aud2-it .dt{display:none}}';
       document.head.appendChild(css);
       // conta corrente (saldos) e pontos do Agente Auditor do servidor: carregados à parte e guardados por 1 min
@@ -222,7 +222,8 @@
         var linha=function(x){return '<div class="aud-r '+(x.R.g>=3?'alta':x.R.g==2?'media':'baixa')+'" data-aud="'+x.k+'"><span class="ic">'+x.R.i+'</span><div class="tx"><b>'+x.R.t+' <em>'+x.n+'</em><button class="ib" data-ex title="O que fazer">?</button></b><small class="ex">'+x.R.e+'</small></div><span class="vv">'+brl(x.v)+'</span></div>'};
         var grupo=function(t,l){return l.length?'<div class="aud2-t">'+t+' <small>'+l.length+' tipo(s)</small></div>'+l.map(linha).join(''):''};
         var itens=function(x){return '<div class="aud2-lista" id="srv_'+x.k+'"'+(ABERTO[x.k]?'':' hidden')+'>'+x.l.slice(0,80).map(function(a){var r=ids[a.comprovante_id];
-          return '<div class="aud2-it"><span class="dt">'+dbr(r.data_despesa)+'</span><span><b>'+esc(r.fornecedor||'—')+'</b> · '+esc(r.remetente||'')+'<span class="m">'+esc(String(a.mensagem||'').slice(0,220))+'</span></span><span class="vl">'+brl(r.valor)+'</span>'+(r.arquivo_path?'<button data-foto="'+r.id+'">ver foto</button>':'<span></span>')+'</div>'}).join('')+
+          return '<div class="aud2-it"><span class="dt">'+dbr(r.data_despesa)+'</span><span><b>'+esc(r.fornecedor||'—')+'</b> · '+esc(r.remetente||'')+'<span class="m">'+esc(String(a.mensagem||'').slice(0,220))+'</span></span><span class="vl">'+brl(r.valor)+'</span><span class="bts">'+(r.arquivo_path?'<button data-foto="'+r.id+'">ver foto</button>':'')+'<button class="revok" data-revok="'+a.id+'" title="Conferi: some desta tela">✔ Revisado</button></span></div>'}).join('')+
+          (x.l.length>1?'<div class="aud2-it"><span></span><span></span><span></span><span class="bts"><button class="revok" data-revtodos="'+x.k+'">✔ Revisar todos ('+x.l.length+')</button></span></div>':'')+
           (x.l.length>80?'<div class="aud2-it"><span></span><span class="m">mostrando 80 de '+x.l.length+'</span></div>':'')+'</div>'};
         return '<div class="aud"><div class="aud-h"><div><h2>🛡 Auditoria de obra</h2><p>Comece pelos vermelhos. Toque numa linha para ver os comprovantes.</p></div></div>'+
           '<div class="aud2-res">'+
@@ -270,6 +271,18 @@
         au.querySelectorAll('[data-ex]').forEach(function(el){el.onclick=function(ev){ev.stopPropagation();el.closest('.aud-r').classList.toggle('ver')}});
         au.querySelectorAll('[data-srv]').forEach(function(el){el.onclick=function(){var k=el.dataset.srv;ABERTO[k]=!ABERTO[k];var l=$('srv_'+k);if(l)l.hidden=!ABERTO[k]}});
         au.querySelectorAll('[data-foto]').forEach(function(el){el.onclick=function(ev){ev.stopPropagation();var r=C.find(function(x){return x.id===el.dataset.foto});if(r)verArquivo(r)}});
+        // Revisado (25/10/2026, pedido do Ricardo): resolve o ponto do Agente Auditor e ele some desta tela (fica no banco,
+        // com quem revisou e quando; o Auditor automático não reabre ponto resolvido).
+        var revisar=async function(ids,btn){
+          if(!ids.length)return;var t=btn.textContent;btn.disabled=true;btn.textContent='Salvando…';
+          var r=await sb.rpc('obras_resolver_achados',{p_ids:ids,p_observacao:'Revisado na tela de Auditoria (conferido na foto)'});
+          if(r.error){alert('Não salvou: '+r.error.message);btn.disabled=false;btn.textContent=t;return}
+          X.achados=X.achados.filter(function(a){return ids.indexOf(a.id)<0});try{renderGeral()}catch(e){}
+        };
+        au.querySelectorAll('[data-revok]').forEach(function(el){el.onclick=function(ev){ev.stopPropagation();revisar([el.dataset.revok],el)}});
+        au.querySelectorAll('[data-revtodos]').forEach(function(el){el.onclick=function(ev){ev.stopPropagation();
+          var k=el.dataset.revtodos,ids=X.achados.filter(function(a){return a.regra===k}).map(function(a){return a.id}).filter(function(id){return !!au.querySelector('[data-revok="'+id+'"]')});
+          if(!confirm('Marcar como revisados os '+ids.length+' pontos desta lista? Eles somem desta tela.'))return;revisar(ids,el)}});
         au.querySelectorAll('[data-irsrv]').forEach(function(el){el.onclick=function(){var t=$('audSrv');if(t)t.scrollIntoView({behavior:'smooth',block:'start'})}});
         au.querySelectorAll('[data-revisar]').forEach(function(el){el.onclick=function(){aplicar({st:'revisar'})}});
         var nA=$('navAud');if(nA)nA.innerHTML=alertas.length?'<em>'+alertas.length+'</em>':'';
