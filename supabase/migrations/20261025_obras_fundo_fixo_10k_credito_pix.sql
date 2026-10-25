@@ -2,7 +2,7 @@
 -- A sobra de um PIX só vira adiantamento até completar os R$ 10 mil; o que passar disso é crédito do próprio PIX
 -- e paga sozinho as próximas despesas que chegarem (ex.: Jhony 20/10, PIX R$ 7.993,00, despesas no sistema R$ 7.414,30;
 -- os R$ 578,70 eram de comprovantes enviados depois do PIX e apareciam como adiantamento).
--- Projeto Supabase: "sistema de auditoria". Rodar inteiro no SQL Editor.
+-- Projeto Supabase: "sistema de auditoria". JÁ APLICADA em 25/10/2026 (registro).
 begin;
 
 alter table public.obras_adiantamentos add column if not exists tipo text not null default 'fundo';
@@ -35,13 +35,15 @@ begin
     continue when v_usado <= 0;
     update public.obras_pagamentos set valor_itens = valor_itens + v_usado, valor_aprovado = valor_aprovado + v_usado,
            valor_pago = valor_pago + v_usado, updated_at = now() where id = a.pagamento_id;
-    update public.obras_adiantamentos set valor = round(v_resto, 2), cancelado = (v_resto <= 0.004),
+    -- usado todo: fica cancelado com o valor original (histórico); usado em parte: fica só o que sobrou
+    update public.obras_adiantamentos set valor = case when v_resto <= 0.004 then valor else round(v_resto, 2) end,
+           cancelado = (v_resto <= 0.004),
            observacao = left(coalesce(observacao, '') || ' | ' || to_char(now() at time zone 'America/Sao_Paulo', 'DD/MM') ||
                         ': R$ ' || to_char(v_usado, 'FM999G999G990D00') || ' usados em ' || array_length(v_ids, 1) || ' despesa(s) que chegaram depois do PIX', 1000)
      where id = a.id;
     perform public.obras_atualizar_situacao(u.cid) from unnest(v_ids) as u(cid);
     perform public.obras_pag_evento(a.pagamento_id, null, p_prest, 'CREDITO_PIX', 'Crédito do PIX (automático)',
-      jsonb_build_object('valor', v_usado, 'itens', array_length(v_ids, 1), 'sobra', round(v_resto, 2)));
+      jsonb_build_object('valor', v_usado, 'itens', array_length(v_ids, 1), 'sobra', round(greatest(v_resto, 0), 2)));
     v_total := v_total + v_usado;
   end loop;
   return v_total;
