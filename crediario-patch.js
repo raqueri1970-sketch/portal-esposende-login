@@ -4,7 +4,7 @@
 */
 (function(){
   if(window.__credPortal)return;window.__credPortal=true;
-  var V='20261025-2';
+  var V='20261026-1';
   var BASE=(function(){try{return new URL('./',document.currentScript.src).href}catch(e){return 'https://raqueri1970-sketch.github.io/portal-esposende-login/'}})();
   var URL_MOD=BASE+'obras/desconto-folha/?v='+V;
   var CARDS=[
