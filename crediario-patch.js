@@ -1,14 +1,11 @@
 /* Desconto em Folha · Crediário dentro do Portal */
 (function(){
   if(window.__credPortal)return;window.__credPortal=true;
-  var V='20261027-portal-card-3';
+  var V='20261027-conferente-folha';
   var BASE=(function(){try{return new URL('./',document.currentScript.src).href}catch(e){return location.origin+'/portal-esposende-login/'}})();
   var URL_MOD=BASE+'obras/desconto-folha/?v='+V;
   var MOD={id:'cred',aba:'painel',icone:'💳',menu:'Desconto em Folha · Crediário',titulo:'Desconto em Folha · Crediário',capa:BASE+'desconto-folha-capa.jpg?v=2'};
 
-  function injetarConferente(f){
-    try{var d=f.contentDocument;if(!d||d.getElementById('script-conferente-crediario'))return;var s=d.createElement('script');s.id='script-conferente-crediario';s.src=BASE+'conferente-crediario-ui.js?v='+V;d.body.appendChild(s);}catch(e){console.warn('[Portal] Conferente:',e);}
-  }
   function abrir(d){
     var ov=d.getElementById('cred-portal');
     if(!ov){
@@ -17,7 +14,7 @@
       ov.querySelector('[data-cred-fechar]').onclick=function(){ov.style.display='none'};d.body.appendChild(ov);
     }
     ov.querySelector('[data-cred-titulo]').textContent=MOD.icone+' '+MOD.titulo;
-    var f=ov.querySelector('iframe');f.onload=function(){injetarConferente(f)};f.src=URL_MOD+'#'+MOD.aba;ov.style.display='flex';
+    var f=ov.querySelector('iframe');f.src=URL_MOD+'#'+MOD.aba;ov.style.display='flex';
   }
   function docs(w,a,p){if(p>4)return a;try{if(w.document)a.push(w.document)}catch(e){return a}for(var i=0;i<w.frames.length;i++)try{docs(w.frames[i],a,p+1)}catch(e){}return a}
 
