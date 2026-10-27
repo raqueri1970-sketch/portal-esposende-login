@@ -1,7 +1,7 @@
 /* Desconto em Folha · Crediário dentro do Portal */
 (function(){
   if(window.__credPortal)return;window.__credPortal=true;
-  var V='20261027-verificar-quitadas';
+  var V='20261027-capa-modulo';
   var BASE=(function(){try{return new URL('./',document.currentScript.src).href}catch(e){return location.origin+'/portal-esposende-login/'}})();
   var URL_MOD=BASE+'obras/desconto-folha/?v='+V;
   var MOD={id:'cred',aba:'painel',icone:'💳',menu:'Desconto em Folha · Crediário',titulo:'Desconto em Folha · Crediário',capa:BASE+'desconto-folha-capa.jpg?v=2'};
@@ -48,34 +48,26 @@
   function mesBR(c){var m=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];return m[+String(c).slice(5,7)-1]+'/'+String(c).slice(0,4)}
   function dataBR(d){return d?String(d).slice(0,10).split('-').reverse().join('/'):''}
   function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function qtd(n){return Number(n||0).toLocaleString('pt-BR')}
+  // status do card do módulo: o selo diz quanto a folha tem que descontar; a linha de baixo, quando e de quantos
   function resumo(d,redesenhar){
-    var modelo=d.querySelector('[data-cred-card="principal"]');if(!modelo||!modelo.parentNode)return;
-    var box=d.querySelector('[data-cred-resumo]');
-    if(box&&!redesenhar)return;
-    if(!box){box=d.createElement('div');box.setAttribute('data-cred-resumo','1');box.style.cssText='grid-column:1/-1;width:100%;box-sizing:border-box;margin:0 0 16px;padding:18px 20px;border-radius:16px;border:1px solid rgba(124,58,237,.55);background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(11,18,34,.92));color:#e5edf8;font-family:inherit';
-      var grade=modelo.parentNode;grade.insertBefore(box,grade.firstChild);}
-    if(!RES){box.innerHTML='<div style="font-weight:800;color:#c4b5fd;font-size:12px;letter-spacing:.06em">💳 DESCONTO EM FOLHA · CREDIÁRIO</div><div style="margin-top:6px;color:#94a3b8">Calculando o que a próxima folha tem que descontar…</div>';calcular(d);return;}
-    if(RES.semAcesso){box.remove();return;}
-    if(RES.erro||RES.vazio){box.innerHTML='<div style="font-weight:800;color:#c4b5fd;font-size:12px;letter-spacing:.06em">💳 DESCONTO EM FOLHA · CREDIÁRIO</div><div style="margin-top:6px;color:#94a3b8">'+(RES.vazio?'Nenhuma prestação a descontar nas próximas folhas.':'Não foi possível calcular agora.')+' <a href="javascript:void(0)" data-cred-ir="" style="color:#93c5fd">Abrir o módulo</a> · <a href="javascript:void(0)" data-cred-recalc style="color:#93c5fd">tentar de novo</a></div>';ligar(d,box);return;}
-    var r=RES,ir=function(f){return 'cf:'+r.comp+':'+f},pct=function(v){return r.folha>0?Math.max(0,Math.min(100,v/r.folha*100)):0};
-    var peca=function(f,rot,v,n,cor){return '<div data-cred-ir="'+ir(f)+'" style="cursor:pointer;flex:1;min-width:170px;padding:10px 12px;border:1px solid rgba(148,163,184,.25);border-left:4px solid '+cor+';border-radius:12px;background:rgba(15,23,42,.55)"><div style="font-size:12px;color:#94a3b8">'+rot+'</div><div style="font-size:19px;font-weight:800">'+brl(v)+'</div><div style="font-size:12px;color:#94a3b8">'+qtd(n)+' pessoa(s) · ver nomes ›</div></div>'};
-    var sinal=function(t){return '<div style="align-self:center;font-size:22px;font-weight:800">'+t+'</div>'};
-    box.innerHTML='<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start">'
-      +'<div data-cred-ir="'+ir('folha')+'" style="cursor:pointer;min-width:260px"><div style="font-weight:800;color:#c4b5fd;font-size:12px;letter-spacing:.06em">💳 A FOLHA TEM QUE DESCONTAR · FOLHA DE '+esc(r.mes).toUpperCase()+'</div>'
-      +'<div style="font-size:40px;font-weight:900;line-height:1.15">'+brl(r.folha)+'</div>'
-      +'<div style="font-size:13px;color:#94a3b8">paga no 5º dia útil, '+esc(r.pag)+' · '+qtd(r.pessoas)+' colaboradores · '+qtd(r.n)+' prestações'+(r.proj>0.009?' · inclui '+brl(r.proj)+' projetados':'')+' · clique para ver os nomes</div></div>'
-      +'<div data-cred-ir="'+ir('folha')+'" style="cursor:pointer;min-width:260px;font-size:13px">'+r.top.map(function(t){return '<div style="display:flex;justify-content:space-between;gap:14px;padding:2px 0"><span>'+esc(t.nome)+'</span><b>'+brl(t.v)+'</b></div>'}).join('')+(r.pessoas>r.top.length?'<div style="color:#94a3b8">+ '+qtd(r.pessoas-r.top.length)+' colaboradores ›</div>':'')+'</div></div>'
-      +'<div style="display:flex;height:9px;border-radius:6px;overflow:hidden;margin:12px 0;background:rgba(148,163,184,.15)"><i style="width:'+pct(r.herdado)+'%;background:#94a3b8"></i><i style="width:'+pct(r.novo)+'%;background:#22c55e"></i></div>'
-      +'<div style="display:flex;gap:10px;flex-wrap:wrap">'+peca('herdado','Herdado · 2ª prestação em diante',r.herdado,r.nHerdado,'#94a3b8')+sinal('+')+peca('novo','Compras novas · 1ª prestação',r.novo,r.nNovo,'#22c55e')+sinal('=')+peca('folha','Folha',r.folha,r.pessoas,'#7c3aed')
-      +peca('fora','Diretoria · PJ / fora do cadastro (por fora)',r.fora,r.nFora,'#f97316')+'</div>'
-      +(r.prox.length?'<div style="margin-top:10px;font-size:13px;color:#94a3b8">Próximas folhas: '+r.prox.map(function(c){return '<a href="javascript:void(0)" data-cred-ir="cf:'+c.comp+':folha" style="color:#cbd5e1;margin-right:12px">'+esc(c.mes)+' <b>'+brl(c.folha)+'</b></a>'}).join('')+'<a href="javascript:void(0)" data-cred-recalc style="color:#93c5fd;float:right">↻ atualizar</a></div>':'');
-    ligar(d,box);
-  }
-  function ligar(d,box){
-    [].forEach.call(box.querySelectorAll('[data-cred-ir]'),function(el){el.onclick=function(ev){ev.preventDefault();ev.stopPropagation();abrir(d,el.getAttribute('data-cred-ir'))}});
-    [].forEach.call(box.querySelectorAll('[data-cred-recalc]'),function(el){el.onclick=function(ev){ev.preventDefault();ev.stopPropagation();RES=null;resumo(d,true)}});
+    var velho=d.querySelector('[data-cred-resumo]');if(velho)velho.remove();   // banner das versões anteriores
+    var card=d.querySelector('[data-cred-card="principal"]');if(!card)return;
+    if(!RES){calcular(d);return}
+    if(card.getAttribute('data-cred-status')===String(RES.comp||'x')&&!redesenhar)return;
+    var ft=card.querySelector('.ocft')||card.lastElementChild;if(!ft)return;
+    var selo=null,folhas=[].filter.call(ft.querySelectorAll('*'),function(el){return el.children.length===0&&(el.textContent||'').trim()});
+    selo=folhas[0]||null;
+    var linha=ft.querySelector('[data-cred-linha]');
+    if(!linha){linha=d.createElement('div');linha.setAttribute('data-cred-linha','1');linha.style.cssText='font-size:11px;color:#94a3b8;margin-top:6px;line-height:1.4';
+      var alvo=selo&&selo.parentElement&&selo.parentElement!==ft?selo.parentElement:selo;if(alvo&&alvo.parentNode)alvo.parentNode.insertBefore(linha,alvo.nextSibling);else ft.appendChild(linha);}
+    if(RES.semAcesso){if(selo)selo.textContent='DISPONÍVEL';linha.textContent='';}
+    else if(RES.erro||RES.vazio){if(selo)selo.textContent=RES.vazio?'SEM PARCELAS A DESCONTAR':'DISPONÍVEL';linha.textContent='';}
+    else{
+      if(selo)selo.textContent='FOLHA '+String(RES.mes).toUpperCase()+' · '+brl(RES.folha);
+      linha.textContent='● desconto em '+RES.pag+' · '+qtd(RES.pessoas)+' colaboradores'+(RES.fora>0.009?' · Diretoria '+brl(RES.fora):'');
+    }
+    card.setAttribute('data-cred-status',String(RES.comp||'x'));
   }
   function docs(w,a,p){if(p>4)return a;try{if(w.document)a.push(w.document)}catch(e){return a}for(var i=0;i<w.frames.length;i++)try{docs(w.frames[i],a,p+1)}catch(e){}return a}
 
@@ -100,13 +92,15 @@
     }
     return null;
   }
+  // troca a arte do card clonado pela capa do crediário (img com srcset, <source> de <picture> ou fundo em CSS)
   function trocarCapa(card){
-    var img=card.querySelector('img');if(img){img.src=MOD.capa;img.alt=MOD.titulo;return;}
-    var els=[card].concat([].slice.call(card.querySelectorAll('*')));
-    for(var i=0;i<els.length;i++){
-      var bg='';try{bg=getComputedStyle(els[i]).backgroundImage||''}catch(e){}
-      if(bg&&bg!=='none'&&/url\(/i.test(bg)){els[i].style.backgroundImage='url("'+MOD.capa+'")';return;}
-    }
+    var w=card.ownerDocument.defaultView;
+    [card].concat([].slice.call(card.querySelectorAll('*'))).forEach(function(el){
+      if(el.tagName==='SOURCE'){el.setAttribute('srcset',MOD.capa);return}
+      if(el.tagName==='IMG'){el.removeAttribute('srcset');el.removeAttribute('sizes');el.removeAttribute('loading');el.src=MOD.capa;el.alt=MOD.titulo;el.style.objectFit='cover';el.style.objectPosition='center';return}
+      var bg='';try{bg=w.getComputedStyle(el).backgroundImage||''}catch(e){}
+      if(bg&&bg.indexOf('url(')>=0){el.style.backgroundImage=bg.replace(/url\([^)]*\)/,'url("'+MOD.capa+'")');el.style.backgroundSize='cover';el.style.backgroundPosition='center'}
+    });
   }
   function cardPrincipal(d){
     if(d.querySelector('[data-cred-card="principal"]'))return;
