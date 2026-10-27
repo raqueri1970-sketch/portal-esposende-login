@@ -1,7 +1,7 @@
 /* Desconto em Folha · Crediário dentro do Portal */
 (function(){
   if(window.__credPortal)return;window.__credPortal=true;
-  var V='20261027-resumo-portal';
+  var V='20261027-painel-simples';
   var BASE=(function(){try{return new URL('./',document.currentScript.src).href}catch(e){return location.origin+'/portal-esposende-login/'}})();
   var URL_MOD=BASE+'obras/desconto-folha/?v='+V;
   var MOD={id:'cred',aba:'painel',icone:'💳',menu:'Desconto em Folha · Crediário',titulo:'Desconto em Folha · Crediário',capa:BASE+'desconto-folha-capa.jpg?v=2'};
@@ -21,7 +21,7 @@
   // o módulo está pronto quando o Conferente já desenhou o painel (dados carregados depois do login)
   function esperarModulo(f,seg,ok,falhou){
     var n=0,t=setInterval(function(){var w=null;try{w=f.contentWindow}catch(e){}
-      var pronto=false;try{pronto=!!(w&&typeof w.conferente==='function'&&w.document.querySelector('#conferente .kpi'))}catch(e){}
+      var pronto=false;try{pronto=!!(w&&typeof w.conferente==='function'&&w.document.querySelector('#conferente[data-pronto]'))}catch(e){}
       if(pronto){clearInterval(t);ok(w);return}
       var semAcesso=false;try{var l=w&&w.document.getElementById('vLogin');semAcesso=!!(l&&!l.classList.contains('hidden')&&w.document.readyState==='complete'&&n>8)}catch(e){}
       if(semAcesso||++n>seg*2){clearInterval(t);if(falhou)falhou(semAcesso)}},500);
