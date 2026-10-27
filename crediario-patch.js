@@ -1,7 +1,7 @@
 /* Desconto em Folha · Crediário dentro do Portal */
 (function(){
   if(window.__credPortal)return;window.__credPortal=true;
-  var V='20261027-portal-card-1';
+  var V='20261027-portal-card-3';
   var BASE=(function(){try{return new URL('./',document.currentScript.src).href}catch(e){return location.origin+'/portal-esposende-login/'}})();
   var URL_MOD=BASE+'obras/desconto-folha/?v='+V;
   var MOD={id:'cred',aba:'painel',icone:'💳',menu:'Desconto em Folha · Crediário',titulo:'Desconto em Folha · Crediário',capa:BASE+'desconto-folha-capa.jpg?v=2'};
@@ -28,31 +28,36 @@
     sb.appendChild(g);g.querySelector('[data-cred-menu]').onclick=function(){abrir(d)};
   }
 
-  function limparIds(el){
-    if(el.removeAttribute)el.removeAttribute('id');
-    [].forEach.call(el.querySelectorAll('[id]'),function(x){x.removeAttribute('id')});
-  }
+  function limparIds(el){if(el.removeAttribute)el.removeAttribute('id');[].forEach.call(el.querySelectorAll('[id]'),function(x){x.removeAttribute('id')});}
   function acharCardModelo(d){
     var folhas=[].filter.call(d.querySelectorAll('*'),function(el){return el.children.length===0&&/Descontos de Funcionários/i.test((el.textContent||'').trim())});
     for(var i=0;i<folhas.length;i++){
       var p=folhas[i];
-      for(var n=0;n<7&&p&&p!==d.body;n++,p=p.parentElement){
-        if(p.querySelector&&p.querySelector('img')&&(p.onclick||p.tagName==='A'||p.querySelector('a,button'))){return {card:p,label:folhas[i]};}
+      for(var n=0;n<9&&p&&p!==d.body;n++,p=p.parentElement){
+        if(!p.querySelector)continue;
+        var r=p.getBoundingClientRect?p.getBoundingClientRect():{width:0,height:0};
+        var cls=String(p.className||'');
+        if((r.width>180&&r.height>120)||/card|mod|tile/i.test(cls)||p.onclick||p.tagName==='A')return {card:p,label:folhas[i]};
       }
     }
     return null;
+  }
+  function trocarCapa(card){
+    var img=card.querySelector('img');if(img){img.src=MOD.capa;img.alt=MOD.titulo;return;}
+    var els=[card].concat([].slice.call(card.querySelectorAll('*')));
+    for(var i=0;i<els.length;i++){
+      var bg='';try{bg=getComputedStyle(els[i]).backgroundImage||''}catch(e){}
+      if(bg&&bg!=='none'&&/url\(/i.test(bg)){els[i].style.backgroundImage='url("'+MOD.capa+'")';return;}
+    }
   }
   function cardPrincipal(d){
     if(d.querySelector('[data-cred-card="principal"]'))return;
     var modelo=acharCardModelo(d);if(!modelo)return;
     var original=modelo.card, card=original.cloneNode(true);limparIds(card);
-    card.setAttribute('data-cred-card','principal');
-    card.removeAttribute('href');card.style.cursor='pointer';
+    card.setAttribute('data-cred-card','principal');card.removeAttribute('href');card.style.cursor='pointer';
     [].forEach.call(card.querySelectorAll('a'),function(a){a.removeAttribute('href')});
-    [].forEach.call(card.querySelectorAll('*'),function(el){
-      if(el.children.length===0&&/Descontos de Funcionários/i.test(el.textContent||''))el.textContent=(el.textContent||'').replace(/Descontos de Funcionários/ig,'Desconto em Folha · Crediário');
-    });
-    var img=card.querySelector('img');if(img){img.src=MOD.capa;img.alt=MOD.titulo;}
+    [].forEach.call(card.querySelectorAll('*'),function(el){if(el.children.length===0&&/Descontos de Funcionários/i.test(el.textContent||''))el.textContent=(el.textContent||'').replace(/Descontos de Funcionários/ig,'Desconto em Folha · Crediário');});
+    trocarCapa(card);
     card.onclick=function(ev){ev.preventDefault();ev.stopPropagation();abrir(d)};
     original.parentNode.insertBefore(card,original.nextSibling);
   }
