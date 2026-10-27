@@ -875,7 +875,7 @@ async function openPortal(){
   // Auditoria Financeira: Contas a Pagar do Sallamo com cruzamentos de possíveis irregularidades (menu Financeiro).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('financeiro-patch.js?v=20261021-1',location.href).href+'"></scr'+'ipt>');
   // Desconto em Folha · Crediário e Ex-funcionários: cards na visão geral e grupo "Crediário" no menu (tela obras/desconto-folha/).
-  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('crediario-patch.js?v=20261027-portal-card-3',location.href).href+'"></scr'+'ipt>');
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('crediario-patch.js?v=20261027-conferente-modulo',location.href).href+'"></scr'+'ipt>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
