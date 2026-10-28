@@ -1,17 +1,18 @@
-/* Desconto em Folha · Crediário dentro do Portal */
+/* Desconto/Crediário (desconto em folha do crediário) dentro do Portal */
 (function(){
   if(window.__credPortal)return;window.__credPortal=true;
-  var V='20261027-logo';
+  var V='20261028-nome';
   var BASE=(function(){try{return new URL('./',document.currentScript.src).href}catch(e){return location.origin+'/portal-esposende-login/'}})();
   var URL_MOD=BASE+'obras/desconto-folha/?v='+V;
-  var MOD={id:'cred',aba:'painel',icone:'💳',menu:'Desconto em Folha · Crediário',titulo:'Desconto em Folha · Crediário',capa:BASE+'desconto-folha-capa.jpg?v=2'};
+  var MOD={id:'cred',aba:'painel',icone:'💳',menu:'Desconto/Crediário',titulo:'Desconto/Crediário',capa:BASE+'desconto-crediario-capa.jpg?v=1'};
+  var CAPA_ARQ='desconto-crediario-capa.jpg';
 
   // acao = card do Conferente a abrir já com a lista de nomes (ex.: 'cf:2026-10:folha')
   function abrir(d,acao){
     var ov=d.getElementById('cred-portal');
     if(!ov){
       ov=d.createElement('div');ov.id='cred-portal';ov.style.cssText='position:fixed;inset:0;z-index:2147483000;background:#070b16;display:flex;flex-direction:column';
-      ov.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #1e2a44;background:#0b1222;color:#e5edf8;font:600 14px Arial"><button type="button" data-cred-fechar style="background:#101a2e;border:1px solid #1e2a44;color:#e5edf8;border-radius:9px;padding:8px 13px">← Voltar ao Portal</button><span data-cred-titulo></span></div><iframe title="Desconto em Folha · Crediário" allow="clipboard-write" style="flex:1;width:100%;border:0;background:#070b16"></iframe>';
+      ov.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #1e2a44;background:#0b1222;color:#e5edf8;font:600 14px Arial"><button type="button" data-cred-fechar style="background:#101a2e;border:1px solid #1e2a44;color:#e5edf8;border-radius:9px;padding:8px 13px">← Voltar ao Portal</button><span data-cred-titulo></span></div><iframe title="Desconto/Crediário" allow="clipboard-write" style="flex:1;width:100%;border:0;background:#070b16"></iframe>';
       ov.querySelector('[data-cred-fechar]').onclick=function(){ov.style.display='none';calcular(d,true)};d.body.appendChild(ov);
     }
     ov.querySelector('[data-cred-titulo]').textContent=MOD.icone+' '+MOD.titulo;
@@ -92,24 +93,35 @@
     }
     return null;
   }
-  // troca a arte do card clonado pela capa do crediário (img com srcset, <source> de <picture> ou fundo em CSS)
+  // troca a arte do card clonado pela capa do crediário (img com srcset, <source> de <picture>, fundo em CSS ou ::before/::after).
+  // Roda a cada varredura: os patches de capa do Portal reaplicam a foto do card de origem no clone.
   function trocarCapa(card){
-    var w=card.ownerDocument.defaultView;
+    var d=card.ownerDocument,w=d.defaultView,ok=function(v){return String(v||'').indexOf(CAPA_ARQ)>=0};
+    if(!d.getElementById('cred-capa-css')){var st=d.createElement('style');st.id='cred-capa-css';
+      st.textContent='[data-cred-card="principal"] [data-cred-pseudo="before"]::before,[data-cred-card="principal"] [data-cred-pseudo="after"]::after{background-image:url("'+MOD.capa+'")!important;background-size:cover!important;background-position:center!important}';
+      d.head.appendChild(st);}
     [card].concat([].slice.call(card.querySelectorAll('*'))).forEach(function(el){
-      if(el.tagName==='SOURCE'){el.setAttribute('srcset',MOD.capa);return}
-      if(el.tagName==='IMG'){el.removeAttribute('srcset');el.removeAttribute('sizes');el.removeAttribute('loading');el.src=MOD.capa;el.alt=MOD.titulo;el.style.objectFit='cover';el.style.objectPosition='center';return}
+      if(el.tagName==='SOURCE'){if(!ok(el.getAttribute('srcset')))el.setAttribute('srcset',MOD.capa);return}
+      if(el.tagName==='IMG'){if(!ok(el.getAttribute('src'))||el.hasAttribute('srcset')){el.removeAttribute('srcset');el.removeAttribute('sizes');el.removeAttribute('loading');el.removeAttribute('data-src');el.removeAttribute('data-srcset');el.src=MOD.capa}
+        el.alt=MOD.titulo;el.style.objectFit='cover';el.style.objectPosition='center';return}
       var bg='';try{bg=w.getComputedStyle(el).backgroundImage||''}catch(e){}
-      if(bg&&bg.indexOf('url(')>=0){el.style.backgroundImage=bg.replace(/url\([^)]*\)/,'url("'+MOD.capa+'")');el.style.backgroundSize='cover';el.style.backgroundPosition='center'}
+      if(bg&&bg.indexOf('url(')>=0&&!ok(bg)){el.style.setProperty('background-image',bg.replace(/url\([^)]*\)/,'url("'+MOD.capa+'")'),'important');el.style.backgroundSize='cover';el.style.backgroundPosition='center'}
+      ['before','after'].forEach(function(ps){var b='';try{b=w.getComputedStyle(el,'::'+ps).backgroundImage||''}catch(e){}
+        if(b&&b.indexOf('url(')>=0&&!ok(b))el.setAttribute('data-cred-pseudo',ps)});
     });
   }
+  // o clone não pode levar as marcas do card de origem (onclick com o id do módulo, data-*): é por elas que os patches de capa o achavam
+  function limparMarcas(el){[el].concat([].slice.call(el.querySelectorAll('*'))).forEach(function(x){
+    [].slice.call(x.attributes).forEach(function(a){if(a.name==='onclick'||(/^data-/.test(a.name)&&!/^data-cred/.test(a.name)))x.removeAttribute(a.name)})})}
+  function renomear(card){[].forEach.call(card.querySelectorAll('*'),function(el){if(el.children.length===0&&/Descontos de Funcionários|Desconto em Folha · Crediário/i.test(el.textContent||''))el.textContent=(el.textContent||'').replace(/Descontos de Funcionários|Desconto em Folha · Crediário/ig,MOD.titulo);});
+    card.setAttribute('title',MOD.titulo);card.setAttribute('aria-label',MOD.titulo);}
   function cardPrincipal(d){
-    if(d.querySelector('[data-cred-card="principal"]'))return;
+    var feito=d.querySelector('[data-cred-card="principal"]');if(feito){renomear(feito);trocarCapa(feito);return}
     var modelo=acharCardModelo(d);if(!modelo)return;
-    var original=modelo.card, card=original.cloneNode(true);limparIds(card);
+    var original=modelo.card, card=original.cloneNode(true);limparIds(card);limparMarcas(card);
     card.setAttribute('data-cred-card','principal');card.removeAttribute('href');card.style.cursor='pointer';
     [].forEach.call(card.querySelectorAll('a'),function(a){a.removeAttribute('href')});
-    [].forEach.call(card.querySelectorAll('*'),function(el){if(el.children.length===0&&/Descontos de Funcionários/i.test(el.textContent||''))el.textContent=(el.textContent||'').replace(/Descontos de Funcionários/ig,'Desconto em Folha · Crediário');});
-    trocarCapa(card);
+    renomear(card);trocarCapa(card);
     card.onclick=function(ev){ev.preventDefault();ev.stopPropagation();abrir(d)};
     original.parentNode.insertBefore(card,original.nextSibling);
   }
