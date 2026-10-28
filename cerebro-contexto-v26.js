@@ -44,15 +44,12 @@
         else if(ativa){p.loja=ativa;p.lojas=[ativa];if(explicita)put({loja:ativa})}
         if(!p.mes&&c.mes)p.mes=c.mes;
         if(!p.ano&&c.ano)p.ano=c.ano;
-        // Regra global de fonte: o Cerebro deve responder com a base operacional que alimenta cada modulo.
-        // Interface, cards, cache, fotos e anexos sao apoio/evidencia, nunca a fonte primaria de numeros.
         p.fonte_regra_global='base_operacional_do_modulo';
         p.exigir_fonte_primaria=true;
         p.ignorar_interface_como_fonte=true;
         p.ignorar_cards_como_fonte=true;
         p.ignorar_cache_como_fonte=true;
         p.anexos_apenas_evidencia=true;
-        // Skills Esposende: roteamento especializado do Cerebro/Auditor.
         p.skills_esposende_ativas=true;
         p.skill_auditor_mestre='skills-esposende/auditor-mestre.md';
         p.skills_catalogo={
@@ -62,6 +59,10 @@
           comercial:'skills-esposende/comercial.md',
           rh:'skills-esposende/rh-folha.md',
           folha:'skills-esposende/rh-folha.md',
+          crediario:'skills-esposende/crediario.md',
+          crediario_funcionario:'skills-esposende/crediario.md',
+          desconto_funcionario:'skills-esposende/crediario.md',
+          desconto_em_folha_crediario:'skills-esposende/crediario.md',
           comissao:'skills-esposende/comissao.md',
           compras:'skills-esposende/compras.md',
           financeiro:'skills-esposende/financeiro.md',
@@ -80,17 +81,26 @@
         p.base_mae_regra='funcionario_loja_cargo_setor_regional_sempre_atual';
         p.instrucoes_fonte=(p.instrucoes_fonte?String(p.instrucoes_fonte)+' | ':'')+
           'REGRA GLOBAL: para qualquer modulo do Portal Esposende, consultar sempre a base operacional/original que alimenta o modulo e calcular a resposta a partir dela. Nao usar tela, card, cache, foto ou anexo como fonte primaria de quantidade, valor, status ou ranking. Se a base primaria nao estiver acessivel, informar indisponibilidade em vez de estimar ou trocar silenciosamente de fonte.';
-        // Regra SACI: quantidade/estoque deve vir da base consolidada D1; fotos sao somente evidencia.
-        if(/\bsaci\b/i.test(norm(q))){
+        const nq=norm(q);
+        if(/\b(crediario|crediario de funcionario|desconto de funcionario|desconto em folha.*crediario|parcela.*funcionario|pj.*crediario)\b/i.test(nq)){
+          p.modulo='crediario';
+          p.skill_prioritaria='skills-esposende/crediario.md';
+          p.crediario_fonte='base_operacional_do_modulo_crediario';
+          p.crediario_cruzar_base_mae=true;
+          p.crediario_cruzar_rh_folha=true;
+          p.crediario_verificar_rescisoes=true;
+          p.crediario_preservar_pj_fora_cadastro=true;
+          p.instrucoes_fonte+=' | CREDIARIO: usar a carteira/base operacional de compras e parcelas; calcular por competencia sem duplicidade; cruzar CPF com Base Mae/RH; manter PJ/fora do cadastro no relatorio Diretoria; para desligados verificar quitacao na rescisao; se o historico de compras quitadas estiver incompleto, excesso de desconto deve ser VERIFICAR e nao erro confirmado.';
+        }
+        if(/\bsaci\b/i.test(nq)){
           p.modulo='saci';
           p.fonte_prioritaria='saci_d1_consolidada';
           p.saci_fonte='base_consolidada_d1';
           p.saci_agregacao='direito+esquerdo';
           p.saci_chave_loja='loja_origem';
           p.saci_ignorar_fotos_como_fonte=true;
-          p.saci_fallback='base_operacional_modulo_saci';
-          p.saci_fallback_quando='campo_ausente_no_d1';
           p.saci_fallback='dados_operacionais_do_modulo_saci';
+          p.saci_fallback_quando='campo_ausente_no_d1';
           p.saci_ordem_fontes=['saci_d1_consolidada','dados_operacionais_do_modulo_saci'];
           p.instrucoes_fonte=(p.instrucoes_fonte?String(p.instrucoes_fonte)+' | ':'')+
             'SACI: primeira fonte = base consolidada D1, somando Direito + Esquerdo por Loja Origem. Se a informacao solicitada nao existir ou nao estiver disponivel na D1, segunda fonte = base/dados operacionais usados pelo proprio modulo SACI, inclusive pesquisas e agrupamentos por marca. Fotos servem apenas como evidencia e nunca como fonte de quantidade. Nunca inventar dados.';
