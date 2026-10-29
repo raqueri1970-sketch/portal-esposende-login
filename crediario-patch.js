@@ -1,9 +1,9 @@
 /* Desconto/Crediário (desconto em folha do crediário) dentro do Portal */
 (function(){
   if(window.__credPortal)return;window.__credPortal=true;
-  var V='20261028-nome';
+  var V='20261029-pasta';
   var BASE=(function(){try{return new URL('./',document.currentScript.src).href}catch(e){return location.origin+'/portal-esposende-login/'}})();
-  var URL_MOD=BASE+'obras/desconto-folha/?v='+V;
+  var URL_MOD=BASE+'crediario/?v='+V;
   var MOD={id:'cred',aba:'painel',icone:'💳',menu:'Desconto/Crediário',titulo:'Desconto/Crediário',capa:BASE+'desconto-crediario-capa.jpg?v=1'};
   var CAPA_ARQ='desconto-crediario-capa.jpg';
 

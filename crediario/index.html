@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#0b1020">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="../obras-contas-pagar/comum.css?v=20261027-dark">
+<link rel="stylesheet" href="comum.css?v=20261027-dark">
 <style>
   .topo-comp{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .marca{display:flex;align-items:center;gap:12px}.marca img{width:150px;height:46px;object-fit:cover;border-radius:9px;flex:none;box-shadow:0 0 0 1px rgba(148,163,184,.25)}
@@ -112,7 +112,7 @@
 <body>
 
 <div id="vLogin" class="hidden" style="max-width:420px;margin:40px auto">
-  <img src="../obras-contas-pagar/logo-esposende.jpg" alt="Esposende" style="width:180px;height:56px;object-fit:cover;border-radius:10px;display:block;margin:0 auto 12px"><h1>Desconto em Folha</h1><div class="sub">Entre com o mesmo usuário do Portal Esposende</div>
+  <img src="logo-esposende.jpg" alt="Esposende" style="width:180px;height:56px;object-fit:cover;border-radius:10px;display:block;margin:0 auto 12px"><h1>Desconto em Folha</h1><div class="sub">Entre com o mesmo usuário do Portal Esposende</div>
   <div class="card" style="margin-top:16px">
     <label class="small">Email do Portal</label><input id="lEmail" type="email" autocomplete="username" inputmode="email">
     <label class="small">Senha</label><input id="lSenha" type="password" autocomplete="current-password">
@@ -123,7 +123,7 @@
 
 <div id="vApp" class="hidden">
   <div class="top">
-    <div class="marca"><img src="../obras-contas-pagar/logo-esposende.jpg" alt="Esposende"><div><h1>Desconto em Folha · Crediário</h1>
+    <div class="marca"><img src="logo-esposende.jpg" alt="Esposende"><div><h1>Desconto em Folha · Crediário</h1>
       <div class="sub" id="origem">Compras dos funcionários × folha de pagamento</div></div></div>
     <div class="topo-comp">
       <label class="small" for="selComp">Competência</label><select id="selComp"></select>
@@ -320,7 +320,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="../obras-contas-pagar/comum.js?v=20261027-dark"></script>
+<script src="comum.js?v=20261027-dark"></script>
 <script>
 // o Conferente de Crediário agora é do módulo: o script que o Portal injetava (conferente-crediario-ui.js) não roda mais aqui
 window.__conferenteCrediarioUI = window.__conferenteCrediario = true;
@@ -2428,7 +2428,7 @@ async function baixarPDF(m) { try { toast('Gerando PDF…', 30000); await gerarP
 
 // Impressão: o mesmo modelo do PDF em página branca (logo, resumo, gráficos, tabelas, assinaturas)
 function imprimirModelo(m) {
-  const logo = new URL('../obras-contas-pagar/logo-esposende.jpg', location.href).href;
+  const logo = new URL('logo-esposende.jpg', location.href).href;
   const td = (c, i, s) => `<td class="${(s.direita || []).includes(i) ? 'r' : ''}">${esc(celTxt(c))}</td>`;
   const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(m.titulo)}</title><style>
     @page{size:A4 ${m.paisagem ? 'landscape' : 'portrait'};margin:12mm}
