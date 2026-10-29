@@ -713,6 +713,7 @@ function cruzar() {
   // em aberto: com o RH, as parcelas das folhas que ainda não foram pagas; sem o RH, as depois da última folha importada
   const emAberto = pe => rd2(pe.parcelas.filter(p => !p.baixa && !p.rec && (modoRH ? quintoDiaUtil(p.comp) >= hoje : !ultFolha || p.comp > ultFolha)).reduce((s, p) => s + p.valor, 0));
   // depois do desligamento não há folha: a folha de M só existe para quem estava na empresa no início de M
+  const vIniBase = par.filter(p => !p.rec).map(p => p.vencimento).sort()[0] || '';
   const depoisDaSaida = (pe, comp) => pe && pe.ex && comp + '-01' > pe.desl.saida;
 
   // 1) desconto em folha
@@ -723,11 +724,12 @@ function cruzar() {
     const peL = pessoas.get(l.cpf);
     if (peL && peL.ex && l.comp === peL.desl.saida.slice(0, 7) && !['ok', 'prev'].includes(l.st)) {
       // base incompleta: parcelas da rescisão em diante que não estão no crediário (reconstruídas a partir da parcela em aberto
-      // do mesmo contrato). Saíram da carteira sem estar no arquivo — pagas na rescisão ou baixadas sem desconto: não dá para
-      // dar o saldo como certo (29/10/2026: CE231245-1/6 e 2/6 fora do crediário e não descontadas; a tela mostrava 59,03).
-      const fb = l.parcelas.filter(p => p.rec);
-      if (fb.length) { const vf = rd2(fb.reduce((s, p) => s + p.valor, 0));
-        add('desconto', 'alta', 'Rescisão a verificar (base incompleta)', l.cpf, l.comp, `Saiu em ${dataBR(peL.desl.saida)}${peL.desl.natureza ? ' (' + peL.desl.natureza + ')' : ''}: no crediário ${brl(rd2(l.devido - vf))} em aberto + ${fb.length} parcela(s) que não estão no crediário (${fb.map(p => p.documento).slice(0, 8).join(', ')}${fb.length > 8 ? '…' : ''}, cerca de ${brl(vf)}) × descontado na rescisão ${brl(l.desc)}. Essas parcelas saíram do crediário sem estar no arquivo: foram pagas na rescisão ou baixadas sem desconto? Confira o TRCT parcela a parcela ou importe o COMPRA EM LOJA dos ciclos de compra de ${faixas([...new Set(fb.map(p => cicloDe(p.lancamento || p.vencimento, cfg.corte)))].sort())} e anteriores — o saldo não é confirmado.`, Math.max(0, -l.dif));
+      // do mesmo contrato) — vencem antes do período que o arquivo do crediário traz. Sem elas o saldo não fecha: não dá para
+      // dá-lo como certo (29/10/2026: CE231245 de 463,47 não descontada na rescisão; a tela mostrava 59,03 em aberto).
+      // só quando o desconto da rescisão não cobre o saldo estimado (com as parcelas fora do crediário); se cobre, segue a regra normal
+      const fb = l.parcelas.filter(p => p.rec), tolFb = cfg.tol + fb.filter(p => p.aprox).length;
+      if (fb.length && -l.dif > tolFb) { const vf = rd2(fb.reduce((s, p) => s + p.valor, 0));
+        add('desconto', 'alta', 'Rescisão a verificar (base incompleta)', l.cpf, l.comp, `Saiu em ${dataBR(peL.desl.saida)}${peL.desl.natureza ? ' (' + peL.desl.natureza + ')' : ''}: no crediário ${brl(rd2(l.devido - vf))} em aberto + ${fb.length} parcela(s) que não estão no crediário (${fb.map(p => p.documento).slice(0, 8).join(', ')}${fb.length > 8 ? '…' : ''}, cerca de ${brl(vf)}) × descontado na rescisão ${brl(l.desc)}. Essas parcelas vencem antes do período do arquivo do crediário${vIniBase ? ' (a partir de ' + dataBR(vIniBase) + ')' : ''}: confira no TRCT quais compras entraram na verba Compra Loja ou importe o COMPRA EM LOJA dos ciclos de compra de ${faixas([...new Set(fb.map(p => cicloDe(p.lancamento || p.vencimento, cfg.corte)))].sort())} e anteriores — o saldo não é confirmado.`, Math.max(0, -l.dif));
         continue; }
       const sd = `Saiu em ${dataBR(peL.desl.saida)}${peL.desl.natureza ? ' (' + peL.desl.natureza + ')' : ''}: saldo das compras ${brl(l.devido)} (${l.parcelas.length} parcela(s), até a folha de ${compBR(l.parcelas.map(p => p.compParcela || p.comp).sort().pop())})`;
       if (l.st === 'nao') add('desconto', 'alta', 'Rescisão sem desconto do saldo', l.cpf, l.comp, `${sd} e nada foi descontado na rescisão (folha de ${compBR(l.comp)}) — conferir o TRCT e cobrar.`, -l.dif);
@@ -769,8 +771,12 @@ function cruzar() {
     // o saldo não é confirmado — sai do débito em aberto e vai para Verificar, com a estimativa pela base
     o.foraBase = pe.parcelas.filter(p => p.rec && p.comp === mS); o.foraValor = rd2(o.foraBase.reduce((s, p) => s + p.valor, 0));
     o.verifValor = 0;
-    if (o.foraBase.length) { o.verifValor = Math.max(0, rd2(saldo + o.foraValor - (folhaResc ? descResc : 0))); o.abertas = []; o.vencido = o.aVencer = o.aberto = 0; o.contratos = 0; o.prox = o.ult = ''; }
-    o.st = o.foraBase.length ? 'verif' : o.aberto > 0.009 ? 'aberto' : 'quitado'; pe.exInfo = o; exs.push(o);
+    // parcela reconstruída da última do contrato tem valor aproximado: aceita até R$ 1 por parcela de diferença
+    const est = o.foraBase.length ? Math.max(0, rd2(saldo + o.foraValor - (folhaResc ? descResc : 0))) : 0, ehVerif = est > cfg.tol + o.foraBase.filter(p => p.aprox).length;
+    if (ehVerif) { o.verifValor = est; o.abertas = []; o.vencido = o.aVencer = o.aberto = 0; o.contratos = 0; o.prox = o.ult = ''; }
+    // coberto pela rescisão contando as parcelas fora do crediário: quitado
+    else if (o.foraBase.length && folhaResc) { o.abertas = []; o.vencido = o.aVencer = o.aberto = 0; }
+    o.st = ehVerif ? 'verif' : o.aberto > 0.009 ? 'aberto' : 'quitado'; pe.exInfo = o; exs.push(o);
     if (o.st === 'verif' && !folhaResc) add('cadastro', 'alta', 'Ex-funcionário a verificar (base incompleta)', pe.cpf, '', `${d.inferida ? 'Saída deduzida (' + d.natureza.replace(/^.*último registro: /, 'último registro: ') + ')' : 'Desligado em ' + dataBR(d.saida) + ' (' + (d.natureza || 'natureza não informada') + ')'}. No crediário ${brl(saldo)} em aberto + ${o.foraBase.length} parcela(s) que não estão no crediário (${o.foraBase.map(p => p.documento).slice(0, 8).join(', ')}, cerca de ${brl(o.foraValor)}). A folha de ${compBR(mS)} não foi importada — importe a folha ou confira o TRCT parcela a parcela.`, o.verifValor);
     // com a folha da rescisão importada, a diferença já vira pendência da rescisão (acima); sem ela, pedir o TRCT
     if (o.aberto > 0.009 && !folhaResc) add('cadastro', 'alta', 'Ex-funcionário com débito em aberto', pe.cpf, '', `${d.inferida ? 'Não está no cadastro de ativos nem nos desligados, mas já foi funcionário (' + d.natureza.replace(/^.*último registro: /, 'último registro: ') + ') — confirmar a saída com o RH' : 'Desligado em ' + dataBR(d.saida) + ' (' + (d.natureza || 'natureza não informada') + ')'}. Saldo de ${abertas.length} parcela(s) de ${o.contratos} compra(s): ${brl(vencido)} vencidas e ${brl(aVencer)} a vencer (até ${dataBR(o.ult)}). Devia ter sido descontado na rescisão, mas a folha de ${compBR(mS)} não foi importada — importe a folha ou confira o TRCT: se descontou, dar baixa no crediário; se não, cobrar.`, o.aberto);
