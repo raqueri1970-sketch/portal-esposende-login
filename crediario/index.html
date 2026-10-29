@@ -220,7 +220,7 @@
     <div class="card" style="margin-top:14px">
       <div class="busca">
         <input id="eBusca" placeholder="Buscar nome, CPF, matrícula, cargo ou empresa">
-        <select id="eSt"><option value="">Todos os ex-funcionários com crediário</option><option value="aberto">Só com débito em aberto</option><option value="folha">Só descontados na folha depois da saída</option><option value="quitado">Só quitados</option></select>
+        <select id="eSt"><option value="">Todos os ex-funcionários com crediário</option><option value="aberto">Só com débito em aberto</option><option value="verif">Só a verificar (base incompleta)</option><option value="folha">Só descontados na folha depois da saída</option><option value="quitado">Só quitados</option></select>
       </div>
       <div class="small mut">Saída e natureza vêm do relatório de desligados. Saldo na saída = parcelas da folha do mês da saída em diante, que tinham de sair na rescisão; Desc. na rescisão = verba 1260 da folha desse mês. Débito em aberto = o que a rescisão não cobriu (sem a folha da rescisão importada, o saldo inteiro). Clique no nome para ver o extrato.</div>
       <div class="tw" id="tEx"></div>
@@ -722,6 +722,13 @@ function cruzar() {
     // folha do mês da saída = rescisão: o devido é o saldo inteiro (parcelas desta folha em diante)
     const peL = pessoas.get(l.cpf);
     if (peL && peL.ex && l.comp === peL.desl.saida.slice(0, 7) && !['ok', 'prev'].includes(l.st)) {
+      // base incompleta: parcelas da rescisão em diante que não estão no crediário (reconstruídas a partir da parcela em aberto
+      // do mesmo contrato). Saíram da carteira sem estar no arquivo — pagas na rescisão ou baixadas sem desconto: não dá para
+      // dar o saldo como certo (29/10/2026: CE231245-1/6 e 2/6 fora do crediário e não descontadas; a tela mostrava 59,03).
+      const fb = l.parcelas.filter(p => p.rec);
+      if (fb.length) { const vf = rd2(fb.reduce((s, p) => s + p.valor, 0));
+        add('desconto', 'alta', 'Rescisão a verificar (base incompleta)', l.cpf, l.comp, `Saiu em ${dataBR(peL.desl.saida)}${peL.desl.natureza ? ' (' + peL.desl.natureza + ')' : ''}: no crediário ${brl(rd2(l.devido - vf))} em aberto + ${fb.length} parcela(s) que não estão no crediário (${fb.map(p => p.documento).slice(0, 8).join(', ')}${fb.length > 8 ? '…' : ''}, cerca de ${brl(vf)}) × descontado na rescisão ${brl(l.desc)}. Essas parcelas saíram do crediário sem estar no arquivo: foram pagas na rescisão ou baixadas sem desconto? Confira o TRCT parcela a parcela ou importe o COMPRA EM LOJA dos ciclos de compra de ${faixas([...new Set(fb.map(p => cicloDe(p.lancamento || p.vencimento, cfg.corte)))].sort())} e anteriores — o saldo não é confirmado.`, Math.max(0, -l.dif));
+        continue; }
       const sd = `Saiu em ${dataBR(peL.desl.saida)}${peL.desl.natureza ? ' (' + peL.desl.natureza + ')' : ''}: saldo das compras ${brl(l.devido)} (${l.parcelas.length} parcela(s), até a folha de ${compBR(l.parcelas.map(p => p.compParcela || p.comp).sort().pop())})`;
       if (l.st === 'nao') add('desconto', 'alta', 'Rescisão sem desconto do saldo', l.cpf, l.comp, `${sd} e nada foi descontado na rescisão (folha de ${compBR(l.comp)}) — conferir o TRCT e cobrar.`, -l.dif);
       else if (l.st === 'menos') add('desconto', 'alta', 'Rescisão descontou a menos', l.cpf, l.comp, `${sd} × descontado na rescisão ${brl(l.desc)} — faltou ${brl(-l.dif)} (cobrar; a compensação na rescisão é limitada ao valor do líquido).`, -l.dif);
@@ -758,7 +765,13 @@ function cruzar() {
     const o = {pe, d, abertas, vencido, aVencer, aberto: rd2(vencido + aVencer), aposCompra, folhaApos, descApos, desc: rd2(pe.folha.reduce((s, l) => s + l.valor, 0)),
       saldo, descResc: rd2(descResc), folhaResc, maisResc: folhaResc ? Math.max(0, rd2(descResc - saldo)) : 0,
       compras: rd2(reais.reduce((s, p) => s + p.valor, 0)), contratos: new Set(abertas.map(p => p.contrato)).size, prox: abertas.length ? abertas[0].vencimento : '', ult: abertas.length ? abertas[abertas.length - 1].vencimento : ''};
-    o.st = o.aberto > 0.009 ? 'aberto' : 'quitado'; pe.exInfo = o; exs.push(o);
+    // base incompleta: parcelas da folha da rescisão em diante que não estão no crediário (ver a pendência da rescisão acima);
+    // o saldo não é confirmado — sai do débito em aberto e vai para Verificar, com a estimativa pela base
+    o.foraBase = pe.parcelas.filter(p => p.rec && p.comp === mS); o.foraValor = rd2(o.foraBase.reduce((s, p) => s + p.valor, 0));
+    o.verifValor = 0;
+    if (o.foraBase.length) { o.verifValor = Math.max(0, rd2(saldo + o.foraValor - (folhaResc ? descResc : 0))); o.abertas = []; o.vencido = o.aVencer = o.aberto = 0; o.contratos = 0; o.prox = o.ult = ''; }
+    o.st = o.foraBase.length ? 'verif' : o.aberto > 0.009 ? 'aberto' : 'quitado'; pe.exInfo = o; exs.push(o);
+    if (o.st === 'verif' && !folhaResc) add('cadastro', 'alta', 'Ex-funcionário a verificar (base incompleta)', pe.cpf, '', `${d.inferida ? 'Saída deduzida (' + d.natureza.replace(/^.*último registro: /, 'último registro: ') + ')' : 'Desligado em ' + dataBR(d.saida) + ' (' + (d.natureza || 'natureza não informada') + ')'}. No crediário ${brl(saldo)} em aberto + ${o.foraBase.length} parcela(s) que não estão no crediário (${o.foraBase.map(p => p.documento).slice(0, 8).join(', ')}, cerca de ${brl(o.foraValor)}). A folha de ${compBR(mS)} não foi importada — importe a folha ou confira o TRCT parcela a parcela.`, o.verifValor);
     // com a folha da rescisão importada, a diferença já vira pendência da rescisão (acima); sem ela, pedir o TRCT
     if (o.aberto > 0.009 && !folhaResc) add('cadastro', 'alta', 'Ex-funcionário com débito em aberto', pe.cpf, '', `${d.inferida ? 'Não está no cadastro de ativos nem nos desligados, mas já foi funcionário (' + d.natureza.replace(/^.*último registro: /, 'último registro: ') + ') — confirmar a saída com o RH' : 'Desligado em ' + dataBR(d.saida) + ' (' + (d.natureza || 'natureza não informada') + ')'}. Saldo de ${abertas.length} parcela(s) de ${o.contratos} compra(s): ${brl(vencido)} vencidas e ${brl(aVencer)} a vencer (até ${dataBR(o.ult)}). Devia ter sido descontado na rescisão, mas a folha de ${compBR(mS)} não foi importada — importe a folha ou confira o TRCT: se descontou, dar baixa no crediário; se não, cobrar.`, o.aberto);
     if (aposCompra.length) add('cadastro', 'alta', 'Compra depois do desligamento', pe.cpf, '', `Saiu em ${dataBR(d.saida)} e tem ${new Set(aposCompra.map(p => p.contrato)).size} compra(s) no crediário de funcionário depois disso (${[...new Set(aposCompra.map(p => dataBR(p.lancamento)))].join(', ')}), ${brl(aposCompra.reduce((s, p) => s + p.valor, 0))} — a loja vendeu como funcionário a quem já tinha saído.`, aposCompra.reduce((s, p) => s + p.valor, 0));
@@ -968,7 +981,7 @@ async function recarregar() {
     const abertas = R.pend.filter(p => !encerrada(p) && p.cat !== 'duplicidade' && p.grav === 'alta').length;
     const dups = R.pend.filter(p => !encerrada(p) && p.cat === 'duplicidade').length;
     $('nPend').textContent = abertas ? `(${abertas})` : ''; $('nDup').textContent = dups ? `(${dups})` : '';
-    const nEx = R.exs.filter(o => o.st === 'aberto').length; $('nEx').textContent = nEx ? `(${nEx})` : '';
+    const nEx = R.exs.filter(o => o.st !== 'quitado').length; $('nEx').textContent = nEx ? `(${nEx})` : '';
     $('nFora').textContent = R.foras.length ? `(${R.foras.length})` : '';
     const ult = D.arquivos.slice().sort((a, b) => b.importado_em.localeCompare(a.importado_em))[0];
     $('origem').textContent = `${qtd(D.parcelas.length)} parcelas · ${qtd(R.pessoas.size)} funcionários · ${R.compsFolha.size} folha(s) importada(s)` + (ult ? ` · último arquivo em ${dtBR(ult.importado_em)}` : '');
@@ -1395,7 +1408,8 @@ function abrirPessoa(cpf, foco) {
   <div><span>Função</span>${f ? esc(f.funcao || '—') : '—'}</div><div><span>Admissão</span>${f ? dataBR(f.admissao) || '—' : '—'}</div><div><span>Situação</span>${f ? esc(f.situacao || '—') + (f.noCadastro ? '' : ' <span class="badt">(saiu do cadastro)</span>') : '—'}</div>
   ${p.nomeCred && f && nomeN(p.nomeCred) !== nomeN(f.nome) ? `<div><span>Nome no crediário</span>${esc(p.nomeCred)}</div>` : ''}
   ${p.desl ? `<div><span>${p.readm ? 'Saiu (readmitido depois)' : p.desl.inferida ? 'Último registro como funcionário' : 'Desligado em'}</span><b class="${p.ex ? 'badt' : ''}">${dataBR(p.desl.saida)}</b> ${esc(p.desl.natureza || '')}</div>` : ''}
-  ${p.exInfo ? `<div><span>Em aberto no crediário</span><b class="${p.exInfo.aberto > 0.009 ? 'badt' : 'okt'}">${brl(p.exInfo.aberto)}</b> (${brl(p.exInfo.vencido)} vencido · ${brl(p.exInfo.aVencer)} a vencer)</div>` : ''}</div>`;
+  ${p.exInfo && p.exInfo.st === 'verif' ? `<div><span>Rescisão a verificar</span><b class="wt">base incompleta</b> — ${p.exInfo.foraBase.length} parcela(s) fora do crediário (${esc(p.exInfo.foraBase.map(x => x.documento).join(', '))}); estimado pela base ${brl(p.exInfo.verifValor)}</div>` : ''}
+  ${p.exInfo && p.exInfo.st !== 'verif' ? `<div><span>Em aberto no crediário</span><b class="${p.exInfo.aberto > 0.009 ? 'badt' : 'okt'}">${brl(p.exInfo.aberto)}</b> (${brl(p.exInfo.vencido)} vencido · ${brl(p.exInfo.aVencer)} a vencer)</div>` : ''}</div>`;
   h += p.pend.map(a => `<div class="${a.grav === 'alta' ? 'perigo' : 'aviso'}"><b>${esc(a.tipo)}${a.comp ? ' · ' + compBR(a.comp) : ''}:</b> ${esc(a.txt)} ${tratChip(a.trat)} <a href="javascript:void(0)" data-tratar="${esc(a.id)}">tratar</a></div>`).join('');
   h += `<div class="tw"><table><thead><tr><th>Competência</th><th class="r">Devido</th><th class="r">Descontado</th><th class="r">Diferença</th><th>Situação</th><th>Pago na folha</th>${D.baixas.length ? '<th>Baixa no crediário</th>' : ''}</tr></thead><tbody>` +
     comps.map(c => { const x = p.celulas[c]; return `<tr ${c === foco ? 'class="semrow"' : ''}><td><b>${compBR(c)}</b></td><td class="r">${nfm(x.devido)}</td><td class="r">${x.st === 'prev' ? '—' : nfm(x.desc)}</td><td class="r">${x.st === 'prev' ? '' : nfm(x.dif)}</td><td>${x.st === 'prev' && quintoDiaUtil(c) < hojeISO() ? `<span class="st st-prev">Folha de ${compBR(c)} não importada (paga em ${dataBR(quintoDiaUtil(c))})</span>` : stChip(x.st)}</td><td class="small">${x.dataPag.map(dataBR).join(', ')}</td>${D.baixas.length ? `<td class="small">${x.baixadas}/${x.parcelas.length} ${x.dataBaixa.map(dataBR).join(', ')}</td>` : ''}</tr>`; }).join('') + `</tbody></table></div>`;
@@ -1715,7 +1729,7 @@ let DRILL = null;
 const CAB_CEL = ['Funcionário', 'CPF', 'Matrícula', 'Loja', 'Prestações', 'Devido', 'Descontado', 'Diferença', 'Situação'];
 const linhaCel = l => { const p = R.pessoas.get(l.cpf); return [p.nome, cpfF(l.cpf), p.cad ? p.cad.matricula || '' : '', p.cad ? p.cad.loja || '' : (p.ex ? 'EX-FUNCIONÁRIO' : 'FORA DO CADASTRO'), l.parcelas.length, V(l.devido), l.st === 'prev' ? '-' : V(l.desc), l.st === 'prev' ? '' : V(l.dif), STAT[l.st][0]]; };
 const CAB_EX = ['Ex-funcionário', 'CPF', 'Saída', 'Natureza', 'Parcelas', 'Vencido', 'A vencer', 'Em aberto', 'Desc. folha após saída'];
-const linhaEx = o => [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), o.d.natureza || '', o.abertas.length, V(o.vencido), V(o.aVencer), V(o.aberto), o.descApos ? V(o.descApos) : ''];
+const linhaEx = o => [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), o.d.natureza || '', o.abertas.length, V(o.vencido), V(o.aVencer), o.st === 'verif' ? `verificar ~${V(o.verifValor)}` : V(o.aberto), o.descApos ? V(o.descApos) : ''];
 function lista(titulo, sub, cab, objs, linha, cpf, direita, total) {
   const linhas = objs.map(linha);
   return {titulo, subtitulo: sub, marca: MARCA, paisagem: true, arquivo: titulo.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '_').slice(0, 60) + '_' + hojeISO(),
@@ -1753,6 +1767,7 @@ function drill(k) {
     ex_debito: () => ex('Ex-funcionários com débito em aberto', o => o.st === 'aberto'), ex_vencido: () => ex('Ex-funcionários com parcela vencida', o => o.vencido > 0.009),
     ex_avencer: () => ex('Ex-funcionários com débito a vencer', o => o.aVencer > 0.009), ex_folha: () => ex('Descontados na folha depois da saída', o => o.folhaApos.length),
     ex_compra: () => ex('Compraram depois da saída', o => o.aposCompra.length), ex_quit: () => ex('Ex-funcionários quitados', o => o.st === 'quitado'),
+    ex_verif: () => ex('Ex-funcionários a verificar (base incompleta)', o => o.st === 'verif'),
     ex_readm: () => lista('Readmitidos com crediário', 'Saíram e voltaram - tratados como ativos', ['Funcionário', 'CPF', 'Saída', 'Readmissão', 'Loja'], readmitidos(), p => [p.nome, cpfF(p.cpf), dataBR(p.desl.saida), dataBR(p.cad.admissao), p.cad.loja || ''], p => p.cpf, []),
     fo_todos: () => fo('Fora do cadastro com crediário', () => true), fo_aberto: () => fo('Fora do cadastro com saldo em aberto', o => o.aberto > 0.009),
     fo_vencido: () => fo('Fora do cadastro com parcela vencida', o => o.vencido > 0.009), fo_lista: () => fo('Fora do cadastro na lista de desconto do RH', o => o.nLista)
@@ -1783,14 +1798,15 @@ function excelDrill() {
 
 /* ---------- EX-FUNCIONÁRIOS ---------- */
 // quem saiu (relatório de desligados) e tem crediário: foi descontado? ficou débito em aberto (vencido / a vencer)?
-const EX_ST = {aberto: ['Débito em aberto', 'st-alta'], quitado: ['Quitado', 'st-ok']};
+const EX_ST = {aberto: ['Débito em aberto', 'st-alta'], verif: ['Verificar (base incompleta)', 'st-verif'], quitado: ['Quitado', 'st-ok']};
 // rescisão × saldo: o que a verba 1260 da folha do mês da saída cobriu
-const rescTxt = o => !o.saldo && !o.descResc ? 'sem saldo' : !o.folhaResc ? `folha de ${compBR(o.d.saida.slice(0, 7))} não importada` : o.maisResc > 0.009 ? `descontou ${nfm(o.maisResc)} a mais` : o.aberto > 0.009 ? (o.descResc ? 'descontou a menos' : 'não descontou') : 'descontado na rescisão';
+const rescTxt = o => o.st === 'verif' ? `base incompleta: ${o.foraBase.length} parcela(s) fora do crediário` : !o.saldo && !o.descResc ? 'sem saldo' : !o.folhaResc ? `folha de ${compBR(o.d.saida.slice(0, 7))} não importada` : o.maisResc > 0.009 ? `descontou ${nfm(o.maisResc)} a mais` : o.aberto > 0.009 ? (o.descResc ? 'descontou a menos' : 'não descontou') : 'descontado na rescisão';
 function listaEx() {
   const q = nomeN($('eBusca').value), qd = soDig($('eBusca').value), st = $('eSt').value;
   return R.exs.filter(o => {
     if (st === 'aberto' && o.st !== 'aberto') return false;
     if (st === 'quitado' && o.st !== 'quitado') return false;
+    if (st === 'verif' && o.st !== 'verif') return false;
     if (st === 'folha' && !o.folhaApos.length) return false;
     if (!q && !qd) return true;
     return (q && nomeN([o.pe.nome, o.d.cargo, o.d.estab, o.d.natureza].join(' ')).includes(q)) || (qd && (o.pe.cpf.includes(qd) || String(o.d.matricula || '').includes(qd)));
@@ -1798,7 +1814,7 @@ function listaEx() {
 }
 function numerosEx(ls = R.exs) {
   const s = k => rd2(ls.reduce((t, o) => t + o[k], 0));
-  return {n: ls.length, nAberto: ls.filter(o => o.st === 'aberto').length, aberto: s('aberto'), vencido: s('vencido'), aVencer: s('aVencer'), nFolha: ls.filter(o => o.folhaApos.length).length, descApos: s('descApos'),
+  return {n: ls.length, nAberto: ls.filter(o => o.st === 'aberto').length, nVerif: ls.filter(o => o.st === 'verif').length, verifValor: s('verifValor'), aberto: s('aberto'), vencido: s('vencido'), aVencer: s('aVencer'), nFolha: ls.filter(o => o.folhaApos.length).length, descApos: s('descApos'),
     nCompra: ls.filter(o => o.aposCompra.length).length, compraApos: rd2(ls.reduce((t, o) => t + o.aposCompra.reduce((u, p) => u + p.valor, 0), 0)), nParc: ls.reduce((t, o) => t + o.abertas.length, 0)};
 }
 const readmitidos = () => [...R.pessoas.values()].filter(p => p.readm).sort((a, b) => a.nome.localeCompare(b.nome));
@@ -1819,7 +1835,8 @@ function telaEx() {
     kpi('Descontados na folha depois da saída', qtd(N.nFolha), brl(N.descApos), N.nFolha ? 't-vermelho' : 't-verde', "drill('ex_folha')") +
     kpi('Compras depois da saída', qtd(N.nCompra), brl(N.compraApos), N.nCompra ? 't-vermelho' : 't-verde', "drill('ex_compra')") +
     kpi('Readmitidos com crediário', qtd(readmitidos().length), 'saíram e voltaram — tratados como ativos', 't-cinza', "drill('ex_readm')") +
-    kpi('Quitados', qtd(N.n - N.nAberto), 'sem parcela em aberto', 't-verde', "drill('ex_quit')");
+    kpi('A verificar (base incompleta)', qtd(N.nVerif), N.nVerif ? `cerca de ${brl(N.verifValor)} · parcelas fora do crediário` : 'nenhum', N.nVerif ? 't-laranja' : 't-verde', "drill('ex_verif')") +
+    kpi('Quitados', qtd(N.n - N.nAberto - N.nVerif), 'sem parcela em aberto', 't-verde', "drill('ex_quit')");
   const porMes = new Map(); R.exs.filter(o => o.aberto > 0.009).forEach(o => { const m = o.d.saida.slice(0, 7); const x = porMes.get(m) || {n: 0, v: 0}; x.n++; x.v += o.aberto; porMes.set(m, x); });
   graficoBarrasH($('gExMes'), [...porMes.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([m, x]) => ({rotulo: compBR(m), valor: rd2(x.v), det: `<div><span>Ex-funcionários</span><span>${x.n}</span></div>`})), {vazio: 'Nenhum débito em aberto.'});
   const porV = new Map(); R.exs.forEach(o => o.abertas.forEach(p => { const m = p.vencimento.slice(0, 7); porV.set(m, (porV.get(m) || 0) + p.valor); }));
@@ -1827,7 +1844,7 @@ function telaEx() {
   const ls = listaEx();
   $('tEx').innerHTML = ls.length ? `<table><thead><tr><th>Ex-funcionário</th><th>Saída</th><th>Natureza</th><th class="r">Saldo na saída</th><th class="r">Desc. na rescisão</th><th class="r">Parcelas</th><th class="r">Vencido</th><th class="r">A vencer</th><th class="r">Em aberto</th><th>Último venc.</th><th class="r">Desc. folha após saída</th><th>Situação</th></tr></thead><tbody>` +
     ls.map(o => `<tr class="clicavel" data-pes="${o.pe.cpf}"><td><b>${esc(o.pe.nome)}</b><br><span class="mut small">${cpfF(o.pe.cpf)} · ${esc(o.d.matricula || '')} · ${esc(o.d.cargo || '')}<br>${esc(o.d.estab || '')}</span></td>
-      <td>${dataBR(o.d.saida)}</td><td class="small">${esc(o.d.natureza || '')}</td><td class="r">${nfm(o.saldo)}</td><td class="r ${o.maisResc > 0.009 || (o.folhaResc && o.aberto > 0.009) ? 'badt' : ''}">${o.folhaResc ? nfm(o.descResc) : '—'}<br><span class="mut small">${esc(rescTxt(o))}</span></td><td class="r">${o.abertas.length}</td><td class="r ${o.vencido > 0.009 ? 'badt' : ''}">${nfm(o.vencido)}</td><td class="r">${nfm(o.aVencer)}</td><td class="r"><b>${nfm(o.aberto)}</b></td>
+      <td>${dataBR(o.d.saida)}</td><td class="small">${esc(o.d.natureza || '')}</td><td class="r">${nfm(o.saldo)}</td><td class="r ${o.maisResc > 0.009 || (o.folhaResc && o.aberto > 0.009) ? 'badt' : ''}">${o.folhaResc ? nfm(o.descResc) : '—'}<br><span class="mut small">${esc(rescTxt(o))}</span></td><td class="r">${o.abertas.length}</td><td class="r ${o.vencido > 0.009 ? 'badt' : ''}">${nfm(o.vencido)}</td><td class="r">${nfm(o.aVencer)}</td><td class="r">${o.st === 'verif' ? `<span class="st st-verif">verificar</span><br><span class="mut small">~${nfm(o.verifValor)}</span>` : `<b>${nfm(o.aberto)}</b>`}</td>
       <td class="small">${dataBR(o.ult)}</td><td class="r ${o.descApos > 0.009 ? 'badt' : ''}">${o.descApos ? nfm(o.descApos) : ''}</td>
       <td><span class="st ${EX_ST[o.st][1]}">${EX_ST[o.st][0]}</span>${o.aposCompra.length ? ' <span class="st st-alta">comprou depois de sair</span>' : ''}</td></tr>`).join('') +
     `</tbody><tfoot><tr><td>Total (${ls.length})</td><td></td><td></td><td class="r">${nfm(ls.reduce((t, o) => t + o.saldo, 0))}</td><td class="r">${nfm(ls.reduce((t, o) => t + o.descResc, 0))}</td><td class="r">${ls.reduce((t, o) => t + o.abertas.length, 0)}</td><td class="r">${nfm(ls.reduce((t, o) => t + o.vencido, 0))}</td><td class="r">${nfm(ls.reduce((t, o) => t + o.aVencer, 0))}</td><td class="r">${nfm(ls.reduce((t, o) => t + o.aberto, 0))}</td><td></td><td class="r">${nfm(ls.reduce((t, o) => t + o.descApos, 0))}</td><td></td></tr></tfoot></table>`
@@ -1844,12 +1861,12 @@ function modeloEx(ls = R.exs) {
   const parcelas = ls.flatMap(o => o.abertas.map(p => [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), p.documento, dataBR(p.lancamento), dataBR(p.vencimento), p.vencimento < hojeISO() ? 'Vencida' : 'A vencer', V(p.valor)]));
   const apos = ls.filter(o => o.folhaApos.length || o.aposCompra.length);
   return {titulo: 'Ex-funcionários - crediário e desconto em folha', subtitulo: `Desligados de ${dataBR(ss[0])} a ${dataBR(ss[ss.length - 1])} com compra no crediário - posição de ${dataBR(hojeISO())}`, marca: MARCA, paisagem: true, arquivo: `ex_funcionarios_crediario_${hojeISO()}`,
-    resumo: [['Ex-funcionários com crediário', qtd(N.n)], ['Com débito em aberto', qtd(N.nAberto)], ['Débito em aberto - pendência', brl(N.aberto)], ['Já vencido', brl(N.vencido)],
+    resumo: [['Ex-funcionários com crediário', qtd(N.n)], ['Com débito em aberto', qtd(N.nAberto)], ['A verificar (base incompleta)', `${qtd(N.nVerif)} - cerca de ${brl(N.verifValor)}`], ['Débito em aberto - pendência', brl(N.aberto)], ['Já vencido', brl(N.vencido)],
       ['Débito futuro (a vencer)', brl(N.aVencer)], ['Descontados na folha depois da saída', `${qtd(N.nFolha)} - ${brl(N.descApos)}`], ['Compras depois da saída', `${qtd(N.nCompra)} - ${brl(N.compraApos)}`], ['Readmitidos com crediário', qtd(readmitidos().length)]],
     graficos: [{titulo: 'Débito em aberto por mês de desligamento', tipo: 'barras', itens: [...porMes.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([m, v]) => ({rotulo: compBR(m), a: rd2(v)}))}],
     secoes: [
       {titulo: `Ex-funcionários (${ls.length})`, cab: ['Ex-funcionário', 'CPF', 'Matrícula', 'Cargo', 'Saída', 'Natureza', 'Saldo na saída', 'Desc. na rescisão', 'Parcelas', 'Vencido', 'A vencer', 'Em aberto', 'Último venc.', 'Desc. folha após saída', 'Situação'], direita: [6, 7, 8, 9, 10, 11, 13],
-        linhas: ls.map(o => [o.pe.nome, cpfF(o.pe.cpf), o.d.matricula || '', o.d.cargo || '', dataBR(o.d.saida), o.d.natureza || '', V(o.saldo), (o.folhaResc ? V(o.descResc) + ' - ' : '') + rescTxt(o), o.abertas.length, V(o.vencido), V(o.aVencer), V(o.aberto), dataBR(o.ult), o.descApos ? V(o.descApos) : '', EX_ST[o.st][0] + (o.aposCompra.length ? ' - comprou depois de sair' : '')]),
+        linhas: ls.map(o => [o.pe.nome, cpfF(o.pe.cpf), o.d.matricula || '', o.d.cargo || '', dataBR(o.d.saida), o.d.natureza || '', V(o.saldo), (o.folhaResc ? V(o.descResc) + ' - ' : '') + rescTxt(o), o.abertas.length, V(o.vencido), V(o.aVencer), o.st === 'verif' ? `verificar ~${V(o.verifValor)}` : V(o.aberto), dataBR(o.ult), o.descApos ? V(o.descApos) : '', EX_ST[o.st][0] + (o.aposCompra.length ? ' - comprou depois de sair' : '')]),
         rodape: ['Total', '', '', '', '', '', V(ls.reduce((t, o) => t + o.saldo, 0)), V(ls.reduce((t, o) => t + o.descResc, 0)), N.nParc, V(N.vencido), V(N.aVencer), V(N.aberto), '', V(N.descApos), '']},
       {titulo: `Desconto em folha ou compra depois da saída (${apos.length})`, cab: ['Ex-funcionário', 'Saída', 'Ocorrência', 'Valor'], direita: [3],
         linhas: apos.flatMap(o => [...[...grpConta(o.folhaApos, l => l.comp).entries()].map(([c, xs]) => [o.pe.nome, dataBR(o.d.saida), `Desconto na folha de ${compBR(c)}`, V(xs.reduce((t, l) => t + l.valor, 0))]),
@@ -1862,7 +1879,7 @@ function excelEx() {
   const ls = listaEx(), wb = XLSX.utils.book_new();
   const add = (nome, linhas, larg) => { const ws = XLSX.utils.json_to_sheet(linhas.length ? linhas : [{'': 'Nada a listar'}]); if (larg) ws['!cols'] = larg.map(w => ({wch: w})); ws['!autofilter'] = {ref: ws['!ref']}; XLSX.utils.book_append_sheet(wb, ws, nome); };
   const id = o => ({'Matrícula': o.d.matricula || '', 'Nome': o.pe.nome, 'CPF': cpfF(o.pe.cpf), 'Cargo': o.d.cargo || '', 'Empresa': o.d.estab || '', 'Admissão': dataBR(o.d.admissao), 'Saída': dataBR(o.d.saida), 'Natureza': o.d.natureza || ''});
-  add('Ex-funcionários', ls.map(o => ({...id(o), 'Saldo na saída (devia sair na rescisão)': o.saldo, 'Folha da rescisão': compBR(o.d.saida.slice(0, 7)), 'Descontado na rescisão (verba 1260)': o.folhaResc ? o.descResc : '', 'Rescisão': rescTxt(o), 'Parcelas em aberto': o.abertas.length, 'Vencido': o.vencido, 'A vencer': o.aVencer, 'Em aberto': o.aberto, 'Próximo vencimento': dataBR(o.prox), 'Último vencimento': dataBR(o.ult),
+  add('Ex-funcionários', ls.map(o => ({...id(o), 'Saldo na saída (devia sair na rescisão)': o.saldo, 'Folha da rescisão': compBR(o.d.saida.slice(0, 7)), 'Descontado na rescisão (verba 1260)': o.folhaResc ? o.descResc : '', 'Rescisão': rescTxt(o), 'Parcelas em aberto': o.abertas.length, 'Vencido': o.vencido, 'A vencer': o.aVencer, 'Em aberto': o.aberto, 'A verificar (estimado pela base)': o.verifValor, 'Parcelas fora do crediário': (o.foraBase || []).map(p => p.documento).join(', '), 'Próximo vencimento': dataBR(o.prox), 'Último vencimento': dataBR(o.ult),
     'Descontado na folha (total)': o.desc, 'Descontado na folha depois da saída': o.descApos, 'Compras depois da saída': rd2(o.aposCompra.reduce((t, p) => t + p.valor, 0)), 'Situação': EX_ST[o.st][0]})),
     [11, 34, 15, 22, 30, 11, 11, 26, 14, 11, 14, 24, 9, 11, 11, 11, 12, 12, 12, 14, 14, 16]);
   add('Parcelas em aberto', ls.flatMap(o => o.abertas.map(p => ({...id(o), 'Documento': p.documento, 'Compra em': dataBR(p.lancamento), 'Vencimento': dataBR(p.vencimento), 'Situação': p.vencimento < hojeISO() ? 'Vencida' : 'A vencer', 'Valor': p.valor}))),
