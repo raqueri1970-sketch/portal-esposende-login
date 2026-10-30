@@ -184,7 +184,7 @@
         <select id="pTipo"><option value="">Todos os tipos</option></select>
         <select id="pGrav"><option value="">Todas as gravidades</option><option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option></select>
         <select id="pSit"><option value="abertas">Abertas e em tratamento</option><option value="">Todas</option><option value="encerradas">Encerradas</option></select>
-        <select id="pComp"><option value="sel">Só a competência selecionada</option><option value="">Todas as competências</option></select>
+        <select id="pComp"><option value="">Todas as competências</option><option value="sel">Só a competência selecionada</option></select>
       </div>
       <div class="leg" id="pCont"></div>
       <div class="tw" id="tPend"></div>
@@ -624,7 +624,11 @@ function cruzar() {
   }
   const par = base.concat(rec).map(p => {
     const x = {...p, comp: compDaParcela(p, cfg.regra, cfg.corte), ck: p.cpf + '|' + p.contrato + '|' + (p.lancamento || ''), descontos: []};
-    const b = bx.get(p.documento + '|' + p.parcela) || bx.get(p.contrato + '|' + p.parcela); x.baixas = b || []; x.baixa = b ? b[0] : null;
+    // o número da compra (CE…) se repete entre compras diferentes (outra loja / outro ano): só vale a baixa da mesma pessoa e
+    // feita depois da compra (30/10/2026: 182 "baixadas 2x" eram compras diferentes com o mesmo número)
+    const b = (bx.get(p.documento + '|' + p.parcela) || bx.get(p.contrato + '|' + p.parcela) || [])
+      .filter(y => (!y.cpf || !p.cpf || y.cpf === p.cpf) && (!p.lancamento || !y.data_baixa || y.data_baixa >= p.lancamento)).sort((u, v) => String(u.data_baixa).localeCompare(String(v.data_baixa)));
+    x.baixas = b; x.baixa = b.length ? b[0] : null;
     return x;
   });
   // com as baixas: parcela reconstruída que tem baixa é real (valor da baixa); baixa de compra que não está na carteira em aberto
@@ -1043,7 +1047,13 @@ function cruzar() {
     // várias compras do mesmo funcionário (inclusive no mesmo dia) são normais e as parcelas se acumulam no mês: só informativo
     add('integridade', 'baixa', 'Compras iguais no mesmo dia', cs2[0].cpf, '', `${cs2.length} compras com o mesmo valor e parcelas em ${dataBR(cs2[0].lanc)}: ${cs2.map(c => c.contrato).join(', ')} — ${cs2[0].n}x, total ${brl(cs2[0].total)} cada. Informativo (comprar várias vezes é permitido).`, 0, {sufixo: cs2.map(c => c.contrato).join('+')});
   }
-  for (const [k, bs] of bx) if (bs.length > 1) {
+  // baixada 2x só quando é a mesma parcela: mesmo valor e lotes próximos (até 45 dias); valor diferente ou meses de distância
+  // é outra compra com o mesmo número
+  for (const [k, bs0] of bx) if (bs0.length > 1) {
+    const bs = bs0.slice().sort((u, v) => String(u.data_baixa).localeCompare(String(v.data_baixa)));
+    const iguais = bs.some((b, i) => i && Math.abs(Number(b.valor) - Number(bs[i - 1].valor)) <= 0.05 && (!b.cpf || !bs[i - 1].cpf || b.cpf === bs[i - 1].cpf)
+      && (new Date(b.data_baixa) - new Date(bs[i - 1].data_baixa)) / 864e5 <= 45);
+    if (!iguais) continue;
     const p = par.find(x => x.documento + '|' + x.parcela === k);
     add('duplicidade', 'alta', 'Parcela baixada 2x', p ? p.cpf : (bs[0].cpf || ''), p ? p.comp : '', `${bs[0].documento} parcela ${bs[0].parcela} baixada ${bs.length} vezes: ${bs.map(b => dataBR(b.data_baixa) + ' ' + brl(b.valor)).join(', ')}.`, bs.slice(1).reduce((s, b) => s + Number(b.valor || 0), 0), {sufixo: k, nome: bs[0].documento});
   }
@@ -1786,6 +1796,8 @@ function telaConferente() {
   <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:12px">
     ${chip('Diretoria · PJ / fora', a.fora, a.nFora ? `${qtd(a.nFora)} pessoa(s)` : '', '#f59e0b', dr('fora'))}
     ${chip('Ex-funcionários · rescisão', nEx.aberto, nEx.nAberto ? `${qtd(nEx.nAberto)} pessoa(s)` : '', '#ef4444', "irPara('ex')")}
+    ${(() => { const ps = R.pend.filter(p => TIPOS_NAO_DESC.has(p.tipo) && !encerrada(p)); return ps.length ? chip('Não descontados', ps.reduce((t, p) => t + p.valor, 0), `${qtd(new Set(ps.map(p => p.cpf)).size)} pessoa(s)`, '#ef4444', "drill('naodesc')") : ''; })()}
+    ${(() => { const ps = R.pend.filter(p => p.tipo === 'Valor lançado errado no RH (centavos)' && !encerrada(p)); return ps.length ? chip('Erro de centavos no RH', ps.reduce((t, p) => t + p.valor, 0), `${qtd(ps.length)} pessoa(s)`, '#ef4444', "drill('pt:Valor lançado errado no RH (centavos)')") : ''; })()}
     ${chip('Total do crediário no mês', a.total, 'folha + Diretoria', '#94a3b8', dr('todos'))}
   </div>
   <h3 style="margin-top:18px">Próximas folhas — quanto cada uma desconta <span class="small mut">(clique na coluna)</span></h3>
@@ -1889,6 +1901,9 @@ function lista(titulo, sub, cab, objs, linha, cpf, direita, total) {
     secoes: [{titulo: `${titulo} (${linhas.length})`, cab, linhas, direita, rodape: total ? total(objs) : null}], cpfs: objs.map(cpf), assinaturas: ['Auditoria']};
 }
 let D_cf = null;
+// o que devia ter sido descontado e não foi (devido × verba 1260), em todas as folhas — ativos e ex-funcionários
+const TIPOS_NAO_DESC = new Set(['Não descontou', 'Descontou a menos', 'Saldo não descontado (acumulado)', 'Rescisão descontou a menos', 'Rescisão sem desconto do saldo',
+  'Valor lançado errado no RH (centavos)', 'Ex-funcionário com débito em aberto', 'Fora da lista do RH', 'Fora do desconto do RH', 'Lista do RH a menos']);
 function drill(k) {
   const N = numeros(), comp = compBR(COMP), cel = (t, f) => lista(t, `Folha de ${comp}`, CAB_CEL, N.ls.filter(f).sort((a, b) => Math.abs(b.dif) - Math.abs(a.dif) || b.devido - a.devido), linhaCel, l => l.cpf, [4, 5, 6, 7],
     ls => ['Total', '', '', '', ls.reduce((t, l) => t + l.parcelas.length, 0), V(ls.reduce((t, l) => t + l.devido, 0)), V(ls.reduce((t, l) => t + (l.st === 'prev' ? 0 : l.desc), 0)), V(ls.reduce((t, l) => t + (l.st === 'prev' ? 0 : l.dif), 0)), '']);
@@ -1905,7 +1920,8 @@ function drill(k) {
   const tipoPt = k.startsWith('pt:') ? k.slice(3) : '';
   if (k.startsWith('cf:')) { const [, c, f] = k.split(':'), m = listaConferente(c, f); D_cf = () => m; k = '_cf'; }
   const D_ = {
-    _pt: () => pend(tipoPt, N.pend.filter(p => p.tipo === tipoPt)),
+    _pt: () => pend(tipoPt, R.pend.filter(p => p.tipo === tipoPt && !encerrada(p))),   // o tipo em todas as folhas
+    naodesc: () => pend('Funcionários não descontados', R.pend.filter(p => TIPOS_NAO_DESC.has(p.tipo) && !encerrada(p)).sort((a, b) => b.valor - a.valor)),
     _cf: () => D_cf(),
     rh_bate: () => par('RH × crediário: parcelas que batem', crd, conjRH().ambos),
     rh_dif: () => { const x = conjRH(); return par('RH × crediário: parcelas que não batem', `${crd} · em aberto no crediário e fora do RH, no RH e não em aberto no crediário, ou em dois arquivos do RH`, [...x.soCred, ...x.soRH, ...x.dup]); },
