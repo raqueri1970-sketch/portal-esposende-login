@@ -783,13 +783,20 @@ function cruzar() {
     const pc = new Map(); c.parcelas.forEach(p => { if (p.rec) return; const ps = pc.get(p.contrato) || []; ps.push(p); pc.set(p.contrato, ps); });
     const ks = [...pc.entries()].map(([k, ps]) => ({k, ps, perda: rd2(ps.reduce((t, p) => t + p.valor - centErr(p.valor), 0))})).filter(x => x.perda > 0.009);
     if (!ks.length || ks.length > 14) continue;
-    const alvo = rd2(c.devido - c.desc); let melhor = null;
+    // exato (até 2 centavos) ou quase: o erro explica a diferença e sobra até R$ 5 (e até 3% dela) de outra coisa
+    // (30/10/2026, Joshuel: CE199521 94,00 → 0,94 explica 279,18 de 276,94 — o TRCT trouxe 2,24 a mais)
+    const alvo = rd2(c.devido - c.desc), folga = Math.min(5, 0.03 * alvo); let melhor = null, dm = Infinity;
     for (let m = 1; m < 1 << ks.length; m++) { let t = 0; for (let i = 0; i < ks.length; i++) if (m & 1 << i) t += ks[i].perda;
-      if (Math.abs(t - alvo) <= 0.02 && (!melhor || bits(m) < bits(melhor))) melhor = m; }
+      const d = Math.abs(t - alvo); if (d <= Math.max(0.02, folga) && (d < dm - 0.005 || (Math.abs(d - dm) <= 0.005 && bits(m) < bits(melhor)))) { melhor = m; dm = d; } }
     if (melhor == null) continue;
     const sel = ks.filter((x, i) => melhor & 1 << i), perda = rd2(sel.reduce((t, x) => t + x.perda, 0));
     if (perda < 1) continue;   // diferença de centavos pode ser coincidência
-    c.centavos = {compras: sel.map(x => x.k), perda, ex: sel.map(x => x.ps.filter(p => centErr(p.valor) !== p.valor).map(p => `${p.documento} ${brl(p.valor)} → ${brl(centErr(p.valor))}`).join(', ')).join('; ')};
+    // sem bater exato, só vale com valor alto e se "a parcela não foi descontada" (valor cheio) não explicar a diferença:
+    // 94,00 → 0,94 perde 99% da parcela, quase igual a não descontar — sem o centavo exato não dá para distinguir
+    if (dm > 0.02) { if (perda < 100) continue;
+      const cheio = sel.reduce((t, x) => t + x.ps.filter(p => centErr(p.valor) !== p.valor).reduce((u, p) => u + p.valor, 0), 0);
+      if (Math.abs(cheio - alvo) <= Math.max(0.02, folga)) continue; }
+    c.centavos = {compras: sel.map(x => x.k), perda, resto: rd2(alvo - perda), ex: sel.map(x => x.ps.filter(p => centErr(p.valor) !== p.valor).map(p => `${p.documento} ${brl(p.valor)} → ${brl(centErr(p.valor))}`).join(', ')).join('; ')};
   }
   function bits(m) { let n = 0; while (m) { n += m & 1; m >>= 1; } return n; }
   linhas.forEach(l => { const x = pessoas.get(l.cpf).celulas[l.comp]; Object.assign(l, {st: x.st, stOrig: x.stOrig, acum: x.acum, carrega: x.carrega, desde: x.desde, centavos: x.centavos}); });
@@ -820,7 +827,7 @@ function cruzar() {
     // folha sem lote de baixa que bata: as compras quitadas dela não estão na base — "a mais" ali não dá para conferir
     if (loteComp.size && !loteBoa.has(l.comp) && l.st === 'verif') continue;
     if (l.centavos) {
-      add('desconto', 'alta', 'Valor lançado errado no RH (centavos)', l.cpf, l.comp, `Folha de ${compBR(l.comp)}: devido ${brl(l.devido)} × descontado ${brl(l.desc)}. A diferença de ${brl(l.centavos.perda)} é exatamente a das compras ${l.centavos.compras.join(', ')} lançadas no RH sem os zeros dos centavos (${l.centavos.ex}). Corrigir o lançamento no RH (a reimportação é rejeitada como "Já lançado") e cobrar a diferença.`, l.centavos.perda);
+      add('desconto', 'alta', 'Valor lançado errado no RH (centavos)', l.cpf, l.comp, `Folha de ${compBR(l.comp)}: devido ${brl(l.devido)} × descontado ${brl(l.desc)}. ${Math.abs(l.centavos.resto) <= 0.02 ? `A diferença de ${brl(l.centavos.perda)} é exatamente a das compras` : `Faltou ${brl(-l.dif)}: ${brl(l.centavos.perda)} são das compras`} ${l.centavos.compras.join(', ')} lançadas no RH sem os zeros dos centavos (${l.centavos.ex})${Math.abs(l.centavos.resto) > 0.02 ? `; os outros ${brl(Math.abs(l.centavos.resto))} foram descontados ${l.centavos.resto < 0 ? 'a mais' : 'a menos'} por outro motivo — conferir no TRCT` : ''}. Corrigir o lançamento no RH (a reimportação é rejeitada como "Já lançado") e cobrar a diferença.`, -l.dif);
       continue; }
     // compensado depois ou saldo que segue para a folha seguinte: a pendência é a do acumulado, na última folha
     if (l.st === 'comp' || l.carrega) continue;
