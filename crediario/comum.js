@@ -43,7 +43,7 @@ function abrirModal(html, classe = '') {
   const a = areaVisivel();
   if (a) { m.style.top = a.top + 'px'; m.style.height = a.alt + 'px'; m.style.bottom = 'auto'; m.style.left = '0'; m.style.right = '0';
     m.style.paddingTop = '12px'; document.body.style.minHeight = (a.top + a.alt) + 'px'; }
-  const f = m.querySelector('input:not([type=file]),select,textarea'); if (f && !a) setTimeout(() => f.focus(), 50);
+  const f = m.querySelector('input:not([type=file]):not([data-sem-foco]),select:not([data-sem-foco]),textarea'); if (f && !a) setTimeout(() => f.focus(), 50);
 }
 function fecharModal() { const m = $('modal'); if (m) { m.style.display = 'none'; m.innerHTML = ''; } document.body.style.minHeight = ''; }
 function iniciarLogin(onEntrar) {
