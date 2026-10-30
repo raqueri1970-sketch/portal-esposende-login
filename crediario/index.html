@@ -284,7 +284,7 @@
   <section id="a-arq" class="hidden">
     <div class="card central" id="central">
       <h3>📥 Central de carregamento <span class="o">todos os arquivos de uma vez</span></h3>
-      <div class="small mut">Solte aqui os arquivos juntos — só <b>3 bases</b>: <b>1) compras em loja</b> ("COMPRA EM LOJA" de cada ciclo e o crediário da loja — o devido), <b>2) funcionários</b> (ativos e inativos/desligados) e <b>3) folha de pagamento</b> (planilha FOLHA MM-AAAA, aba Sheet1 — vale a verba 1260 "Compra Loja", o desconto efetivo). A tela reconhece cada um pelo nome e pelas colunas, mostra o que leu e grava tudo de uma vez (arquivo já importado é pulado).</div>
+      <div class="small mut">Solte aqui os arquivos juntos — <b>3 bases</b> e as baixas: <b>1) compras em loja</b> ("COMPRA EM LOJA" de cada ciclo e o crediário da loja — o devido), <b>2) funcionários</b> (ativos e inativos/desligados), <b>3) folha de pagamento</b> (planilha FOLHA MM-AAAA, aba Sheet1 — vale a verba 1260 "Compra Loja", o desconto efetivo) e <b>4) baixas do crediário</b> (recebimentos do Seta, BAIXA.CSV). A tela reconhece cada um pelo nome e pelas colunas, mostra o que leu e grava tudo de uma vez (arquivo já importado é pulado).</div>
       <label class="drop drop-g" id="dropCentral">Soltar os arquivos aqui ou clicar para escolher (pode marcar vários)<input type="file" id="inpCentral" multiple accept=".csv,.txt,.xlsx,.xls"></label>
       <div id="centralLista"></div>
     </div>
@@ -299,6 +299,9 @@
       <div class="card fonte"><h3>3 · Folha de pagamento <span class="o">depois que a folha fecha</span></h3>
         <div class="small mut">Planilha "FOLHA MM-AAAA" (aba <b>Sheet1</b>, uma linha por verba): entra só a verba <b>1260 "Compra Loja"</b> — o desconto efetivo do mês, inclusive o da rescisão. Competência pela coluna "Mês_Ano Folha".</div>
         <label class="drop" data-tipo="folha">Soltar ou escolher arquivo<input type="file" accept=".csv,.txt,.xlsx,.xls"></label></div>
+      <div class="card fonte"><h3>4 · Baixas do crediário <span class="o">depois da baixa da folha</span></h3>
+        <div class="small mut">Relatório de recebimentos do Seta (DATA, ITEM, NOME, DOCUMENTO CE…-1/6, VALOR): as parcelas que o crediário deu como pagas. Cada lote (data) é ligado à folha que ele baixou e conferido com a verba 1260; na rescisão, mostra o que foi baixado sem desconto.</div>
+        <label class="drop" data-tipo="baixas">Soltar ou escolher arquivo<input type="file" accept=".csv,.txt,.xlsx,.xls"></label></div>
     </div>
     <h2>Arquivos importados</h2>
     <div class="card tw" id="tArq"></div>
@@ -431,7 +434,8 @@ const COLUNAS = {
   // a FOLHA mensal (aba Sheet1) vem uma linha por verba: Mês_Ano Folha, Código (matrícula), Verba_Título, Verba_Valor, Data Desligament, CPF
   folha: {cpf: /cpf/, matricula: /matr|chapa|registro|cod.*func|^codigo$/, nome: /^nome|funcion|colaborador/, comp: /compet|^m[eê]s|per[ií]odo|mes.?ano|ano.?mes/, evento: /verba.?titulo|evento|rubrica|descri|hist|^verba$/, valor: /valor|desconto|vlr|total/, dataPag: /pagamento|dt.*pag|data.*pag|cr[eé]dito|liquid/,
     doc: /^documento|^doc$/, parcela: /^parcela$/, venc: /^venc/, lanc: /^lanc|^emiss/, saida: /deslig|demiss/, admissao: /admiss/, loja: /ccusto.?titulo|^loja|lotac/, cargo: /cargo/},
-  baixas: {cpf: /cpf/, doc: /documento|^doc|titulo|contrato/, parcela: /^parc/, dataBaixa: /baixa|pagamento|receb|liquid|dt.*pag|data.*pag/, valor: /valor.*(pago|receb|baixa)|^valor|vlr/},
+  // baixas do crediário (Seta): relatório de recebimentos — DATA (do lote), ITEM, NOME, DOCUMENTO (CE231245-1/6), VALOR; sem CPF
+  baixas: {cpf: /cpf/, doc: /documento|^doc|titulo|contrato/, parcela: /^parc/, dataBaixa: /baixa|pagamento|receb|liquid|dt.*pag|data.*pag|^data$/, valor: /valor.*(pago|receb|baixa)|^valor|vlr/, nome: /^nome|cliente/, item: /^item|^histor/},
   // relatório "Desligados no Período": Estab, Descrição, Código, Nome, CPF, PIS, Admissão, Cargo, Saída, Natureza
   desligados: {cpf: /^cpf/, saida: /saida|deslig|demiss|rescis/, matricula: /^codigo$|^cod\b|^cod\.|matr|chapa/, nome: /^nome/, estab: /^descri|^empresa|^loja|ccusto/, cargo: /cargo|^func/, admissao: /admiss/, natureza: /natureza|motivo|causa/}
 };
@@ -489,7 +493,7 @@ const SEM_SAL = /doen|acid|invalid|aposent|resc|susp|inss/i;
 const STAT = {
   ok: ['OK', 'st-ok'], menos: ['Descontou a menos', 'st-menos'], nao: ['Não descontou', 'st-nao'], mais: ['Descontou a mais', 'st-mais'],
   semcompra: ['Desconto sem compra', 'st-semcompra'], verif: ['Verificar (compra quitada fora da base)', 'st-verif'], prev: ['Previsto (folha não importada)', 'st-prev'],
-  rh: ['Só no RH (o crediário importado não alcança)', 'st-prog']
+  rh: ['Só no RH (o crediário importado não alcança)', 'st-prog'], comp: ['Compensado em outra folha', 'st-ok']
 };
 const stChip = s => `<span class="st ${STAT[s][1]}">${STAT[s][0]}</span>`;
 const TRAT = {pendente: 'Pendente', cobrar: 'Cobrar do funcionário', devolver: 'Devolver ao funcionário', justificado: 'Justificado', resolvido: 'Resolvido'};
@@ -570,6 +574,28 @@ function cruzar() {
 
   // baixas por documento|parcela
   const bx = new Map(); D.baixas.forEach(b => { const k = b.documento + '|' + b.parcela; if (!bx.has(k)) bx.set(k, []); bx.get(k).push(b); });
+  // Baixas do crediário (Seta) em lote: o RH dá baixa no crediário quando paga a folha — um lote por mês, por volta do dia 20
+  // do mês seguinte (folha de 08 → lote de 22/09). Cada lote é ligado à folha com que mais bate pessoa a pessoa (verba 1260 =
+  // valor baixado), uma folha por lote; lote pequeno fora do dia vai com o lote seguinte (até 25 dias). Sem CPF no arquivo, o
+  // CPF vem do contrato da compra (gravado na importação, ou pelas compras da base).
+  const reParc = /^(.*?)-(\d+)\/(\d+)$/, ctrCpf = new Map();
+  D.parcelas.forEach(p => ctrCpf.set(p.contrato, ctrCpf.has(p.contrato) && ctrCpf.get(p.contrato) !== p.cpf ? null : p.cpf));
+  const BX = D.baixas.map(b => { const m = String(b.documento || '').match(reParc); return m && b.data_baixa ? {...b, valor: Number(b.valor), contrato: m[1], n: +m[3], cpf: b.cpf || ctrCpf.get(m[1]) || ''} : null; }).filter(Boolean);
+  const loteComp = new Map(), loteBoa = new Set();
+  if (BX.length) {
+    const fPes = new Map(), nFolha = new Map();
+    folha.forEach(l => { if (l.cpf && l.comp) { const k = l.cpf + '|' + l.comp; if (!fPes.has(k)) nFolha.set(l.comp, (nFolha.get(l.comp) || 0) + 1); fPes.set(k, (fPes.get(k) || 0) + l.valor); } });
+    const porLote = new Map(); BX.forEach(b => { if (!b.cpf) return; const m = porLote.get(b.data_baixa) || new Map(); m.set(b.cpf, (m.get(b.cpf) || 0) + b.valor); porLote.set(b.data_baixa, m); });
+    const lotes = [...new Set(BX.map(b => b.data_baixa))].sort(), cand = [];
+    for (const d of lotes) for (const k of [0, 1, 2]) { const c = addMes(d.slice(0, 7), -k); if (!nFolha.has(c)) continue;
+      let n = 0; for (const [cpf, v] of porLote.get(d) || []) { const f = fPes.get(cpf + '|' + c); if (f && Math.abs(f - v) <= cfg.tol) n++; }
+      cand.push({d, c, n}); }
+    cand.sort((a, b) => b.n - a.n); const usada = new Set();
+    for (const x of cand) if (x.n >= 5 && !loteComp.has(x.d) && !usada.has(x.c)) { loteComp.set(x.d, x.c); usada.add(x.c); if (x.n >= 0.4 * nFolha.get(x.c)) loteBoa.add(x.c); }
+    const ligados = [...loteComp.keys()].sort();
+    for (const d of lotes) if (!loteComp.has(d)) { const nx = ligados.find(a => a >= d && (new Date(a) - new Date(d)) / 864e5 <= 25); loteComp.set(d, nx ? loteComp.get(nx) : addMes(d.slice(0, 7), -1)); }
+  }
+  const compBaixa = b => (b && loteComp.get(b.data_baixa)) || '';
   // A carteira do crediário só traz parcelas em aberto. As parcelas já pagas de um contrato ainda aberto são reconstruídas
   // (mesmo valor da 1ª parcela em aberto, vencimento 30 dias antes a cada parcela) para auditar as folhas passadas.
   const base = D.parcelas.map(p => ({...p, valor: Number(p.valor)})), rec = [];
@@ -587,6 +613,15 @@ function cruzar() {
     const b = bx.get(p.documento + '|' + p.parcela) || bx.get(p.contrato + '|' + p.parcela); x.baixas = b || []; x.baixa = b ? b[0] : null;
     return x;
   });
+  // com as baixas: parcela reconstruída que tem baixa é real (valor da baixa); baixa de compra que não está na carteira em aberto
+  // (compra já quitada) entra como parcela paga, na folha do lote que a baixou
+  if (loteComp.size) {
+    par.forEach(p => { if (p.rec && p.baixa) { p.rec = false; p.aprox = false; p.valor = Number(p.baixa.valor); p.viaBaixa = true; } });
+    const tem = new Set(par.map(p => p.documento + '|' + p.parcela));
+    BX.forEach(b => { const k = b.documento + '|' + b.parcela; if (tem.has(k) || !b.cpf) return; tem.add(k);
+      par.push({chave: 'bx|' + k, cpf: b.cpf, nome: '', documento: b.documento, contrato: b.contrato, parcela: b.parcela, n_parcelas: b.n, lancamento: null, vencimento: b.data_baixa, valor: b.valor,
+        valor_anterior: null, comp: compBaixa(b), ck: b.cpf + '|' + b.contrato + '|', descontos: [], baixas: bx.get(k) || [b], baixa: b, viaBaixa: true, soBaixa: true}); });
+  }
   // ex-funcionário: depois da saída não há folha — as parcelas da folha do mês da saída em diante são o saldo que tem de sair
   // na rescisão (verba 1260 da folha desse mês) e passam todas para essa folha. Readmitido (voltou depois da saída) segue normal.
   const saidaDe = cpf => { const d = desl.get(cpf), f = porCpf.get(cpf); return d && !(f && f.noCadastro && f.admissao && f.admissao > d.saida) ? d.saida : ''; };
@@ -696,6 +731,21 @@ function cruzar() {
     if (c.st === 'verif') { pe.verif += c.dif; pe.nDiv++; }
     linhas.push({cpf, comp, ...c});
   }
+  // A diferença de um mês passa para a folha seguinte (regra do RH: o que não cabe no líquido fica para a próxima). Por pessoa,
+  // em ordem de folha: o mês cuja diferença o acumulado zerou depois é "compensado" (não é pendência); o saldo que ficou aberto
+  // vira uma pendência só, na última folha, com o acumulado. Ex-funcionário: só até a folha anterior à da saída (a rescisão é à parte).
+  for (const pe of pessoas.values()) {
+    const lim = pe.ex ? pe.desl.saida.slice(0, 7) : '9999';
+    const cs = Object.keys(pe.celulas).filter(c => c < lim && !['prev', 'rh'].includes(pe.celulas[c].st)).sort(); if (!cs.length) continue;
+    let acc = 0, zero = -1; cs.forEach((c, i) => { acc = rd2(acc + pe.celulas[c].dif); pe.celulas[c].acum = acc; if (Math.abs(acc) <= cfg.tol) zero = i; });
+    cs.forEach((c, i) => { const x = pe.celulas[c]; if (x.st === 'ok') return;
+      if (i <= zero) { x.stOrig = x.st; x.st = 'comp'; }
+      else if (i < cs.length - 1) x.carrega = true;   // saldo aberto que segue para a folha seguinte: entra na pendência da última
+      else if (i > zero + 1) x.desde = cs[zero + 1]; });
+    pe.menos = pe.mais = pe.verif = 0; pe.nDiv = 0;
+    for (const x of Object.values(pe.celulas)) { if (['menos', 'nao'].includes(x.st)) { pe.menos += -x.dif; pe.nDiv++; } if (['mais', 'semcompra'].includes(x.st)) { pe.mais += x.dif; pe.nDiv++; } if (x.st === 'verif') { pe.verif += x.dif; pe.nDiv++; } }
+  }
+  linhas.forEach(l => { const x = pessoas.get(l.cpf).celulas[l.comp]; Object.assign(l, {st: x.st, stOrig: x.stOrig, acum: x.acum, carrega: x.carrega, desde: x.desde}); });
   // "a mais" numa folha sem todas as compras importadas fica em Verificar: o crediário importado é a carteira em aberto e não
   // traz as compras já quitadas, de qualquer mês — um desconto acima do devido pode ser parcela delas. (27/10/2026: a regra
   // antiga só aceitava "a mais desde a 1ª folha, sem interrupção" e acusava como erro quem comprou e quitou no meio do ano.)
@@ -720,6 +770,12 @@ function cruzar() {
   for (const l of linhas) {
     // ex-funcionário: a folha depois da saída não desconta — a cobrança é a do saldo na rescisão (pendência de cadastro)
     if (l.st === 'nao' && depoisDaSaida(pessoas.get(l.cpf), l.comp)) continue;
+    // compensado depois ou saldo que segue para a folha seguinte: a pendência é a do acumulado, na última folha
+    if (l.st === 'comp' || l.carrega) continue;
+    if (l.desde && Math.abs(l.acum) > cfg.tol) {
+      const ac = l.acum, tipoA = ac < 0 ? 'Saldo não descontado (acumulado)' : 'Descontado a mais (acumulado)';
+      add('desconto', 'alta', tipoA, l.cpf, l.comp, `Das folhas de ${compBR(l.desde)} a ${compBR(l.comp)} ${ac < 0 ? 'faltou descontar' : 'descontou a mais'} ${brl(Math.abs(ac))} no acumulado (a diferença de cada mês passa para a folha seguinte e não foi compensada). Nesta folha: devido ${brl(l.devido)} × descontado ${brl(l.desc)}.${ac < 0 ? ' Cobrar na próxima folha.' : ' Pedir ao RH a compra que originou o desconto; se não houver, devolver.'}`, Math.abs(ac));
+      continue; }
     // folha do mês da saída = rescisão: o devido é o saldo inteiro (parcelas desta folha em diante)
     const peL = pessoas.get(l.cpf);
     if (peL && peL.ex && l.comp === peL.desl.saida.slice(0, 7) && !['ok', 'prev'].includes(l.st)) {
@@ -756,7 +812,8 @@ function cruzar() {
     const d = pe.desl, reais = pe.parcelas.filter(p => !p.rec), mS = d.saida.slice(0, 7);
     // saldo na saída = parcelas da folha do mês da saída em diante (todas passaram para a folha da rescisão);
     // com a folha da rescisão importada, em aberto é o que a verba 1260 dela não cobriu
-    const saldoPs = reais.filter(p => p.comp === mS && !p.baixa).sort((a, b) => a.vencimento.localeCompare(b.vencimento)), saldo = rd2(saldoPs.reduce((s, p) => s + p.valor, 0));
+    // parcela baixada no crediário no lote da folha da rescisão em diante segue no saldo: depois da saída só a rescisão paga
+    const saldoPs = reais.filter(p => p.comp === mS && (!p.baixa || compBaixa(p.baixa) >= mS)).sort((a, b) => a.vencimento.localeCompare(b.vencimento)), saldo = rd2(saldoPs.reduce((s, p) => s + p.valor, 0));
     const folhaResc = compsFolha.has(mS), cR = pe.celulas[mS], descResc = cR ? cR.desc : 0;
     const falta = folhaResc ? Math.max(0, rd2(saldo - descResc)) : saldo, abertas = falta > 0.009 ? saldoPs : [];
     const venc0 = rd2(abertas.filter(p => p.vencimento < hojeD).reduce((s, p) => s + p.valor, 0));
@@ -769,6 +826,10 @@ function cruzar() {
       compras: rd2(reais.reduce((s, p) => s + p.valor, 0)), contratos: new Set(abertas.map(p => p.contrato)).size, prox: abertas.length ? abertas[0].vencimento : '', ult: abertas.length ? abertas[abertas.length - 1].vencimento : ''};
     // base incompleta: parcelas da folha da rescisão em diante que não estão no crediário (ver a pendência da rescisão acima);
     // o saldo não é confirmado — sai do débito em aberto e vai para Verificar, com a estimativa pela base
+    // baixado no crediário depois da saída e não coberto pela rescisão = baixa sem desconto (estornar a baixa e cobrar)
+    o.bxApos = rd2(saldoPs.filter(p => p.baixa).reduce((s, p) => s + p.valor, 0)); o.bxSemDesc = folhaResc ? Math.min(o.bxApos, Math.max(0, rd2(saldo - descResc))) : 0;
+    if (o.bxSemDesc > cfg.tol) { const ls = [...new Set(saldoPs.filter(p => p.baixa).map(p => p.baixa.data_baixa))].sort();
+      add('integridade', 'alta', 'Baixa sem desconto (ex-funcionário)', pe.cpf, mS, `Saiu em ${dataBR(d.saida)}: o crediário baixou ${brl(o.bxApos)} de parcelas depois da saída (lote(s) de ${ls.map(dataBR).join(', ')}) e a rescisão (folha de ${compBR(mS)}) descontou ${brl(descResc)} do saldo de ${brl(saldo)} — ${brl(o.bxSemDesc)} foram baixados sem desconto. Estornar a baixa e cobrar.`, o.bxSemDesc); }
     o.foraBase = pe.parcelas.filter(p => p.rec && p.comp === mS); o.foraValor = rd2(o.foraBase.reduce((s, p) => s + p.valor, 0));
     o.verifValor = 0;
     // parcela reconstruída da última do contrato tem valor aproximado: aceita até R$ 1 por parcela de diferença
@@ -823,7 +884,7 @@ function cruzar() {
   const maxVencArq = new Map(); par.filter(p => !p.rec).forEach(p => { if ((maxVencArq.get(p.arquivo_id) || '') < p.vencimento) maxVencArq.set(p.arquivo_id, p.vencimento); });
   for (const ps of contr.values()) {
     // relatório de parcelas em aberto traz só a parcela do mês: só confere o contrato que veio desde a 1ª parcela
-    const n = ps[0].n_parcelas; if (!n || !ps.some(p => p.parcela === 1)) continue;
+    const n = ps[0].n_parcelas; if (!n || ps[0].soBaixa || !ps.some(p => p.parcela === 1)) continue;
     // parcela que venceria depois do último vencimento do relatório não "falta": o relatório é que termina antes (ex.: carteira até 31/12)
     const lim = maxVencArq.get(ps[0].arquivo_id) || '', venceria = i => { const d = new Date(ps[0].lancamento + 'T12:00:00'); d.setDate(d.getDate() + 30 * i); return d.toISOString().slice(0, 10); };
     const tem = new Set(ps.map(p => p.parcela)); const falt = []; for (let i = 1; i <= n; i++) if (!tem.has(i) && (!ps[0].lancamento || venceria(i) <= lim)) falt.push(i);
@@ -843,7 +904,7 @@ function cruzar() {
   semId.forEach(l => add('integridade', 'media', 'Desconto sem funcionário', '', l.competencia, `${l.arq}: ${l.nome || 'matrícula ' + (l.matricula || '?')} — ${brl(l.valor)} sem CPF/matrícula no cadastro.`, l.valor, {sufixo: l.id, nome: l.nome || l.matricula}));
   // competências que já deviam ter folha
   const compsDevido = [...new Set(par.map(p => p.comp))].sort();
-  const compsReais = new Set(par.filter(p => !p.rec).map(p => p.comp));
+  const compsReais = new Set(par.filter(p => !p.rec && !p.viaBaixa).map(p => p.comp));  // baixa não prova que a folha existia
   const folhaJaPaga = c => hoje > quintoDiaUtil(c);
   compsDevido.filter(c => folhaJaPaga(c) && !compsFolha.has(c) && compsReais.has(c)).forEach(c => {
     const dv = rd2(par.filter(p => p.comp === c).reduce((s, p) => s + p.valor, 0));
@@ -853,8 +914,29 @@ function cruzar() {
   const cs = [...ciclos].sort();
   if (cs.length > 1 && !carteiras.length) for (let c = cs[0]; c < cs[cs.length - 1]; c = addMes(c, 1)) if (!ciclos.has(c))
     add('integridade', 'media', 'Compras do ciclo não importadas', '', c, `Não há compras do ciclo de ${compBR(c)} (dia ${cfg.corte + 1} a ${cfg.corte}) — importe o relatório para o devido ficar completo.`, 0, {nome: 'Ciclo ' + compBR(c)});
+  // baixas em lote × verba 1260: o que o crediário baixou tem de ser o que a folha descontou (acumulado: a diferença de um
+  // mês passa para a folha seguinte). Só nas folhas em que os lotes batem com a folha para a maioria (cobertura boa).
+  // Ex-funcionário: só até a folha anterior à saída — a rescisão é conferida à parte (acima).
+  if (loteComp.size) {
+    const porPes = new Map(), G3 = (cpf, c) => { if (!porPes.has(cpf)) porPes.set(cpf, new Map()); const m = porPes.get(cpf); if (!m.has(c)) m.set(c, {bx: 0, desc: 0, docs: []}); return m.get(c); };
+    BX.forEach(b => { const c = compBaixa(b); if (b.cpf && loteBoa.has(c)) { const o = G3(b.cpf, c); o.bx += b.valor; o.docs.push(b.documento); } });
+    folhaOk.forEach(l => { if (loteBoa.has(l.comp)) G3(l.cpf, l.comp).desc += l.valor; });
+    for (const [cpf, m] of porPes) {
+      const pe = pessoas.get(cpf), lim = pe && pe.ex ? pe.desl.saida.slice(0, 7) : '9999';
+      const ms = [...m.entries()].filter(([c]) => c < lim).sort((a, b) => a[0].localeCompare(b[0])); if (!ms.length) continue;
+      const tb = rd2(ms.reduce((t, [, o]) => t + o.bx, 0)), td = rd2(ms.reduce((t, [, o]) => t + o.desc, 0)), dif = rd2(tb - td); if (Math.abs(dif) <= cfg.tol) continue;
+      const det = ms.filter(([, o]) => Math.abs(o.bx - o.desc) > cfg.tol).map(([c, o]) => `${compBR(c)}: baixado ${brl(o.bx)} × descontado ${brl(o.desc)}`).slice(0, 6).join('; ');
+      const per = `folhas de ${compBR(ms[0][0])} a ${compBR(ms[ms.length - 1][0])}`, grav = Math.abs(dif) > 50 ? 'alta' : 'media';
+      if (dif > 0) add('integridade', grav, 'Baixa sem desconto na folha', cpf, '', `Nas ${per} o crediário baixou ${brl(tb)} e a folha descontou ${brl(td)}: ${brl(dif)} baixados sem desconto (${det}). Conferir e estornar a baixa ou cobrar.`, dif);
+      else add('integridade', grav, 'Desconto sem baixa no crediário', cpf, '', `Nas ${per} a folha descontou ${brl(td)} e o crediário baixou ${brl(tb)}: ${brl(-dif)} descontados sem baixa (${det}). Dar baixa — risco de cobrar duas vezes.`, -dif);
+    }
+    // parcela baixada que continua em aberto no relatório do crediário tirado depois da baixa
+    const arqData = new Map(D.arquivos.map(a => [a.id, String(a.importado_em || '').slice(0, 10)]));
+    for (const [cpf, ps] of grpConta(par.filter(p => !p.rec && !p.viaBaixa && p.baixa && (arqData.get(p.ultimo_arquivo_id || p.arquivo_id) || '') > p.baixa.data_baixa), p => p.cpf))
+      add('integridade', 'media', 'Baixada e em aberto no crediário', cpf, '', `${ps.length} parcela(s) baixada(s) no crediário continuam em aberto no relatório do crediário importado depois da baixa (${ps.slice(0, 5).map(p => p.documento + ' baixada em ' + dataBR(p.baixa.data_baixa)).join(', ')}${ps.length > 5 ? '…' : ''}).`, ps.reduce((t, p) => t + p.valor, 0));
+  }
   // baixas
-  if (D.baixas.length) {
+  if (D.baixas.length && !loteComp.size) {
     // só cobra a baixa de cada parcela nos meses que o arquivo de baixas cobre (≥ 50% das parcelas baixadas);
     // arquivo parcial vira um aviso só, em vez de centenas de "descontado e não baixado"
     const cob = grpConta(par, p => p.comp), compsComBaixa = new Set();
@@ -890,7 +972,7 @@ function cruzar() {
     if (ps.length < 2 || !ps[0].n_parcelas) continue;
     add('duplicidade', 'alta', 'Parcela com dois vencimentos', ps[0].cpf, ps[0].comp, `${ps[0].documento} aparece com ${ps.length} vencimentos (${ps.map(p => dataBR(p.vencimento)).join(', ')}) — entra duas vezes no devido. Ver se foi renegociada.`, ps.slice(1).reduce((s, p) => s + p.valor, 0), {sufixo: ps[0].documento});
   }
-  const contratos = [...contr.values()].filter(ps => ps[0].n_parcelas).map(ps => ({cpf: ps[0].cpf, contrato: ps[0].contrato, lanc: ps[0].lancamento, n: ps[0].n_parcelas, total: rd2(ps.reduce((s, p) => s + p.valor, 0)), comp: ps[0].comp}));
+  const contratos = [...contr.values()].filter(ps => ps[0].n_parcelas && !ps[0].soBaixa).map(ps => ({cpf: ps[0].cpf, contrato: ps[0].contrato, lanc: ps[0].lancamento, n: ps[0].n_parcelas, total: rd2(ps.reduce((s, p) => s + p.valor, 0)), comp: ps[0].comp}));
   for (const [, cs2] of grp(contratos, c => c.cpf + '|' + c.lanc + '|' + c.n + '|' + c.total.toFixed(2))) {
     if (cs2.length < 2) continue;
     // várias compras do mesmo funcionário (inclusive no mesmo dia) são normais e as parcelas se acumulam no mês: só informativo
@@ -1806,7 +1888,7 @@ function excelDrill() {
 // quem saiu (relatório de desligados) e tem crediário: foi descontado? ficou débito em aberto (vencido / a vencer)?
 const EX_ST = {aberto: ['Débito em aberto', 'st-alta'], verif: ['Verificar (base incompleta)', 'st-verif'], quitado: ['Quitado', 'st-ok']};
 // rescisão × saldo: o que a verba 1260 da folha do mês da saída cobriu
-const rescTxt = o => o.st === 'verif' ? `base incompleta: ${o.foraBase.length} parcela(s) fora do crediário` : !o.saldo && !o.descResc ? 'sem saldo' : !o.folhaResc ? `folha de ${compBR(o.d.saida.slice(0, 7))} não importada` : o.maisResc > 0.009 ? `descontou ${nfm(o.maisResc)} a mais` : o.aberto > 0.009 ? (o.descResc ? 'descontou a menos' : 'não descontou') : 'descontado na rescisão';
+const rescTxt = o => o.bxSemDesc > 0.009 ? `descontou a menos; ${nfm(o.bxSemDesc)} baixados sem desconto` : o.st === 'verif' ? `base incompleta: ${o.foraBase.length} parcela(s) fora do crediário` : !o.saldo && !o.descResc ? 'sem saldo' : !o.folhaResc ? `folha de ${compBR(o.d.saida.slice(0, 7))} não importada` : o.maisResc > 0.009 ? `descontou ${nfm(o.maisResc)} a mais` : o.aberto > 0.009 ? (o.descResc ? 'descontou a menos' : 'não descontou') : 'descontado na rescisão';
 function listaEx() {
   const q = nomeN($('eBusca').value), qd = soDig($('eBusca').value), st = $('eSt').value;
   return R.exs.filter(o => {
@@ -1986,6 +2068,22 @@ function montarLinhas() {
   const {tipo, rows, cab, map} = IMP; const out = []; const avisos = []; let soma = 0, rodape = null;
   const porMat = new Map(D.funcionarios.map(f => [matN(f.matricula), f.cpf]));
   const okEv = IMP.eventos ? new Set(IMP.eventos) : null;
+  let semCpfBx = 0;
+  if (tipo === 'baixas' && !IMP.ctrCpf) {
+    const uni = (m, k, v) => { if (k && v) m.set(k, m.has(k) && m.get(k) !== v ? null : v); };
+    let cc = null, nc = null;
+    IMP.ctrCpf = () => cc || (cc = (() => { const x = new Map(); D.parcelas.forEach(p => uni(x, p.contrato, p.cpf)); return x; })());
+    // nome: igual (cadastro, desligados, crediário ou folha) ou, se não achar, parecido — mesmo 1º nome, todas as partes do nome
+    // mais curto batendo (abreviação "P B" e uma letra trocada valem) e um CPF só (ex.: "ILANA MIRELLY" = "ILANA MIRELY")
+    IMP.nomeCpf = () => nc || (nc = (() => { const x = new Map(); [D.funcionarios, D.desligados, D.parcelas, D.folha].forEach(ls => ls.forEach(f => uni(x, nomeN(f.nome), f.cpf))); return x; })());
+    const p1 = new Map(), cache = new Map();
+    IMP.cpfDoNome = n => { const k = nomeN(n); if (!k) return null; const ex = IMP.nomeCpf().get(k); if (ex !== undefined) return ex;
+      if (cache.has(k)) return cache.get(k);
+      if (!p1.size) for (const [nm, c] of IMP.nomeCpf()) { if (!c) continue; const f = nm.split(' ')[0]; if (!p1.has(f)) p1.set(f, []); p1.get(f).push([nm, c]); }
+      const t = k.split(' '), cand = new Set();
+      if (t.length >= 3) for (const [f, ls] of p1) if (lev1(f, t[0])) ls.forEach(([nm, c]) => { if (simNome(k, nm) === 1 && Math.min(t.length, nm.split(' ').length) >= 3) cand.add(c); });
+      const r = cand.size === 1 ? [...cand][0] : null; cache.set(k, r); return r; };
+  }
   for (let i = cab + 1; i < rows.length; i++) {
     const row = rows[i];
     if (tipo === 'compras') {
@@ -2024,8 +2122,12 @@ function montarLinhas() {
     } else if (tipo === 'baixas') {
       const doc = String(cel(row, map, 'doc')).trim(); if (!doc) continue;
       const m = doc.match(/^(.*?)-(\d+)\/(\d+)$/), parcela = +cel(row, map, 'parcela') || (m ? +m[2] : 1);
-      const cpf = cpfN(cel(row, map, 'cpf')) || null, data = dataISO(cel(row, map, 'dataBaixa')) || null, v = rd2(Math.abs(numero(cel(row, map, 'valor')) || 0));
-      out.push({chave: [doc, parcela, cpf || '', data || '', v.toFixed(2)].join('|'), documento: doc, parcela, cpf, data_baixa: data, valor: v}); soma += v;
+      // relatório de recebimentos do Seta: só a baixa de parcela de crediário (CE231245-1/6); venda à vista (-AV), vale-presente e BRA ficam fora
+      if (map.item != null && !m) continue;
+      // sem CPF no arquivo: pelo contrato (compra que está na base) ou pelo nome (único no cadastro, desligados ou crediário)
+      const cpf = cpfN(cel(row, map, 'cpf')) || (m && IMP.ctrCpf().get(m[1])) || IMP.cpfDoNome(cel(row, map, 'nome')) || null;
+      const data = dataISO(cel(row, map, 'dataBaixa')) || null, v = rd2(Math.abs(numero(cel(row, map, 'valor')) || 0));
+      out.push({chave: [doc, parcela, cpf || '', data || '', v.toFixed(2)].join('|'), documento: doc, parcela, cpf, data_baixa: data, valor: v, _nome: nomeN(cel(row, map, 'nome'))}); soma += v;
     }
   }
   if (tipo === 'folha') {
@@ -2044,6 +2146,19 @@ function montarLinhas() {
     const semData = out.filter(l => !l.data_pagamento).length; if (semData) avisos.push(`${semData} linha(s) sem data de pagamento — informe a data em que a folha foi paga.`);
   }
   if (tipo === 'desligados') { const repet = out.length - new Set(out.map(l => l.cpf)).size; if (repet) avisos.push(`${repet} CPF(s) com mais de uma saída no período (vale a mais recente para o crediário).`); }
+  if (tipo === 'baixas') {
+    // nome de mais de uma pessoa (homônimos): fica com quem tem, numa das folhas do mês do lote ou dos 2 anteriores, o desconto
+    // igual ao total baixado para esse nome no lote
+    const multi = new Map(); [D.funcionarios, D.desligados, D.parcelas, D.folha].forEach(ls => ls.forEach(f => { const k = nomeN(f.nome); if (k && f.cpf) { if (!multi.has(k)) multi.set(k, new Set()); multi.get(k).add(f.cpf); } }));
+    const fol = new Map(); D.folha.forEach(l => { if (l.cpf) { const k = l.cpf + '|' + l.competencia; fol.set(k, (fol.get(k) || 0) + Number(l.valor)); } });
+    const grp = new Map(); out.forEach(l => { if (!l.cpf && l._nome && (multi.get(l._nome) || new Set()).size > 1) { const k = l._nome + '|' + l.data_baixa; if (!grp.has(k)) grp.set(k, []); grp.get(k).push(l); } });
+    for (const [k, ls] of grp) { const [nm, d] = k.split('|'), tot = ls.reduce((t, l) => t + l.valor, 0);
+      const cs = [...multi.get(nm)].filter(c => [0, 1, 2].some(i => Math.abs((fol.get(c + '|' + addMes(d.slice(0, 7), -i)) || 0) - tot) <= 0.05));
+      if (cs.length === 1) ls.forEach(l => { l.cpf = cs[0]; l.chave = [l.documento, l.parcela, l.cpf, l.data_baixa || '', l.valor.toFixed(2)].join('|'); }); }
+    out.forEach(l => { delete l._nome; if (!l.cpf) semCpfBx++; });
+    const ds = [...new Set(out.map(l => l.data_baixa).filter(Boolean))].sort();
+    if (ds.length) avisos.push(`${qtd(out.length)} baixa(s) de parcela em ${qtd(ds.length)} lote(s), de ${dataBR(ds[0])} a ${dataBR(ds[ds.length - 1])}. Cada lote é ligado à folha do mês que ele baixou.`);
+    if (semCpfBx) avisos.push(`${qtd(semCpfBx)} baixa(s) sem CPF identificado (compra fora da base e nome que não está no cadastro) — ficam fora da conferência por pessoa.`); }
   if (tipo === 'compras' && rodape != null && Math.abs(rodape - soma) > 0.01) avisos.push(`Soma das linhas ${brl(soma)} ≠ total do rodapé ${brl(rodape)} — o relatório pode ter vindo cortado.`);
   const obrig = OBRIG[tipo].filter(k => map[k] == null); if (obrig.length) avisos.unshift(`Coluna obrigatória não encontrada: ${obrig.map(k => ROT[k]).join(', ')}.`);
   return {linhas: out, soma: rd2(soma), rodape, avisos};
@@ -2108,8 +2223,15 @@ async function gravarIMP() {
   const {linhas, soma, rodape} = montarLinhas(); const t = IMP.tipo;
   const comps = t === 'folha' ? [...new Set(linhas.map(l => l.competencia))].sort() : [];
   const unicas = t === 'compras' || t === 'baixas' ? [...new Map(linhas.map(l => [l.chave, l])).values()] : linhas;
-  const {data, error} = await sb.rpc('cred_importar', {p_arquivo: {tipo: t, origem: IMP.origem || '', nome: IMP.nome, hash: IMP.hash, total: soma || null, rodape, competencias: comps, eventos: IMP.eventos || []}, p_linhas: unicas});
-  if (error) throw error;
+  // baixas: em partes de até 10 mil linhas (a 1ª parte tem o hash do arquivo, para não importar duas vezes)
+  const TAM = 10000, partes = t === 'baixas' && unicas.length > TAM ? Math.ceil(unicas.length / TAM) : 1;
+  let data = null;
+  for (let i = 0; i < partes; i++) {
+    if (partes > 1) toast(`Gravando parte ${i + 1} de ${partes}…`, 60000);
+    const r = await sb.rpc('cred_importar', {p_arquivo: {tipo: t, origem: IMP.origem || '', nome: IMP.nome + (partes > 1 ? ` (parte ${i + 1}/${partes})` : ''), hash: IMP.hash + (i ? ':parte' + (i + 1) : ''), total: partes > 1 ? null : soma || null, rodape, competencias: comps, eventos: IMP.eventos || []}, p_linhas: unicas.slice(i * TAM, (i + 1) * TAM)});
+    if (r.error) throw partes > 1 ? new Error(`parte ${i + 1} de ${partes}: ${msgErro(r.error)}${i ? ' (as partes anteriores já gravaram — importe o arquivo de novo só depois de excluí-las)' : ''}`) : r.error;
+    if (!data) data = r.data; else ['novas', 'atualizadas', 'alteradas', 'ignoradas'].forEach(k => data[k] = (data[k] || 0) + (r.data[k] || 0));
+  }
   let extra = '';
   const ds = desligadosDaFolha(), hd = IMP.hash + ':desligados';
   if (ds.length && !D.arquivos.some(a => a.tipo === 'desligados' && a.hash === hd)) {
@@ -2136,12 +2258,13 @@ async function gravarImportacao() {
 let CENTRAL = [];
 const ORDEM_TIPO = ['cadastro', 'desligados', 'compras', 'rh', 'folha', 'baixas'];
 // só as 3 bases necessárias: compras em loja, funcionários (ativos e desligados) e a folha de pagamento
-const TIPOS_CENTRAL = ['rh', 'compras', 'cadastro', 'desligados', 'folha'];
+const TIPOS_CENTRAL = ['rh', 'compras', 'cadastro', 'desligados', 'folha', 'baixas'];
 function abrirCentral() { irPara('arq'); $('central').scrollIntoView({behavior: 'smooth', block: 'start'}); $('inpCentral').click(); }
 // tipo pelo nome do arquivo e, se o nome não disser, pelas colunas
 function adivinharTipo(nome, abas) {
   const n = semAc(nome).toLowerCase();
   if (/deslig|inativ|demiti|demissa|rescis/.test(n)) return 'desligados';
+  if (/baixa|recebimento|liquida/.test(n)) return 'baixas';
   if (/comiss|premia|vendas?\b/.test(n)) return '';   // relatório de comissão/vendas não é deste módulo
   if (/compra.?em.?loja|compra.?loja/.test(n)) return 'rh';   // "COMPRA EM LOJA" do ciclo = compras com todas as parcelas (devido)
   if (/desconto.*folha|folha|credi.*func|listagem.*rh|\brh\b/.test(n)) return 'folha';
@@ -2194,6 +2317,7 @@ function telaCentral() {
         + (!parc || imp.compModo === 'fixa' ? `<input type="month" data-cccomp="${it.id}" value="${esc(imp.compFixa || '')}"> ` : '') + `<div class="small mut">folha de ${cs.map(compBR).join(', ') || '—'}</div>`;
     } else if (r && t === 'compras') { const vs = r.linhas.map(l => l.vencimento).sort(); det = vs.length ? `<span class="small mut">vencimentos ${dataBR(vs[0])} a ${dataBR(vs[vs.length - 1])}</span>` : ''; }
     else if (r && t === 'desligados') { const ss = r.linhas.map(l => l.saida).sort(); det = ss.length ? `<span class="small mut">${qtd(new Set(r.linhas.map(l => l.cpf)).size)} pessoas · saídas ${dataBR(ss[0])} a ${dataBR(ss[ss.length - 1])}</span>` : ''; }
+    else if (r && t === 'baixas') { const ds = [...new Set(r.linhas.map(l => l.data_baixa).filter(Boolean))].sort(); det = ds.length ? `<span class="small mut">${qtd(r.linhas.length)} baixas · ${qtd(ds.length)} lotes de ${dataBR(ds[0])} a ${dataBR(ds[ds.length - 1])}</span>` : ''; }
     else if (r && t === 'cadastro') det = `<span class="small mut">${qtd(r.linhas.filter(l => /^ativo$/i.test(l.situacao || '')).length)} ativos · ${qtd(r.linhas.filter(l => !/^ativo$/i.test(l.situacao || '')).length)} afastados/férias/outras</span>`;
     const st = it.st === 'ok' ? `<span class="st st-ok">gravado</span><div class="small mut">${esc(it.msg)}</div>` : it.st === 'erro' ? `<span class="st st-alta">erro</span><div class="cl-av b">${esc(it.msg)}</div>`
       : !t ? '<span class="st st-media">escolha o tipo</span>' : p && p.motivo ? `<span class="st ${p.motivo === 'já importado' ? 'st-prev' : 'st-media'}">${esc(p.motivo)}</span>` : '<span class="st st-ok">pronto</span>';
