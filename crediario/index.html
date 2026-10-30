@@ -745,7 +745,25 @@ function cruzar() {
     pe.menos = pe.mais = pe.verif = 0; pe.nDiv = 0;
     for (const x of Object.values(pe.celulas)) { if (['menos', 'nao'].includes(x.st)) { pe.menos += -x.dif; pe.nDiv++; } if (['mais', 'semcompra'].includes(x.st)) { pe.mais += x.dif; pe.nDiv++; } if (x.st === 'verif') { pe.verif += x.dif; pe.nDiv++; } }
   }
-  linhas.forEach(l => { const x = pessoas.get(l.cpf).celulas[l.comp]; Object.assign(l, {st: x.st, stOrig: x.stOrig, acum: x.acum, carrega: x.carrega, desde: x.desde}); });
+  // Erro de centavos na importação do RH (29/10/2026, Ernandes e Kaliandra): valor terminado em ",00" perde os zeros e é lido com
+  // duas casas a menos (129,00 → 1,29; 15,00 → 0,15) e o terminado em zero perde um (131,90 → 13,19); com centavos (14,99) entra
+  // certo. O RH importa compra a compra: procura as compras que, lançadas assim, fazem o devido do mês virar exatamente o descontado.
+  const centErr = v => { const c = Math.round(v * 100) % 100; return c === 0 ? rd2(v / 100) : c % 10 === 0 ? rd2(v / 10) : v; };
+  for (const pe of pessoas.values()) for (const [comp, c] of Object.entries(pe.celulas)) {
+    if (['ok', 'prev', 'rh', 'comp'].includes(c.st) || !(c.desc > 0) || c.desc >= c.devido - 0.05) continue;
+    const pc = new Map(); c.parcelas.forEach(p => { if (p.rec) return; const ps = pc.get(p.contrato) || []; ps.push(p); pc.set(p.contrato, ps); });
+    const ks = [...pc.entries()].map(([k, ps]) => ({k, ps, perda: rd2(ps.reduce((t, p) => t + p.valor - centErr(p.valor), 0))})).filter(x => x.perda > 0.009);
+    if (!ks.length || ks.length > 14) continue;
+    const alvo = rd2(c.devido - c.desc); let melhor = null;
+    for (let m = 1; m < 1 << ks.length; m++) { let t = 0; for (let i = 0; i < ks.length; i++) if (m & 1 << i) t += ks[i].perda;
+      if (Math.abs(t - alvo) <= 0.02 && (!melhor || bits(m) < bits(melhor))) melhor = m; }
+    if (melhor == null) continue;
+    const sel = ks.filter((x, i) => melhor & 1 << i), perda = rd2(sel.reduce((t, x) => t + x.perda, 0));
+    if (perda < 1) continue;   // diferença de centavos pode ser coincidência
+    c.centavos = {compras: sel.map(x => x.k), perda, ex: sel.map(x => x.ps.filter(p => centErr(p.valor) !== p.valor).map(p => `${p.documento} ${brl(p.valor)} → ${brl(centErr(p.valor))}`).join(', ')).join('; ')};
+  }
+  function bits(m) { let n = 0; while (m) { n += m & 1; m >>= 1; } return n; }
+  linhas.forEach(l => { const x = pessoas.get(l.cpf).celulas[l.comp]; Object.assign(l, {st: x.st, stOrig: x.stOrig, acum: x.acum, carrega: x.carrega, desde: x.desde, centavos: x.centavos}); });
   // "a mais" numa folha sem todas as compras importadas fica em Verificar: o crediário importado é a carteira em aberto e não
   // traz as compras já quitadas, de qualquer mês — um desconto acima do devido pode ser parcela delas. (27/10/2026: a regra
   // antiga só aceitava "a mais desde a 1ª folha, sem interrupção" e acusava como erro quem comprou e quitou no meio do ano.)
@@ -770,6 +788,9 @@ function cruzar() {
   for (const l of linhas) {
     // ex-funcionário: a folha depois da saída não desconta — a cobrança é a do saldo na rescisão (pendência de cadastro)
     if (l.st === 'nao' && depoisDaSaida(pessoas.get(l.cpf), l.comp)) continue;
+    if (l.centavos) {
+      add('desconto', 'alta', 'Valor lançado errado no RH (centavos)', l.cpf, l.comp, `Folha de ${compBR(l.comp)}: devido ${brl(l.devido)} × descontado ${brl(l.desc)}. A diferença de ${brl(l.centavos.perda)} é exatamente a das compras ${l.centavos.compras.join(', ')} lançadas no RH sem os zeros dos centavos (${l.centavos.ex}). Corrigir o lançamento no RH (a reimportação é rejeitada como "Já lançado") e cobrar a diferença.`, l.centavos.perda);
+      continue; }
     // compensado depois ou saldo que segue para a folha seguinte: a pendência é a do acumulado, na última folha
     if (l.st === 'comp' || l.carrega) continue;
     if (l.desde && Math.abs(l.acum) > cfg.tol) {
