@@ -789,6 +789,10 @@ function cruzar() {
     for (let m = 1; m < 1 << ks.length; m++) { let t = 0; for (let i = 0; i < ks.length; i++) if (m & 1 << i) t += ks[i].perda;
       const d = Math.abs(t - alvo); if (d <= Math.max(0.02, folga) && (d < dm - 0.005 || (Math.abs(d - dm) <= 0.005 && bits(m) < bits(melhor)))) { melhor = m; dm = d; } }
     if (melhor == null) continue;
+    // se compras inteiras desta folha não descontadas (o RH importa compra a compra) somam exatamente a diferença, não há como
+    // dizer que foi centavo (30/10/2026, Andreia: faltaram 98,00 = CE223980 60,00 + CE092999 15,00 + uma de 23,00 — o erro de
+    // centavos dava 98,01 por coincidência)
+    if (somaExata([...pc.values()].map(ps => ps.reduce((t, p) => t + p.valor, 0)), alvo)) continue;
     const sel = ks.filter((x, i) => melhor & 1 << i), perda = rd2(sel.reduce((t, x) => t + x.perda, 0));
     if (perda < 1) continue;   // diferença de centavos pode ser coincidência
     // sem bater exato, só vale com valor alto e se "a parcela não foi descontada" (valor cheio) não explicar a diferença:
@@ -798,6 +802,10 @@ function cruzar() {
       if (Math.abs(cheio - alvo) <= Math.max(0.02, folga)) continue; }
     c.centavos = {compras: sel.map(x => x.k), perda, resto: rd2(alvo - perda), ex: sel.map(x => x.ps.filter(p => centErr(p.valor) !== p.valor).map(p => `${p.documento} ${brl(p.valor)} → ${brl(centErr(p.valor))}`).join(', ')).join('; ')};
   }
+  // alguma combinação das parcelas (valor cheio) soma exatamente o valor? (em centavos, até 30 parcelas)
+  function somaExata(vs, alvo) { const a = Math.round(alvo * 100); let ok = new Set([0]);
+    for (const v of vs.slice(0, 30)) { const c = Math.round(v * 100), nv = new Set(ok); for (const x of ok) { const y = x + c; if (y === a) return true; if (y < a) nv.add(y); } ok = nv; if (ok.size > 200000) return false; }
+    return ok.has(a); }
   function bits(m) { let n = 0; while (m) { n += m & 1; m >>= 1; } return n; }
   linhas.forEach(l => { const x = pessoas.get(l.cpf).celulas[l.comp]; Object.assign(l, {st: x.st, stOrig: x.stOrig, acum: x.acum, carrega: x.carrega, desde: x.desde, centavos: x.centavos}); });
   // "a mais" numa folha sem todas as compras importadas fica em Verificar: o crediário importado é a carteira em aberto e não
