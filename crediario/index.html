@@ -337,7 +337,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="comum.js?v=20261027-dark"></script>
+<script src="comum.js?v=20261030-foco"></script>
 <script>
 // o Conferente de Crediário agora é do módulo: o script que o Portal injetava (conferente-crediario-ui.js) não roda mais aqui
 window.__conferenteCrediarioUI = window.__conferenteCrediario = true;
@@ -1911,6 +1911,28 @@ let D_cf = null;
 // o que devia ter sido descontado e não foi (devido × verba 1260), em todas as folhas — ativos e ex-funcionários
 const TIPOS_NAO_DESC = new Set(['Não descontou', 'Descontou a menos', 'Saldo não descontado (acumulado)', 'Rescisão descontou a menos', 'Rescisão sem desconto do saldo',
   'Valor lançado errado no RH (centavos)', 'Ex-funcionário com débito em aberto', 'Fora da lista do RH', 'Fora do desconto do RH', 'Lista do RH a menos']);
+// não descontados por funcionário, separados: com erro de centavos no RH (corrigir o lançamento) e sem (outros motivos)
+function modeloNaoDesc() {
+  const ps = R.pend.filter(p => TIPOS_NAO_DESC.has(p.tipo) && !encerrada(p)), CENT = 'Valor lançado errado no RH (centavos)', por = new Map();
+  ps.forEach(p => { const o = por.get(p.cpf) || {cpf: p.cpf, nome: p.nome, loja: p.loja, cent: 0, outros: 0, compras: new Set(), mot: new Set(), folhas: new Set()};
+    if (p.tipo === CENT) { o.cent += p.valor; ((p.txt.match(/compras? (CE[\d, CE]+?) lançadas/) || [])[1] || '').split(',').map(x => x.trim()).filter(Boolean).forEach(x => o.compras.add(x)); }
+    else { o.outros += p.valor; o.mot.add(p.tipo); }
+    if (p.comp) o.folhas.add(p.comp); por.set(p.cpf, o); });
+  const pe = c => R.pessoas.get(c), sit = c => { const x = pe(c); return x && x.ex ? `Ex-funcionário (saída ${dataBR(x.desl.saida)})` : 'Ativo'; };
+  const todos = [...por.values()].sort((a, b) => b.cent + b.outros - a.cent - a.outros), com = todos.filter(o => o.cent > 0.009), sem = todos.filter(o => o.cent <= 0.009);
+  const cab = ['Funcionário', 'CPF', 'Situação', 'Loja', 'Erro de centavos', 'Outros motivos', 'Total não descontado', 'Compras com erro de centavos', 'Outros motivos (quais)', 'Folhas'];
+  const lin = o => [o.nome, cpfF(o.cpf), sit(o.cpf), o.loja || '', V(o.cent), V(o.outros), V(o.cent + o.outros), [...o.compras].join(', '), [...o.mot].join('; '), [...o.folhas].sort().map(compBR).join(', ')];
+  const tot = ls => ['Total', '', '', '', V(ls.reduce((t, o) => t + o.cent, 0)), V(ls.reduce((t, o) => t + o.outros, 0)), V(ls.reduce((t, o) => t + o.cent + o.outros, 0)), '', '', ''];
+  const sec = (t, ls) => ({titulo: `${t} (${ls.length})`, cab, linhas: ls.map(lin), direita: [4, 5, 6], rodape: tot(ls), cpfs: ls.map(o => o.cpf)});
+  const pendOrd = ps.slice().sort((a, b) => (a.tipo === CENT ? 0 : 1) - (b.tipo === CENT ? 0 : 1) || b.valor - a.valor);
+  const sCom = sec('Com erro de centavos no RH — corrigir o lançamento e cobrar', com), sSem = sec('Sem erro de centavos — outros motivos', sem);
+  return {titulo: 'Funcionários não descontados', subtitulo: `${qtd(todos.length)} funcionário(s), ${brl(todos.reduce((t, o) => t + o.cent + o.outros, 0))} · com erro de centavos: ${qtd(com.length)} (${brl(com.reduce((t, o) => t + o.cent, 0))}) · sem: ${qtd(sem.length)}`,
+    marca: MARCA, paisagem: true, arquivo: `funcionarios_nao_descontados_${hojeISO()}`,
+    resumo: [['Não descontados', `${qtd(todos.length)} - ${brl(todos.reduce((t, o) => t + o.cent + o.outros, 0))}`], ['Com erro de centavos', `${qtd(com.length)} - ${brl(com.reduce((t, o) => t + o.cent, 0))}`], ['Sem erro de centavos', `${qtd(sem.length)} - ${brl(sem.reduce((t, o) => t + o.outros, 0))}`],
+      ['Ativos com erro de centavos', qtd(com.filter(o => !(pe(o.cpf) || {}).ex).length)]],
+    secoes: [sCom, sSem, {titulo: `Pendências (${pendOrd.length})`, cab: CAB_PEND, linhas: pendOrd.map(linhaPend), direita: [8], cpfs: pendOrd.map(p => p.cpf)}],
+    cpfs: sCom.cpfs, assinaturas: ['Auditoria', 'RH / Departamento Pessoal']};
+}
 function drill(k) {
   const N = numeros(), comp = compBR(COMP), cel = (t, f) => lista(t, `Folha de ${comp}`, CAB_CEL, N.ls.filter(f).sort((a, b) => Math.abs(b.dif) - Math.abs(a.dif) || b.devido - a.devido), linhaCel, l => l.cpf, [4, 5, 6, 7],
     ls => ['Total', '', '', '', ls.reduce((t, l) => t + l.parcelas.length, 0), V(ls.reduce((t, l) => t + l.devido, 0)), V(ls.reduce((t, l) => t + (l.st === 'prev' ? 0 : l.desc), 0)), V(ls.reduce((t, l) => t + (l.st === 'prev' ? 0 : l.dif), 0)), '']);
@@ -1928,7 +1950,7 @@ function drill(k) {
   if (k.startsWith('cf:')) { const [, c, f] = k.split(':'), m = listaConferente(c, f); D_cf = () => m; k = '_cf'; }
   const D_ = {
     _pt: () => pend(tipoPt, R.pend.filter(p => p.tipo === tipoPt && !encerrada(p))),   // o tipo em todas as folhas
-    naodesc: () => pend('Funcionários não descontados', R.pend.filter(p => TIPOS_NAO_DESC.has(p.tipo) && !encerrada(p)).sort((a, b) => b.valor - a.valor)),
+    naodesc: () => modeloNaoDesc(),
     _cf: () => D_cf(),
     rh_bate: () => par('RH × crediário: parcelas que batem', crd, conjRH().ambos),
     rh_dif: () => { const x = conjRH(); return par('RH × crediário: parcelas que não batem', `${crd} · em aberto no crediário e fora do RH, no RH e não em aberto no crediário, ou em dois arquivos do RH`, [...x.soCred, ...x.soRH, ...x.dup]); },
@@ -1953,7 +1975,7 @@ function drill(k) {
   const m = DRILL = D_[k](), s = m.secoes[0];
   abrirModal(`<div class="row" style="justify-content:space-between"><h3>${esc(m.titulo)}</h3><div class="row"><button class="btn b-pri" onclick="baixarPDF(DRILL)">PDF</button><button class="btn" onclick="imprimirModelo(DRILL)">Imprimir</button><button class="btn" onclick="excelDrill()">Planilha</button><button class="btn" onclick="fecharModal()">Fechar</button></div></div>
     <div class="small mut">${esc(m.subtitulo)} · ${qtd(s.linhas.length)} linha(s)${m.cpfs.some(Boolean) ? ' · clique na linha para ver o extrato com cada compra e prestação' : ''}</div>
-    ${s.linhas.length ? m.secoes.map((sx, k) => tabelaModal(sx, k ? sx.cpfs || [] : m.cpfs, k)).join('') : '<div class="vazio">Nada a listar. ✔</div>'}`, 'larga');
+    ${m.secoes.some(x => x.linhas.length) ? m.secoes.map((sx, k) => tabelaModal(sx, k ? sx.cpfs || [] : m.cpfs, k || (m.secoes.length > 1 ? 1 : 0))).join('') : '<div class="vazio">Nada a listar. ✔</div>'}`, 'larga');
 }
 // tabela do modal: a 1ª seção é a lista do card; as demais (ex.: prestações do Conferente) vêm embaixo com o título
 // pendências em cartões: gravidade, tipo e valor em cima; quem (nome, CPF, matrícula, loja, folha); o detalhe com a largura toda
@@ -1964,7 +1986,7 @@ function cartoesModal(s, cpfs, k) {
   const chips = Object.entries(cont).filter(([v]) => v).map(([v, n]) => `<span class="st ${v === 'alta' ? 'st-alta' : v === 'média' ? 'st-media' : 'st-baixa'}">${esc(v)} · ${n}</span>`).join(' ');
   const id = 'pl' + Math.random().toString(36).slice(2, 8);
   return `${k ? `<h3 style="margin-top:16px">${esc(s.titulo)}</h3>` : ''}
-    <div class="pfiltro"><input placeholder="Filtrar por nome, CPF, loja, tipo ou texto" oninput="const q=this.value.toLowerCase();document.querySelectorAll('#${id} .pcard').forEach(c=>c.style.display=c.textContent.toLowerCase().includes(q)?'':'none')">${chips}</div>
+    <div class="pfiltro"><input data-sem-foco placeholder="Filtrar por nome, CPF, loja, tipo ou texto" oninput="const q=this.value.toLowerCase();document.querySelectorAll('#${id} .pcard').forEach(c=>c.style.display=c.textContent.toLowerCase().includes(q)?'':'none')">${chips}</div>
     <div class="plista" id="${id}">${ls.map((l, i) => { const gv = g(l, 'Grav.') || g(l, 'Gravidade'), cl = gv === 'alta' ? 'g-alta' : gv === 'média' ? 'g-media' : 'g-baixa';
       const quem = [g(l, 'Funcionário') && `<b>${esc(g(l, 'Funcionário'))}</b>`, g(l, 'CPF'), g(l, 'Matrícula') && 'mat. ' + esc(g(l, 'Matrícula')), esc(g(l, 'Loja')), g(l, 'Comp.') && 'folha ' + esc(g(l, 'Comp.'))].filter(Boolean).join(' · ');
       const tr = g(l, 'Tratativa');
