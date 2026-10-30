@@ -800,7 +800,10 @@ function cruzar() {
     if (dm > 0.02) { if (perda < 100) continue;
       const cheio = sel.reduce((t, x) => t + x.ps.filter(p => centErr(p.valor) !== p.valor).reduce((u, p) => u + p.valor, 0), 0);
       if (Math.abs(cheio - alvo) <= Math.max(0.02, folga)) continue; }
-    c.centavos = {compras: sel.map(x => x.k), perda, resto: rd2(alvo - perda), ex: sel.map(x => x.ps.filter(p => centErr(p.valor) !== p.valor).map(p => `${p.documento} ${brl(p.valor)} → ${brl(centErr(p.valor))}`).join(', ')).join('; ')};
+    // certo só quando bate ao centavo (o RH grava o valor dividido por 100: o erro fecha exato); com sobra — ou 1 centavo, que
+    // parcelas inteiras não descontadas também explicam (30/10/2026, José Luis: 199,00 × 198,99) — é só possível
+    const certo = dm <= 0.005, alt = !certo && somaExata(c.parcelas.filter(p => !p.rec).map(p => p.valor), alvo);
+    c.centavos = {compras: sel.map(x => x.k), perda, resto: rd2(alvo - perda), certo, alt, ex: sel.map(x => x.ps.filter(p => centErr(p.valor) !== p.valor).map(p => `${p.documento} ${brl(p.valor)} → ${brl(centErr(p.valor))}`).join(', ')).join('; ')};
   }
   // alguma combinação das parcelas (valor cheio) soma exatamente o valor? (em centavos, até 30 parcelas)
   function somaExata(vs, alvo) { const a = Math.round(alvo * 100); let ok = new Set([0]);
@@ -835,7 +838,8 @@ function cruzar() {
     // folha sem lote de baixa que bata: as compras quitadas dela não estão na base — "a mais" ali não dá para conferir
     if (loteComp.size && !loteBoa.has(l.comp) && l.st === 'verif') continue;
     if (l.centavos) {
-      add('desconto', 'alta', 'Valor lançado errado no RH (centavos)', l.cpf, l.comp, `Folha de ${compBR(l.comp)}: devido ${brl(l.devido)} × descontado ${brl(l.desc)}. ${Math.abs(l.centavos.resto) <= 0.02 ? `A diferença de ${brl(l.centavos.perda)} é exatamente a das compras` : `Faltou ${brl(-l.dif)}: ${brl(l.centavos.perda)} são das compras`} ${l.centavos.compras.join(', ')} lançadas no RH sem os zeros dos centavos (${l.centavos.ex})${Math.abs(l.centavos.resto) > 0.02 ? `; os outros ${brl(Math.abs(l.centavos.resto))} foram descontados ${l.centavos.resto < 0 ? 'a mais' : 'a menos'} por outro motivo — conferir no TRCT` : ''}. Corrigir o lançamento no RH (a reimportação é rejeitada como "Já lançado") e cobrar a diferença.`, -l.dif);
+      const cc = l.centavos;
+      add('desconto', cc.certo ? 'alta' : 'media', cc.certo ? 'Valor lançado errado no RH (centavos)' : 'Possível erro de centavos no RH', l.cpf, l.comp, `${cc.certo ? '' : `A conferir na lista "Diversos" do RH (o erro de centavos não fecha ao centavo${cc.alt ? ' e parcelas inteiras não descontadas também explicam a diferença' : ''}). `}Folha de ${compBR(l.comp)}: devido ${brl(l.devido)} × descontado ${brl(l.desc)}. ${Math.abs(l.centavos.resto) <= 0.005 ? `A diferença de ${brl(l.centavos.perda)} é exatamente a das compras` : `Faltou ${brl(-l.dif)}: ${brl(l.centavos.perda)} são das compras`} ${l.centavos.compras.join(', ')} lançadas no RH sem os zeros dos centavos (${l.centavos.ex})${Math.abs(l.centavos.resto) > 0.005 ? `; os outros ${brl(Math.abs(l.centavos.resto))} foram descontados ${l.centavos.resto < 0 ? 'a mais' : 'a menos'} por outro motivo — conferir no TRCT` : ''}. Corrigir o lançamento no RH (a reimportação é rejeitada como "Já lançado") e cobrar a diferença.`, -l.dif);
       continue; }
     // compensado depois ou saldo que segue para a folha seguinte: a pendência é a do acumulado, na última folha
     if (l.st === 'comp' || l.carrega) continue;
@@ -1918,7 +1922,7 @@ function lista(titulo, sub, cab, objs, linha, cpf, direita, total) {
 let D_cf = null;
 // o que devia ter sido descontado e não foi (devido × verba 1260), em todas as folhas — ativos e ex-funcionários
 const TIPOS_NAO_DESC = new Set(['Não descontou', 'Descontou a menos', 'Saldo não descontado (acumulado)', 'Rescisão descontou a menos', 'Rescisão sem desconto do saldo',
-  'Valor lançado errado no RH (centavos)', 'Ex-funcionário com débito em aberto', 'Fora da lista do RH', 'Fora do desconto do RH', 'Lista do RH a menos']);
+  'Valor lançado errado no RH (centavos)', 'Possível erro de centavos no RH', 'Ex-funcionário com débito em aberto', 'Fora da lista do RH', 'Fora do desconto do RH', 'Lista do RH a menos']);
 // não descontados por funcionário, separados: com erro de centavos no RH (corrigir o lançamento) e sem (outros motivos)
 function modeloNaoDesc() {
   const ps = R.pend.filter(p => TIPOS_NAO_DESC.has(p.tipo) && !encerrada(p)), CENT = 'Valor lançado errado no RH (centavos)', por = new Map();
