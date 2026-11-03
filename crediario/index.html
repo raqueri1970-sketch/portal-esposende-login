@@ -561,7 +561,12 @@ function cruzar() {
   };
   // relatório de compras importado por engano como desconto da folha: fica fora do cruzamento (a tela aponta para excluir)
   const arqIgnorado = new Set(D.arquivos.filter(a => a.tipo === 'folha' && /compra/i.test(a.nome) && !/desc|folha|credi/i.test(a.nome)).map(a => a.id));
-  const folha = D.folha.filter(l => !arqIgnorado.has(l.arquivo_id)).map(ident);
+  let folha = D.folha.filter(l => !arqIgnorado.has(l.arquivo_id)).map(ident);
+  // desconto da rescisão informado à mão (TRCT, origem 'trct'): vale enquanto a folha daquele mês não for importada para a pessoa;
+  // não marca o mês como "folha importada" para os outros
+  const arqTrct = new Set(D.arquivos.filter(a => a.tipo === 'folha' && a.origem === 'trct').map(a => a.id));
+  { const tem = new Set(folha.filter(l => !arqTrct.has(l.arquivo_id)).map(l => l.cpf + '|' + l.comp)); folha = folha.filter(l => !arqTrct.has(l.arquivo_id) || !tem.has(l.cpf + '|' + l.comp)); }
+  const trctPes = new Set(folha.filter(l => arqTrct.has(l.arquivo_id)).map(l => l.cpf + '|' + l.comp));
   // Quem já apareceu como funcionário (num cadastro anterior ou numa folha / lista de desconto do RH) e não está no cadastro de
   // ativos atual é ex-funcionário, mesmo sem estar no relatório de desligados (desatualizado). "Fora do cadastro" fica só para
   // quem nunca apareceu como funcionário. A saída é deduzida do último registro: data do cadastro em que ainda estava ou fim do
@@ -670,7 +675,7 @@ function cruzar() {
   const folhaResumo = folhaOk.filter(l => !l.documento), folhaParc = folhaOk.filter(l => l.documento);
   // a lista do RH parcela a parcela vale como a lista inteira da folha: parcela da folha que não está nela = não vai ser descontada.
   // janelas = vencimentos que a lista traz (ex.: 21/10 a 23/10), para mostrar quando ela foi tirada com o período curto
-  const compsResumo = new Set(folhaResumo.map(l => l.comp)), janelas = new Map();
+  const compsResumo = new Set(folhaResumo.filter(l => !arqTrct.has(l.arquivo_id)).map(l => l.comp)), janelas = new Map();
   for (const [, ls] of grpConta(folhaParc.filter(l => !l.rh), l => l.arquivo_id)) {
     const vs = ls.map(l => l.vencimento || (l.par && l.par.vencimento)).filter(Boolean).sort(); if (!vs.length) continue;
     const j = {ini: vs[0], fim: vs[vs.length - 1], arq: ls[0].arq};
@@ -731,7 +736,7 @@ function cruzar() {
     c.faltam = cobertura(comp); c.completa = !c.faltam.length;
     // parcela reconstruída a partir da última parcela do contrato: aceita até R$ 1 por parcela do contrato de arredondamento
     c.tolRec = rd2(c.parcelas.filter(p => p.aprox).reduce((s, p) => s + (p.n_parcelas || 1), 0));
-    if (!compsFolha.has(comp)) c.st = 'prev';
+    if (!compsFolha.has(comp) && !trctPes.has(cpf + '|' + comp)) c.st = 'prev';
     // com o RH: sem nenhuma parcela dentro do período do crediário da loja não há como conferir — o RH é a única fonte
     // (folhas passadas: o crediário só traz o que está em aberto; folhas de 2027: o relatório do crediário termina antes)
     else if (modoRH && compsRH.has(comp) && !c.parcelas.some(p => p.noCred && !p.descontos.length) && !c.parcelas.some(p => p.vencimento >= credIni && p.vencimento <= credFim)) c.st = 'rh';
@@ -760,7 +765,7 @@ function cruzar() {
     let acc = 0, zero = -1; cs.forEach((c, i) => { acc = rd2(acc + pe.celulas[c].dif); pe.celulas[c].acum = acc; if (Math.abs(acc) <= cfg.tol) zero = i; });
     // ex-funcionário com a folha da rescisão importada: a FALTA que ficou aberta depois da última compensação é cobrada na
     // rescisão (desconto a mais não abate a rescisão: segue como pendência própria — 30/10/2026, Mathews: 30,99 da folha de set)
-    const vaiResc = pe.ex && compsFolha.has(lim);
+    const vaiResc = pe.ex && (compsFolha.has(lim) || trctPes.has(pe.cpf + '|' + lim));
     // a falta segue para a folha seguinte e o desconto a mais quita a falta que já existia (o que vem antes da falta não a quita)
     if (vaiResc) { let D = 0;
       cs.forEach(c => { const x = pe.celulas[c]; if (x.st === 'ok' || x.st === 'comp') return;
@@ -899,7 +904,7 @@ function cruzar() {
     // com a folha da rescisão importada, em aberto é o que a verba 1260 dela não cobriu
     // parcela baixada no crediário no lote da folha da rescisão em diante segue no saldo: depois da saída só a rescisão paga
     let saldoPs = reais.filter(p => p.comp === mS && (!p.baixa || compBaixa(p.baixa) >= mS)).sort((a, b) => a.vencimento.localeCompare(b.vencimento)), saldo = rd2(saldoPs.reduce((s, p) => s + p.valor, 0));
-    const folhaResc = compsFolha.has(mS), cR = pe.celulas[mS], descResc = cR ? cR.desc : 0;
+    const folhaResc = compsFolha.has(mS) || trctPes.has(pe.cpf + '|' + mS), cR = pe.celulas[mS], descResc = cR ? cR.desc : 0;
     if (folhaResc && pe.saldoAnt) saldo = rd2(saldo + pe.saldoAnt);
     const falta = folhaResc ? Math.max(0, rd2(saldo - descResc)) : saldo, abertas = falta > 0.009 ? saldoPs : [];
     const venc0 = rd2(abertas.filter(p => p.vencimento < hojeD).reduce((s, p) => s + p.valor, 0));
@@ -1114,7 +1119,7 @@ function cruzar() {
     }).sort((a, b) => b.pct - a.pct);
   }
   R = {cfg, par, nRec: rec.length, compsReais, acima, folha: folhaOk, semId, linhas, pessoas, pend, comps, porComp, calib, compsFolha, ciclos, compHoje, cadAtual, arqPorId, cobertura,
-    desl, deslRel, exs, foras, janelas, foraJanela, compsResumo, compLinha, modoRH, compsRH, semRH, arqRH, credAtual, credIni, credFim, arqIgnorado};
+    desl, deslRel, exs, foras, trctPes, loteBoa, temLotes: loteComp.size > 0, janelas, foraJanela, compsResumo, compLinha, modoRH, compsRH, semRH, arqRH, credAtual, credIni, credFim, arqIgnorado};
 }
 
 /* =====================================================================================================
@@ -1914,8 +1919,11 @@ const CAB_CEL = ['Funcionário', 'CPF', 'Matrícula', 'Loja', 'Prestações', 'D
 const linhaCel = l => { const p = R.pessoas.get(l.cpf); return [p.nome, cpfF(l.cpf), p.cad ? p.cad.matricula || '' : '', p.cad ? p.cad.loja || '' : (p.ex ? 'EX-FUNCIONÁRIO' : 'FORA DO CADASTRO'), l.parcelas.length, V(l.devido), l.st === 'prev' ? '-' : V(l.desc), l.st === 'prev' ? '' : V(l.dif), STAT[l.st][0]]; };
 // o relatório mostra a conta da rescisão: saldo na saída − descontado na rescisão = em aberto (30/10/2026: sem as duas colunas,
 // parecia que o desconto da rescisão não tinha sido considerado)
-const CAB_EX = ['Ex-funcionário', 'CPF', 'Saída', 'Natureza', 'Saldo na saída', 'Desc. na rescisão', 'Parcelas', 'Vencido', 'A vencer', 'Em aberto', 'Desc. folha após saída'];
-const linhaEx = o => [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), o.d.natureza || '', V(o.saldo), o.folhaResc ? V(o.descResc) : `folha de ${compBR(o.d.saida.slice(0, 7))} não importada`, o.abertas.length, V(o.vencido), V(o.aVencer), o.st === 'verif' ? `verificar ~${V(o.verifValor)}` : V(o.aberto), o.descApos ? V(o.descApos) : ''];
+const CAB_EX = ['Ex-funcionário', 'CPF', 'Saída', 'Saldo na saída', 'Descontado na rescisão', 'Resultado', 'Diferença', 'Observação'];
+const linhaEx = o => { const r = resEx(o), cor = RES_EX[r.res][1];
+  return [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), V(o.saldo), o.folhaResc ? V(o.descResc) : '—', {t: RES_EX[r.res][0], c: cor}, r.res === 'perda' ? {t: '− ' + nfm(r.valor), c: cor} : r.res === 'ganho' || r.res === 'conferir' ? {t: '+ ' + nfm(r.valor), c: cor} : '', r.obs]; };
+const rodapeEx = ls => { const t = totEx(ls); return ['Total', `${ls.length} ex-funcionário(s)`, '', V(ls.reduce((a, o) => a + o.saldo, 0)), V(ls.reduce((a, o) => a + (o.folhaResc ? o.descResc : 0), 0)),
+  `Perda ${t.nP} · Ganho ${t.nG} · A conferir ${t.nC} · Aguardando ${t.nA}`, `Perda − ${nfm(t.perda)} · Ganho + ${nfm(t.ganho)} · Líquido ${t.liq < 0 ? '− ' : '+ '}${nfm(Math.abs(t.liq))}`, [t.nC ? `${t.nC} a conferir (descontado a mais ${nfm(t.conf)}, base incompleta — fora do líquido)` : '', t.nA ? `${t.nA} aguardando a folha da rescisão (saldo ${nfm(t.sA)})` : ''].filter(Boolean).join(' · ')]; };
 function lista(titulo, sub, cab, objs, linha, cpf, direita, total) {
   const linhas = objs.map(linha);
   return {titulo, subtitulo: sub, marca: MARCA, paisagem: true, arquivo: titulo.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '_').slice(0, 60) + '_' + hojeISO(),
@@ -1951,7 +1959,8 @@ function drill(k) {
   const N = numeros(), comp = compBR(COMP), cel = (t, f) => lista(t, `Folha de ${comp}`, CAB_CEL, N.ls.filter(f).sort((a, b) => Math.abs(b.dif) - Math.abs(a.dif) || b.devido - a.devido), linhaCel, l => l.cpf, [4, 5, 6, 7],
     ls => ['Total', '', '', '', ls.reduce((t, l) => t + l.parcelas.length, 0), V(ls.reduce((t, l) => t + l.devido, 0)), V(ls.reduce((t, l) => t + (l.st === 'prev' ? 0 : l.desc), 0)), V(ls.reduce((t, l) => t + (l.st === 'prev' ? 0 : l.dif), 0)), '']);
   const pend = (t, ls) => lista(t, `Pendências abertas - ${comp} e gerais`, CAB_PEND, ls, linhaPend, p => p.cpf, [8]);
-  const ex = (t, f) => lista(t, 'Ex-funcionários com crediário', CAB_EX, R.exs.filter(f), linhaEx, o => o.pe.cpf, [4, 5, 6, 7, 8, 9, 10], ls => ['Total', '', '', '', V(ls.reduce((t, o) => t + o.saldo, 0)), V(ls.reduce((t, o) => t + (o.folhaResc ? o.descResc : 0), 0)), ls.reduce((t, o) => t + o.abertas.length, 0), ...['vencido', 'aVencer', 'aberto', 'descApos'].map(q => V(ls.reduce((t, o) => t + o[q], 0)))]);
+  const ex = (t, f) => { const ls = ordEx(R.exs.filter(f)), tt = totEx(ls), m = lista(t, `Ex-funcionários com crediário · perda − ${brl(tt.perda)} (${tt.nP}) · ganho + ${brl(tt.ganho)} (${tt.nG}) · líquido ${brl(tt.liq)}${tt.nA ? ` · ${tt.nA} aguardando a folha da rescisão` : ''}`, CAB_EX, ls, linhaEx, o => o.pe.cpf, [3, 4, 6], rodapeEx);
+    m.resumo = [['Perda (descontamos menos)', `${qtd(tt.nP)} - ${brl(tt.perda)}`], ['Ganho (descontamos mais)', `${qtd(tt.nG)} - ${brl(tt.ganho)}`], ['Resultado líquido', brl(tt.liq)], ['A conferir (a mais, base incompleta)', `${qtd(tt.nC)} - ${brl(tt.conf)}`], ['Aguardando folha da rescisão', `${qtd(tt.nA)} - saldo ${brl(tt.sA)}`]]; return m; };
   const fo = (t, f) => lista(t, 'Compradores fora do cadastro', CAB_FORA, R.foras.filter(f), linhaFora, o => o.pe.cpf, [3, 5, 6, 7, 8]);
   const CAB_P = ['Funcionário', 'CPF', 'Situação', 'Documento', 'Compra', 'Vencimento', 'Folha', 'Valor', 'Relatórios'];
   const par = (t, sub, ps) => lista(t, sub, CAB_P, ps.slice().sort((a, b) => (R.pessoas.get(a.cpf) || {nome: ''}).nome.localeCompare((R.pessoas.get(b.cpf) || {nome: ''}).nome) || a.vencimento.localeCompare(b.vencimento)),
@@ -1976,7 +1985,7 @@ function drill(k) {
     dv_mes: () => par(`Compras do mês - ${comp}`, '1ª parcela das compras do ciclo desta folha', N.psMes), dv_ant: () => par(`Parcelas de compras anteriores - ${comp}`, '2ª parcela em diante de compras de meses anteriores', N.psAnt),
     dv_resc: () => par(`Saldo de rescisão - ${comp}`, 'Parcelas restantes de quem saiu neste mês (tinham de sair na rescisão)', N.psResc),
     graves: () => pend('Erros e faltas graves', N.graves), dups: () => pend('Duplicidades', N.dups),
-    ex_debito: () => ex('Ex-funcionários com débito em aberto', o => o.st === 'aberto'), ex_vencido: () => ex('Ex-funcionários com parcela vencida', o => o.vencido > 0.009),
+    ex_debito: () => ex('Ex-funcionários com débito em aberto', o => o.st === 'aberto' || ['ganho', 'conferir'].includes(resEx(o).res)), ex_vencido: () => ex('Ex-funcionários com parcela vencida', o => o.vencido > 0.009),
     ex_avencer: () => ex('Ex-funcionários com débito a vencer', o => o.aVencer > 0.009), ex_folha: () => ex('Descontados na folha depois da saída', o => o.folhaApos.length),
     ex_compra: () => ex('Compraram depois da saída', o => o.aposCompra.length), ex_quit: () => ex('Ex-funcionários quitados', o => o.st === 'quitado'),
     ex_verif: () => ex('Ex-funcionários a verificar (base incompleta)', o => o.st === 'verif'),
@@ -2014,7 +2023,7 @@ function cartoesModal(s, cpfs, k) {
 function tabelaModal(s, cpfs, k) {
   if (s.cab.includes('Detalhe')) return cartoesModal(s, cpfs, k);
   const r = j => (s.direita || []).includes(j) ? 'r' : '';
-  return `${k ? `<h3 style="margin-top:16px">${esc(s.titulo)}</h3>` : ''}<div class="tw"><table><thead><tr>${s.cab.map((h, i) => `<th class="${r(i)}">${esc(h)}</th>`).join('')}</tr></thead><tbody>${s.linhas.slice(0, 500).map((l, i) => `<tr ${cpfs[i] ? `class="clicavel" data-pes="${cpfs[i]}" data-c="${COMP}"` : ''}>${l.map((c, j) => `<td class="${r(j)}">${esc(celTxt(c))}</td>`).join('')}</tr>`).join('')}</tbody>${s.rodape ? `<tfoot><tr>${s.rodape.map((c, j) => `<td class="${r(j)}">${esc(celTxt(c))}</td>`).join('')}</tr></tfoot>` : ''}</table></div>${s.linhas.length > 500 ? `<div class="small mut">Mostrando 500 de ${qtd(s.linhas.length)}. O PDF e a planilha trazem todas.</div>` : ''}`;
+  return `${k ? `<h3 style="margin-top:16px">${esc(s.titulo)}</h3>` : ''}<div class="tw"><table><thead><tr>${s.cab.map((h, i) => `<th class="${r(i)}">${esc(h)}</th>`).join('')}</tr></thead><tbody>${s.linhas.slice(0, 500).map((l, i) => `<tr ${cpfs[i] ? `class="clicavel" data-pes="${cpfs[i]}" data-c="${COMP}"` : ''}>${l.map((c, j) => `<td class="${r(j)} ${c && typeof c === 'object' && c.c ? c.c : ''}">${c && typeof c === 'object' && c.c ? '<b>' + esc(celTxt(c)) + '</b>' : esc(celTxt(c))}</td>`).join('')}</tr>`).join('')}</tbody>${s.rodape ? `<tfoot><tr>${s.rodape.map((c, j) => `<td class="${r(j)}">${esc(celTxt(c))}</td>`).join('')}</tr></tfoot>` : ''}</table></div>${s.linhas.length > 500 ? `<div class="small mut">Mostrando 500 de ${qtd(s.linhas.length)}. O PDF e a planilha trazem todas.</div>` : ''}`;
 }
 // célula da planilha: valor em reais V() = {t, n} vira número (antes saía vazio); texto com número nas colunas da direita também
 const celXLSX = (c, i, direita) => c && typeof c === 'object' && 'n' in c ? c.n : (direita || []).includes(i) && typeof c === 'string' && /\d/.test(c) ? numero(c) : c;
@@ -2030,6 +2039,38 @@ function excelDrill() {
 
 /* ---------- EX-FUNCIONÁRIOS ---------- */
 // quem saiu (relatório de desligados) e tem crediário: foi descontado? ficou débito em aberto (vencido / a vencer)?
+// quem está certo na rescisão: saldo na saída × descontado. Perda = descontamos menos (a cobrar); ganho = descontamos mais
+// (a devolver ou explicar); aguardando = a folha da rescisão (ou o TRCT) ainda não está no sistema
+function resEx(o) {
+  const ps = (o.pe.pend || []).filter(p => !encerrada(p)), txt = ps.map(p => p.txt).join(' '), tem = t => ps.some(p => p.tipo === t);
+  const fora = (txt.match(/Não entraram na rescisão: ([^.]+)\./) || [])[1], mS = o.d.saida.slice(0, 7);
+  const trct = R.trctPes && R.trctPes.has(o.pe.cpf + '|' + mS);
+  let res, valor = 0, obs = [];
+  if (!o.folhaResc) { res = 'aguarda'; obs.push(`Folha de ${compBR(mS)} (rescisão) não importada — importe a folha ou informe o desconto do TRCT`); }
+  else if (o.aberto > 0.009) { res = 'perda'; valor = o.aberto;
+    if (tem('Valor lançado errado no RH (centavos)')) { const c = ps.find(p => p.tipo === 'Valor lançado errado no RH (centavos)'); obs.push('Erro de centavos no RH: ' + ((c.txt.match(/compras? (CE[\d, CE]+?) lançadas/) || [])[1] || '') + ' lançada(s) sem os zeros (ex.: 129,00 → 1,29)'); }
+    else if (tem('Possível erro de centavos no RH')) obs.push('Possível erro de centavos — conferir na lista Diversos do RH');
+    else if (fora) obs.push('Não entraram na rescisão: ' + fora);
+    else if (o.descResc <= 0.009) obs.push('Rescisão sem desconto de Compra Loja (ver se havia líquido no TRCT)');
+    else obs.push('Rescisão descontou menos que o saldo — compra não identificada: conferir TRCT × lista Diversos do RH'); }
+  else if (o.maisResc > 0.009) { valor = o.maisResc;
+    // só é ganho com a base completa: com o lote de baixa da folha da rescisão confiável e compras encontradas. Senão o saldo pode
+    // estar menor que o real (compra quitada que a base não tem) — a conferir (30/10/2026: 50 "ganhos", quase todos de jan/fev)
+    const baseOk = o.saldo > 0.009 && (!R.temLotes || (R.loteBoa && R.loteBoa.has(mS)));
+    if (baseOk) { res = 'ganho'; obs.push('Rescisão descontou a mais que o saldo das compras — pedir ao RH a origem; se não houver compra, devolver'); }
+    else { res = 'conferir'; obs.push(o.saldo <= 0.009 ? 'Descontou sem compra encontrada na base (compra com outro nome/CPF ou fora dos arquivos) — conferir no TRCT e na lista Diversos do RH'
+      : `Descontou acima do saldo encontrado, mas a base de ${compBR(mS)} está incompleta (compras quitadas sem lote de baixa confiável) — provável compra que a base não tem; conferir no TRCT`); } }
+  else res = 'ok';
+  if (o.d.inferida) obs.unshift('Saída não confirmada (não está nos desligados) — confirmar com o RH');
+  if (trct) obs.push('Desconto informado pelo TRCT (até a folha do mês ser importada)');
+  if (o.bxSemDesc > 0.009) obs.push(`Crediário baixou ${brl(o.bxSemDesc)} sem desconto — estornar a baixa`);
+  return {res, valor: rd2(valor), obs: obs.join(' · ')};
+}
+const RES_EX = {perda: ['Perda', 'badt'], ganho: ['Ganho', 'okt'], conferir: ['A conferir (a mais)', 'wt'], ok: ['OK', 'mut'], aguarda: ['Aguardando', 'wt']};
+const totEx = ls => { const t = {perda: 0, ganho: 0, conf: 0, nP: 0, nG: 0, nC: 0, nA: 0, sA: 0, nOk: 0}; ls.forEach(o => { const r = resEx(o);
+  if (r.res === 'perda') { t.perda += r.valor; t.nP++; } else if (r.res === 'ganho') { t.ganho += r.valor; t.nG++; } else if (r.res === 'conferir') { t.conf += r.valor; t.nC++; } else if (r.res === 'aguarda') { t.nA++; t.sA += o.saldo; } else t.nOk++; });
+  t.perda = rd2(t.perda); t.ganho = rd2(t.ganho); t.conf = rd2(t.conf); t.liq = rd2(t.ganho - t.perda); t.sA = rd2(t.sA); return t; };
+const ordEx = ls => ls.slice().sort((a, b) => { const ra = resEx(a), rb = resEx(b), o = {perda: 0, ganho: 1, conferir: 2, aguarda: 3, ok: 4}; return o[ra.res] - o[rb.res] || rb.valor - ra.valor || b.saldo - a.saldo; });
 const EX_ST = {aberto: ['Débito em aberto', 'st-alta'], verif: ['Verificar (base incompleta)', 'st-verif'], quitado: ['Quitado', 'st-ok']};
 // rescisão × saldo: o que a verba 1260 da folha do mês da saída cobriu
 const rescTxt = o => o.bxSemDesc > 0.009 ? `descontou a menos; ${nfm(o.bxSemDesc)} baixados sem desconto` : o.st === 'verif' ? `base incompleta: ${o.foraBase.length} parcela(s) fora do crediário` : !o.saldo && !o.descResc ? 'sem saldo' : !o.folhaResc ? `folha de ${compBR(o.d.saida.slice(0, 7))} não importada` : o.maisResc > 0.009 ? `descontou ${nfm(o.maisResc)} a mais` : o.aberto > 0.009 ? (o.descResc ? 'descontou a menos' : 'não descontou') : 'descontado na rescisão';
@@ -2050,6 +2091,16 @@ function numerosEx(ls = R.exs) {
     nCompra: ls.filter(o => o.aposCompra.length).length, compraApos: rd2(ls.reduce((t, o) => t + o.aposCompra.reduce((u, p) => u + p.valor, 0), 0)), nParc: ls.reduce((t, o) => t + o.abertas.length, 0)};
 }
 const readmitidos = () => [...R.pessoas.values()].filter(p => p.readm).sort((a, b) => a.nome.localeCompare(b.nome));
+// desconto de Compra Loja do TRCT, enquanto a folha do mês da rescisão não é importada (a folha passa a valer quando chegar)
+async function informarTRCT(cpf) {
+  const o = R.exs.find(x => x.pe.cpf === cpf); if (!o) return;
+  const mS = o.d.saida.slice(0, 7), v = prompt(`${o.pe.nome} — saída em ${dataBR(o.d.saida)}.\n\nValor de "Outros Descontos (Compra Loja)" no TRCT (0 se não houve):`, '');
+  if (v == null) return; const n = numero(v); if (!isFinite(n) || n < 0) { toast('Valor inválido.'); return; }
+  const {error} = await sb.rpc('cred_importar', {p_arquivo: {tipo: 'folha', origem: 'trct', nome: `TRCT ${o.pe.nome} (rescisão ${compBR(mS)})`, hash: 'trct:' + cpf + ':' + mS, total: rd2(n), rodape: null, competencias: [mS], eventos: ['Compra Loja']},
+    p_linhas: [{cpf, matricula: o.d.matricula || null, nome: o.pe.nome, competencia: mS, evento: 'Compra Loja', valor: rd2(n), data_pagamento: null, documento: null, parcela: null, vencimento: null}]});
+  if (error) { toast('Não gravou: ' + msgErro(error) + (/já foi importado/.test(msgErro(error)) ? ' — para corrigir, exclua o "TRCT" em Arquivos do mês e informe de novo.' : ''), 9000); return; }
+  toast('TRCT registrado.'); await recarregar(); irPara('ex');
+}
 function telaEx() {
   if (!R.desl.size) {
     $('exRegra').innerHTML = 'Importe o relatório de <b>desligados</b> (inativos) em <a href="javascript:void(0)" onclick="irPara(\'arq\')">Arquivos do mês</a> — a tela cruza a data de saída com as compras no crediário e com os descontos da folha.';
@@ -2074,12 +2125,17 @@ function telaEx() {
   const porV = new Map(); R.exs.forEach(o => o.abertas.forEach(p => { const m = p.vencimento.slice(0, 7); porV.set(m, (porV.get(m) || 0) + p.valor); }));
   graficoBarrasH($('gExVenc'), [...porV.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([m, v]) => ({rotulo: (m < hojeISO().slice(0, 7) ? 'Vencido ' : 'Vence ') + compBR(m), valor: rd2(v)})), {vazio: 'Nenhuma parcela em aberto.'});
   const ls = listaEx();
-  $('tEx').innerHTML = ls.length ? `<table><thead><tr><th>Ex-funcionário</th><th>Saída</th><th>Natureza</th><th class="r">Saldo na saída</th><th class="r">Desc. na rescisão</th><th class="r">Parcelas</th><th class="r">Vencido</th><th class="r">A vencer</th><th class="r">Em aberto</th><th>Último venc.</th><th class="r">Desc. folha após saída</th><th>Situação</th></tr></thead><tbody>` +
-    ls.map(o => `<tr class="clicavel" data-pes="${o.pe.cpf}"><td><b>${esc(o.pe.nome)}</b><br><span class="mut small">${cpfF(o.pe.cpf)} · ${esc(o.d.matricula || '')} · ${esc(o.d.cargo || '')}<br>${esc(o.d.estab || '')}</span></td>
-      <td>${dataBR(o.d.saida)}</td><td class="small">${esc(o.d.natureza || '')}</td><td class="r">${nfm(o.saldo)}</td><td class="r ${o.maisResc > 0.009 || (o.folhaResc && o.aberto > 0.009) ? 'badt' : ''}">${o.folhaResc ? nfm(o.descResc) : '—'}<br><span class="mut small">${esc(rescTxt(o))}</span></td><td class="r">${o.abertas.length}</td><td class="r ${o.vencido > 0.009 ? 'badt' : ''}">${nfm(o.vencido)}</td><td class="r">${nfm(o.aVencer)}</td><td class="r">${o.st === 'verif' ? `<span class="st st-verif">verificar</span><br><span class="mut small">~${nfm(o.verifValor)}</span>` : `<b>${nfm(o.aberto)}</b>`}</td>
-      <td class="small">${dataBR(o.ult)}</td><td class="r ${o.descApos > 0.009 ? 'badt' : ''}">${o.descApos ? nfm(o.descApos) : ''}</td>
-      <td><span class="st ${EX_ST[o.st][1]}">${EX_ST[o.st][0]}</span>${o.aposCompra.length ? ' <span class="st st-alta">comprou depois de sair</span>' : ''}</td></tr>`).join('') +
-    `</tbody><tfoot><tr><td>Total (${ls.length})</td><td></td><td></td><td class="r">${nfm(ls.reduce((t, o) => t + o.saldo, 0))}</td><td class="r">${nfm(ls.reduce((t, o) => t + o.descResc, 0))}</td><td class="r">${ls.reduce((t, o) => t + o.abertas.length, 0)}</td><td class="r">${nfm(ls.reduce((t, o) => t + o.vencido, 0))}</td><td class="r">${nfm(ls.reduce((t, o) => t + o.aVencer, 0))}</td><td class="r">${nfm(ls.reduce((t, o) => t + o.aberto, 0))}</td><td></td><td class="r">${nfm(ls.reduce((t, o) => t + o.descApos, 0))}</td><td></td></tr></tfoot></table>`
+  const lo = ordEx(ls), tt = totEx(lo);
+  $('tEx').innerHTML = lo.length ? `<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <span class="st st-alta">Perda (descontamos menos): ${tt.nP} · − ${brl(tt.perda)}</span><span class="st st-ok">Ganho (descontamos mais): ${tt.nG} · + ${brl(tt.ganho)}</span>
+      <span class="st ${tt.liq < 0 ? 'st-alta' : 'st-ok'}">Resultado líquido: ${brl(tt.liq)}</span>${tt.nC ? `<span class="st st-media">A conferir (descontado a mais, base incompleta): ${tt.nC} · ${brl(tt.conf)}</span>` : ''}${tt.nA ? `<span class="st st-media">Aguardando a folha da rescisão: ${tt.nA} · saldo ${brl(tt.sA)}</span>` : ''}<span class="st st-prev">OK: ${tt.nOk}</span></div>
+    <table><thead><tr><th>Ex-funcionário</th><th>Saída</th><th class="r">Saldo na saída</th><th class="r">Descontado na rescisão</th><th>Resultado</th><th class="r">Diferença</th><th>Observação</th></tr></thead><tbody>` +
+    lo.map(o => { const r = resEx(o), cor = RES_EX[r.res][1];
+      return `<tr class="clicavel" data-pes="${o.pe.cpf}"><td><b>${esc(o.pe.nome)}</b><br><span class="mut small">${cpfF(o.pe.cpf)} · ${esc(o.d.natureza || '')}</span></td>
+      <td>${dataBR(o.d.saida)}</td><td class="r">${nfm(o.saldo)}</td><td class="r">${o.folhaResc ? nfm(o.descResc) : '—'}${!o.folhaResc ? `<br><button class="btn small" onclick="event.stopPropagation(); informarTRCT('${o.pe.cpf}')">Informar TRCT</button>` : ''}</td>
+      <td><b class="${cor}">${RES_EX[r.res][0]}</b></td><td class="r"><b class="${cor}">${r.res === 'perda' ? '− ' + nfm(r.valor) : r.res === 'ganho' || r.res === 'conferir' ? '+ ' + nfm(r.valor) : ''}</b></td><td class="small">${esc(r.obs)}</td></tr>`; }).join('') +
+    `</tbody><tfoot><tr><td>Total (${lo.length})</td><td></td><td class="r">${nfm(lo.reduce((t, o) => t + o.saldo, 0))}</td><td class="r">${nfm(lo.reduce((t, o) => t + (o.folhaResc ? o.descResc : 0), 0))}</td>
+      <td class="small">Perda ${tt.nP} · Ganho ${tt.nG} · A conferir ${tt.nC}</td><td class="r"><span class="badt">− ${nfm(tt.perda)}</span><br><span class="okt">+ ${nfm(tt.ganho)}</span><br><b class="${tt.liq < 0 ? 'badt' : 'okt'}">= ${nfm(tt.liq)}</b></td><td class="small">${tt.nA ? `${tt.nA} aguardando a folha da rescisão (saldo ${nfm(tt.sA)})` : ''}</td></tr></tfoot></table>`
     : `<div class="vazio">${R.exs.length ? 'Nada com esse filtro.' : 'Nenhum desligado tem compra no crediário ou desconto na folha. ✔'}</div>`;
   const rd = readmitidos();
   $('tReadm').innerHTML = rd.length ? `<table><thead><tr><th>Funcionário</th><th>Saída</th><th>Readmissão</th><th>Loja atual</th><th class="r">Em aberto no crediário</th></tr></thead><tbody>` +
@@ -2093,13 +2149,12 @@ function modeloEx(ls = R.exs) {
   const parcelas = ls.flatMap(o => o.abertas.map(p => [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), p.documento, dataBR(p.lancamento), dataBR(p.vencimento), p.vencimento < hojeISO() ? 'Vencida' : 'A vencer', V(p.valor)]));
   const apos = ls.filter(o => o.folhaApos.length || o.aposCompra.length);
   return {titulo: 'Ex-funcionários - crediário e desconto em folha', subtitulo: `Desligados de ${dataBR(ss[0])} a ${dataBR(ss[ss.length - 1])} com compra no crediário - posição de ${dataBR(hojeISO())}`, marca: MARCA, paisagem: true, arquivo: `ex_funcionarios_crediario_${hojeISO()}`,
-    resumo: [['Ex-funcionários com crediário', qtd(N.n)], ['Com débito em aberto', qtd(N.nAberto)], ['A verificar (base incompleta)', `${qtd(N.nVerif)} - cerca de ${brl(N.verifValor)}`], ['Débito em aberto - pendência', brl(N.aberto)], ['Já vencido', brl(N.vencido)],
+    resumo: [['Perda (descontamos menos)', `${qtd(totEx(ls).nP)} - ${brl(totEx(ls).perda)}`], ['Ganho (descontamos mais)', `${qtd(totEx(ls).nG)} - ${brl(totEx(ls).ganho)}`], ['Resultado líquido', brl(totEx(ls).liq)], ['A conferir (a mais, base incompleta)', `${qtd(totEx(ls).nC)} - ${brl(totEx(ls).conf)}`], ['Aguardando folha da rescisão', `${qtd(totEx(ls).nA)} - saldo ${brl(totEx(ls).sA)}`],
+      ['Ex-funcionários com crediário', qtd(N.n)], ['Com débito em aberto', qtd(N.nAberto)], ['A verificar (base incompleta)', `${qtd(N.nVerif)} - cerca de ${brl(N.verifValor)}`], ['Débito em aberto - pendência', brl(N.aberto)], ['Já vencido', brl(N.vencido)],
       ['Débito futuro (a vencer)', brl(N.aVencer)], ['Descontados na folha depois da saída', `${qtd(N.nFolha)} - ${brl(N.descApos)}`], ['Compras depois da saída', `${qtd(N.nCompra)} - ${brl(N.compraApos)}`], ['Readmitidos com crediário', qtd(readmitidos().length)]],
     graficos: [{titulo: 'Débito em aberto por mês de desligamento', tipo: 'barras', itens: [...porMes.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([m, v]) => ({rotulo: compBR(m), a: rd2(v)}))}],
     secoes: [
-      {titulo: `Ex-funcionários (${ls.length})`, cab: ['Ex-funcionário', 'CPF', 'Matrícula', 'Cargo', 'Saída', 'Natureza', 'Saldo na saída', 'Desc. na rescisão', 'Parcelas', 'Vencido', 'A vencer', 'Em aberto', 'Último venc.', 'Desc. folha após saída', 'Situação'], direita: [6, 7, 8, 9, 10, 11, 13],
-        linhas: ls.map(o => [o.pe.nome, cpfF(o.pe.cpf), o.d.matricula || '', o.d.cargo || '', dataBR(o.d.saida), o.d.natureza || '', V(o.saldo), (o.folhaResc ? V(o.descResc) + ' - ' : '') + rescTxt(o), o.abertas.length, V(o.vencido), V(o.aVencer), o.st === 'verif' ? `verificar ~${V(o.verifValor)}` : V(o.aberto), dataBR(o.ult), o.descApos ? V(o.descApos) : '', EX_ST[o.st][0] + (o.aposCompra.length ? ' - comprou depois de sair' : '')]),
-        rodape: ['Total', '', '', '', '', '', V(ls.reduce((t, o) => t + o.saldo, 0)), V(ls.reduce((t, o) => t + o.descResc, 0)), N.nParc, V(N.vencido), V(N.aVencer), V(N.aberto), '', V(N.descApos), '']},
+      {titulo: `Ex-funcionários (${ls.length}) — perda = descontamos menos, ganho = descontamos mais`, cab: CAB_EX, direita: [3, 4, 6], linhas: ordEx(ls).map(linhaEx), rodape: rodapeEx(ls)},
       {titulo: `Desconto em folha ou compra depois da saída (${apos.length})`, cab: ['Ex-funcionário', 'Saída', 'Ocorrência', 'Valor'], direita: [3],
         linhas: apos.flatMap(o => [...[...grpConta(o.folhaApos, l => l.comp).entries()].map(([c, xs]) => [o.pe.nome, dataBR(o.d.saida), `Desconto na folha de ${compBR(c)}`, V(xs.reduce((t, l) => t + l.valor, 0))]),
           ...(o.aposCompra.length ? [[o.pe.nome, dataBR(o.d.saida), `Compra em ${[...new Set(o.aposCompra.map(p => dataBR(p.lancamento)))].join(', ')}`, V(o.aposCompra.reduce((t, p) => t + p.valor, 0))]] : [])])},
@@ -2111,7 +2166,7 @@ function excelEx() {
   const ls = listaEx(), wb = XLSX.utils.book_new();
   const add = (nome, linhas, larg) => { const ws = XLSX.utils.json_to_sheet(linhas.length ? linhas : [{'': 'Nada a listar'}]); if (larg) ws['!cols'] = larg.map(w => ({wch: w})); ws['!autofilter'] = {ref: ws['!ref']}; XLSX.utils.book_append_sheet(wb, ws, nome); };
   const id = o => ({'Matrícula': o.d.matricula || '', 'Nome': o.pe.nome, 'CPF': cpfF(o.pe.cpf), 'Cargo': o.d.cargo || '', 'Empresa': o.d.estab || '', 'Admissão': dataBR(o.d.admissao), 'Saída': dataBR(o.d.saida), 'Natureza': o.d.natureza || ''});
-  add('Ex-funcionários', ls.map(o => ({...id(o), 'Saldo na saída (devia sair na rescisão)': o.saldo, 'Folha da rescisão': compBR(o.d.saida.slice(0, 7)), 'Descontado na rescisão (verba 1260)': o.folhaResc ? o.descResc : '', 'Rescisão': rescTxt(o), 'Parcelas em aberto': o.abertas.length, 'Vencido': o.vencido, 'A vencer': o.aVencer, 'Em aberto': o.aberto, 'A verificar (estimado pela base)': o.verifValor, 'Parcelas fora do crediário': (o.foraBase || []).map(p => p.documento).join(', '), 'Próximo vencimento': dataBR(o.prox), 'Último vencimento': dataBR(o.ult),
+  add('Ex-funcionários', ls.map(o => ({...id(o), 'Saldo na saída (devia sair na rescisão)': o.saldo, 'Folha da rescisão': compBR(o.d.saida.slice(0, 7)), 'Descontado na rescisão (verba 1260)': o.folhaResc ? o.descResc : '', 'Rescisão': rescTxt(o), 'Parcelas em aberto': o.abertas.length, 'Vencido': o.vencido, 'A vencer': o.aVencer, 'Em aberto': o.aberto, 'Resultado': RES_EX[resEx(o).res][0], 'Diferença (− perda / + ganho)': resEx(o).res === 'perda' ? -resEx(o).valor : ['ganho', 'conferir'].includes(resEx(o).res) ? resEx(o).valor : 0, 'Observação': resEx(o).obs, 'A verificar (estimado pela base)': o.verifValor, 'Parcelas fora do crediário': (o.foraBase || []).map(p => p.documento).join(', '), 'Próximo vencimento': dataBR(o.prox), 'Último vencimento': dataBR(o.ult),
     'Descontado na folha (total)': o.desc, 'Descontado na folha depois da saída': o.descApos, 'Compras depois da saída': rd2(o.aposCompra.reduce((t, p) => t + p.valor, 0)), 'Situação': EX_ST[o.st][0]})),
     [11, 34, 15, 22, 30, 11, 11, 26, 14, 11, 14, 24, 9, 11, 11, 11, 12, 12, 12, 14, 14, 16]);
   add('Parcelas em aberto', ls.flatMap(o => o.abertas.map(p => ({...id(o), 'Documento': p.documento, 'Compra em': dataBR(p.lancamento), 'Vencimento': dataBR(p.vencimento), 'Situação': p.vencimento < hojeISO() ? 'Vencida' : 'A vencer', 'Valor': p.valor}))),
