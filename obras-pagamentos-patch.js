@@ -337,12 +337,44 @@
         if(PER.p==='per')return [PER.de||'',PER.ate||''];
         return ['',''];
       }
+      /* Busca sem acento (03/11/2026, auditoria de combustível): "combustivel" não achava "Combustível" e o Dashboard
+         mostrava 8 de 52 abastecimentos de outubro. Agora: ignora acento e maiúscula, cada palavra precisa aparecer
+         (em qualquer ordem) e "combustível" também acha gasolina, etanol, álcool, diesel e abastecimento.
+         Para esses sinônimos não vale o nome da categoria ("Transporte/combustível"), senão Uber e passagem entrariam. */
+      var semAcento=function(s){return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()};
+      var SINONIMOS=[{raiz:'combust',acha:['combust','gasolin','etanol','alcool','diesel','abastec']}];
+      function termosBusca(q){
+        return semAcento(q).split(/\s+/).filter(Boolean).map(function(w){
+          var s=SINONIMOS.filter(function(x){return w.indexOf(x.raiz)===0||(w.length>=5&&x.raiz.indexOf(w)===0)})[0];
+          return s?{lista:s.acha,semCategoria:true}:{lista:[w],semCategoria:false};
+        });
+      }
+      function textoPassa(r,q){
+        var ts=termosBusca(q);if(!ts.length)return true;
+        var base=semAcento([r.fornecedor,r.loja,r.descricao,r.remetente,r.cnpj,r.legenda,r.autenticacao].join(' '));
+        var cat=semAcento(typeof CATS!=='undefined'?CATS[r.categoria]:'');
+        return ts.every(function(t){var txt=t.semCategoria?base:base+' '+cat;return t.lista.some(function(p){return txt.indexOf(p)>=0})});
+      }
+      window.__obrasTextoPassa=textoPassa;
       function passa(r){
         var fx=faixa(),dt=r.data_despesa||'';
         if(fx[0]&&dt<fx[0])return false;if(fx[1]&&(!dt||dt>fx[1]))return false;
-        var q=(PER.q||'').toLowerCase();
-        if(q&&![r.fornecedor,r.loja,r.descricao,r.remetente,r.cnpj,r.legenda,r.autenticacao,(typeof CATS!=='undefined'?CATS[r.categoria]:'')].join(' ').toLowerCase().includes(q))return false;
+        if(PER.q&&!textoPassa(r,PER.q))return false;
         return true;
+      }
+      // A lista de Comprovantes (aberta ao clicar num número) usa a mesma busca sem acento.
+      if(typeof renderLista==='function'){
+        var origLista=renderLista;
+        renderLista=function(){
+          var campo=$('q'),q=((typeof F!=='undefined'&&F&&F.q)||(campo&&campo.value)||'').trim();
+          if(!q)return origLista.apply(this,arguments);
+          var C0=C,fq=(typeof F!=='undefined'&&F)?F.q:undefined,vq=campo?campo.value:'';
+          try{
+            C=C0.filter(function(r){return textoPassa(r,q)});
+            if(typeof F!=='undefined'&&F)F.q='';if(campo)campo.value='';
+            return origLista.apply(this,arguments);
+          }finally{C=C0;if(typeof F!=='undefined'&&F)F.q=fq;if(campo)campo.value=vq}
+        };
       }
       var ativo=function(){var fx=faixa();return !!(fx[0]||fx[1]||PER.q)};
       var origRender=renderGeral,origAplicar=aplicar;
