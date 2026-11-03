@@ -897,7 +897,7 @@ function cruzar() {
   // 2) cadastro
   // ex-funcionários: o que ficou em aberto no crediário depois da saída (devia sair na rescisão)
   const hojeD = hojeISO(), exs = [];
-  const c0 = [...compsFolha].sort()[0] || '', bxPorCpf = new Map(); BX.forEach(b => { if (b.cpf) { if (!bxPorCpf.has(b.cpf)) bxPorCpf.set(b.cpf, []); bxPorCpf.get(b.cpf).push(b); } });
+  const c0 = [...compsFolha].sort()[0] || '', c1 = [...compsFolha].sort()[1] || '', bxPorCpf = new Map(); BX.forEach(b => { if (b.cpf) { if (!bxPorCpf.has(b.cpf)) bxPorCpf.set(b.cpf, []); bxPorCpf.get(b.cpf).push(b); } });
   for (const pe of pessoas.values()) {
     if (!pe.ex) continue;
     const d = pe.desl, reais = pe.parcelas.filter(p => !p.rec), mS = d.saida.slice(0, 7);
@@ -926,9 +926,17 @@ function cruzar() {
     if (folhaResc && c0) { const bxP = bxPorCpf.get(pe.cpf) || [];
       const dL = rd2(Object.keys(pe.celulas).filter(c => c >= c0 && c <= mS).reduce((s, c) => s + (pe.celulas[c].desc || 0), 0));
       const cL = rd2(bxP.filter(b => compBaixa(b) >= c0).reduce((s, b) => s + b.valor, 0) + reais.filter(p => !p.baixa && !p.soBaixa).reduce((s, p) => s + p.valor, 0));
-      o.led = {desc: dL, compras: cL, dif: rd2(dL - cL), c0}; }
-    const ledPago = o.led && o.led.dif >= -cfg.tol;
-    o.bxApos = rd2(saldoPs.filter(p => p.baixa).reduce((s, p) => s + p.valor, 0)); o.bxSemDesc = folhaResc && !ledPago ? Math.min(o.bxApos, Math.max(0, rd2(saldo - descResc)), o.led ? -o.led.dif : Infinity) : 0;
+      o.led = {desc: dL, compras: cL, dif: rd2(dL - cL), c0};
+      // a mesma conta sem a 1ª folha (jan/2026): os lotes de baixa dela misturam parcelas de dez/2025, cuja folha não foi importada
+      // — vale o menor déficit das duas (03/11/2026: Thiago, Jorge, Marny, Eliwelton só davam perda contando o lote de jan)
+      if (c1 && mS >= c1) { const d1 = rd2(Object.keys(pe.celulas).filter(c => c >= c1 && c <= mS).reduce((s, c) => s + (pe.celulas[c].desc || 0), 0));
+        const k1 = rd2(bxP.filter(b => compBaixa(b) >= c1).reduce((s, b) => s + b.valor, 0) + reais.filter(p => !p.baixa && !p.soBaixa).reduce((s, p) => s + p.valor, 0));
+        Object.assign(o.led, {desc1: d1, compras1: k1, dif1: rd2(d1 - k1), c1}); }
+      // mês (antes da rescisão) em que a folha descontou mais do que o crediário baixou no lote dela: compra que não está no
+      // crediário, desconto em dobro ou lançamento errado do RH — pedir a lista Diversos do RH
+      o.led.semBx = Object.keys(pe.celulas).filter(c => c >= (c1 || c0) && c < mS).sort().map(c => ({c, v: rd2((pe.celulas[c].desc || 0) - bxP.filter(b => compBaixa(b) === c).reduce((s, b) => s + b.valor, 0))})).filter(x => x.v > cfg.tol); }
+    const ledPago = o.led && (o.led.dif >= -cfg.tol || (o.led.dif1 != null && o.led.dif1 >= -cfg.tol)), ledFalta = o.led ? Math.min(-o.led.dif, o.led.dif1 != null ? -o.led.dif1 : Infinity) : Infinity;
+    o.bxApos = rd2(saldoPs.filter(p => p.baixa).reduce((s, p) => s + p.valor, 0)); o.bxSemDesc = folhaResc && !ledPago ? Math.min(o.bxApos, Math.max(0, rd2(saldo - descResc)), ledFalta) : 0;
     if (o.bxSemDesc > cfg.tol) { const ls = [...new Set(saldoPs.filter(p => p.baixa).map(p => p.baixa.data_baixa))].sort();
       add('integridade', 'alta', 'Baixa sem desconto (ex-funcionário)', pe.cpf, mS, `Saiu em ${dataBR(d.saida)}: o crediário baixou ${brl(o.bxApos)} de parcelas depois da saída (lote(s) de ${ls.map(dataBR).join(', ')}) e a rescisão (folha de ${compBR(mS)}) descontou ${brl(descResc)} do saldo de ${brl(saldo)} — ${brl(o.bxSemDesc)} foram baixados sem desconto. Estornar a baixa e cobrar.`, o.bxSemDesc); }
     o.foraBase = pe.parcelas.filter(p => p.rec && p.comp === mS); o.foraValor = rd2(o.foraBase.reduce((s, p) => s + p.valor, 0));
@@ -1931,9 +1939,9 @@ const linhaCel = l => { const p = R.pessoas.get(l.cpf); return [p.nome, cpfF(l.c
 // parecia que o desconto da rescisão não tinha sido considerado)
 const CAB_EX = ['Ex-funcionário', 'CPF', 'Saída', 'Saldo na saída', 'Descontado na rescisão', 'Resultado', 'Diferença', 'Observação'];
 const linhaEx = o => { const r = resEx(o), cor = RES_EX[r.res][1];
-  return [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), V(o.saldo), o.folhaResc ? V(o.descResc) : '—', {t: RES_EX[r.res][0], c: cor}, r.res === 'perda' ? {t: '− ' + nfm(r.valor), c: cor} : r.res === 'ganho' || r.res === 'conferir' ? {t: '+ ' + nfm(r.valor), c: cor} : '', r.obs]; };
+  return [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), V(o.saldo), o.folhaResc ? V(o.descResc) : '—', {t: RES_EX[r.res][0], c: cor}, r.res === 'perda' ? {t: '− ' + nfm(r.valor), c: cor} : r.res === 'ganho' || r.res === 'conferir' ? {t: r.sinal + ' ' + nfm(r.valor), c: cor} : '', r.obs]; };
 const rodapeEx = ls => { const t = totEx(ls); return ['Total', `${ls.length} ex-funcionário(s)`, '', V(ls.reduce((a, o) => a + o.saldo, 0)), V(ls.reduce((a, o) => a + (o.folhaResc ? o.descResc : 0), 0)),
-  `Perda ${t.nP} · Ganho ${t.nG} · A conferir ${t.nC} · Aguardando ${t.nA}`, `Perda − ${nfm(t.perda)} · Ganho + ${nfm(t.ganho)} · Líquido ${t.liq < 0 ? '− ' : '+ '}${nfm(Math.abs(t.liq))}`, [t.nC ? `${t.nC} a conferir (descontado a mais ${nfm(t.conf)}, base incompleta — fora do líquido)` : '', t.nA ? `${t.nA} aguardando a folha da rescisão (saldo ${nfm(t.sA)})` : ''].filter(Boolean).join(' · ')]; };
+  `Perda ${t.nP} · Ganho ${t.nG} · A conferir ${t.nC} · Aguardando ${t.nA}`, `Perda − ${nfm(t.perda)} · Ganho + ${nfm(t.ganho)} · Líquido ${t.liq < 0 ? '− ' : '+ '}${nfm(Math.abs(t.liq))}`, [t.nC ? `${t.nC} a conferir (${nfm(t.conf)} — fora do líquido)` : '', t.nA ? `${t.nA} aguardando a folha da rescisão (saldo ${nfm(t.sA)})` : ''].filter(Boolean).join(' · ')]; };
 function lista(titulo, sub, cab, objs, linha, cpf, direita, total) {
   const linhas = objs.map(linha);
   return {titulo, subtitulo: sub, marca: MARCA, paisagem: true, arquivo: titulo.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '_').slice(0, 60) + '_' + hojeISO(),
@@ -1970,7 +1978,7 @@ function drill(k) {
     ls => ['Total', '', '', '', ls.reduce((t, l) => t + l.parcelas.length, 0), V(ls.reduce((t, l) => t + l.devido, 0)), V(ls.reduce((t, l) => t + (l.st === 'prev' ? 0 : l.desc), 0)), V(ls.reduce((t, l) => t + (l.st === 'prev' ? 0 : l.dif), 0)), '']);
   const pend = (t, ls) => lista(t, `Pendências abertas - ${comp} e gerais`, CAB_PEND, ls, linhaPend, p => p.cpf, [8]);
   const ex = (t, f) => { const ls = ordEx(R.exs.filter(f)), tt = totEx(ls), m = lista(t, `Ex-funcionários com crediário · perda − ${brl(tt.perda)} (${tt.nP}) · ganho + ${brl(tt.ganho)} (${tt.nG}) · líquido ${brl(tt.liq)}${tt.nA ? ` · ${tt.nA} aguardando a folha da rescisão` : ''}`, CAB_EX, ls, linhaEx, o => o.pe.cpf, [3, 4, 6], rodapeEx);
-    m.resumo = [['Perda (descontamos menos)', `${qtd(tt.nP)} - ${brl(tt.perda)}`], ['Ganho (descontamos mais)', `${qtd(tt.nG)} - ${brl(tt.ganho)}`], ['Resultado líquido', brl(tt.liq)], ['A conferir (a mais, base incompleta)', `${qtd(tt.nC)} - ${brl(tt.conf)}`], ['Aguardando folha da rescisão', `${qtd(tt.nA)} - saldo ${brl(tt.sA)}`]]; return m; };
+    m.resumo = [['Perda (descontamos menos)', `${qtd(tt.nP)} - ${brl(tt.perda)}`], ['Ganho (descontamos mais)', `${qtd(tt.nG)} - ${brl(tt.ganho)}`], ['Resultado líquido', brl(tt.liq)], ['A conferir (fora do líquido)', `${qtd(tt.nC)} - ${brl(tt.conf)}`], ['Aguardando folha da rescisão', `${qtd(tt.nA)} - saldo ${brl(tt.sA)}`]]; return m; };
   const fo = (t, f) => lista(t, 'Compradores fora do cadastro', CAB_FORA, R.foras.filter(f), linhaFora, o => o.pe.cpf, [3, 5, 6, 7, 8]);
   const CAB_P = ['Funcionário', 'CPF', 'Situação', 'Documento', 'Compra', 'Vencimento', 'Folha', 'Valor', 'Relatórios'];
   const par = (t, sub, ps) => lista(t, sub, CAB_P, ps.slice().sort((a, b) => (R.pessoas.get(a.cpf) || {nome: ''}).nome.localeCompare((R.pessoas.get(b.cpf) || {nome: ''}).nome) || a.vencimento.localeCompare(b.vencimento)),
@@ -2072,17 +2080,25 @@ function resEx(o) {
       : `Descontou acima do saldo encontrado, mas a base de ${compBR(mS)} está incompleta (compras quitadas sem lote de baixa confiável) — provável compra que a base não tem; conferir no TRCT`); } }
   else res = 'ok';
   const L = o.led, ccTxt = L ? `conta corrente ${compBR(L.c0)} a ${compBR(mS)}: descontado ${brl(L.desc)} × compras ${brl(L.compras)}` : '';
-  if (L && res === 'perda') { if (L.dif > R.cfg.tol) { res = 'conferir'; valor = L.dif; obs = [`Sem perda, mas descontou a mais — ${ccTxt}: ${brl(L.dif)} descontados além de todas as compras do crediário (compra que não está no sistema ou devolução) — pedir ao RH a origem`]; }
-    else if (L.dif >= -R.cfg.tol) { res = 'ok'; valor = 0; obs = [`Sem perda — ${ccTxt}: o total descontado cobre todas as compras (a diferença da rescisão é de parcela paga em outra folha)`]; }
-    else { valor = Math.min(valor, -L.dif); obs.push(ccTxt + ' — confirma'); } }
-  else if (L && (res === 'ganho' || res === 'conferir')) { if (L.dif <= R.cfg.tol) { res = 'ok'; valor = 0; obs = [`Sem ganho — ${ccTxt}: o total descontado não passa das compras (o a mais da rescisão é parcela que o sistema achou paga numa folha anterior)${L.dif < -R.cfg.tol ? ` · na conta corrente faltam ${brl(-L.dif)}, que podem ser parcelas de dez/2025 no lote de baixa de jan (folha de 2025 não importada)` : ''}`]; }
-    else { valor = Math.min(valor, L.dif); obs.push(ccTxt + ` — ${brl(L.dif)} descontados além de todas as compras`); } }
+  const ccTxt1 = L && L.c1 != null ? `sem ${compBR(L.c0)} (lote misturado com dez/2025): descontado ${brl(L.desc1)} × compras ${brl(L.compras1)}` : '';
+  const semBxTxt = L && L.semBx && L.semBx.length ? ` · folha descontou mais do que o crediário baixou em ${L.semBx.map(x => compBR(x.c) + ' ' + brl(x.v)).join(', ')} (compra fora do crediário, desconto em dobro ou lançamento errado) — pedir a lista Diversos do RH` : '';
+  let sinal = '+';
+  if (L && res === 'perda') { const d0 = -L.dif, d1 = L.c1 != null ? -L.dif1 : d0, dC = rd2(Math.min(d0, d1)), dM = Math.max(d0, d1);
+    if (Math.min(L.dif, L.c1 != null ? L.dif1 : L.dif) > R.cfg.tol) { res = 'conferir'; valor = rd2(Math.min(L.dif, L.c1 != null ? L.dif1 : L.dif)); obs = [`Sem perda, mas descontou a mais — ${ccTxt}${ccTxt1 ? '; ' + ccTxt1 : ''}: ${brl(valor)} descontados além de todas as compras do crediário (compra que não está no sistema ou devolução) — pedir ao RH a origem`]; }
+    else if (dM <= R.cfg.tol) { res = 'ok'; valor = 0; obs = [`Sem perda — ${ccTxt}: o total descontado cobre todas as compras (a diferença da rescisão é de parcela paga em outra folha)`]; }
+    else if (dC > R.cfg.tol) { const v0 = valor; valor = rd2(Math.min(valor, dC)); const resto = rd2(v0 - valor), sb = L.semBx ? rd2(L.semBx.reduce((t, x) => t + x.v, 0)) : 0;
+      obs.push(`${ccTxt}${ccTxt1 ? '; ' + ccTxt1 : ''} — confirma${resto > R.cfg.tol ? ` ${brl(valor)} de ${brl(v0)}: ` + (sb >= resto - R.cfg.tol ? `os outros ${brl(resto)} batem com o que a folha descontou a mais sem baixa no crediário — se for parcela de compra fora do crediário, a perda é ${brl(valor)}; se for desconto errado do RH, a perda é ${brl(v0)}` : `os outros ${brl(resto)} dependem do lote de baixa de jan (misturado com dez/2025)`) : ''}`); }
+    else { res = 'conferir'; sinal = '−'; obs = [`Perda não confirmada (${brl(valor)} pela rescisão): ${ccTxt}, mas ${ccTxt1} — fecha sem o lote de jan; ${obs.join(' · ')}`]; } }
+  else if (L && (res === 'ganho' || res === 'conferir')) { const e = Math.min(L.dif, L.c1 != null ? L.dif1 : L.dif);
+    if (e <= R.cfg.tol) { res = 'ok'; valor = 0; obs = [`Sem ganho — ${ccTxt}: o total descontado não passa das compras (o a mais da rescisão é parcela que o sistema achou paga numa folha anterior)${L.dif < -R.cfg.tol ? ` · na conta corrente faltam ${brl(-L.dif)}, que podem ser parcelas de dez/2025 no lote de baixa de jan (folha de 2025 não importada)` : ''}`]; }
+    else { valor = rd2(Math.min(valor, e)); obs.push(ccTxt + ` — ${brl(e)} descontados além de todas as compras`); } }
+  if (semBxTxt && res !== 'ok') obs.push(semBxTxt.slice(3));
   if (o.d.inferida) obs.unshift('Saída não confirmada (não está nos desligados) — confirmar com o RH');
   if (trct) obs.push('Desconto informado pelo TRCT (até a folha do mês ser importada)');
   if (o.bxSemDesc > 0.009) obs.push(`Crediário baixou ${brl(o.bxSemDesc)} sem desconto — estornar a baixa`);
-  return {res, valor: rd2(valor), obs: obs.join(' · ')};
+  return {res, valor: rd2(valor), obs: obs.join(' · '), sinal: res === 'conferir' ? sinal : res === 'perda' ? '−' : '+'};
 }
-const RES_EX = {perda: ['Perda', 'badt'], ganho: ['Ganho', 'okt'], conferir: ['A conferir (a mais)', 'wt'], ok: ['OK', 'mut'], aguarda: ['Aguardando', 'wt']};
+const RES_EX = {perda: ['Perda', 'badt'], ganho: ['Ganho', 'okt'], conferir: ['A conferir', 'wt'], ok: ['OK', 'mut'], aguarda: ['Aguardando', 'wt']};
 const totEx = ls => { const t = {perda: 0, ganho: 0, conf: 0, nP: 0, nG: 0, nC: 0, nA: 0, sA: 0, nOk: 0}; ls.forEach(o => { const r = resEx(o);
   if (r.res === 'perda') { t.perda += r.valor; t.nP++; } else if (r.res === 'ganho') { t.ganho += r.valor; t.nG++; } else if (r.res === 'conferir') { t.conf += r.valor; t.nC++; } else if (r.res === 'aguarda') { t.nA++; t.sA += o.saldo; } else t.nOk++; });
   t.perda = rd2(t.perda); t.ganho = rd2(t.ganho); t.conf = rd2(t.conf); t.liq = rd2(t.ganho - t.perda); t.sA = rd2(t.sA); return t; };
@@ -2144,12 +2160,12 @@ function telaEx() {
   const lo = ordEx(ls), tt = totEx(lo);
   $('tEx').innerHTML = lo.length ? `<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">
       <span class="st st-alta">Perda (descontamos menos): ${tt.nP} · − ${brl(tt.perda)}</span><span class="st st-ok">Ganho (descontamos mais): ${tt.nG} · + ${brl(tt.ganho)}</span>
-      <span class="st ${tt.liq < 0 ? 'st-alta' : 'st-ok'}">Resultado líquido: ${brl(tt.liq)}</span>${tt.nC ? `<span class="st st-media">A conferir (descontado a mais, base incompleta): ${tt.nC} · ${brl(tt.conf)}</span>` : ''}${tt.nA ? `<span class="st st-media">Aguardando a folha da rescisão: ${tt.nA} · saldo ${brl(tt.sA)}</span>` : ''}<span class="st st-prev">OK: ${tt.nOk}</span></div>
+      <span class="st ${tt.liq < 0 ? 'st-alta' : 'st-ok'}">Resultado líquido: ${brl(tt.liq)}</span>${tt.nC ? `<span class="st st-media">A conferir (fora do líquido): ${tt.nC} · ${brl(tt.conf)}</span>` : ''}${tt.nA ? `<span class="st st-media">Aguardando a folha da rescisão: ${tt.nA} · saldo ${brl(tt.sA)}</span>` : ''}<span class="st st-prev">OK: ${tt.nOk}</span></div>
     <table><thead><tr><th>Ex-funcionário</th><th>Saída</th><th class="r">Saldo na saída</th><th class="r">Descontado na rescisão</th><th>Resultado</th><th class="r">Diferença</th><th>Observação</th></tr></thead><tbody>` +
     lo.map(o => { const r = resEx(o), cor = RES_EX[r.res][1];
       return `<tr class="clicavel" data-pes="${o.pe.cpf}"><td><b>${esc(o.pe.nome)}</b><br><span class="mut small">${cpfF(o.pe.cpf)} · ${esc(o.d.natureza || '')}</span></td>
       <td>${dataBR(o.d.saida)}</td><td class="r">${nfm(o.saldo)}</td><td class="r">${o.folhaResc ? nfm(o.descResc) : '—'}${!o.folhaResc ? `<br><button class="btn small" onclick="event.stopPropagation(); informarTRCT('${o.pe.cpf}')">Informar TRCT</button>` : ''}</td>
-      <td><b class="${cor}">${RES_EX[r.res][0]}</b></td><td class="r"><b class="${cor}">${r.res === 'perda' ? '− ' + nfm(r.valor) : r.res === 'ganho' || r.res === 'conferir' ? '+ ' + nfm(r.valor) : ''}</b></td><td class="small">${esc(r.obs)}</td></tr>`; }).join('') +
+      <td><b class="${cor}">${RES_EX[r.res][0]}</b></td><td class="r"><b class="${cor}">${r.res === 'perda' ? '− ' + nfm(r.valor) : r.res === 'ganho' || r.res === 'conferir' ? r.sinal + ' ' + nfm(r.valor) : ''}</b></td><td class="small">${esc(r.obs)}</td></tr>`; }).join('') +
     `</tbody><tfoot><tr><td>Total (${lo.length})</td><td></td><td class="r">${nfm(lo.reduce((t, o) => t + o.saldo, 0))}</td><td class="r">${nfm(lo.reduce((t, o) => t + (o.folhaResc ? o.descResc : 0), 0))}</td>
       <td class="small">Perda ${tt.nP} · Ganho ${tt.nG} · A conferir ${tt.nC}</td><td class="r"><span class="badt">− ${nfm(tt.perda)}</span><br><span class="okt">+ ${nfm(tt.ganho)}</span><br><b class="${tt.liq < 0 ? 'badt' : 'okt'}">= ${nfm(tt.liq)}</b></td><td class="small">${tt.nA ? `${tt.nA} aguardando a folha da rescisão (saldo ${nfm(tt.sA)})` : ''}</td></tr></tfoot></table>`
     : `<div class="vazio">${R.exs.length ? 'Nada com esse filtro.' : 'Nenhum desligado tem compra no crediário ou desconto na folha. ✔'}</div>`;
@@ -2165,7 +2181,7 @@ function modeloEx(ls = R.exs) {
   const parcelas = ls.flatMap(o => o.abertas.map(p => [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), p.documento, dataBR(p.lancamento), dataBR(p.vencimento), p.vencimento < hojeISO() ? 'Vencida' : 'A vencer', V(p.valor)]));
   const apos = ls.filter(o => o.folhaApos.length || o.aposCompra.length);
   return {titulo: 'Ex-funcionários - crediário e desconto em folha', subtitulo: `Desligados de ${dataBR(ss[0])} a ${dataBR(ss[ss.length - 1])} com compra no crediário - posição de ${dataBR(hojeISO())}`, marca: MARCA, paisagem: true, arquivo: `ex_funcionarios_crediario_${hojeISO()}`,
-    resumo: [['Perda (descontamos menos)', `${qtd(totEx(ls).nP)} - ${brl(totEx(ls).perda)}`], ['Ganho (descontamos mais)', `${qtd(totEx(ls).nG)} - ${brl(totEx(ls).ganho)}`], ['Resultado líquido', brl(totEx(ls).liq)], ['A conferir (a mais, base incompleta)', `${qtd(totEx(ls).nC)} - ${brl(totEx(ls).conf)}`], ['Aguardando folha da rescisão', `${qtd(totEx(ls).nA)} - saldo ${brl(totEx(ls).sA)}`],
+    resumo: [['Perda (descontamos menos)', `${qtd(totEx(ls).nP)} - ${brl(totEx(ls).perda)}`], ['Ganho (descontamos mais)', `${qtd(totEx(ls).nG)} - ${brl(totEx(ls).ganho)}`], ['Resultado líquido', brl(totEx(ls).liq)], ['A conferir (fora do líquido)', `${qtd(totEx(ls).nC)} - ${brl(totEx(ls).conf)}`], ['Aguardando folha da rescisão', `${qtd(totEx(ls).nA)} - saldo ${brl(totEx(ls).sA)}`],
       ['Ex-funcionários com crediário', qtd(N.n)], ['Com débito em aberto', qtd(N.nAberto)], ['A verificar (base incompleta)', `${qtd(N.nVerif)} - cerca de ${brl(N.verifValor)}`], ['Débito em aberto - pendência', brl(N.aberto)], ['Já vencido', brl(N.vencido)],
       ['Débito futuro (a vencer)', brl(N.aVencer)], ['Descontados na folha depois da saída', `${qtd(N.nFolha)} - ${brl(N.descApos)}`], ['Compras depois da saída', `${qtd(N.nCompra)} - ${brl(N.compraApos)}`], ['Readmitidos com crediário', qtd(readmitidos().length)]],
     graficos: [{titulo: 'Débito em aberto por mês de desligamento', tipo: 'barras', itens: [...porMes.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([m, v]) => ({rotulo: compBR(m), a: rd2(v)}))}],
@@ -2182,7 +2198,7 @@ function excelEx() {
   const ls = listaEx(), wb = XLSX.utils.book_new();
   const add = (nome, linhas, larg) => { const ws = XLSX.utils.json_to_sheet(linhas.length ? linhas : [{'': 'Nada a listar'}]); if (larg) ws['!cols'] = larg.map(w => ({wch: w})); ws['!autofilter'] = {ref: ws['!ref']}; XLSX.utils.book_append_sheet(wb, ws, nome); };
   const id = o => ({'Matrícula': o.d.matricula || '', 'Nome': o.pe.nome, 'CPF': cpfF(o.pe.cpf), 'Cargo': o.d.cargo || '', 'Empresa': o.d.estab || '', 'Admissão': dataBR(o.d.admissao), 'Saída': dataBR(o.d.saida), 'Natureza': o.d.natureza || ''});
-  add('Ex-funcionários', ls.map(o => ({...id(o), 'Saldo na saída (devia sair na rescisão)': o.saldo, 'Folha da rescisão': compBR(o.d.saida.slice(0, 7)), 'Descontado na rescisão (verba 1260)': o.folhaResc ? o.descResc : '', 'Rescisão': rescTxt(o), 'Parcelas em aberto': o.abertas.length, 'Vencido': o.vencido, 'A vencer': o.aVencer, 'Em aberto': o.aberto, 'Resultado': RES_EX[resEx(o).res][0], 'Diferença (− perda / + ganho)': resEx(o).res === 'perda' ? -resEx(o).valor : ['ganho', 'conferir'].includes(resEx(o).res) ? resEx(o).valor : 0, 'Observação': resEx(o).obs, 'A verificar (estimado pela base)': o.verifValor, 'Parcelas fora do crediário': (o.foraBase || []).map(p => p.documento).join(', '), 'Próximo vencimento': dataBR(o.prox), 'Último vencimento': dataBR(o.ult),
+  add('Ex-funcionários', ls.map(o => ({...id(o), 'Saldo na saída (devia sair na rescisão)': o.saldo, 'Folha da rescisão': compBR(o.d.saida.slice(0, 7)), 'Descontado na rescisão (verba 1260)': o.folhaResc ? o.descResc : '', 'Rescisão': rescTxt(o), 'Parcelas em aberto': o.abertas.length, 'Vencido': o.vencido, 'A vencer': o.aVencer, 'Em aberto': o.aberto, 'Resultado': RES_EX[resEx(o).res][0], 'Diferença (− perda / + ganho)': resEx(o).res === 'perda' ? -resEx(o).valor : ['ganho', 'conferir'].includes(resEx(o).res) ? (resEx(o).sinal === '−' ? -1 : 1) * resEx(o).valor : 0, 'Observação': resEx(o).obs, 'A verificar (estimado pela base)': o.verifValor, 'Parcelas fora do crediário': (o.foraBase || []).map(p => p.documento).join(', '), 'Próximo vencimento': dataBR(o.prox), 'Último vencimento': dataBR(o.ult),
     'Descontado na folha (total)': o.desc, 'Descontado na folha depois da saída': o.descApos, 'Compras depois da saída': rd2(o.aposCompra.reduce((t, p) => t + p.valor, 0)), 'Situação': EX_ST[o.st][0]})),
     [11, 34, 15, 22, 30, 11, 11, 26, 14, 11, 14, 24, 9, 11, 11, 11, 12, 12, 12, 14, 14, 16]);
   add('Parcelas em aberto', ls.flatMap(o => o.abertas.map(p => ({...id(o), 'Documento': p.documento, 'Compra em': dataBR(p.lancamento), 'Vencimento': dataBR(p.vencimento), 'Situação': p.vencimento < hojeISO() ? 'Vencida' : 'A vencer', 'Valor': p.valor}))),
