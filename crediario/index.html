@@ -599,7 +599,7 @@ function cruzar() {
   // CPF vem do contrato da compra (gravado na importação, ou pelas compras da base).
   const reParc = /^(.*?)-(\d+)\/(\d+)$/, ctrCpf = new Map();
   D.parcelas.forEach(p => ctrCpf.set(p.contrato, ctrCpf.has(p.contrato) && ctrCpf.get(p.contrato) !== p.cpf ? null : p.cpf));
-  const BX = D.baixas.map(b => { const m = String(b.documento || '').match(reParc); return m && b.data_baixa ? {...b, valor: Number(b.valor), contrato: m[1], n: +m[3], cpf: b.cpf || ctrCpf.get(m[1]) || ''} : null; }).filter(Boolean);
+  const BX = D.baixas.map(b => { const m = String(b.documento || '').match(reParc); return m && b.data_baixa ? {...b, valor: Number(b.valor), contrato: m[1], n: +m[3], cpf: b.cpf || ''} : null; }).filter(Boolean);
   const loteComp = new Map(), loteBoa = new Set();
   if (BX.length) {
     const fPes = new Map(), nFolha = new Map();
@@ -2276,6 +2276,7 @@ function montarLinhas() {
     // mais curto batendo (abreviação "P B" e uma letra trocada valem) e um CPF só (ex.: "ILANA MIRELLY" = "ILANA MIRELY")
     IMP.nomeCpf = () => nc || (nc = (() => { const x = new Map(); [D.funcionarios, D.desligados, D.parcelas, D.folha].forEach(ls => ls.forEach(f => uni(x, nomeN(f.nome), f.cpf))); return x; })());
     const p1 = new Map(), cache = new Map();
+    let nd = null; IMP.nomesDe = c => (nd || (nd = (() => { const x = new Map(); [D.funcionarios, D.desligados, D.parcelas, D.folha].forEach(ls => ls.forEach(f => { if (f.cpf && f.nome) { if (!x.has(f.cpf)) x.set(f.cpf, new Set()); x.get(f.cpf).add(nomeN(f.nome)); } })); return x; })())).get(c) ? [...nd.get(c)] : [];
     IMP.cpfDoNome = n => { const k = nomeN(n); if (!k) return null; const ex = IMP.nomeCpf().get(k); if (ex !== undefined) return ex;
       if (cache.has(k)) return cache.get(k);
       if (!p1.size) for (const [nm, c] of IMP.nomeCpf()) { if (!c) continue; const f = nm.split(' ')[0]; if (!p1.has(f)) p1.set(f, []); p1.get(f).push([nm, c]); }
@@ -2324,7 +2325,10 @@ function montarLinhas() {
       // relatório de recebimentos do Seta: só a baixa de parcela de crediário (CE231245-1/6); venda à vista (-AV), vale-presente e BRA ficam fora
       if (map.item != null && !m) continue;
       // sem CPF no arquivo: pelo contrato (compra que está na base) ou pelo nome (único no cadastro, desligados ou crediário)
-      const cpf = cpfN(cel(row, map, 'cpf')) || (m && IMP.ctrCpf().get(m[1])) || IMP.cpfDoNome(cel(row, map, 'nome')) || null;
+      // o número da compra (CE…) se repete entre pessoas: o contrato só vale se o nome da baixa for o do dono do CPF
+      // (03/11/2026: 430 baixas, R$ 16.482,50, tinham ido para o CPF de outra pessoa com o mesmo número de compra)
+      const nmB = cel(row, map, 'nome'), cc = m && IMP.ctrCpf().get(m[1]), okC = cc && (!nomeN(nmB) || IMP.nomesDe(cc).some(x => simNome(nmB, x) >= 0.6));
+      const cpf = cpfN(cel(row, map, 'cpf')) || (okC ? cc : null) || IMP.cpfDoNome(nmB) || null;
       const data = dataISO(cel(row, map, 'dataBaixa')) || null, v = rd2(Math.abs(numero(cel(row, map, 'valor')) || 0));
       out.push({chave: [doc, parcela, cpf || '', data || '', v.toFixed(2)].join('|'), documento: doc, parcela, cpf, data_baixa: data, valor: v, _nome: nomeN(cel(row, map, 'nome'))}); soma += v;
     }
