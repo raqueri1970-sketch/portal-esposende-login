@@ -1912,8 +1912,10 @@ function excelFora() {
 let DRILL = null;
 const CAB_CEL = ['Funcionário', 'CPF', 'Matrícula', 'Loja', 'Prestações', 'Devido', 'Descontado', 'Diferença', 'Situação'];
 const linhaCel = l => { const p = R.pessoas.get(l.cpf); return [p.nome, cpfF(l.cpf), p.cad ? p.cad.matricula || '' : '', p.cad ? p.cad.loja || '' : (p.ex ? 'EX-FUNCIONÁRIO' : 'FORA DO CADASTRO'), l.parcelas.length, V(l.devido), l.st === 'prev' ? '-' : V(l.desc), l.st === 'prev' ? '' : V(l.dif), STAT[l.st][0]]; };
-const CAB_EX = ['Ex-funcionário', 'CPF', 'Saída', 'Natureza', 'Parcelas', 'Vencido', 'A vencer', 'Em aberto', 'Desc. folha após saída'];
-const linhaEx = o => [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), o.d.natureza || '', o.abertas.length, V(o.vencido), V(o.aVencer), o.st === 'verif' ? `verificar ~${V(o.verifValor)}` : V(o.aberto), o.descApos ? V(o.descApos) : ''];
+// o relatório mostra a conta da rescisão: saldo na saída − descontado na rescisão = em aberto (30/10/2026: sem as duas colunas,
+// parecia que o desconto da rescisão não tinha sido considerado)
+const CAB_EX = ['Ex-funcionário', 'CPF', 'Saída', 'Natureza', 'Saldo na saída', 'Desc. na rescisão', 'Parcelas', 'Vencido', 'A vencer', 'Em aberto', 'Desc. folha após saída'];
+const linhaEx = o => [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), o.d.natureza || '', V(o.saldo), o.folhaResc ? V(o.descResc) : `folha de ${compBR(o.d.saida.slice(0, 7))} não importada`, o.abertas.length, V(o.vencido), V(o.aVencer), o.st === 'verif' ? `verificar ~${V(o.verifValor)}` : V(o.aberto), o.descApos ? V(o.descApos) : ''];
 function lista(titulo, sub, cab, objs, linha, cpf, direita, total) {
   const linhas = objs.map(linha);
   return {titulo, subtitulo: sub, marca: MARCA, paisagem: true, arquivo: titulo.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '_').slice(0, 60) + '_' + hojeISO(),
@@ -1949,7 +1951,7 @@ function drill(k) {
   const N = numeros(), comp = compBR(COMP), cel = (t, f) => lista(t, `Folha de ${comp}`, CAB_CEL, N.ls.filter(f).sort((a, b) => Math.abs(b.dif) - Math.abs(a.dif) || b.devido - a.devido), linhaCel, l => l.cpf, [4, 5, 6, 7],
     ls => ['Total', '', '', '', ls.reduce((t, l) => t + l.parcelas.length, 0), V(ls.reduce((t, l) => t + l.devido, 0)), V(ls.reduce((t, l) => t + (l.st === 'prev' ? 0 : l.desc), 0)), V(ls.reduce((t, l) => t + (l.st === 'prev' ? 0 : l.dif), 0)), '']);
   const pend = (t, ls) => lista(t, `Pendências abertas - ${comp} e gerais`, CAB_PEND, ls, linhaPend, p => p.cpf, [8]);
-  const ex = (t, f) => lista(t, 'Ex-funcionários com crediário', CAB_EX, R.exs.filter(f), linhaEx, o => o.pe.cpf, [4, 5, 6, 7, 8], ls => ['Total', '', '', '', ls.reduce((t, o) => t + o.abertas.length, 0), ...['vencido', 'aVencer', 'aberto', 'descApos'].map(q => V(ls.reduce((t, o) => t + o[q], 0)))]);
+  const ex = (t, f) => lista(t, 'Ex-funcionários com crediário', CAB_EX, R.exs.filter(f), linhaEx, o => o.pe.cpf, [4, 5, 6, 7, 8, 9, 10], ls => ['Total', '', '', '', V(ls.reduce((t, o) => t + o.saldo, 0)), V(ls.reduce((t, o) => t + (o.folhaResc ? o.descResc : 0), 0)), ls.reduce((t, o) => t + o.abertas.length, 0), ...['vencido', 'aVencer', 'aberto', 'descApos'].map(q => V(ls.reduce((t, o) => t + o[q], 0)))]);
   const fo = (t, f) => lista(t, 'Compradores fora do cadastro', CAB_FORA, R.foras.filter(f), linhaFora, o => o.pe.cpf, [3, 5, 6, 7, 8]);
   const CAB_P = ['Funcionário', 'CPF', 'Situação', 'Documento', 'Compra', 'Vencimento', 'Folha', 'Valor', 'Relatórios'];
   const par = (t, sub, ps) => lista(t, sub, CAB_P, ps.slice().sort((a, b) => (R.pessoas.get(a.cpf) || {nome: ''}).nome.localeCompare((R.pessoas.get(b.cpf) || {nome: ''}).nome) || a.vencimento.localeCompare(b.vencimento)),
