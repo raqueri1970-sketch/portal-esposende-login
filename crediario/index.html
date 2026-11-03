@@ -897,6 +897,7 @@ function cruzar() {
   // 2) cadastro
   // ex-funcionários: o que ficou em aberto no crediário depois da saída (devia sair na rescisão)
   const hojeD = hojeISO(), exs = [];
+  const c0 = [...compsFolha].sort()[0] || '', bxPorCpf = new Map(); BX.forEach(b => { if (b.cpf) { if (!bxPorCpf.has(b.cpf)) bxPorCpf.set(b.cpf, []); bxPorCpf.get(b.cpf).push(b); } });
   for (const pe of pessoas.values()) {
     if (!pe.ex) continue;
     const d = pe.desl, reais = pe.parcelas.filter(p => !p.rec), mS = d.saida.slice(0, 7);
@@ -918,7 +919,16 @@ function cruzar() {
     // base incompleta: parcelas da folha da rescisão em diante que não estão no crediário (ver a pendência da rescisão acima);
     // o saldo não é confirmado — sai do débito em aberto e vai para Verificar, com a estimativa pela base
     // baixado no crediário depois da saída e não coberto pela rescisão = baixa sem desconto (estornar a baixa e cobrar)
-    o.bxApos = rd2(saldoPs.filter(p => p.baixa).reduce((s, p) => s + p.valor, 0)); o.bxSemDesc = folhaResc ? Math.min(o.bxApos, Math.max(0, rd2(saldo - descResc))) : 0;
+    // conta corrente (prova final, 03/11/2026): tudo o que foi descontado da 1ª folha importada até a rescisão × tudo o que o
+    // crediário baixou a partir do lote dessa folha + parcelas sem baixa. Não depende de qual folha pagou qual parcela: se o total
+    // descontado cobre as compras, não há perda; se não passa das compras, não há ganho (os 15 "ganhos" de 03/11 eram isso:
+    // parcela que o sistema achou paga numa folha anterior e saiu na rescisão — Davi: descontou 481,44, contrato de 481,44)
+    if (folhaResc && c0) { const bxP = bxPorCpf.get(pe.cpf) || [];
+      const dL = rd2(Object.keys(pe.celulas).filter(c => c >= c0 && c <= mS).reduce((s, c) => s + (pe.celulas[c].desc || 0), 0));
+      const cL = rd2(bxP.filter(b => compBaixa(b) >= c0).reduce((s, b) => s + b.valor, 0) + reais.filter(p => !p.baixa && !p.soBaixa).reduce((s, p) => s + p.valor, 0));
+      o.led = {desc: dL, compras: cL, dif: rd2(dL - cL), c0}; }
+    const ledPago = o.led && o.led.dif >= -cfg.tol;
+    o.bxApos = rd2(saldoPs.filter(p => p.baixa).reduce((s, p) => s + p.valor, 0)); o.bxSemDesc = folhaResc && !ledPago ? Math.min(o.bxApos, Math.max(0, rd2(saldo - descResc)), o.led ? -o.led.dif : Infinity) : 0;
     if (o.bxSemDesc > cfg.tol) { const ls = [...new Set(saldoPs.filter(p => p.baixa).map(p => p.baixa.data_baixa))].sort();
       add('integridade', 'alta', 'Baixa sem desconto (ex-funcionário)', pe.cpf, mS, `Saiu em ${dataBR(d.saida)}: o crediário baixou ${brl(o.bxApos)} de parcelas depois da saída (lote(s) de ${ls.map(dataBR).join(', ')}) e a rescisão (folha de ${compBR(mS)}) descontou ${brl(descResc)} do saldo de ${brl(saldo)} — ${brl(o.bxSemDesc)} foram baixados sem desconto. Estornar a baixa e cobrar.`, o.bxSemDesc); }
     o.foraBase = pe.parcelas.filter(p => p.rec && p.comp === mS); o.foraValor = rd2(o.foraBase.reduce((s, p) => s + p.valor, 0));
@@ -2061,6 +2071,12 @@ function resEx(o) {
     else { res = 'conferir'; obs.push(o.saldo <= 0.009 ? 'Descontou sem compra encontrada na base (compra com outro nome/CPF ou fora dos arquivos) — conferir no TRCT e na lista Diversos do RH'
       : `Descontou acima do saldo encontrado, mas a base de ${compBR(mS)} está incompleta (compras quitadas sem lote de baixa confiável) — provável compra que a base não tem; conferir no TRCT`); } }
   else res = 'ok';
+  const L = o.led, ccTxt = L ? `conta corrente ${compBR(L.c0)} a ${compBR(mS)}: descontado ${brl(L.desc)} × compras ${brl(L.compras)}` : '';
+  if (L && res === 'perda') { if (L.dif > R.cfg.tol) { res = 'conferir'; valor = L.dif; obs = [`Sem perda, mas descontou a mais — ${ccTxt}: ${brl(L.dif)} descontados além de todas as compras do crediário (compra que não está no sistema ou devolução) — pedir ao RH a origem`]; }
+    else if (L.dif >= -R.cfg.tol) { res = 'ok'; valor = 0; obs = [`Sem perda — ${ccTxt}: o total descontado cobre todas as compras (a diferença da rescisão é de parcela paga em outra folha)`]; }
+    else { valor = Math.min(valor, -L.dif); obs.push(ccTxt + ' — confirma'); } }
+  else if (L && (res === 'ganho' || res === 'conferir')) { if (L.dif <= R.cfg.tol) { res = 'ok'; valor = 0; obs = [`Sem ganho — ${ccTxt}: o total descontado não passa das compras (o a mais da rescisão é parcela que o sistema achou paga numa folha anterior)${L.dif < -R.cfg.tol ? ` · na conta corrente faltam ${brl(-L.dif)}, que podem ser parcelas de dez/2025 no lote de baixa de jan (folha de 2025 não importada)` : ''}`]; }
+    else { valor = Math.min(valor, L.dif); obs.push(ccTxt + ` — ${brl(L.dif)} descontados além de todas as compras`); } }
   if (o.d.inferida) obs.unshift('Saída não confirmada (não está nos desligados) — confirmar com o RH');
   if (trct) obs.push('Desconto informado pelo TRCT (até a folha do mês ser importada)');
   if (o.bxSemDesc > 0.009) obs.push(`Crediário baixou ${brl(o.bxSemDesc)} sem desconto — estornar a baixa`);
@@ -2282,7 +2298,15 @@ function montarLinhas() {
       if (!p1.size) for (const [nm, c] of IMP.nomeCpf()) { if (!c) continue; const f = nm.split(' ')[0]; if (!p1.has(f)) p1.set(f, []); p1.get(f).push([nm, c]); }
       const t = k.split(' '), cand = new Set();
       if (t.length >= 3) for (const [f, ls] of p1) if (lev1(f, t[0])) ls.forEach(([nm, c]) => { if (simNome(k, nm) === 1 && Math.min(t.length, nm.split(' ').length) >= 3) cand.add(c); });
-      const r = cand.size === 1 ? [...cand][0] : null; cache.set(k, r); return r; };
+      // nome abreviado do Seta ("BEATRIZ LOURENÇO" = BEATRIZ LOURENCO DA SILVA): as 2 palavras no começo do nome, uma pessoa só
+      // (03/11/2026: R$ 1.079,85 de baixas dela estavam sem CPF)
+      if (!cand.size && t.length === 2 && t.every(x => x.length >= 3)) for (const [nm] of IMP.nomeCpf()) { const u = nm.split(' ');
+        if (u.length >= 3 && u[0] === t[0] && u[1] === t[1]) cand.add(IMP.nomeCpf().get(nm) || 'x'); }
+      // primeiro nome digitado errado ("ELISABERTE JUSSARA SILVA DO NASCIMENTO"): o resto do nome igual (3+ palavras) e as 3
+      // primeiras letras iguais, uma pessoa só
+      const st = new Set(['DA', 'DE', 'DO', 'DAS', 'DOS', 'E']), resto = x => x.split(' ').slice(1).filter(w => !st.has(w)).join(' ');
+      if (!cand.size && resto(k).split(' ').length >= 3) for (const [nm, c] of IMP.nomeCpf()) if (nm.slice(0, 3) === k.slice(0, 3) && resto(nm) === resto(k)) cand.add(c || 'x');
+      cand.delete(null); const r = cand.size === 1 && !cand.has('x') ? [...cand][0] : null; cache.set(k, r); return r; };
   }
   for (let i = cab + 1; i < rows.length; i++) {
     const row = rows[i];
@@ -2358,6 +2382,11 @@ function montarLinhas() {
     for (const [k, ls] of grp) { const [nm, d] = k.split('|'), tot = ls.reduce((t, l) => t + l.valor, 0);
       const cs = [...multi.get(nm)].filter(c => [0, 1, 2].some(i => Math.abs((fol.get(c + '|' + addMes(d.slice(0, 7), -i)) || 0) - tot) <= 0.05));
       if (cs.length === 1) ls.forEach(l => { l.cpf = cs[0]; l.chave = [l.documento, l.parcela, l.cpf, l.data_baixa || '', l.valor.toFixed(2)].join('|'); }); }
+    // parcela sem CPF de uma compra cuja outra parcela já tem CPF: mesmo número de compra, mesmo nº de parcelas e o mesmo nome
+    // → mesma compra, mesmo dono (03/11/2026: homônimos "JEFFERSON ALVES DA SILVA" deixavam 16 parcelas sem CPF)
+    const kS = l => { const m = String(l.documento).match(/^(.*?)-\d+\/(\d+)$/); return m && l._nome ? m[1] + '/' + m[2] + '|' + l._nome : null; }, dono = new Map();
+    out.forEach(l => { const k = kS(l); if (k && l.cpf) dono.set(k, dono.has(k) && dono.get(k) !== l.cpf ? null : l.cpf); });
+    out.forEach(l => { const k = kS(l), c = k && !l.cpf && dono.get(k); if (c) { l.cpf = c; l.chave = [l.documento, l.parcela, c, l.data_baixa || '', l.valor.toFixed(2)].join('|'); } });
     out.forEach(l => { delete l._nome; if (!l.cpf) semCpfBx++; });
     const ds = [...new Set(out.map(l => l.data_baixa).filter(Boolean))].sort();
     if (ds.length) avisos.push(`${qtd(out.length)} baixa(s) de parcela em ${qtd(ds.length)} lote(s), de ${dataBR(ds[0])} a ${dataBR(ds[ds.length - 1])}. Cada lote é ligado à folha do mês que ele baixou.`);
