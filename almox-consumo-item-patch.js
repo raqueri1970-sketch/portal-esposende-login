@@ -8,6 +8,15 @@
 
   var MESES=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
   var state={itensMarcados:null,ultimoTermo:null};
+  // Proposta Sulnove nº 010145 (29/10/2026) · BOPP Metalizado espessura 0,004 · preço por milheiro.
+  // P=30x40, M=40x50, G=50x60. DIFAL de 13,5% somado ao custo unitário.
+  var DIFAL=0.135;
+  var PROPOSTA={
+    '11314':{tam:'P · 30x40',milheiro:331.00},
+    '11315':{tam:'M · 40x50',milheiro:535.75},
+    '11316':{tam:'G · 50x60',milheiro:799.50}
+  };
+  function unitProposta(cod){var p=PROPOSTA[String(cod||'').trim()];return p?p.milheiro/1000*(1+DIFAL):null;}
 
   function norm(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase();}
   function limpa(s){return String(s||'').replace(/\s+/g,' ').trim();}
@@ -50,7 +59,9 @@
         item:limpa(r['Insumo']),
         codigo:limpa(r['Código']),
         qtd:Number(r['Qtd Atendida'])||0,
-        custo:Number(r['Custo Atendido'])||0
+        custo:Number(r['Custo Atendido'])||0,
+        custoNovo:(function(){var u=unitProposta(r['Código']);return u==null?(Number(r['Custo Atendido'])||0):(Number(r['Qtd Atendida'])||0)*u;})(),
+        temProposta:unitProposta(r['Código'])!=null
       });
     });
     return out;
@@ -69,7 +80,7 @@
   +'#aci-box .aci-hd{display:flex!important;flex-direction:row!important;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid #1d3550;position:static!important}'+'#aci-box .aci-tit{flex:1 1 auto;min-width:0}#aci-box .aci-tit b{display:block;font-size:18px;color:#fff}#aci-box .aci-tit small{display:block;color:#8ca4bf;font-size:12px;margin-top:2px}'+'#aci-box .aci-acoes{display:flex!important;flex-direction:row!important;gap:8px;flex:0 0 auto;align-items:center}'+'#aci-box .aci-acoes button{position:static!important;display:inline-block!important;width:auto!important;margin:0!important;white-space:nowrap}'
   +'#aci-box button{background:#15304d;color:#fff;border:1px solid #2f5478;border-radius:8px;padding:8px 13px;font-weight:700;cursor:pointer;font-size:13px}'
   +'#aci-box button.aci-pri{background:#0e7c66;border-color:#14a386}#aci-box button:hover{filter:brightness(1.15)}'
-  +'#aci-box .aci-flt{display:grid;grid-template-columns:2fr 1.3fr 1fr .8fr .8fr;gap:12px;padding:14px 18px;align-items:end}'
+  +'#aci-box .aci-flt{display:grid;grid-template-columns:1.8fr 1.2fr .9fr .8fr .8fr 1.4fr;gap:12px;padding:14px 18px;align-items:end}'
   +'#aci-box label{display:block;font-size:11px;color:#8ca4bf;font-weight:700;letter-spacing:.04em;margin-bottom:5px;text-transform:uppercase}'
   +'#aci-box input,#aci-box select{width:100%;box-sizing:border-box;background:#06101c;color:#fff;border:1px solid #2a4867;border-radius:8px;padding:9px 10px;font-size:14px}'
   +'#aci-box input#aci-q{font-size:16px;border-color:#14a386}'
@@ -101,6 +112,7 @@
       +'<div><label>Regional</label><select id="aci-reg"></select></div>'
       +'<div><label>De (mês)</label><input type="month" id="aci-de"></div>'
       +'<div><label>Até (mês)</label><input type="month" id="aci-ate"></div>'
+      +'<div><label>Custo usado</label><select id="aci-base"><option value="prop">Proposta Sulnove 0,004 + DIFAL 13,5%</option><option value="atual">Custo atual do almoxarifado</option></select></div>'
       +'</div>'
       +'<div id="aci-itens"><span style="color:#8ca4bf">Digite acima para encontrar os itens.</span></div>'
       +'<div id="aci-kpi"></div><div id="aci-res"></div></div>';
@@ -110,7 +122,7 @@
     ov.addEventListener('click',function(e){if(e.target===ov)ov.style.display='none';});
     document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ov.style.display!=='none')ov.style.display='none';});
     var t;$('aci-q').addEventListener('input',function(){clearTimeout(t);t=setTimeout(function(){state.itensMarcados=null;listarItens();calcular();},200);});
-    ['aci-loja','aci-reg','aci-de','aci-ate'].forEach(function(id){$(id).addEventListener('change',function(){if(id==='aci-reg')montarLojas();calcular();});});
+    ['aci-loja','aci-reg','aci-de','aci-ate','aci-base'].forEach(function(id){$(id).addEventListener('change',function(){if(id==='aci-reg')montarLojas();calcular();});});
     $('aci-xls').onclick=exportar;
     $('aci-print').onclick=function(){imprimir(false);};$('aci-pdf').onclick=function(){imprimir(true);};
     montarFiltros(true);
@@ -180,6 +192,7 @@
     if(!termo||!state.itensMarcados||!state.itensMarcados.size){kpi.innerHTML='';res.innerHTML='<div class="aci-vazio">Digite o nome do item (ex.: <b>embalagem</b>) para ver o consumo.</div>';ultimo=null;return;}
     var loja=$('aci-loja').value,reg=$('aci-reg').value,de=$('aci-de').value,ate=$('aci-ate').value;
     var meses=mesesEntre(de,ate);
+    var base=$('aci-base').value;var V=function(l){return base==='prop'?l.custoNovo:l.custo;};
     var sel=L.filter(function(l){
       return state.itensMarcados.has(l.item)&&(!loja||l.loja===loja)&&(!reg||l.reg===reg)&&(!de||l.mes>=de)&&(!ate||l.mes<=ate);
     });
@@ -192,18 +205,19 @@
       sel.forEach(function(l){
         var k=l[chave];g[k]=g[k]||{nome:k,meses:{},qtd:0,custo:0,qMed:0};
         var c=g[k].meses[l.mes]=g[k].meses[l.mes]||{q:0,v:0};
-        c.q+=l.qtd;c.v+=l.custo;g[k].qtd+=l.qtd;g[k].custo+=l.custo;
+        c.q+=l.qtd;c.v+=V(l);g[k].qtd+=l.qtd;g[k].custo+=V(l);
         if(!fechados.length||l.mes<atual)g[k].qMed+=l.qtd;
       });
       return Object.keys(g).map(function(k){return g[k];});
     }
     var porItem=agrupa('item').sort(function(a,b){return a.nome.localeCompare(b.nome);});
     var porLoja=agrupa('loja').sort(function(a,b){return b.qtd-a.qtd;});
-    var totQ=0,totV=0,totMed=0,totM={};
-    sel.forEach(function(l){totQ+=l.qtd;totV+=l.custo;if(!fechados.length||l.mes<atual)totMed+=l.qtd;var c=totM[l.mes]=totM[l.mes]||{q:0,v:0};c.q+=l.qtd;c.v+=l.custo;});
+    var totQ=0,totV=0,totMed=0,totM={},totAtual=0,nProp=0;
+    sel.forEach(function(l){totQ+=l.qtd;totV+=V(l);totAtual+=l.custo;if(l.temProposta)nProp++;if(!fechados.length||l.mes<atual)totMed+=l.qtd;var c=totM[l.mes]=totM[l.mes]||{q:0,v:0};c.q+=l.qtd;c.v+=V(l);});
     kpi.innerHTML='<div><span>CONSUMO TOTAL NO PERÍODO</span><b>'+n0(totQ)+' un.</b></div>'
       +'<div><span>MÉDIA MENSAL ('+div+' '+(div>1?'meses fechados':'mês')+')</span><b style="color:#5fd3b8">'+n0(totMed/div)+' un./mês</b></div>'
-      +'<div><span>CUSTO TOTAL</span><b>'+brl(totV)+'</b></div>'
+      +'<div><span>CUSTO TOTAL '+(base==='prop'?'(PROPOSTA + DIFAL)':'(ATUAL)')+'</span><b>'+brl(totV)+'</b>'
+        +(base==='prop'&&nProp?'<small style="display:block;color:#8ca4bf;font-size:11px;margin-top:3px">Custo atual: '+brl(totAtual)+' · diferença '+(totV-totAtual>=0?'+':'−')+brl(Math.abs(totV-totAtual))+(totAtual?' ('+((totV/totAtual-1)*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%)':'')+'</small>':'')+'</div>'
       +'<div><span>LOJAS QUE PEDIRAM</span><b>'+porLoja.length+'</b></div>';
     if(!sel.length){res.innerHTML='<div class="aci-vazio">Nenhum consumo desse(s) item(ns) no período/loja escolhidos.</div>';ultimo=null;return;}
     function tabela(titulo,grupos,comValor){
@@ -218,8 +232,12 @@
       return h;
     }
     var onde=loja?loja:(reg?'Regional '+reg:'todas as lojas');
-    var html=tabela('Consumo mensal por item — '+esc(onde),porItem,true);
+    var html=tabela('Consumo mensal por item — '+esc(onde)+(base==='prop'?' · custo da proposta + DIFAL':' · custo atual'),porItem,true);
     if(!loja)html+=tabela('Consumo por loja (soma dos itens marcados) — '+esc(onde),porLoja,false);
+    if(base==='prop'){
+      var usados=Object.keys(PROPOSTA).filter(function(c){return sel.some(function(l){return l.codigo===c;});});
+      if(usados.length)html+='<div style="color:#8ca4bf;font-size:11px;margin-top:8px">Custo unitário usado (Sulnove nº 010145 · BOPP metalizado 0,004 · + DIFAL 13,5%): '+usados.map(function(c){var p=PROPOSTA[c];return c+' '+p.tam+' = R$ '+(p.milheiro/1000).toLocaleString('pt-BR',{minimumFractionDigits:4})+' → <b>R$ '+unitProposta(c).toLocaleString('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:4})+'</b>/un.';}).join(' · ')+(sel.some(function(l){return !l.temProposta;})?' · Itens sem proposta continuam com o custo atual.':'')+'</div>';
+    }
     if(meses.some(function(m){return m>=atual;}))html+='<div style="color:#8ca4bf;font-size:11px;margin-top:8px">* mês em andamento — aparece na tabela, mas não entra na média mensal.</div>';
     res.innerHTML=html;
     ultimo={meses:meses,porItem:porItem,porLoja:porLoja,div:div,onde:onde,loja:loja,totQ:totQ,totV:totV,totMed:totMed,totM:totM};
