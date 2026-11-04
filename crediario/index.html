@@ -900,13 +900,17 @@ function cruzar() {
   const c0 = [...compsFolha].sort()[0] || '', c1 = [...compsFolha].sort()[1] || '', bxPorCpf = new Map(); BX.forEach(b => { if (b.cpf) { if (!bxPorCpf.has(b.cpf)) bxPorCpf.set(b.cpf, []); bxPorCpf.get(b.cpf).push(b); } });
   for (const pe of pessoas.values()) {
     if (!pe.ex) continue;
-    const d = pe.desl, reais = pe.parcelas.filter(p => !p.rec), mS = d.saida.slice(0, 7);
+    // plano BRA (funeral/telemedicina) é mensalidade, não compra: depois do mês da saída é cancelado, não se cobra na rescisão
+    // (04/11/2026: Victor tinha 5 mensalidades de R$ 49,99 até fev/2027 contadas como perda)
+    const d = pe.desl, mS = d.saida.slice(0, 7), planoFut = p => /^BRA\d/i.test(String(p.documento || '')) && String(p.vencimento || '').slice(0, 7) > mS;
+    const reais = pe.parcelas.filter(p => !p.rec && !planoFut(p));
     // saldo na saída = parcelas da folha do mês da saída em diante (todas passaram para a folha da rescisão);
     // com a folha da rescisão importada, em aberto é o que a verba 1260 dela não cobriu
     // parcela baixada no crediário no lote da folha da rescisão em diante segue no saldo: depois da saída só a rescisão paga
     let saldoPs = reais.filter(p => p.comp === mS && (!p.baixa || compBaixa(p.baixa) >= mS)).sort((a, b) => a.vencimento.localeCompare(b.vencimento)), saldo = rd2(saldoPs.reduce((s, p) => s + p.valor, 0));
     const folhaResc = compsFolha.has(mS) || trctPes.has(pe.cpf + '|' + mS), cR = pe.celulas[mS], descResc = cR ? cR.desc : 0;
     if (folhaResc && pe.saldoAnt) saldo = rd2(saldo + pe.saldoAnt);
+    const saldoAntR = folhaResc ? rd2(pe.saldoAnt || 0) : 0;
     const falta = folhaResc ? Math.max(0, rd2(saldo - descResc)) : saldo, abertas = falta > 0.009 ? saldoPs : [];
     // ex-funcionário não tem "a vencer": na saída todo o saldo vence e tinha de sair na rescisão (03/11/2026)
     const vencido = rd2(falta), aVencer = 0;
@@ -914,7 +918,7 @@ function cruzar() {
     // a folha em que o desconto foi feito (a informada no arquivo), não a da regra
     const folhaApos = pe.folha.filter(l => l.comp + '-01' > d.saida), descApos = rd2(folhaApos.reduce((s, l) => s + l.valor, 0));
     const o = {pe, d, abertas, vencido, aVencer, aberto: rd2(vencido + aVencer), aposCompra, folhaApos, descApos, desc: rd2(pe.folha.reduce((s, l) => s + l.valor, 0)),
-      saldo, descResc: rd2(descResc), folhaResc, maisResc: folhaResc ? Math.max(0, rd2(descResc - saldo)) : 0,
+      saldo, saldoAnt: saldoAntR, saldoPs, descResc: rd2(descResc), folhaResc, maisResc: folhaResc ? Math.max(0, rd2(descResc - saldo)) : 0,
       compras: rd2(reais.reduce((s, p) => s + p.valor, 0)), contratos: new Set(abertas.map(p => p.contrato)).size, prox: abertas.length ? abertas[0].vencimento : '', ult: abertas.length ? abertas[abertas.length - 1].vencimento : ''};
     // base incompleta: parcelas da folha da rescisão em diante que não estão no crediário (ver a pendência da rescisão acima);
     // o saldo não é confirmado — sai do débito em aberto e vai para Verificar, com a estimativa pela base
@@ -2059,6 +2063,22 @@ function excelDrill() {
 // quem saiu (relatório de desligados) e tem crediário: foi descontado? ficou débito em aberto (vencido / a vencer)?
 // quem está certo na rescisão: saldo na saída × descontado. Perda = descontamos menos (a cobrar); ganho = descontamos mais
 // (a devolver ou explicar); aguardando = a folha da rescisão (ou o TRCT) ainda não está no sistema
+// o que faltou descontar na rescisão, parcela a parcela: o desconto paga primeiro o saldo das folhas anteriores e depois as
+// parcelas por vencimento; lista as que ficaram de fora (04/11/2026: "não basta dizer descontou a menos, diga o que faltou")
+function faltouResc(o) {
+  const ps = (o.saldoPs || []).slice().sort((a, b) => a.vencimento.localeCompare(b.vencimento) || String(a.documento).localeCompare(String(b.documento)));
+  let rem = rd2(o.descResc || 0); const tol = R.cfg.tol, falt = [], cob = [];
+  if (o.saldoAnt > tol) { if (rem >= o.saldoAnt - tol) { cob.push(`saldo de folhas anteriores ${brl(o.saldoAnt)}`); rem = rd2(rem - o.saldoAnt); } else { falt.push({t: 'saldo de folhas anteriores', v: rd2(o.saldoAnt - rem)}); rem = 0; } }
+  for (const p of ps) { const nm = p.n_parcelas ? `${p.contrato} ${p.parcela}/${p.n_parcelas}` : `${p.documento}${/^BRA\d/i.test(String(p.documento)) ? ' (mensalidade do plano BRA)' : ''}`;
+    if (rem >= p.valor - tol) { cob.push(nm); rem = rd2(rem - p.valor); }
+    else { falt.push({t: nm, v: rd2(p.valor - rem), parc: rem > tol ? p.valor : 0, c: p.n_parcelas ? p.contrato : null, n: p.n_parcelas ? `${p.parcela}/${p.n_parcelas}` : null}); rem = 0; } }
+  if (!falt.length) return '';
+  // agrupa por compra: CE101329 4/6, 5/6, 6/6
+  const g = new Map(); falt.forEach(x => { const k = x.c || x.t; if (!g.has(k)) g.set(k, {k, ns: [], v: 0, parc: x.parc, t: x.t}); const y = g.get(k); if (x.n) y.ns.push(x.n); y.v = rd2(y.v + x.v); });
+  const lista = [...g.values()].map(y => (y.ns.length ? `${y.k} ${y.ns.join(', ')}` : y.t) + ` ${brl(y.v)}`), mx = 6;
+  const desc = rd2(o.descResc || 0);
+  return `Rescisão descontou ${brl(desc)}${cob.length ? ` (pagou ${cob.length > 4 ? cob.length + ' parcelas' : cob.join(', ')})` : ''}; faltou: ${lista.slice(0, mx).join('; ')}${lista.length > mx ? `; +${lista.length - mx} compra(s)` : ''}`;
+}
 function resEx(o) {
   // observação curta: motivo + o que fazer (03/11/2026: o usuário pediu texto simples e objetivo; as contas ficam no extrato)
   const ps = (o.pe.pend || []).filter(p => !encerrada(p)), txt = ps.map(p => p.txt).join(' '), tem = t => ps.some(p => p.tipo === t);
@@ -2071,8 +2091,7 @@ function resEx(o) {
     if (tem('Valor lançado errado no RH (centavos)')) { const c = ps.find(p => p.tipo === 'Valor lançado errado no RH (centavos)'); motivo = 'RH lançou sem os zeros (ex.: 129,00 → 1,29): ' + ((c.txt.match(/compras? (CE[\d, CE]+?) lançadas/) || [])[1] || ''); }
     else if (tem('Possível erro de centavos no RH')) motivo = 'Possível erro de centavos do RH';
     else if (fora) motivo = 'Não entrou na rescisão: ' + docs(fora);
-    else if (o.descResc <= 0.009) motivo = 'Rescisão sem desconto de Compra Loja';
-    else motivo = 'Rescisão descontou menos que o saldo'; }
+    else motivo = faltouResc(o) || (o.descResc <= 0.009 ? 'Rescisão sem desconto de Compra Loja' : 'Rescisão descontou menos que o saldo'); }
   else if (o.maisResc > 0.009) { valor = o.maisResc;
     // só é ganho com a base completa (lote de baixa da folha da rescisão confiável e compras encontradas)
     const baseOk = o.saldo > 0.009 && (!R.temLotes || (R.loteBoa && R.loteBoa.has(mS)));
