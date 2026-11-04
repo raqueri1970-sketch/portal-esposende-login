@@ -74,7 +74,7 @@ body.portal-on .card{display:none}
   <div id="status"></div>
 </div>
 <iframe id="portalFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups allow-top-navigation-by-user-activation allow-popups-to-escape-sandbox"></iframe>
-<button id="btnInteligenciaAuditoria" type="button" onclick="window.open(&quot;inteligencia-auditoria.html&quot;,&quot;_blank&quot;)">🧠 Inteligência da Auditoria</button>
+<button style="display:none" id="btnInteligenciaAuditoria" type="button" onclick="window.open(&quot;inteligencia-auditoria.html&quot;,&quot;_blank&quot;)">🧠 Inteligência da Auditoria</button>
 <button id="btnSairGestor" class="hidden" type="button" onclick="sairGestor()">Sair</button>
 <div id="baseMaeOverlay" aria-hidden="true">
   <div id="baseMaeTop"><button type="button" onclick="fecharBaseMae()">← Voltar ao Portal</button><strong id="baseMaeTitulo">Base Mãe</strong><span id="baseMaeDesc">Carregamento oficial de funcionários, lojas, regionais e setores</span></div>
@@ -693,6 +693,7 @@ async function abrirSomenteOrcamento(session){
   ifr.style.display='block';
   document.getElementById('btnSairGestor').classList.remove('hidden');
   document.body.classList.add('portal-on');
+  var _btnIA=document.getElementById('btnInteligenciaAuditoria');if(_btnIA){_btnIA.style.display='block';_btnIA.style.position='fixed';_btnIA.style.bottom='14px';_btnIA.style.right='14px';_btnIA.style.zIndex='10001';_btnIA.style.width='auto';_btnIA.style.fontSize='12px';}
   setStatus('','');
 }
 async function sairGestor(){
