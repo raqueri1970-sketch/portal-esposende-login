@@ -251,7 +251,7 @@
     <div class="card" style="margin-top:14px">
       <div class="busca">
         <input id="dqBusca" placeholder="Buscar nome, CPF, motivo, compra (CE…), observação ou quem decidiu">
-        <select id="dqTipo"><option value="">Rescisões e pendências</option><option value="rescisao">Só rescisões (ex-funcionários)</option><option value="pendencia">Só pendências</option></select>
+        <select id="dqTipo"><option value="">Rescisões e pendências</option><option value="rescisao">Só rescisões (ex-funcionários)</option><option value="nao_descontado">Só não descontados (ativos)</option><option value="pendencia">Só pendências</option></select>
         <select id="dqDec"><option value="">Todas as decisões</option></select>
         <select id="dqDe" title="Mês de referência: de"></select>
         <select id="dqAte" title="Mês de referência: até"></select>
@@ -509,11 +509,15 @@ async function carregarDados() {
 }
 // decisões da auditoria: a mais recente de cada caso vale; decidido (não "em análise"/"reaberto") sai dos relatórios em aberto
 const DEC = {procede: ['Procede — cobrar', 'badt'], recuperado: ['Procede — já recuperado', 'okt'], nao_procede: ['Não procede', 'mut'], ajustado: ['Valor ajustado', 'wt'], analise: ['Em análise', 'wt'], reaberto: ['Reaberto', 'mut']};
+const TIPO_DEC = {rescisao: 'Rescisão', nao_descontado: 'Não descontado (ativo)', pendencia: 'Pendência'};
 const DEC_FINAL = new Set(['procede', 'recuperado', 'nao_procede', 'ajustado']);
-let DECMAP = new Map(), DECCPF = new Map();
+let DECMAP = new Map(), DECCPF = new Map(), DECPEND = new Map();
 function montarDecisoes() {
   DECMAP = new Map(); (D.decisoes || []).forEach(d => DECMAP.set(d.chave, d));
-  DECCPF = new Map(); for (const d of DECMAP.values()) if (d.tipo === 'rescisao' && DEC_FINAL.has(d.decisao) && d.cpf) DECCPF.set(d.cpf, d);
+  DECCPF = new Map(); DECPEND = new Map();
+  for (const d of DECMAP.values()) { if (!DEC_FINAL.has(d.decisao)) continue;
+    if (d.tipo === 'rescisao' && d.cpf) DECCPF.set(d.cpf, d);
+    if (d.tipo === 'nao_descontado') ((d.detalhe && d.detalhe.pendencias) || []).forEach(id => DECPEND.set(id, d)); }
 }
 const chaveEx = o => 'resc:' + o.pe.cpf + '|' + o.d.saida;
 const decEx = o => DECMAP.get(chaveEx(o));
@@ -545,7 +549,7 @@ const STAT = {
 const stChip = s => `<span class="st ${STAT[s][1]}">${STAT[s][0]}</span>`;
 const TRAT = {pendente: 'Pendente', cobrar: 'Cobrar do funcionário', devolver: 'Devolver ao funcionário', justificado: 'Justificado', resolvido: 'Resolvido'};
 const tratChip = t => t ? `<span class="st st-${t.status}" title="${esc((t.observacao || '') + ' — ' + quemCurto(t.usuario) + ' ' + dtBR(t.criado_em))}">${TRAT[t.status]}</span>` : '<span class="st st-pendente">Sem tratativa</span>';
-const encerrada = p => !!(p.trat && ['justificado', 'resolvido'].includes(p.trat.status)) || !!(p.cpf && DECCPF.has(p.cpf));
+const encerrada = p => !!(p.trat && ['justificado', 'resolvido'].includes(p.trat.status)) || !!(p.cpf && DECCPF.has(p.cpf)) || DECPEND.has(p.id);
 const GRAV = {alta: 0, media: 1, baixa: 2};
 const gravChip = g => `<span class="st st-${g}">${g === 'media' ? 'média' : g}</span>`;
 
@@ -1591,10 +1595,45 @@ async function salvarDecisao(cpf) {
   if (x.error) { toast('Não gravou: ' + msgErro(x.error), 6000); return; }
   fecharModal(); toast(DEC_FINAL.has(decisao) ? 'Decisão gravada — o caso saiu do relatório em aberto e está na aba Decisões.' : 'Gravado.'); await recarregar();
 }
+// não descontado de ativo: a decisão cobre as faltas em aberto naquele momento (ids das pendências); falta de mês novo fica aberta
+const ndAbertas = cpf => R.pend.filter(p => p.cpf === cpf && TIPOS_NAO_DESC.has(p.tipo) && !encerrada(p));
+let ND_ATUAL = null;
+function decidirND(cpf, chave) {
+  let ps, ant = null;
+  if (chave) { ant = DECMAP.get(chave); if (!ant) return; cpf = ant.cpf; const ids = new Set((ant.detalhe && ant.detalhe.pendencias) || []); ps = R.pend.filter(p => ids.has(p.id)); if (!ps.length) ps = ((ant.detalhe && ant.detalhe.itens) || []); }
+  else ps = ndAbertas(cpf);
+  const pe = R.pessoas.get(cpf); if (!pe || !ps.length) { toast('Nenhuma falta em aberto para decidir.'); return; }
+  const ids = ps.map(p => p.id).sort(), k = ant ? ant.chave : 'nd:' + cpf + '|' + ids.join(','), tot = rd2(ps.reduce((t, p) => t + Number(p.valor || 0), 0));
+  ND_ATUAL = {cpf, ps, ids, chave: k, tot}; const hist = (D.decisoes || []).filter(d => d.chave === k);
+  abrirModal(`<h3>Decisão da auditoria — ${esc(pe.nome)}</h3>
+    <div class="small">${cpfF(cpf)}${pe.cad ? ' · ' + esc(pe.cad.loja || '') + ' · ' + esc(pe.cad.matricula || '') : ' · fora do cadastro'} · não descontado (ativo)</div>
+    <div class="tw"><table><thead><tr><th>Falta</th><th>Folha</th><th class="r">Valor</th><th>Detalhe</th></tr></thead><tbody>${ps.map(p => `<tr><td>${esc(p.tipo)}</td><td>${compBR(p.comp)}</td><td class="r">${nfm(p.valor)}</td><td class="small">${esc(p.txt)}</td></tr>`).join('')}</tbody>
+    <tfoot><tr><td>Total</td><td></td><td class="r">${nfm(tot)}</td><td></td></tr></tfoot></table></div>
+    ${hist.length ? '<div class="small mut"><b>Histórico:</b><br>' + hist.slice().reverse().map(d => `${dtBR(d.criado_em)} · ${esc(quemCurto(d.usuario))} · <b>${DEC[d.decisao][0]}</b> ${d.valor_final != null ? brl(d.valor_final) : ''} ${esc(d.observacao || '')}`).join('<br>') + '</div>' : ''}
+    <label>Decisão</label><select id="dcDec">${Object.entries(DEC).filter(([x]) => x !== 'reaberto' || ant).map(([x, v]) => `<option value="${x}" ${(ant ? ant.decisao : 'procede') === x ? 'selected' : ''}>${v[0]}</option>`).join('')}</select>
+    <div class="small mut">Procede — cobrar: lançar na próxima folha · Já recuperado: já descontado/acertado · Não procede: não é devido (explique) · Valor ajustado: devido, com outro valor · Em análise: continua no relatório · Reaberto: volta para o relatório</div>
+    <label>Valor final (R$)</label><input id="dcVal" value="${nfm(ant && ant.valor_final != null ? ant.valor_final : tot)}">
+    <label>Observação (o que foi conferido, com quem, documento)</label><textarea id="dcObs" rows="3">${esc(ant && ant.observacao || '')}</textarea>
+    <div class="row"><button class="btn b-pri" id="bDec">Gravar decisão</button><button class="btn" onclick="fecharModal()">Cancelar</button></div>`);
+  $('bDec').onclick = salvarDecisaoND;
+}
+async function salvarDecisaoND() {
+  const a = ND_ATUAL; if (!a) return; const pe = R.pessoas.get(a.cpf) || {}, f = pe.cad || {};
+  const decisao = $('dcDec').value, obs = $('dcObs').value.trim(), v = numero($('dcVal').value);
+  if (['nao_procede', 'ajustado', 'reaberto'].includes(decisao) && !obs) { toast('Escreva a justificativa na observação.'); return; }
+  const comps = a.ps.map(p => p.comp).filter(Boolean).sort();
+  const linha = {chave: a.chave, tipo: 'nao_descontado', cpf: a.cpf, nome: pe.nome || '', matricula: f.matricula || null, loja: f.loja || (pe.cad ? null : 'FORA DO CADASTRO'), competencia: comps[comps.length - 1] || null, saida: null,
+    resultado: 'perda', valor_apurado: a.tot, decisao, valor_final: decisao === 'nao_procede' ? 0 : isFinite(v) ? rd2(v) : a.tot,
+    motivo: a.ps.map(p => `${p.tipo} ${compBR(p.comp)} ${brl(p.valor)}`).join('; '), observacao: obs || null,
+    detalhe: {pendencias: a.ids, itens: a.ps.map(p => ({id: p.id, tipo: p.tipo, comp: p.comp, valor: p.valor, txt: p.txt}))}};
+  const x = await sb.from('cred_decisoes').insert(linha);
+  if (x.error) { toast('Não gravou: ' + msgErro(x.error), 6000); return; }
+  fecharModal(); toast(DEC_FINAL.has(decisao) ? 'Decisão gravada — as faltas saíram do relatório e estão na aba Decisões.' : 'Gravado.'); await recarregar();
+}
 // linhas da aba: decisões das rescisões (a mais recente de cada caso) + tratativas das pendências (a mais recente de cada uma)
 function linhasDec() {
   const out = [];
-  for (const d of DECMAP.values()) if (d.decisao !== 'reaberto') out.push({tipo: 'rescisao', quando: d.criado_em, comp: d.competencia || '', cpf: d.cpf, nome: d.nome || '', motivo: d.motivo || '', apurado: Number(d.valor_apurado || 0), final: Number(d.valor_final || 0), dec: d.decisao, decTxt: DEC[d.decisao][0], obs: d.observacao || '', por: d.usuario || '', saida: d.saida});
+  for (const d of DECMAP.values()) if (d.decisao !== 'reaberto') out.push({tipo: d.tipo || 'rescisao', quando: d.criado_em, comp: d.competencia || '', cpf: d.cpf, nome: d.nome || '', motivo: d.motivo || '', apurado: Number(d.valor_apurado || 0), final: Number(d.valor_final || 0), dec: d.decisao, decTxt: DEC[d.decisao][0], obs: d.observacao || '', por: d.usuario || '', saida: d.saida});
   const tm = new Map(); (D.tratativas || []).forEach(t => tm.set(t.pendencia, t));
   for (const t of tm.values()) { const p = R.pend.find(x => x.id === t.pendencia), pe = t.cpf && R.pessoas.get(t.cpf);
     out.push({tipo: 'pendencia', quando: t.criado_em, comp: t.competencia || '', cpf: t.cpf || '', nome: pe ? pe.nome : p ? p.nome || '' : '', motivo: p ? p.tipo + ': ' + p.txt : String(t.pendencia).split('|')[0], apurado: Number(t.valor || 0), final: ['justificado'].includes(t.status) ? 0 : Number(t.valor || 0), dec: 'trat:' + t.status, decTxt: 'Pendência: ' + TRAT[t.status], obs: t.observacao || '', por: t.usuario || ''}); }
@@ -1611,32 +1650,32 @@ function telaDec() {
   opt('dqDec', '<option value="">Todas as decisões</option>' + Object.entries(DEC).filter(([k]) => k !== 'reaberto').map(([k, v]) => `<option value="${k}">${v[0]}</option>`).join('') + Object.entries(TRAT).map(([k, v]) => `<option value="trat:${k}">Pendência: ${v}</option>`).join(''));
   opt('dqDe', '<option value="">Mês de: todos</option>' + comps.map(c => `<option value="${c}">de ${compBR(c)}</option>`).join(''));
   opt('dqAte', '<option value="">até: todos</option>' + comps.map(c => `<option value="${c}">até ${compBR(c)}</option>`).join(''));
-  const ls = filtroDec(), resc = ls.filter(x => x.tipo === 'rescisao'), g = k => resc.filter(x => x.dec === k), sm = a => rd2(a.reduce((t, x) => t + x.final, 0));
+  const ls = filtroDec(), resc = ls.filter(x => x.tipo !== 'pendencia'), g = k => resc.filter(x => x.dec === k), sm = a => rd2(a.reduce((t, x) => t + x.final, 0));
   $('decKpis').innerHTML = kpi('Procede — cobrar', qtd(g('procede').length), brl(sm(g('procede'))), 't-vermelho', "filtroDecKpi('procede')") + kpi('Já recuperado', qtd(g('recuperado').length), brl(sm(g('recuperado'))), 't-verde', "filtroDecKpi('recuperado')") +
     kpi('Valor ajustado', qtd(g('ajustado').length), brl(sm(g('ajustado'))), 't-laranja', "filtroDecKpi('ajustado')") + kpi('Não procede', qtd(g('nao_procede').length), `apurado ${brl(rd2(g('nao_procede').reduce((t, x) => t + x.apurado, 0)))}`, 't-cinza', "filtroDecKpi('nao_procede')") +
     kpi('Em análise', qtd(g('analise').length), brl(sm(g('analise'))), 't-roxo', "filtroDecKpi('analise')") + kpi('Pendências tratadas', qtd(ls.filter(x => x.tipo === 'pendencia').length), 'tratativas das pendências', 't-cinza', "filtroDecKpi('')");
-  $('nDec').textContent = todas.filter(x => x.tipo === 'rescisao').length ? '(' + todas.filter(x => x.tipo === 'rescisao').length + ')' : '';
+  $('nDec').textContent = todas.filter(x => x.tipo !== 'pendencia').length ? '(' + todas.filter(x => x.tipo !== 'pendencia').length + ')' : '';
   $('dqInfo').textContent = `${qtd(ls.length)} registro(s) · apurado ${brl(rd2(ls.reduce((t, x) => t + x.apurado, 0)))} · valor final ${brl(sm(ls))}`;
   $('tDec').innerHTML = ls.length ? `<table><thead><tr><th>Mês ref.</th><th>Funcionário</th><th>Tipo</th><th>Motivo</th><th class="r">Apurado</th><th class="r">Valor final</th><th>Decisão</th><th>Observação</th><th>Por / em</th></tr></thead><tbody>` +
-    ls.slice(0, 600).map(x => `<tr ${x.cpf ? `class="clicavel" data-pes="${x.cpf}"` : ''}><td>${x.comp ? compBR(x.comp) : '—'}</td><td><b>${esc(x.nome)}</b><br><span class="mut small">${x.cpf ? cpfF(x.cpf) : ''}${x.saida ? ' · saída ' + dataBR(x.saida) : ''}</span></td><td class="small">${x.tipo === 'rescisao' ? 'Rescisão' : 'Pendência'}</td>
+    ls.slice(0, 600).map(x => `<tr ${x.cpf ? `class="clicavel" data-pes="${x.cpf}"` : ''}><td>${x.comp ? compBR(x.comp) : '—'}</td><td><b>${esc(x.nome)}</b><br><span class="mut small">${x.cpf ? cpfF(x.cpf) : ''}${x.saida ? ' · saída ' + dataBR(x.saida) : ''}</span></td><td class="small">${TIPO_DEC[x.tipo]}</td>
       <td class="small">${esc(x.motivo)}</td><td class="r">${nfm(x.apurado)}</td><td class="r"><b>${nfm(x.final)}</b></td><td><span class="${x.dec in DEC ? DEC[x.dec][1] : ''}"><b>${esc(x.decTxt)}</b></span></td><td class="small">${esc(x.obs)}</td><td class="small">${esc(quemCurto(x.por))}<br>${dtBR(x.quando)}</td></tr>`).join('') +
     `</tbody><tfoot><tr><td>Total</td><td>${qtd(ls.length)}</td><td></td><td></td><td class="r">${nfm(ls.reduce((t, x) => t + x.apurado, 0))}</td><td class="r">${nfm(sm(ls))}</td><td colspan="3"></td></tr></tfoot></table>` +
     (ls.length > 600 ? `<div class="small mut">Mostrando 600 de ${ls.length} — o PDF e a planilha trazem todos.</div>` : '')
-    : `<div class="vazio">${todas.length ? 'Nada com esse filtro.' : 'Nenhuma decisão gravada ainda. Decida os casos na aba Ex-funcionários (botão Decidir) ou no extrato da pessoa.'}</div>`;
+    : `<div class="vazio">${todas.length ? 'Nada com esse filtro.' : 'Nenhuma decisão gravada ainda. Decida os casos com o botão Decidir: aba Ex-funcionários, lista de não descontados ou extrato da pessoa.'}</div>`;
 }
 function filtroDecKpi(k) { $('dqDec').value = k; telaDec(); }
 ['dqBusca', 'dqTipo', 'dqDec', 'dqDe', 'dqAte'].forEach(id => $(id).addEventListener('input', telaDec));
 function relDecisoes(fmt) {
   const ls = filtroDec(), agr = $('dqAgr').value, de = $('dqDe').value, ate = $('dqAte').value;
   const cab = ['Mês ref.', 'Funcionário', 'CPF', 'Tipo', 'Motivo', 'Apurado', 'Valor final', 'Decisão', 'Observação', 'Por', 'Em'];
-  const lin = x => [x.comp ? compBR(x.comp) : '—', x.nome, x.cpf ? cpfF(x.cpf) : '', x.tipo === 'rescisao' ? 'Rescisão' : 'Pendência', x.motivo, V(x.apurado), V(x.final), x.decTxt, x.obs, quemCurto(x.por), dataBR(String(x.quando || '').slice(0, 10))];
+  const lin = x => [x.comp ? compBR(x.comp) : '—', x.nome, x.cpf ? cpfF(x.cpf) : '', TIPO_DEC[x.tipo], x.motivo, V(x.apurado), V(x.final), x.decTxt, x.obs, quemCurto(x.por), dataBR(String(x.quando || '').slice(0, 10))];
   const tot = a => ['Total', `${a.length} registro(s)`, '', '', '', V(a.reduce((t, x) => t + x.apurado, 0)), V(a.reduce((t, x) => t + x.final, 0)), '', '', '', ''];
   if (fmt === 'xlsx') { const wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet([cab, ...ls.map(x => lin(x).map((c, i) => celXLSX(c, i, [5, 6])))]); ws['!autofilter'] = {ref: ws['!ref']};
     ws['!cols'] = [10, 34, 15, 11, 70, 12, 12, 24, 50, 14, 16].map(w => ({wch: w})); XLSX.utils.book_append_sheet(wb, ws, 'Decisões'); XLSX.writeFile(wb, `decisoes_auditoria_crediario_${hojeISO()}.xlsx`); return; }
   const grupos = new Map(); ls.forEach(x => { const k = agr === 'mes' ? x.comp : agr === 'decisao' ? x.decTxt : 'todos'; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(x); });
   const ks = [...grupos.keys()].sort((a, b) => agr === 'mes' ? a.localeCompare(b) : 0);
   const per = de || ate ? `${de ? compBR(de) : 'início'} a ${ate ? compBR(ate) : 'hoje'}` : 'todos os meses';
-  const resc = ls.filter(x => x.tipo === 'rescisao'), sm = k => rd2(resc.filter(x => x.dec === k).reduce((t, x) => t + x.final, 0)), n = k => resc.filter(x => x.dec === k).length;
+  const resc = ls.filter(x => x.tipo !== 'pendencia'), sm = k => rd2(resc.filter(x => x.dec === k).reduce((t, x) => t + x.final, 0)), n = k => resc.filter(x => x.dec === k).length;
   const m = {titulo: 'Decisões da auditoria — crediário', subtitulo: `Mês de referência: ${per}${$('dqBusca').value.trim() ? ` · busca "${$('dqBusca').value.trim()}"` : ''} · ${qtd(ls.length)} registro(s) · posição de ${dataBR(hojeISO())}`, marca: MARCA, paisagem: true, arquivo: `decisoes_auditoria_${hojeISO()}`,
     resumo: [['Procede — cobrar', `${qtd(n('procede'))} - ${brl(sm('procede'))}`], ['Já recuperado', `${qtd(n('recuperado'))} - ${brl(sm('recuperado'))}`], ['Valor ajustado', `${qtd(n('ajustado'))} - ${brl(sm('ajustado'))}`], ['Não procede', qtd(n('nao_procede'))], ['Em análise', `${qtd(n('analise'))} - ${brl(sm('analise'))}`], ['Pendências tratadas', qtd(ls.filter(x => x.tipo === 'pendencia').length)]],
     secoes: ks.map(k => { const a = grupos.get(k); return {titulo: `${agr === 'mes' ? (k ? 'Mês de referência ' + compBR(k) : 'Sem mês de referência') : agr === 'decisao' ? k : 'Decisões'} (${a.length})`, cab, linhas: a.map(lin), direita: [5, 6], rodape: tot(a)}; }),
@@ -1736,6 +1775,9 @@ function abrirPessoa(cpf, foco) {
   ${p.desl ? `<div><span>${p.readm ? 'Saiu (readmitido depois)' : p.desl.inferida ? 'Último registro como funcionário' : 'Desligado em'}</span><b class="${p.ex ? 'badt' : ''}">${dataBR(p.desl.saida)}</b> ${esc(p.desl.natureza || '')}</div>` : ''}
   ${p.exInfo && p.exInfo.st === 'verif' ? `<div><span>Rescisão a verificar</span><b class="wt">base incompleta</b> — ${p.exInfo.foraBase.length} parcela(s) fora do crediário (${esc(p.exInfo.foraBase.map(x => x.documento).join(', '))}); estimado pela base ${brl(p.exInfo.verifValor)}</div>` : ''}
   ${p.exInfo && p.exInfo.st !== 'verif' ? `<div><span>Em aberto no crediário</span><b class="${p.exInfo.aberto > 0.009 ? 'badt' : 'okt'}">${brl(p.exInfo.aberto)}</b> (todo vencido na rescisão)</div>` : ''}</div>`;
+  if (!p.ex) { const ab = ndAbertas(cpf), dds = [...DECMAP.values()].filter(d => d.tipo === 'nao_descontado' && d.cpf === cpf);
+    if (ab.length || dds.length) h += `<div class="${ab.length ? 'perigo' : 'aviso'}"><b>Decisão da auditoria (não descontado):</b> ${ab.length ? `${ab.length} falta(s) em aberto, ${brl(rd2(ab.reduce((t, x) => t + x.valor, 0)))} <button class="btn small" data-decidirnd="${cpf}">Decidir</button>` : 'nenhuma falta em aberto'}` +
+      dds.map(d => `<br>${decChip(d)} ${brl(d.valor_final)} · ${esc(compBR(d.competencia))} · ${esc(quemCurto(d.usuario))} ${dtBR(d.criado_em)}${d.observacao ? ' · ' + esc(d.observacao) : ''} <button class="btn small" data-reverdec="${esc(d.chave)}">Rever</button>`).join('') + '</div>'; }
   if (p.exInfo) { const o = p.exInfo, rr = resEx(o), dd = decEx(o);
     h += `<div class="${dd && DEC_FINAL.has(dd.decisao) ? 'aviso' : 'perigo'}"><b>Decisão da auditoria (rescisão):</b> ${dd ? decChip(dd) + ` ${brl(dd.valor_final)} · ${esc(quemCurto(dd.usuario))} ${dtBR(dd.criado_em)}${dd.observacao ? ' · ' + esc(dd.observacao) : ''}` : 'ainda não decidido'} · resultado agora: <b>${RES_EX[rr.res][0]}</b>${rr.valor ? ' ' + brl(rr.valor) : ''} <button class="btn small" data-decidir="${cpf}">${dd ? 'Rever decisão' : 'Decidir'}</button></div>`; }
   h += p.pend.map(a => `<div class="${a.grav === 'alta' ? 'perigo' : 'aviso'}"><b>${esc(a.tipo)}${a.comp ? ' · ' + compBR(a.comp) : ''}:</b> ${esc(a.txt)} ${tratChip(a.trat)} <a href="javascript:void(0)" data-tratar="${esc(a.id)}">tratar</a></div>`).join('');
@@ -2083,9 +2125,12 @@ function modeloNaoDesc() {
     if (p.comp) o.folhas.add(p.comp); por.set(p.cpf, o); });
   const pe = c => R.pessoas.get(c), sit = c => { const x = pe(c); return x && x.ex ? `Ex-funcionário (saída ${dataBR(x.desl.saida)})` : 'Ativo'; };
   const todos = [...por.values()].sort((a, b) => b.cent + b.outros - a.cent - a.outros), com = todos.filter(o => o.cent > 0.009), sem = todos.filter(o => o.cent <= 0.009);
-  const cab = ['Funcionário', 'CPF', 'Situação', 'Loja', 'Erro de centavos', 'Outros motivos', 'Total não descontado', 'Compras com erro de centavos', 'Outros motivos (quais)', 'Folhas'];
-  const lin = o => [o.nome, cpfF(o.cpf), sit(o.cpf), o.loja || '', V(o.cent), V(o.outros), V(o.cent + o.outros), [...o.compras].join(', '), [...o.mot].join('; '), [...o.folhas].sort().map(compBR).join(', ')];
-  const tot = ls => ['Total', '', '', '', V(ls.reduce((t, o) => t + o.cent, 0)), V(ls.reduce((t, o) => t + o.outros, 0)), V(ls.reduce((t, o) => t + o.cent + o.outros, 0)), '', '', ''];
+  const cab = ['Funcionário', 'CPF', 'Situação', 'Loja', 'Erro de centavos', 'Outros motivos', 'Total não descontado', 'Compras com erro de centavos', 'Outros motivos (quais)', 'Folhas', 'Decisão'];
+  const btnDec = c => { const x = pe(c); if (x && x.ex) return {t: 'Na rescisão', html: `<button class="btn small" data-decidir="${c}">Decidir</button>`};
+    const an = (D.decisoes || []).filter(d => d.tipo === 'nao_descontado' && d.cpf === c).pop();
+    return {t: an && an.decisao === 'analise' ? 'Em análise' : 'Sem decisão', html: `${an && an.decisao === 'analise' ? decChip(an) + '<br>' : ''}<button class="btn small" data-decidirnd="${c}">Decidir</button>`}; };
+  const lin = o => [o.nome, cpfF(o.cpf), sit(o.cpf), o.loja || '', V(o.cent), V(o.outros), V(o.cent + o.outros), [...o.compras].join(', '), [...o.mot].join('; '), [...o.folhas].sort().map(compBR).join(', '), btnDec(o.cpf)];
+  const tot = ls => ['Total', '', '', '', V(ls.reduce((t, o) => t + o.cent, 0)), V(ls.reduce((t, o) => t + o.outros, 0)), V(ls.reduce((t, o) => t + o.cent + o.outros, 0)), '', '', '', ''];
   const sec = (t, ls) => ({titulo: `${t} (${ls.length})`, cab, linhas: ls.map(lin), direita: [4, 5, 6], rodape: tot(ls), cpfs: ls.map(o => o.cpf)});
   const pendOrd = ps.slice().sort((a, b) => (a.tipo === CENT ? 0 : 1) - (b.tipo === CENT ? 0 : 1) || b.valor - a.valor);
   const sCom = sec('Com erro de centavos no RH — corrigir o lançamento e cobrar', com), sSem = sec('Sem erro de centavos — outros motivos', sem);
@@ -2164,10 +2209,10 @@ function cartoesModal(s, cpfs, k) {
 function tabelaModal(s, cpfs, k) {
   if (s.cab.includes('Detalhe')) return cartoesModal(s, cpfs, k);
   const r = j => (s.direita || []).includes(j) ? 'r' : '';
-  return `${k ? `<h3 style="margin-top:16px">${esc(s.titulo)}</h3>` : ''}<div class="tw"><table><thead><tr>${s.cab.map((h, i) => `<th class="${r(i)}">${esc(h)}</th>`).join('')}</tr></thead><tbody>${s.linhas.slice(0, 500).map((l, i) => `<tr ${cpfs[i] ? `class="clicavel" data-pes="${cpfs[i]}" data-c="${COMP}"` : ''}>${l.map((c, j) => `<td class="${r(j)} ${c && typeof c === 'object' && c.c ? c.c : ''}">${c && typeof c === 'object' && c.c ? '<b>' + esc(celTxt(c)) + '</b>' : esc(celTxt(c))}</td>`).join('')}</tr>`).join('')}</tbody>${s.rodape ? `<tfoot><tr>${s.rodape.map((c, j) => `<td class="${r(j)}">${esc(celTxt(c))}</td>`).join('')}</tr></tfoot>` : ''}</table></div>${s.linhas.length > 500 ? `<div class="small mut">Mostrando 500 de ${qtd(s.linhas.length)}. O PDF e a planilha trazem todas.</div>` : ''}`;
+  return `${k ? `<h3 style="margin-top:16px">${esc(s.titulo)}</h3>` : ''}<div class="tw"><table><thead><tr>${s.cab.map((h, i) => `<th class="${r(i)}">${esc(h)}</th>`).join('')}</tr></thead><tbody>${s.linhas.slice(0, 500).map((l, i) => `<tr ${cpfs[i] ? `class="clicavel" data-pes="${cpfs[i]}" data-c="${COMP}"` : ''}>${l.map((c, j) => `<td class="${r(j)} ${c && typeof c === 'object' && c.c ? c.c : ''}">${c && typeof c === 'object' && c.html ? c.html : c && typeof c === 'object' && c.c ? '<b>' + esc(celTxt(c)) + '</b>' : esc(celTxt(c))}</td>`).join('')}</tr>`).join('')}</tbody>${s.rodape ? `<tfoot><tr>${s.rodape.map((c, j) => `<td class="${r(j)}">${esc(celTxt(c))}</td>`).join('')}</tr></tfoot>` : ''}</table></div>${s.linhas.length > 500 ? `<div class="small mut">Mostrando 500 de ${qtd(s.linhas.length)}. O PDF e a planilha trazem todas.</div>` : ''}`;
 }
 // célula da planilha: valor em reais V() = {t, n} vira número (antes saía vazio); texto com número nas colunas da direita também
-const celXLSX = (c, i, direita) => c && typeof c === 'object' && 'n' in c ? c.n : (direita || []).includes(i) && typeof c === 'string' && /\d/.test(c) ? numero(c) : c;
+const celXLSX = (c, i, direita) => c && typeof c === 'object' && 'n' in c ? c.n : c && typeof c === 'object' ? c.t : (direita || []).includes(i) && typeof c === 'string' && /\d/.test(c) ? numero(c) : c;
 function excelDrill() {
   if (!DRILL) return; const wb = XLSX.utils.book_new();
   // uma aba por tabela (a 1ª é a lista do card; o Conferente traz também as prestações que formam o total)
@@ -3024,11 +3069,13 @@ function exportar() {
 
 /* ---------- cliques ---------- */
 document.body.addEventListener('click', e => {
-  const t = e.target.closest('[data-decidir],[data-tratar],[data-pes],[data-fechar],[data-reabrir],[data-excluir],[data-usar],[data-ircomp],[data-pdfpes],[data-imppes],[data-datapag],[data-pdfaba],[data-impaba]'); if (!t) return;
+  const t = e.target.closest('[data-decidir],[data-decidirnd],[data-reverdec],[data-tratar],[data-pes],[data-fechar],[data-reabrir],[data-excluir],[data-usar],[data-ircomp],[data-pdfpes],[data-imppes],[data-datapag],[data-pdfaba],[data-impaba]'); if (!t) return;
   if (t.dataset.datapag) return dataPagamento(+t.dataset.datapag);
   if (t.dataset.pdfaba) return relatorioAba(t.dataset.pdfaba, 'pdf');
   if (t.dataset.impaba) return relatorioAba(t.dataset.impaba, 'imprimir');
   if (t.dataset.decidir) { e.stopPropagation(); return decidirEx(t.dataset.decidir); }
+  if (t.dataset.decidirnd) { e.stopPropagation(); return decidirND(t.dataset.decidirnd); }
+  if (t.dataset.reverdec) { e.stopPropagation(); return decidirND(null, t.dataset.reverdec); }
   if (t.dataset.tratar) return tratar(t.dataset.tratar);
   if (t.dataset.fechar) return fecharComp(t.dataset.fechar);
   if (t.dataset.reabrir) return reabrir(t.dataset.reabrir);
