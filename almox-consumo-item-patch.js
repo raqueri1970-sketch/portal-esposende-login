@@ -260,18 +260,31 @@
     var termo=document.getElementById('aci-q').value,gerado=new Date().toLocaleString('pt-BR');
     var NAVY='FF14284A';
     function aba(nome,titulo,grupos,col,comValor){
-      var ws=wb.addWorksheet(nome,{views:[{state:'frozen',ySplit:6}],pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9}});
+      var ws=wb.addWorksheet(nome,{views:[{state:'frozen',ySplit:7,showGridLines:false}],pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9}});
       var ncol=1+u.meses.length+(comValor?3:2);
       ws.getColumn(1).width=42;for(var c=2;c<=ncol;c++)ws.getColumn(c).width=13;
       ws.getRow(1).height=24;ws.getRow(2).height=18;ws.getRow(3).height=18;
-      ws.addImage(logoId,{tl:{col:0,row:0},ext:{width:220,height:60}});
+      ws.addImage(logoId,{tl:{col:0.1,row:0.2},ext:{width:220,height:60}});
       ws.getCell('B1').value='Almoxarifado — Consumo por Item';ws.getCell('B1').font={bold:true,size:15,color:{argb:NAVY}};
       ws.getCell('B2').value=titulo+' · busca: '+termo;ws.getCell('B2').font={size:10,color:{argb:'FF555555'}};
       ws.getCell('B3').value='Gerado em '+gerado;ws.getCell('B3').font={size:9,color:{argb:'FF777777'}};
-      ws.getCell('B4').value='Total: '+Math.round(u.totQ).toLocaleString('pt-BR')+' un. · Média mensal: '+Math.round(u.totMed/u.div).toLocaleString('pt-BR')+' un./mês · Custo total: '+brl(u.totV);
-      ws.getCell('B4').font={bold:true,size:10};
+      // Cards de valores (linhas 4 e 5)
+      var atualX=mesKey(new Date()),custoF=0;u.meses.forEach(function(m){if(m<atualX&&u.totM[m])custoF+=u.totM[m].v;});
+      if(!u.meses.some(function(m){return m<atualX;}))custoF=u.totV;
+      var kp=[['CONSUMO TOTAL',Math.round(u.totQ),'#,##0" un."','FF14284A'],['MÉDIA MENSAL',Math.round(u.totMed/u.div),'#,##0" un./mês"','FF0E7C66'],['CUSTO TOTAL',u.totV,'"R$" #,##0.00','FFB45309'],['CUSTO MÉDIO/MÊS',custoF/u.div,'"R$" #,##0.00','FF7C3AED'],['LOJAS',u.porLoja.length,'0','FFBE123C']];
+      ws.getRow(4).height=16;ws.getRow(5).height=26;
+      kp.forEach(function(k,ix){
+        var c1=2+ix*2,c2=c1+1;
+        ws.mergeCells(4,c1,4,c2);ws.mergeCells(5,c1,5,c2);
+        var a=ws.getCell(4,c1),b=ws.getCell(5,c1);
+        a.value=k[0];a.font={bold:true,size:8,color:{argb:'FF5B6B80'}};
+        b.value=k[1];b.numFmt=k[2];b.font={bold:true,size:14,color:{argb:k[3]}};
+        [a,b].forEach(function(c){c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF3F6FA'}};c.alignment={horizontal:'left',vertical:'middle',indent:1};});
+        a.border={top:{style:'thick',color:{argb:k[3]}},left:{style:'thin',color:{argb:'FFD9E1EC'}},right:{style:'thin',color:{argb:'FFD9E1EC'}}};
+        b.border={bottom:{style:'thin',color:{argb:'FFD9E1EC'}},left:{style:'thin',color:{argb:'FFD9E1EC'}},right:{style:'thin',color:{argb:'FFD9E1EC'}}};
+      });
       var cab=[col].concat(u.meses.map(mesLabel)).concat(comValor?['TOTAL QTD','TOTAL R$','MÉDIA/MÊS']:['TOTAL','MÉDIA/MÊS']);
-      var hr=ws.getRow(6);hr.values=cab;hr.height=20;
+      var hr=ws.getRow(7);hr.values=cab;hr.height=20;
       hr.eachCell(function(cell){cell.font={bold:true,color:{argb:'FFFFFFFF'}};cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:NAVY}};cell.alignment={horizontal:'center',vertical:'middle'};});
       function linha(nome,meses,qtd,custo,med,tot){
         var vals=[nome].concat(u.meses.map(function(m){return meses[m]?meses[m].q:null;})).concat(comValor?[qtd,custo,med]:[qtd,med]);
@@ -279,6 +292,8 @@
         for(var c=2;c<=ncol;c++)r.getCell(c).numFmt='#,##0';
         if(comValor)r.getCell(ncol-1).numFmt='"R$" #,##0.00';
         r.getCell(ncol).numFmt='#,##0.0';
+        if(!tot&&r.number%2===0)r.eachCell({includeEmpty:true},function(cell){cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF8FAFC'}};});
+        r.eachCell({includeEmpty:true},function(cell){cell.border={bottom:{style:'hair',color:{argb:'FFD9E1EC'}}};});
         if(tot)r.eachCell(function(cell){cell.font={bold:true};cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFEEF2F7'}};});
       }
       grupos.forEach(function(g){linha(g.nome,g.meses,g.qtd,g.custo,g.qMed/u.div,false);});
@@ -319,19 +334,63 @@
     if(!ultimo){alert('Faça uma busca primeiro.');return;}
     var w=window.open('','_blank');
     if(!w){alert('Libere pop-ups para imprimir.');return;}
-    var css='@page{size:A4 landscape;margin:10mm}body{font-family:Arial,sans-serif;color:#111;margin:20px}h2{margin:0 0 4px}p{color:#555;margin:0 0 12px;font-size:12px}h3{font-size:14px;margin:18px 0 6px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#14284a;color:#fff;padding:6px;text-align:right}th:first-child,td:first-child{text-align:left}td{padding:5px 6px;border-bottom:1px solid #ddd;text-align:right}td small{display:block;color:#666}tr.aci-tot td{font-weight:bold;background:#eef2f7}tr{page-break-inside:avoid}#k{font-size:13px;margin:8px 0}.cab{display:flex;align-items:center;gap:16px;border-bottom:3px solid #14284a;padding-bottom:10px;margin-bottom:10px}.cab img{height:56px;width:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}.cab h2{color:#14284a}'
-      +'#barra{position:sticky;top:0;background:#0b1626;padding:10px 14px;margin:-20px -20px 16px;display:flex;gap:10px;align-items:center;z-index:5}#barra button{background:#0e7c66;color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer}#barra button.sec{background:#15304d}#barra span{color:#8ca4bf;font-size:12px}'
-      +'@media print{#barra{display:none}body{margin:0}th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}';
-    var k=document.getElementById('aci-kpi').innerText.replace(/\n+/g,' · ');
-    var nome='consumo_por_item_'+new Date().toISOString().slice(0,10)+'.pdf';
-    var js='function salvarPDF(){var b=document.getElementById("bpdf");b.textContent="Gerando PDF...";b.disabled=true;'
-      +'function go(){var el=document.getElementById("doc");html2pdf().set({margin:8,filename:"'+nome+'",image:{type:"jpeg",quality:0.95},html2canvas:{scale:2},jsPDF:{unit:"mm",format:"a4",orientation:"landscape"},pagebreak:{mode:["css","legacy"],avoid:"tr"}}).from(el).save().then(function(){b.textContent="📄 Salvar PDF";b.disabled=false;});}'
+    var u=ultimo,atual=mesKey(new Date());
+    var custoFech=0;u.meses.forEach(function(m){if(m<atual&&u.totM[m])custoFech+=u.totM[m].v;});
+    if(!u.meses.some(function(m){return m<atual;}))custoFech=u.totV;
+    var de=u.meses.length?mesLabel(u.meses[0]):'',ate=u.meses.length?mesLabel(u.meses[u.meses.length-1]):'';
+    function card(cor,rot,val,sub){return '<div class="kc" style="border-top-color:'+cor+'"><span>'+rot+'</span><b style="color:'+cor+'">'+val+'</b>'+(sub?'<small>'+sub+'</small>':'')+'</div>';}
+    var cards=card('#14284a','Consumo total no período',n0(u.totQ)+' un.',de+' a '+ate)
+      +card('#0e7c66','Média mensal',n0(u.totMed/u.div)+' un./mês',u.div+(u.div>1?' meses fechados':' mês'))
+      +card('#b45309','Custo total',brl(u.totV),'no período')
+      +card('#7c3aed','Custo médio mensal',brl(custoFech/u.div),'meses fechados')
+      +card('#be123c','Lojas que pediram',String(u.porLoja.length),u.loja?esc(u.loja):'');
+    var itensCards='';
+    if(u.porItem.length>1&&u.porItem.length<=6){
+      itensCards='<div class="sec">Resumo por item</div><div class="ic">'+u.porItem.map(function(g){
+        var pct=u.totQ?Math.round(g.qtd/u.totQ*100):0;
+        return '<div class="icard"><div class="in">'+esc(g.nome)+'</div><div class="iv"><div><span>Quantidade</span><b>'+n0(g.qtd)+'</b></div><div><span>Custo</span><b>'+brl(g.custo)+'</b></div><div><span>Média/mês</span><b>'+n1(g.qMed/u.div)+'</b></div></div><div class="bar"><i style="width:'+pct+'%"></i></div><small>'+pct+'% do consumo</small></div>';
+      }).join('')+'</div>';
+    }
+    function tabela(titulo,grupos,comValor,col){
+      var maxQ=0;grupos.forEach(function(g){u.meses.forEach(function(m){if(g.meses[m]&&g.meses[m].q>maxQ)maxQ=g.meses[m].q;});});
+      var h='<div class="sec">'+titulo+'</div><table><thead><tr><th>'+col+'</th>'+u.meses.map(function(m){return '<th>'+mesLabel(m)+(m>=atual?'*':'')+'</th>';}).join('')+'<th class="t">Total</th><th class="t">Média/mês</th></tr></thead><tbody>';
+      grupos.forEach(function(g){
+        h+='<tr><td class="nm">'+esc(g.nome)+'</td>'+u.meses.map(function(m){var c=g.meses[m];if(!c)return '<td class="z">—</td>';return '<td>'+n0(c.q)+(comValor?'<small>'+brl(c.v)+'</small>':'')+'</td>';}).join('')
+          +'<td class="t"><b>'+n0(g.qtd)+'</b>'+(comValor?'<small>'+brl(g.custo)+'</small>':'')+'</td><td class="t md">'+n1(g.qMed/u.div)+'</td></tr>';
+      });
+      h+='<tr class="tt"><td class="nm">TOTAL</td>'+u.meses.map(function(m){var c=u.totM[m];return '<td>'+(c?n0(c.q)+(comValor?'<small>'+brl(c.v)+'</small>':''):'—')+'</td>';}).join('')
+        +'<td class="t">'+n0(u.totQ)+(comValor?'<small>'+brl(u.totV)+'</small>':'')+'</td><td class="t md">'+n1(u.totMed/u.div)+'</td></tr></tbody></table>';
+      return h;
+    }
+    var corpo=tabela('Consumo mensal por item',u.porItem,true,'Item');
+    if(!u.loja)corpo+=tabela('Consumo por loja (soma dos itens marcados)',u.porLoja,false,'Loja');
+    var css='@page{size:A4 landscape;margin:9mm}*{box-sizing:border-box}body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#1b2533;margin:0;background:#eef2f7}'
+      +'#doc{background:#fff;max-width:1400px;margin:18px auto;padding:22px 26px;border-radius:12px;box-shadow:0 4px 18px rgba(20,40,74,.12)}'
+      +'.cab{display:flex;align-items:center;gap:18px;padding-bottom:14px;border-bottom:3px solid #14284a}.cab img{height:58px;border-radius:6px}.cab .tt1{flex:1}.cab h1{margin:0;font-size:22px;color:#14284a}.cab p{margin:3px 0 0;color:#5b6b80;font-size:12px}'
+      +'.tag{background:#14284a;color:#fff;font-size:11px;font-weight:700;padding:6px 12px;border-radius:20px;letter-spacing:.05em}'
+      +'.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:16px 0 6px}.kc{background:#f7f9fc;border:1px solid #e1e7ef;border-top:4px solid;border-radius:10px;padding:12px 14px}.kc span{display:block;font-size:10px;font-weight:700;color:#5b6b80;text-transform:uppercase;letter-spacing:.04em}.kc b{display:block;font-size:21px;margin-top:4px}.kc small{display:block;color:#8091a7;font-size:10.5px;margin-top:2px}'
+      +'.sec{font-size:14px;font-weight:800;color:#14284a;margin:20px 0 8px;padding-left:10px;border-left:4px solid #0e7c66}'
+      +'.ic{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.icard{border:1px solid #e1e7ef;border-radius:10px;padding:12px 14px;background:#fff}.in{font-weight:800;font-size:12.5px;color:#14284a;margin-bottom:8px}.iv{display:flex;justify-content:space-between;gap:8px}.iv span{display:block;font-size:9.5px;color:#8091a7;text-transform:uppercase;font-weight:700}.iv b{font-size:14px}.bar{height:6px;background:#e8edf4;border-radius:4px;margin-top:10px;overflow:hidden}.bar i{display:block;height:100%;background:#0e7c66}.icard small{color:#8091a7;font-size:10px}'
+      +'table{width:100%;border-collapse:separate;border-spacing:0;font-size:10.5px;border:1px solid #d9e1ec;border-radius:10px;overflow:hidden}'
+      +'th{background:#14284a;color:#fff;padding:8px 6px;text-align:right;font-size:10px;letter-spacing:.03em;text-transform:uppercase}th:first-child{text-align:left;padding-left:10px}'
+      +'td{padding:6px;text-align:right;border-bottom:1px solid #eef2f7}td.nm{text-align:left;padding-left:10px;font-weight:600;color:#1b2533}td small{display:block;color:#7a8aa0;font-size:9px}td.z{color:#c3ccd8}'
+      +'tbody tr:nth-child(even) td{background:#f8fafc}th.t,td.t{background:#eef3fa}th.t{background:#0f2342}td.md{color:#0e7c66;font-weight:800}'
+      +'tr.tt td{background:#dfe8f4!important;font-weight:800;color:#14284a;border-top:2px solid #14284a}tr{page-break-inside:avoid}thead{display:table-header-group}'
+      +'.nota{color:#8091a7;font-size:10px;margin-top:8px}.rod{display:flex;justify-content:space-between;color:#8091a7;font-size:10px;margin-top:18px;padding-top:8px;border-top:1px solid #e1e7ef}'
+      +'#barra{position:sticky;top:0;background:#0b1626;padding:10px 14px;display:flex;gap:10px;align-items:center;z-index:5}#barra button{background:#0e7c66;color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer}#barra button.sec2{background:#15304d}#barra span{color:#8ca4bf;font-size:12px}'
+      +'@media print{#barra{display:none}body{background:#fff}#doc{box-shadow:none;margin:0;padding:0;max-width:none;border-radius:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}';
+    var nome='Esposende_consumo_por_item_'+new Date().toISOString().slice(0,10)+'.pdf';
+    var js='function salvarPDF(){var b=document.getElementById("bpdf");b.textContent="Gerando PDF...";b.disabled=true;var d=document.getElementById("doc");'
+      +'function go(){var st=d.getAttribute("style")||"";d.style.cssText="margin:0;box-shadow:none;border-radius:0;max-width:none";html2pdf().set({margin:7,filename:"'+nome+'",image:{type:"jpeg",quality:0.95},html2canvas:{scale:2,backgroundColor:"#ffffff"},jsPDF:{unit:"mm",format:"a4",orientation:"landscape"},pagebreak:{mode:["css","legacy"],avoid:["tr",".kc",".icard"]}}).from(d).save().then(function(){d.setAttribute("style",st);b.textContent="📄 Salvar PDF";b.disabled=false;});}'
       +'if(window.html2pdf)return go();var s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js";s.onload=go;'
       +'s.onerror=function(){b.textContent="📄 Salvar PDF";b.disabled=false;alert("Não consegui gerar o PDF direto. Use Imprimir e escolha Salvar como PDF.");window.print();};document.head.appendChild(s);}';
-    w.document.write('<html><head><meta charset="utf-8"><title>Consumo por Item</title><style>'+css+'</style></head><body>'
-      +'<div id="barra"><button onclick="window.print()">🖨 Imprimir</button><button id="bpdf" class="sec" onclick="salvarPDF()">📄 Salvar PDF</button><button class="sec" onclick="window.close()">✕ Fechar</button><span>A folha sai na horizontal (A4).</span></div>'
-      +'<div id="doc"><div class="cab"><img src="data:image/jpeg;base64,'+LOGO_B64+'" alt="Esposende"><div><h2>Almoxarifado — Consumo por Item</h2><p>'+esc(document.getElementById('aci-q').value)+' · '+esc(ultimo.onde)+' · Gerado em '+new Date().toLocaleString('pt-BR')+'</p></div></div><div id="k">'+esc(k)+'</div>'+document.getElementById('aci-res').innerHTML.replace(/class="aci-wrap"/g,'')+'</div>'
-      +'<scr'+'ipt>'+js+(pdf?'setTimeout(salvarPDF,300);':'setTimeout(function(){window.print()},400);')+'</scr'+'ipt></body></html>');
+    w.document.write('<html><head><meta charset="utf-8"><title>Esposende · Consumo por Item</title><style>'+css+'</style></head><body>'
+      +'<div id="barra"><button onclick="window.print()">🖨 Imprimir</button><button id="bpdf" class="sec2" onclick="salvarPDF()">📄 Salvar PDF</button><button class="sec2" onclick="window.close()">✕ Fechar</button><span>A folha sai na horizontal (A4).</span></div>'
+      +'<div id="doc"><div class="cab"><img src="data:image/jpeg;base64,'+LOGO_B64+'" alt="Esposende"><div class="tt1"><h1>Almoxarifado — Consumo por Item</h1><p>Busca: <b>'+esc(document.getElementById('aci-q').value)+'</b> · '+esc(u.onde)+' · Período: '+de+' a '+ate+'</p></div><span class="tag">AUDITORIA &amp; CONTROLE</span></div>'
+      +'<div class="kpis">'+cards+'</div>'+itensCards+corpo
+      +(u.meses.some(function(m){return m>=atual;})?'<div class="nota">* mês em andamento — aparece na tabela, mas não entra na média mensal.</div>':'')
+      +'<div class="rod"><span>Esposende · Central de Auditoria &amp; Controle</span><span>Gerado em '+new Date().toLocaleString('pt-BR')+'</span></div></div>'
+      +'<scr'+'ipt>'+js+(pdf?'setTimeout(salvarPDF,300);':'setTimeout(function(){window.print()},500);')+'</scr'+'ipt></body></html>');
     w.document.close();
   }
 
