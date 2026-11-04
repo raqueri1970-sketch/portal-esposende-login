@@ -59,8 +59,8 @@
         item:limpa(r['Insumo']),
         codigo:limpa(r['Código']),
         qtd:Number(r['Qtd Atendida'])||0,
-        custo:Number(r['Custo Atendido'])||0,
-        custoNovo:(function(){var u=unitProposta(r['Código']);return u==null?(Number(r['Custo Atendido'])||0):(Number(r['Qtd Atendida'])||0)*u;})(),
+        custo:Number(r.__custoSeta!=null?r.__custoSeta:r['Custo Atendido'])||0,
+        custoNovo:(function(){var u=unitProposta(r['Código']);return u==null?(Number(r['Custo Atendido'])||0):Math.round((Number(r['Qtd Atendida'])||0)*u*100)/100;})(),
         temProposta:unitProposta(r['Código'])!=null
       });
     });
@@ -112,7 +112,7 @@
       +'<div><label>Regional</label><select id="aci-reg"></select></div>'
       +'<div><label>De (mês)</label><input type="month" id="aci-de"></div>'
       +'<div><label>Até (mês)</label><input type="month" id="aci-ate"></div>'
-      +'<div><label>Custo usado</label><select id="aci-base"><option value="prop">Proposta Sulnove 0,004 + DIFAL 13,5%</option><option value="atual">Custo atual do almoxarifado</option></select></div>'
+      +'<div><label>Custo usado</label><select id="aci-base"><option value="prop">Custo real (Sulnove 0,004 + DIFAL 13,5%)</option><option value="atual">Custo antigo do Seta</option></select></div>'
       +'</div>'
       +'<div id="aci-itens"><span style="color:#8ca4bf">Digite acima para encontrar os itens.</span></div>'
       +'<div id="aci-kpi"></div><div id="aci-res"></div></div>';
@@ -216,8 +216,8 @@
     sel.forEach(function(l){totQ+=l.qtd;totV+=V(l);totAtual+=l.custo;if(l.temProposta)nProp++;if(!fechados.length||l.mes<atual)totMed+=l.qtd;var c=totM[l.mes]=totM[l.mes]||{q:0,v:0};c.q+=l.qtd;c.v+=V(l);});
     kpi.innerHTML='<div><span>CONSUMO TOTAL NO PERÍODO</span><b>'+n0(totQ)+' un.</b></div>'
       +'<div><span>MÉDIA MENSAL ('+div+' '+(div>1?'meses fechados':'mês')+')</span><b style="color:#5fd3b8">'+n0(totMed/div)+' un./mês</b></div>'
-      +'<div><span>CUSTO TOTAL '+(base==='prop'?'(PROPOSTA + DIFAL)':'(ATUAL)')+'</span><b>'+brl(totV)+'</b>'
-        +(base==='prop'&&nProp?'<small style="display:block;color:#8ca4bf;font-size:11px;margin-top:3px">Custo atual: '+brl(totAtual)+' · diferença '+(totV-totAtual>=0?'+':'−')+brl(Math.abs(totV-totAtual))+(totAtual?' ('+((totV/totAtual-1)*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%)':'')+'</small>':'')+'</div>'
+      +'<div><span>CUSTO TOTAL '+(base==='prop'?'(CUSTO REAL)':'(CUSTO ANTIGO SETA)')+'</span><b>'+brl(totV)+'</b>'
+        +(base==='prop'&&nProp?'<small style="display:block;color:#8ca4bf;font-size:11px;margin-top:3px">Custo antigo Seta: '+brl(totAtual)+' · diferença '+(totV-totAtual>=0?'+':'−')+brl(Math.abs(totV-totAtual))+(totAtual?' ('+((totV/totAtual-1)*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%)':'')+'</small>':'')+'</div>'
       +'<div><span>LOJAS QUE PEDIRAM</span><b>'+porLoja.length+'</b></div>';
     if(!sel.length){res.innerHTML='<div class="aci-vazio">Nenhum consumo desse(s) item(ns) no período/loja escolhidos.</div>';ultimo=null;return;}
     function tabela(titulo,grupos,comValor){
@@ -232,7 +232,7 @@
       return h;
     }
     var onde=loja?loja:(reg?'Regional '+reg:'todas as lojas');
-    var html=tabela('Consumo mensal por item — '+esc(onde)+(base==='prop'?' · custo da proposta + DIFAL':' · custo atual'),porItem,true);
+    var html=tabela('Consumo mensal por item — '+esc(onde)+(base==='prop'?' · custo real (Sulnove + DIFAL)':' · custo antigo Seta'),porItem,true);
     if(!loja)html+=tabela('Consumo por loja (soma dos itens marcados) — '+esc(onde),porLoja,false);
     if(base==='prop'){
       var usados=Object.keys(PROPOSTA).filter(function(c){return sel.some(function(l){return l.codigo===c;});});
@@ -299,6 +299,53 @@
     if(ref&&ref.parentElement){ref.parentElement.insertBefore(btn,ref);btn.style.marginLeft='0';btn.style.marginRight='8px';}
     else{btn.style.cssText+=';position:fixed;right:18px;bottom:60px;z-index:99999;box-shadow:0 6px 20px rgba(0,0,0,.5)';doc.body.appendChild(btn);}
   }
+  // ---------- Custo real no módulo Almoxarifado ----------
+  // Troca, na tela do módulo, o custo das embalagens de presente pelo custo real
+  // (Sulnove 0,004 + DIFAL). O valor original do Seta fica em __custoSeta/__custoUnitSeta
+  // e é o que continua sendo gravado na nuvem (montarPayloadAtual devolve os originais).
+  function ajustarCustos(w){
+    var mudou=false;
+    try{
+      var cons=w.eval("typeof dbConsumoRaw!=='undefined'?dbConsumoRaw:[]")||[];
+      for(var i=0;i<cons.length;i++){
+        var r=cons[i],u=unitProposta(r['Código']);if(u==null)continue;
+        if(r.__custoSeta==null){r.__custoSeta=r['Custo Atendido'];mudou=true;}
+        r['Custo Atendido']=Math.round((Number(r['Qtd Atendida'])||0)*u*100)/100;
+      }
+      var est=w.eval("typeof dbEstoqueRaw!=='undefined'?dbEstoqueRaw:[]")||[];
+      for(var j=0;j<est.length;j++){
+        var e=est[j],ue=unitProposta(e['Código']);if(ue==null)continue;
+        if(e.__custoUnitSeta==null){e.__custoUnitSeta=e['Custo Unitário'];mudou=true;}
+        e['Custo Unitário']=Math.round(ue*10000)/10000;
+      }
+    }catch(err){console.error('[Almoxarifado] custo real:',err);}
+    return mudou;
+  }
+  function limparPayload(p){
+    if(!p||typeof p!=='object')return p;
+    if(Array.isArray(p.dbConsumoRaw))p.dbConsumoRaw=p.dbConsumoRaw.map(function(r){
+      if(r&&r.__custoSeta!=null){var c=Object.assign({},r);c['Custo Atendido']=c.__custoSeta;delete c.__custoSeta;return c;}return r;});
+    if(Array.isArray(p.dbEstoqueRaw))p.dbEstoqueRaw=p.dbEstoqueRaw.map(function(r){
+      if(r&&r.__custoUnitSeta!=null){var c=Object.assign({},r);c['Custo Unitário']=c.__custoUnitSeta;delete c.__custoUnitSeta;return c;}return r;});
+    return p;
+  }
+  function instalarCustoReal(){
+    var m=moduloAlm();if(!m)return;var w=m.w;
+    if(typeof w.calcularEAtualizarPainel!=='function'||typeof w.montarPayloadAtual!=='function')return;
+    if(!w.__custoRealVersao){
+      w.__custoRealVersao='2026-11-04.1';
+      var origPayload=w.montarPayloadAtual;
+      w.montarPayloadAtual=function(){return limparPayload(origPayload.apply(this,arguments));};
+      ['calcularEAtualizarPainel','atualizarVisaoGeral','atualizarPainelEstoque','aplicarFiltros','atualizarRelatorioConsolidado'].forEach(function(nome){
+        var f=w[nome];if(typeof f!=='function')return;
+        w[nome]=function(){ajustarCustos(w);return f.apply(this,arguments);};
+      });
+    }
+    // Dados novos (upload ou nuvem) chegam com o custo do Seta: ajusta e redesenha.
+    if(ajustarCustos(w)){try{w.aplicarFiltros();}catch(e){try{w.calcularEAtualizarPainel();}catch(e2){}}}
+  }
+  setInterval(instalarCustoReal,1500);
+
   setInterval(instalarBotao,1500);
   new MutationObserver(function(){instalarBotao();}).observe(document.documentElement,{childList:true,subtree:true});
   window.abrirConsumoPorItem=abrir;
