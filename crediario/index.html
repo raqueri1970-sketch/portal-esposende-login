@@ -2102,11 +2102,14 @@ const CAB_CEL = ['Funcionário', 'CPF', 'Matrícula', 'Loja', 'Prestações', 'D
 const linhaCel = l => { const p = R.pessoas.get(l.cpf); return [p.nome, cpfF(l.cpf), p.cad ? p.cad.matricula || '' : '', p.cad ? p.cad.loja || '' : (p.ex ? 'EX-FUNCIONÁRIO' : 'FORA DO CADASTRO'), l.parcelas.length, V(l.devido), l.st === 'prev' ? '-' : V(l.desc), l.st === 'prev' ? '' : V(l.dif), STAT[l.st][0]]; };
 // o relatório mostra a conta da rescisão: saldo na saída − descontado na rescisão = em aberto (30/10/2026: sem as duas colunas,
 // parecia que o desconto da rescisão não tinha sido considerado)
-const CAB_EX = ['Ex-funcionário', 'CPF', 'Saída', 'Saldo na saída', 'Descontado na rescisão', 'Resultado', 'Diferença', 'Observação'];
+const CAB_EX = ['Ex-funcionário', 'CPF', 'Saída', 'Saldo na saída', 'Descontado na rescisão', 'Resultado', 'Diferença', 'Observação', 'Decisão'];
 const linhaEx = o => { const r = resEx(o), cor = RES_EX[r.res][1];
-  return [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), V(o.saldo), o.folhaResc ? V(o.descResc) : '—', {t: RES_EX[r.res][0], c: cor}, r.res === 'perda' ? {t: '− ' + nfm(r.valor), c: cor} : r.res === 'ganho' || r.res === 'conferir' ? {t: r.sinal + ' ' + nfm(r.valor), c: cor} : '', r.obs]; };
+  return [o.pe.nome, cpfF(o.pe.cpf), dataBR(o.d.saida), V(o.saldo), o.folhaResc ? V(o.descResc) : '—', {t: RES_EX[r.res][0], c: cor}, r.res === 'perda' ? {t: '− ' + nfm(r.valor), c: cor} : r.res === 'ganho' || r.res === 'conferir' ? {t: r.sinal + ' ' + nfm(r.valor), c: cor} : '', r.obs, celDecEx(o, r)]; };
+// botão Decidir na linha (por CPF); no PDF/planilha sai o texto da decisão
+const celDecEx = (o, r) => { const dd = decEx(o); if (r.res === 'ok' && !dd) return '';
+  return {t: dd ? DEC[dd.decisao][0] : 'Sem decisão', html: `${dd ? decChip(dd) + '<br>' : ''}<button class="btn small" data-decidir="${o.pe.cpf}">${dd && DEC_FINAL.has(dd.decisao) ? 'Rever' : 'Decidir'}</button>`}; };
 const rodapeEx = ls => { const t = totEx(ls); return ['Total', `${ls.length} ex-funcionário(s)`, '', V(ls.reduce((a, o) => a + o.saldo, 0)), V(ls.reduce((a, o) => a + (o.folhaResc ? o.descResc : 0), 0)),
-  `Perda ${t.nP} · Ganho ${t.nG} · A conferir ${t.nC} · Aguardando ${t.nA}`, `Perda − ${nfm(t.perda)} · Ganho + ${nfm(t.ganho)} · Líquido ${t.liq < 0 ? '− ' : '+ '}${nfm(Math.abs(t.liq))}`, [t.nC ? `${t.nC} a conferir (${nfm(t.conf)} — fora do líquido)` : '', t.nA ? `${t.nA} aguardando a folha da rescisão (saldo ${nfm(t.sA)})` : ''].filter(Boolean).join(' · ')]; };
+  `Perda ${t.nP} · Ganho ${t.nG} · A conferir ${t.nC} · Aguardando ${t.nA}`, `Perda − ${nfm(t.perda)} · Ganho + ${nfm(t.ganho)} · Líquido ${t.liq < 0 ? '− ' : '+ '}${nfm(Math.abs(t.liq))}`, [t.nC ? `${t.nC} a conferir (${nfm(t.conf)} — fora do líquido)` : '', t.nA ? `${t.nA} aguardando a folha da rescisão (saldo ${nfm(t.sA)})` : ''].filter(Boolean).join(' · '), '']; };
 function lista(titulo, sub, cab, objs, linha, cpf, direita, total) {
   const linhas = objs.map(linha);
   return {titulo, subtitulo: sub, marca: MARCA, paisagem: true, arquivo: titulo.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '_').slice(0, 60) + '_' + hojeISO(),
