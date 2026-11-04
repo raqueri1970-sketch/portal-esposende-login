@@ -153,6 +153,7 @@
     <button data-aba="fluxo">Fluxo de caixa</button>
     <button data-aba="ex">Ex-funcionários <span id="nEx"></span></button>
     <button data-aba="fora">Fora do cadastro <span id="nFora"></span></button>
+    <button data-aba="dec">Decisões <span id="nDec"></span></button>
     <button data-aba="rel">Relatórios e PDF</button>
     <button data-aba="arq">Arquivos do mês</button>
   </div>
@@ -234,13 +235,31 @@
     <div class="card" style="margin-top:14px">
       <div class="busca">
         <input id="eBusca" placeholder="Buscar nome, CPF, matrícula, cargo ou empresa">
-        <select id="eSt"><option value="">Todos os ex-funcionários com crediário</option><option value="aberto">Só com débito em aberto</option><option value="verif">Só a verificar (base incompleta)</option><option value="folha">Só descontados na folha depois da saída</option><option value="quitado">Só quitados</option></select>
+        <select id="eSt"><option value="">Todos os ex-funcionários com crediário</option><option value="aberto">Só com débito em aberto</option><option value="verif">Só a verificar (base incompleta)</option><option value="decididos">Já decididos (saíram do relatório)</option><option value="folha">Só descontados na folha depois da saída</option><option value="quitado">Só quitados</option></select>
       </div>
       <div class="small mut">Saída e natureza vêm do relatório de desligados. Saldo na saída = parcelas da folha do mês da saída em diante, que tinham de sair na rescisão; Desc. na rescisão = verba 1260 da folha desse mês. Débito em aberto = o que a rescisão não cobriu (sem a folha da rescisão importada, o saldo inteiro). Clique no nome para ver o extrato.</div>
       <div class="tw" id="tEx"></div>
     </div>
     <h2>Readmitidos (desligados que voltaram e estão no cadastro de ativos)</h2>
     <div class="card tw" id="tReadm"></div>
+  </section>
+
+  <!-- DECISÕES DA AUDITORIA -->
+  <section id="a-dec" class="hidden">
+    <div class="regra">Registro das decisões da auditoria. Ao decidir um caso (Procede, Já recuperado, Não procede ou Valor ajustado), ele sai dos relatórios em aberto e fica gravado aqui com os valores do dia da decisão: novas importações não mudam o que já foi decidido. "Em análise" marca o caso, mas ele continua nos relatórios. As tratativas das pendências também aparecem aqui.</div>
+    <div class="grid kp4" id="decKpis"></div>
+    <div class="card" style="margin-top:14px">
+      <div class="busca">
+        <input id="dqBusca" placeholder="Buscar nome, CPF, motivo, compra (CE…), observação ou quem decidiu">
+        <select id="dqTipo"><option value="">Rescisões e pendências</option><option value="rescisao">Só rescisões (ex-funcionários)</option><option value="pendencia">Só pendências</option></select>
+        <select id="dqDec"><option value="">Todas as decisões</option></select>
+        <select id="dqDe" title="Mês de referência: de"></select>
+        <select id="dqAte" title="Mês de referência: até"></select>
+        <select id="dqAgr"><option value="mes">Relatório por mês de referência</option><option value="decisao">Relatório por decisão</option><option value="">Relatório em lista única</option></select>
+      </div>
+      <div class="row" style="gap:8px;margin:8px 0"><button class="btn b-pri" onclick="relDecisoes('pdf')">PDF</button><button class="btn" onclick="relDecisoes('imprimir')">Imprimir</button><button class="btn" onclick="relDecisoes('xlsx')">Planilha</button><span class="small mut" id="dqInfo"></span></div>
+      <div class="tw" id="tDec"></div>
+    </div>
   </section>
 
   <!-- FORA DO CADASTRO -->
@@ -484,8 +503,22 @@ async function carregarDados() {
     sel('cred_tratativas', '*', 'id'), sel('cred_fechamentos', '*', 'competencia'),
     todos(() => sb.from('cred_desligados').select('*').order('cpf').order('saida'))]);
   const verificacoes = await todos(() => sb.from('cred_verificacoes').select('*').order('id')).catch(e => { console.warn('[Desconto em folha] verificações:', e); return null; });
-  D = {arquivos, parcelas, funcionarios, folha, baixas, cfg: cfg || {regra: 'ciclo', corte: 20, tolerancia: 0.05}, tratativas, fechamentos, desligados, verificacoes};
+  const decisoes = await todos(() => sb.from('cred_decisoes').select('*').order('id')).catch(e => { console.warn('[Desconto em folha] decisões:', e); return []; });
+  D = {arquivos, parcelas, funcionarios, folha, baixas, cfg: cfg || {regra: 'ciclo', corte: 20, tolerancia: 0.05}, tratativas, fechamentos, desligados, verificacoes, decisoes};
+  montarDecisoes();
 }
+// decisões da auditoria: a mais recente de cada caso vale; decidido (não "em análise"/"reaberto") sai dos relatórios em aberto
+const DEC = {procede: ['Procede — cobrar', 'badt'], recuperado: ['Procede — já recuperado', 'okt'], nao_procede: ['Não procede', 'mut'], ajustado: ['Valor ajustado', 'wt'], analise: ['Em análise', 'wt'], reaberto: ['Reaberto', 'mut']};
+const DEC_FINAL = new Set(['procede', 'recuperado', 'nao_procede', 'ajustado']);
+let DECMAP = new Map(), DECCPF = new Map();
+function montarDecisoes() {
+  DECMAP = new Map(); (D.decisoes || []).forEach(d => DECMAP.set(d.chave, d));
+  DECCPF = new Map(); for (const d of DECMAP.values()) if (d.tipo === 'rescisao' && DEC_FINAL.has(d.decisao) && d.cpf) DECCPF.set(d.cpf, d);
+}
+const chaveEx = o => 'resc:' + o.pe.cpf + '|' + o.d.saida;
+const decEx = o => DECMAP.get(chaveEx(o));
+const decidido = o => { const d = decEx(o); return !!(d && DEC_FINAL.has(d.decisao)); };
+const decChip = d => d ? `<span class="st ${d.decisao === 'procede' ? 'st-alta' : d.decisao === 'recuperado' ? 'st-ok' : 'st-media'}" title="${esc((d.observacao || '') + ' — ' + quemCurto(d.usuario) + ' ' + dtBR(d.criado_em))}">${DEC[d.decisao][0]}</span>` : '';
 
 /* ---------- regra de competência ---------- */
 const cicloDe = (d, corte) => +d.slice(8, 10) > corte ? addMes(d.slice(0, 7), 1) : d.slice(0, 7);
@@ -512,7 +545,7 @@ const STAT = {
 const stChip = s => `<span class="st ${STAT[s][1]}">${STAT[s][0]}</span>`;
 const TRAT = {pendente: 'Pendente', cobrar: 'Cobrar do funcionário', devolver: 'Devolver ao funcionário', justificado: 'Justificado', resolvido: 'Resolvido'};
 const tratChip = t => t ? `<span class="st st-${t.status}" title="${esc((t.observacao || '') + ' — ' + quemCurto(t.usuario) + ' ' + dtBR(t.criado_em))}">${TRAT[t.status]}</span>` : '<span class="st st-pendente">Sem tratativa</span>';
-const encerrada = p => p.trat && ['justificado', 'resolvido'].includes(p.trat.status);
+const encerrada = p => !!(p.trat && ['justificado', 'resolvido'].includes(p.trat.status)) || !!(p.cpf && DECCPF.has(p.cpf));
 const GRAV = {alta: 0, media: 1, baixa: 2};
 const gravChip = g => `<span class="st st-${g}">${g === 'media' ? 'média' : g}</span>`;
 
@@ -1149,7 +1182,7 @@ function cruzar() {
    ===================================================================================================== */
 // ?modo=ex: módulo só de ex-funcionários e fora do cadastro (card próprio no Portal)
 const MODO = new URLSearchParams(location.search).get('modo') || '';
-const MODO_ABAS = MODO === 'ex' ? ['ex', 'fora', 'fluxo', 'rel', 'arq'] : null;
+const MODO_ABAS = MODO === 'ex' ? ['ex', 'fora', 'fluxo', 'dec', 'rel', 'arq'] : null;
 if (MODO_ABAS) {
   document.title = 'Ex-funcionários e fora do cadastro';
   document.querySelectorAll('#vApp h1').forEach(h => h.textContent = '🚪 Ex-funcionários e fora do cadastro · Crediário');
@@ -1163,7 +1196,7 @@ function irPara(aba) {
   document.querySelectorAll('#abas button').forEach(b => b.classList.toggle('on', b.dataset.aba === aba));
   document.querySelectorAll('section[id^="a-"]').forEach(s => s.classList.toggle('hidden', s.id !== 'a-' + aba));
   history.replaceState(null, '', '#' + aba);
-  if (R) ({painel: telaPainel, pend: telaPend, dup: telaDup, meses: telaMeses, func: telaFunc, ex: telaEx, fora: telaFora, fluxo: telaFluxo, rel: () => {}, arq: telaArquivos})[aba]();
+  if (R) ({painel: telaPainel, pend: telaPend, dup: telaDup, meses: telaMeses, func: telaFunc, ex: telaEx, fora: telaFora, fluxo: telaFluxo, dec: telaDec, rel: () => {}, arq: telaArquivos})[aba]();
 }
 $('abas').addEventListener('click', e => { const b = e.target.closest('button'); if (b) irPara(b.dataset.aba); });
 window.addEventListener('hashchange', () => { if (R) irPara(location.hash.replace('#', '')); });   // card "Ex-funcionários" do Portal abre #ex
@@ -1528,6 +1561,90 @@ async function salvarTratativa(id) {
   fecharModal(); toast('Tratativa gravada.'); await recarregar();
 }
 
+/* ---------- DECISÕES DA AUDITORIA ---------- */
+function decidirEx(cpf) {
+  const o = R.exs.find(x => x.pe.cpf === cpf); if (!o) return;
+  const r = resEx(o), dd = decEx(o), hist = (D.decisoes || []).filter(d => d.chave === chaveEx(o));
+  const sug = r.res === 'perda' ? 'procede' : r.res === 'ok' ? 'nao_procede' : 'analise';
+  abrirModal(`<h3>Decisão da auditoria — ${esc(o.pe.nome)}</h3>
+    <div class="small">${cpfF(cpf)} · saída ${dataBR(o.d.saida)}${o.d.natureza ? ' · ' + esc(o.d.natureza) : ''} · rescisão ${compBR(o.d.saida.slice(0, 7))}</div>
+    <div class="kv"><div><span>Saldo na saída</span>${brl(o.saldo)}</div><div><span>Descontado na rescisão</span>${o.folhaResc ? brl(o.descResc) : '—'}</div><div><span>Resultado apurado</span><b class="${RES_EX[r.res][1]}">${RES_EX[r.res][0]}${r.valor ? ' ' + (r.sinal === '−' || r.res === 'perda' ? '− ' : '+ ') + brl(r.valor) : ''}</b></div></div>
+    <div class="aviso">${esc(r.obs)}</div>
+    ${hist.length ? '<div class="small mut"><b>Histórico:</b><br>' + hist.slice().reverse().map(d => `${dtBR(d.criado_em)} · ${esc(quemCurto(d.usuario))} · <b>${DEC[d.decisao][0]}</b> ${d.valor_final != null ? brl(d.valor_final) : ''} ${esc(d.observacao || '')}`).join('<br>') + '</div>' : ''}
+    <label>Decisão</label><select id="dcDec">${Object.entries(DEC).filter(([k]) => k !== 'reaberto' || dd).map(([k, v]) => `<option value="${k}" ${(dd ? dd.decisao : sug) === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select>
+    <div class="small mut">Procede — cobrar: o valor é devido e vai ser cobrado · Já recuperado: já cobrado/acertado · Não procede: não é devido (explique) · Valor ajustado: devido, mas com outro valor · Em análise: marca e continua no relatório · Reaberto: volta para o relatório</div>
+    <label>Valor final (R$)</label><input id="dcVal" value="${nfm(dd && dd.valor_final != null ? dd.valor_final : r.valor)}">
+    <label>Observação (o que foi conferido, com quem, documento)</label><textarea id="dcObs" rows="3">${esc(dd && dd.observacao || '')}</textarea>
+    <div class="row"><button class="btn b-pri" id="bDec">Gravar decisão</button><button class="btn" onclick="fecharModal()">Cancelar</button></div>`);
+  $('bDec').onclick = () => salvarDecisao(cpf);
+}
+async function salvarDecisao(cpf) {
+  const o = R.exs.find(x => x.pe.cpf === cpf); if (!o) return; const r = resEx(o);
+  const decisao = $('dcDec').value, obs = $('dcObs').value.trim(), v = numero($('dcVal').value);
+  if (['nao_procede', 'ajustado', 'reaberto'].includes(decisao) && !obs) { toast('Escreva a justificativa na observação.'); return; }
+  const vf = decisao === 'nao_procede' ? 0 : isFinite(v) ? rd2(v) : r.valor;
+  const f = o.pe.cad || {};
+  const linha = {chave: chaveEx(o), tipo: 'rescisao', cpf, nome: o.pe.nome, matricula: o.d.matricula || f.matricula || null, loja: o.d.estab || f.loja || null, competencia: o.d.saida.slice(0, 7), saida: o.d.saida,
+    resultado: r.res, valor_apurado: r.res === 'ok' ? 0 : r.valor, decisao, valor_final: vf, motivo: r.obs, observacao: obs || null,
+    detalhe: {saldo: o.saldo, descontado_rescisao: o.folhaResc ? o.descResc : null, natureza: o.d.natureza || null, sinal: r.sinal, em_aberto: o.aberto, conta_corrente: o.led || null}};
+  const x = await sb.from('cred_decisoes').insert(linha);
+  if (x.error) { toast('Não gravou: ' + msgErro(x.error), 6000); return; }
+  fecharModal(); toast(DEC_FINAL.has(decisao) ? 'Decisão gravada — o caso saiu do relatório em aberto e está na aba Decisões.' : 'Gravado.'); await recarregar();
+}
+// linhas da aba: decisões das rescisões (a mais recente de cada caso) + tratativas das pendências (a mais recente de cada uma)
+function linhasDec() {
+  const out = [];
+  for (const d of DECMAP.values()) if (d.decisao !== 'reaberto') out.push({tipo: 'rescisao', quando: d.criado_em, comp: d.competencia || '', cpf: d.cpf, nome: d.nome || '', motivo: d.motivo || '', apurado: Number(d.valor_apurado || 0), final: Number(d.valor_final || 0), dec: d.decisao, decTxt: DEC[d.decisao][0], obs: d.observacao || '', por: d.usuario || '', saida: d.saida});
+  const tm = new Map(); (D.tratativas || []).forEach(t => tm.set(t.pendencia, t));
+  for (const t of tm.values()) { const p = R.pend.find(x => x.id === t.pendencia), pe = t.cpf && R.pessoas.get(t.cpf);
+    out.push({tipo: 'pendencia', quando: t.criado_em, comp: t.competencia || '', cpf: t.cpf || '', nome: pe ? pe.nome : p ? p.nome || '' : '', motivo: p ? p.tipo + ': ' + p.txt : String(t.pendencia).split('|')[0], apurado: Number(t.valor || 0), final: ['justificado'].includes(t.status) ? 0 : Number(t.valor || 0), dec: 'trat:' + t.status, decTxt: 'Pendência: ' + TRAT[t.status], obs: t.observacao || '', por: t.usuario || ''}); }
+  return out.sort((a, b) => b.comp.localeCompare(a.comp) || String(b.quando).localeCompare(String(a.quando)));
+}
+function filtroDec() {
+  const q = nomeN($('dqBusca').value), qd = soDig($('dqBusca').value), tp = $('dqTipo').value, dc = $('dqDec').value, de = $('dqDe').value, ate = $('dqAte').value;
+  return linhasDec().filter(x => (!tp || x.tipo === tp) && (!dc || x.dec === dc) && (!de || x.comp >= de) && (!ate || x.comp <= ate) &&
+    (!q && !qd || (q && nomeN([x.nome, x.motivo, x.obs, x.por, x.decTxt].join(' ')).includes(q)) || (qd && qd.length >= 3 && String(x.cpf).includes(qd)) || (q && String(x.motivo).toUpperCase().includes($('dqBusca').value.trim().toUpperCase()))));
+}
+function telaDec() {
+  const todas = linhasDec(), comps = [...new Set(todas.map(x => x.comp).filter(Boolean))].sort();
+  const keep = id => $(id).value, opt = (id, html) => { const v = keep(id); $(id).innerHTML = html; $(id).value = v; };
+  opt('dqDec', '<option value="">Todas as decisões</option>' + Object.entries(DEC).filter(([k]) => k !== 'reaberto').map(([k, v]) => `<option value="${k}">${v[0]}</option>`).join('') + Object.entries(TRAT).map(([k, v]) => `<option value="trat:${k}">Pendência: ${v}</option>`).join(''));
+  opt('dqDe', '<option value="">Mês de: todos</option>' + comps.map(c => `<option value="${c}">de ${compBR(c)}</option>`).join(''));
+  opt('dqAte', '<option value="">até: todos</option>' + comps.map(c => `<option value="${c}">até ${compBR(c)}</option>`).join(''));
+  const ls = filtroDec(), resc = ls.filter(x => x.tipo === 'rescisao'), g = k => resc.filter(x => x.dec === k), sm = a => rd2(a.reduce((t, x) => t + x.final, 0));
+  $('decKpis').innerHTML = kpi('Procede — cobrar', qtd(g('procede').length), brl(sm(g('procede'))), 't-vermelho', "filtroDecKpi('procede')") + kpi('Já recuperado', qtd(g('recuperado').length), brl(sm(g('recuperado'))), 't-verde', "filtroDecKpi('recuperado')") +
+    kpi('Valor ajustado', qtd(g('ajustado').length), brl(sm(g('ajustado'))), 't-laranja', "filtroDecKpi('ajustado')") + kpi('Não procede', qtd(g('nao_procede').length), `apurado ${brl(rd2(g('nao_procede').reduce((t, x) => t + x.apurado, 0)))}`, 't-cinza', "filtroDecKpi('nao_procede')") +
+    kpi('Em análise', qtd(g('analise').length), brl(sm(g('analise'))), 't-roxo', "filtroDecKpi('analise')") + kpi('Pendências tratadas', qtd(ls.filter(x => x.tipo === 'pendencia').length), 'tratativas das pendências', 't-cinza', "filtroDecKpi('')");
+  $('nDec').textContent = todas.filter(x => x.tipo === 'rescisao').length ? '(' + todas.filter(x => x.tipo === 'rescisao').length + ')' : '';
+  $('dqInfo').textContent = `${qtd(ls.length)} registro(s) · apurado ${brl(rd2(ls.reduce((t, x) => t + x.apurado, 0)))} · valor final ${brl(sm(ls))}`;
+  $('tDec').innerHTML = ls.length ? `<table><thead><tr><th>Mês ref.</th><th>Funcionário</th><th>Tipo</th><th>Motivo</th><th class="r">Apurado</th><th class="r">Valor final</th><th>Decisão</th><th>Observação</th><th>Por / em</th></tr></thead><tbody>` +
+    ls.slice(0, 600).map(x => `<tr ${x.cpf ? `class="clicavel" data-pes="${x.cpf}"` : ''}><td>${x.comp ? compBR(x.comp) : '—'}</td><td><b>${esc(x.nome)}</b><br><span class="mut small">${x.cpf ? cpfF(x.cpf) : ''}${x.saida ? ' · saída ' + dataBR(x.saida) : ''}</span></td><td class="small">${x.tipo === 'rescisao' ? 'Rescisão' : 'Pendência'}</td>
+      <td class="small">${esc(x.motivo)}</td><td class="r">${nfm(x.apurado)}</td><td class="r"><b>${nfm(x.final)}</b></td><td><span class="${x.dec in DEC ? DEC[x.dec][1] : ''}"><b>${esc(x.decTxt)}</b></span></td><td class="small">${esc(x.obs)}</td><td class="small">${esc(quemCurto(x.por))}<br>${dtBR(x.quando)}</td></tr>`).join('') +
+    `</tbody><tfoot><tr><td>Total</td><td>${qtd(ls.length)}</td><td></td><td></td><td class="r">${nfm(ls.reduce((t, x) => t + x.apurado, 0))}</td><td class="r">${nfm(sm(ls))}</td><td colspan="3"></td></tr></tfoot></table>` +
+    (ls.length > 600 ? `<div class="small mut">Mostrando 600 de ${ls.length} — o PDF e a planilha trazem todos.</div>` : '')
+    : `<div class="vazio">${todas.length ? 'Nada com esse filtro.' : 'Nenhuma decisão gravada ainda. Decida os casos na aba Ex-funcionários (botão Decidir) ou no extrato da pessoa.'}</div>`;
+}
+function filtroDecKpi(k) { $('dqDec').value = k; telaDec(); }
+['dqBusca', 'dqTipo', 'dqDec', 'dqDe', 'dqAte'].forEach(id => $(id).addEventListener('input', telaDec));
+function relDecisoes(fmt) {
+  const ls = filtroDec(), agr = $('dqAgr').value, de = $('dqDe').value, ate = $('dqAte').value;
+  const cab = ['Mês ref.', 'Funcionário', 'CPF', 'Tipo', 'Motivo', 'Apurado', 'Valor final', 'Decisão', 'Observação', 'Por', 'Em'];
+  const lin = x => [x.comp ? compBR(x.comp) : '—', x.nome, x.cpf ? cpfF(x.cpf) : '', x.tipo === 'rescisao' ? 'Rescisão' : 'Pendência', x.motivo, V(x.apurado), V(x.final), x.decTxt, x.obs, quemCurto(x.por), dataBR(String(x.quando || '').slice(0, 10))];
+  const tot = a => ['Total', `${a.length} registro(s)`, '', '', '', V(a.reduce((t, x) => t + x.apurado, 0)), V(a.reduce((t, x) => t + x.final, 0)), '', '', '', ''];
+  if (fmt === 'xlsx') { const wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet([cab, ...ls.map(x => lin(x).map((c, i) => celXLSX(c, i, [5, 6])))]); ws['!autofilter'] = {ref: ws['!ref']};
+    ws['!cols'] = [10, 34, 15, 11, 70, 12, 12, 24, 50, 14, 16].map(w => ({wch: w})); XLSX.utils.book_append_sheet(wb, ws, 'Decisões'); XLSX.writeFile(wb, `decisoes_auditoria_crediario_${hojeISO()}.xlsx`); return; }
+  const grupos = new Map(); ls.forEach(x => { const k = agr === 'mes' ? x.comp : agr === 'decisao' ? x.decTxt : 'todos'; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(x); });
+  const ks = [...grupos.keys()].sort((a, b) => agr === 'mes' ? a.localeCompare(b) : 0);
+  const per = de || ate ? `${de ? compBR(de) : 'início'} a ${ate ? compBR(ate) : 'hoje'}` : 'todos os meses';
+  const resc = ls.filter(x => x.tipo === 'rescisao'), sm = k => rd2(resc.filter(x => x.dec === k).reduce((t, x) => t + x.final, 0)), n = k => resc.filter(x => x.dec === k).length;
+  const m = {titulo: 'Decisões da auditoria — crediário', subtitulo: `Mês de referência: ${per}${$('dqBusca').value.trim() ? ` · busca "${$('dqBusca').value.trim()}"` : ''} · ${qtd(ls.length)} registro(s) · posição de ${dataBR(hojeISO())}`, marca: MARCA, paisagem: true, arquivo: `decisoes_auditoria_${hojeISO()}`,
+    resumo: [['Procede — cobrar', `${qtd(n('procede'))} - ${brl(sm('procede'))}`], ['Já recuperado', `${qtd(n('recuperado'))} - ${brl(sm('recuperado'))}`], ['Valor ajustado', `${qtd(n('ajustado'))} - ${brl(sm('ajustado'))}`], ['Não procede', qtd(n('nao_procede'))], ['Em análise', `${qtd(n('analise'))} - ${brl(sm('analise'))}`], ['Pendências tratadas', qtd(ls.filter(x => x.tipo === 'pendencia').length)]],
+    secoes: ks.map(k => { const a = grupos.get(k); return {titulo: `${agr === 'mes' ? (k ? 'Mês de referência ' + compBR(k) : 'Sem mês de referência') : agr === 'decisao' ? k : 'Decisões'} (${a.length})`, cab, linhas: a.map(lin), direita: [5, 6], rodape: tot(a)}; }),
+    assinaturas: ['Auditoria', 'RH / Departamento Pessoal', 'Diretoria']};
+  if (!ls.length) { toast('Nada para o relatório com esse filtro.'); return; }
+  return fmt === 'pdf' ? baixarPDF(m) : imprimirModelo(m);
+}
+
 /* ---------- MÊS A MÊS ---------- */
 function telaMeses() {
   if (!R.porComp.length) { $('tMeses').innerHTML = `<div class="vazio">Importe o relatório de compras para começar.</div>`; return; }
@@ -1619,6 +1736,8 @@ function abrirPessoa(cpf, foco) {
   ${p.desl ? `<div><span>${p.readm ? 'Saiu (readmitido depois)' : p.desl.inferida ? 'Último registro como funcionário' : 'Desligado em'}</span><b class="${p.ex ? 'badt' : ''}">${dataBR(p.desl.saida)}</b> ${esc(p.desl.natureza || '')}</div>` : ''}
   ${p.exInfo && p.exInfo.st === 'verif' ? `<div><span>Rescisão a verificar</span><b class="wt">base incompleta</b> — ${p.exInfo.foraBase.length} parcela(s) fora do crediário (${esc(p.exInfo.foraBase.map(x => x.documento).join(', '))}); estimado pela base ${brl(p.exInfo.verifValor)}</div>` : ''}
   ${p.exInfo && p.exInfo.st !== 'verif' ? `<div><span>Em aberto no crediário</span><b class="${p.exInfo.aberto > 0.009 ? 'badt' : 'okt'}">${brl(p.exInfo.aberto)}</b> (todo vencido na rescisão)</div>` : ''}</div>`;
+  if (p.exInfo) { const o = p.exInfo, rr = resEx(o), dd = decEx(o);
+    h += `<div class="${dd && DEC_FINAL.has(dd.decisao) ? 'aviso' : 'perigo'}"><b>Decisão da auditoria (rescisão):</b> ${dd ? decChip(dd) + ` ${brl(dd.valor_final)} · ${esc(quemCurto(dd.usuario))} ${dtBR(dd.criado_em)}${dd.observacao ? ' · ' + esc(dd.observacao) : ''}` : 'ainda não decidido'} · resultado agora: <b>${RES_EX[rr.res][0]}</b>${rr.valor ? ' ' + brl(rr.valor) : ''} <button class="btn small" data-decidir="${cpf}">${dd ? 'Rever decisão' : 'Decidir'}</button></div>`; }
   h += p.pend.map(a => `<div class="${a.grav === 'alta' ? 'perigo' : 'aviso'}"><b>${esc(a.tipo)}${a.comp ? ' · ' + compBR(a.comp) : ''}:</b> ${esc(a.txt)} ${tratChip(a.trat)} <a href="javascript:void(0)" data-tratar="${esc(a.id)}">tratar</a></div>`).join('');
   h += `<div class="tw"><table><thead><tr><th>Competência</th><th class="r">Devido</th><th class="r">Descontado</th><th class="r">Diferença</th><th>Situação</th><th>Pago na folha</th>${D.baixas.length ? '<th>Baixa no crediário</th>' : ''}</tr></thead><tbody>` +
     comps.map(c => { const x = p.celulas[c]; return `<tr ${c === foco ? 'class="semrow"' : ''}><td><b>${compBR(c)}</b></td><td class="r">${nfm(x.devido)}</td><td class="r">${x.st === 'prev' ? '—' : nfm(x.desc)}</td><td class="r">${x.st === 'prev' ? '' : nfm(x.dif)}</td><td>${x.st === 'prev' && quintoDiaUtil(c) < hojeISO() ? `<span class="st st-prev">Folha de ${compBR(c)} não importada (paga em ${dataBR(quintoDiaUtil(c))})</span>` : stChip(x.st)}</td><td class="small">${x.dataPag.map(dataBR).join(', ')}</td>${D.baixas.length ? `<td class="small">${x.baixadas}/${x.parcelas.length} ${x.dataBaixa.map(dataBR).join(', ')}</td>` : ''}</tr>`; }).join('') + `</tbody></table></div>`;
@@ -1981,7 +2100,7 @@ function drill(k) {
   const N = numeros(), comp = compBR(COMP), cel = (t, f) => lista(t, `Folha de ${comp}`, CAB_CEL, N.ls.filter(f).sort((a, b) => Math.abs(b.dif) - Math.abs(a.dif) || b.devido - a.devido), linhaCel, l => l.cpf, [4, 5, 6, 7],
     ls => ['Total', '', '', '', ls.reduce((t, l) => t + l.parcelas.length, 0), V(ls.reduce((t, l) => t + l.devido, 0)), V(ls.reduce((t, l) => t + (l.st === 'prev' ? 0 : l.desc), 0)), V(ls.reduce((t, l) => t + (l.st === 'prev' ? 0 : l.dif), 0)), '']);
   const pend = (t, ls) => lista(t, `Pendências abertas - ${comp} e gerais`, CAB_PEND, ls, linhaPend, p => p.cpf, [8]);
-  const ex = (t, f) => { const ls = ordEx(R.exs.filter(f)), tt = totEx(ls), m = lista(t, `Ex-funcionários com crediário · perda − ${brl(tt.perda)} (${tt.nP}) · ganho + ${brl(tt.ganho)} (${tt.nG}) · líquido ${brl(tt.liq)}${tt.nA ? ` · ${tt.nA} aguardando a folha da rescisão` : ''}`, CAB_EX, ls, linhaEx, o => o.pe.cpf, [3, 4, 6], rodapeEx);
+  const ex = (t, f) => { const nDec = R.exs.filter(f).filter(decidido).length, ls = ordEx(R.exs.filter(f).filter(o => !decidido(o))), tt = totEx(ls), m = lista(t, `${nDec ? nDec + ' já decidido(s) — ver aba Decisões · ' : ''}Ex-funcionários com crediário · perda − ${brl(tt.perda)} (${tt.nP}) · ganho + ${brl(tt.ganho)} (${tt.nG}) · líquido ${brl(tt.liq)}${tt.nA ? ` · ${tt.nA} aguardando a folha da rescisão` : ''}`, CAB_EX, ls, linhaEx, o => o.pe.cpf, [3, 4, 6], rodapeEx);
     m.resumo = [['Perda (descontamos menos)', `${qtd(tt.nP)} - ${brl(tt.perda)}`], ['Ganho (descontamos mais)', `${qtd(tt.nG)} - ${brl(tt.ganho)}`], ['Resultado líquido', brl(tt.liq)], ['A conferir (fora do líquido)', `${qtd(tt.nC)} - ${brl(tt.conf)}`], ['Aguardando folha da rescisão', `${qtd(tt.nA)} - saldo ${brl(tt.sA)}`]]; return m; };
   const fo = (t, f) => lista(t, 'Compradores fora do cadastro', CAB_FORA, R.foras.filter(f), linhaFora, o => o.pe.cpf, [3, 5, 6, 7, 8]);
   const CAB_P = ['Funcionário', 'CPF', 'Situação', 'Documento', 'Compra', 'Vencimento', 'Folha', 'Valor', 'Relatórios'];
@@ -2125,6 +2244,8 @@ const rescTxt = o => o.bxSemDesc > 0.009 ? `descontou a menos; ${nfm(o.bxSemDesc
 function listaEx() {
   const q = nomeN($('eBusca').value), qd = soDig($('eBusca').value), st = $('eSt').value;
   return R.exs.filter(o => {
+    if (st === 'decididos') return decidido(o) && (!q && !qd || (q && nomeN(o.pe.nome).includes(q)) || (qd && o.pe.cpf.includes(qd)));
+    if (decidido(o)) return false;
     if (st === 'aberto' && o.st !== 'aberto') return false;
     if (st === 'quitado' && o.st !== 'quitado') return false;
     if (st === 'verif' && o.st !== 'verif') return false;
@@ -2175,13 +2296,13 @@ function telaEx() {
   $('tEx').innerHTML = lo.length ? `<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">
       <span class="st st-alta">Perda (descontamos menos): ${tt.nP} · − ${brl(tt.perda)}</span><span class="st st-ok">Ganho (descontamos mais): ${tt.nG} · + ${brl(tt.ganho)}</span>
       <span class="st ${tt.liq < 0 ? 'st-alta' : 'st-ok'}">Resultado líquido: ${brl(tt.liq)}</span>${tt.nC ? `<span class="st st-media">A conferir (fora do líquido): ${tt.nC} · ${brl(tt.conf)}</span>` : ''}${tt.nA ? `<span class="st st-media">Aguardando a folha da rescisão: ${tt.nA} · saldo ${brl(tt.sA)}</span>` : ''}<span class="st st-prev">OK: ${tt.nOk}</span></div>
-    <table><thead><tr><th>Ex-funcionário</th><th>Saída</th><th class="r">Saldo na saída</th><th class="r">Descontado na rescisão</th><th>Resultado</th><th class="r">Diferença</th><th>Observação</th></tr></thead><tbody>` +
-    lo.map(o => { const r = resEx(o), cor = RES_EX[r.res][1];
+    <table><thead><tr><th>Ex-funcionário</th><th>Saída</th><th class="r">Saldo na saída</th><th class="r">Descontado na rescisão</th><th>Resultado</th><th class="r">Diferença</th><th>Observação</th><th>Decisão</th></tr></thead><tbody>` +
+    lo.map(o => { const r = resEx(o), cor = RES_EX[r.res][1], dd = decEx(o);
       return `<tr class="clicavel" data-pes="${o.pe.cpf}"><td><b>${esc(o.pe.nome)}</b><br><span class="mut small">${cpfF(o.pe.cpf)} · ${esc(o.d.natureza || '')}</span></td>
       <td>${dataBR(o.d.saida)}</td><td class="r">${nfm(o.saldo)}</td><td class="r">${o.folhaResc ? nfm(o.descResc) : '—'}${!o.folhaResc ? `<br><button class="btn small" onclick="event.stopPropagation(); informarTRCT('${o.pe.cpf}')">Informar TRCT</button>` : ''}</td>
-      <td><b class="${cor}">${RES_EX[r.res][0]}</b></td><td class="r"><b class="${cor}">${r.res === 'perda' ? '− ' + nfm(r.valor) : r.res === 'ganho' || r.res === 'conferir' ? r.sinal + ' ' + nfm(r.valor) : ''}</b></td><td class="small">${esc(r.obs)}</td></tr>`; }).join('') +
+      <td><b class="${cor}">${RES_EX[r.res][0]}</b></td><td class="r"><b class="${cor}">${r.res === 'perda' ? '− ' + nfm(r.valor) : r.res === 'ganho' || r.res === 'conferir' ? r.sinal + ' ' + nfm(r.valor) : ''}</b></td><td class="small">${esc(r.obs)}</td><td>${dd ? decChip(dd) + '<br>' : ''}${r.res !== 'ok' || dd ? `<button class="btn small" data-decidir="${o.pe.cpf}">${dd && DEC_FINAL.has(dd.decisao) ? 'Rever' : 'Decidir'}</button>` : ''}</td></tr>`; }).join('') +
     `</tbody><tfoot><tr><td>Total (${lo.length})</td><td></td><td class="r">${nfm(lo.reduce((t, o) => t + o.saldo, 0))}</td><td class="r">${nfm(lo.reduce((t, o) => t + (o.folhaResc ? o.descResc : 0), 0))}</td>
-      <td class="small">Perda ${tt.nP} · Ganho ${tt.nG} · A conferir ${tt.nC}</td><td class="r"><span class="badt">− ${nfm(tt.perda)}</span><br><span class="okt">+ ${nfm(tt.ganho)}</span><br><b class="${tt.liq < 0 ? 'badt' : 'okt'}">= ${nfm(tt.liq)}</b></td><td class="small">${tt.nA ? `${tt.nA} aguardando a folha da rescisão (saldo ${nfm(tt.sA)})` : ''}</td></tr></tfoot></table>`
+      <td class="small">Perda ${tt.nP} · Ganho ${tt.nG} · A conferir ${tt.nC}</td><td class="r"><span class="badt">− ${nfm(tt.perda)}</span><br><span class="okt">+ ${nfm(tt.ganho)}</span><br><b class="${tt.liq < 0 ? 'badt' : 'okt'}">= ${nfm(tt.liq)}</b></td><td class="small">${tt.nA ? `${tt.nA} aguardando a folha da rescisão (saldo ${nfm(tt.sA)})` : ''}</td><td class="small">${R.exs.filter(decidido).length ? `${R.exs.filter(decidido).length} já decidido(s)` : ''}</td></tr></tfoot></table>`
     : `<div class="vazio">${R.exs.length ? 'Nada com esse filtro.' : 'Nenhum desligado tem compra no crediário ou desconto na folha. ✔'}</div>`;
   const rd = readmitidos();
   $('tReadm').innerHTML = rd.length ? `<table><thead><tr><th>Funcionário</th><th>Saída</th><th>Readmissão</th><th>Loja atual</th><th class="r">Em aberto no crediário</th></tr></thead><tbody>` +
@@ -2903,10 +3024,11 @@ function exportar() {
 
 /* ---------- cliques ---------- */
 document.body.addEventListener('click', e => {
-  const t = e.target.closest('[data-tratar],[data-pes],[data-fechar],[data-reabrir],[data-excluir],[data-usar],[data-ircomp],[data-pdfpes],[data-imppes],[data-datapag],[data-pdfaba],[data-impaba]'); if (!t) return;
+  const t = e.target.closest('[data-decidir],[data-tratar],[data-pes],[data-fechar],[data-reabrir],[data-excluir],[data-usar],[data-ircomp],[data-pdfpes],[data-imppes],[data-datapag],[data-pdfaba],[data-impaba]'); if (!t) return;
   if (t.dataset.datapag) return dataPagamento(+t.dataset.datapag);
   if (t.dataset.pdfaba) return relatorioAba(t.dataset.pdfaba, 'pdf');
   if (t.dataset.impaba) return relatorioAba(t.dataset.impaba, 'imprimir');
+  if (t.dataset.decidir) { e.stopPropagation(); return decidirEx(t.dataset.decidir); }
   if (t.dataset.tratar) return tratar(t.dataset.tratar);
   if (t.dataset.fechar) return fecharComp(t.dataset.fechar);
   if (t.dataset.reabrir) return reabrir(t.dataset.reabrir);
