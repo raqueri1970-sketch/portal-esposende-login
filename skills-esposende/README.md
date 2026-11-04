@@ -9,3 +9,4 @@ Skills: auditor-mestre, ajuste-express, inventario, saci, comercial, rh-folha, c
 
 ## Regra de relatórios
 Todo relatório gerado pelo Portal (impressão, PDF, Excel) sai com a logo oficial da Esposende no topo. Fonte da logo: LOGO_B64 em almox-consumo-item-patch.js (mesma arte de orcamento-compras.html).
+Valores principais sempre em cards; tabelas com cabeçalho azul-marinho, linhas zebradas e total destacado; rodapé com "Esposende · Central de Auditoria & Controle" e data de geração. Modelo completo em almoxarifado.md (Padrão de relatório).
