@@ -2060,43 +2060,40 @@ function excelDrill() {
 // quem está certo na rescisão: saldo na saída × descontado. Perda = descontamos menos (a cobrar); ganho = descontamos mais
 // (a devolver ou explicar); aguardando = a folha da rescisão (ou o TRCT) ainda não está no sistema
 function resEx(o) {
+  // observação curta: motivo + o que fazer (03/11/2026: o usuário pediu texto simples e objetivo; as contas ficam no extrato)
   const ps = (o.pe.pend || []).filter(p => !encerrada(p)), txt = ps.map(p => p.txt).join(' '), tem = t => ps.some(p => p.tipo === t);
   const fora = (txt.match(/Não entraram na rescisão: ([^.]+)\./) || [])[1], mS = o.d.saida.slice(0, 7);
-  const trct = R.trctPes && R.trctPes.has(o.pe.cpf + '|' + mS);
-  let res, valor = 0, obs = [];
-  if (!o.folhaResc) { res = 'aguarda'; obs.push(`Folha de ${compBR(mS)} (rescisão) não importada — importe a folha ou informe o desconto do TRCT`); }
+  const trct = R.trctPes && R.trctPes.has(o.pe.cpf + '|' + mS), tol = R.cfg.tol;
+  const docs = t => (t || '').replace(/ \(compra de [^)]*\)/g, '');
+  let res, valor = 0, sinal = '+', obs = [], motivo = '';
+  if (!o.folhaResc) { res = 'aguarda'; obs.push(`Falta a folha de ${compBR(mS)} (rescisão) ou informar o valor do TRCT`); }
   else if (o.aberto > 0.009) { res = 'perda'; valor = o.aberto;
-    if (tem('Valor lançado errado no RH (centavos)')) { const c = ps.find(p => p.tipo === 'Valor lançado errado no RH (centavos)'); obs.push('Erro de centavos no RH: ' + ((c.txt.match(/compras? (CE[\d, CE]+?) lançadas/) || [])[1] || '') + ' lançada(s) sem os zeros (ex.: 129,00 → 1,29)'); }
-    else if (tem('Possível erro de centavos no RH')) obs.push('Possível erro de centavos — conferir na lista Diversos do RH');
-    else if (fora) obs.push('Não entraram na rescisão: ' + fora);
-    else if (o.descResc <= 0.009) obs.push('Rescisão sem desconto de Compra Loja (ver se havia líquido no TRCT)');
-    else obs.push('Rescisão descontou menos que o saldo — compra não identificada: conferir TRCT × lista Diversos do RH'); }
+    if (tem('Valor lançado errado no RH (centavos)')) { const c = ps.find(p => p.tipo === 'Valor lançado errado no RH (centavos)'); motivo = 'RH lançou sem os zeros (ex.: 129,00 → 1,29): ' + ((c.txt.match(/compras? (CE[\d, CE]+?) lançadas/) || [])[1] || ''); }
+    else if (tem('Possível erro de centavos no RH')) motivo = 'Possível erro de centavos do RH';
+    else if (fora) motivo = 'Não entrou na rescisão: ' + docs(fora);
+    else if (o.descResc <= 0.009) motivo = 'Rescisão sem desconto de Compra Loja';
+    else motivo = 'Rescisão descontou menos que o saldo'; }
   else if (o.maisResc > 0.009) { valor = o.maisResc;
-    // só é ganho com a base completa: com o lote de baixa da folha da rescisão confiável e compras encontradas. Senão o saldo pode
-    // estar menor que o real (compra quitada que a base não tem) — a conferir (30/10/2026: 50 "ganhos", quase todos de jan/fev)
+    // só é ganho com a base completa (lote de baixa da folha da rescisão confiável e compras encontradas)
     const baseOk = o.saldo > 0.009 && (!R.temLotes || (R.loteBoa && R.loteBoa.has(mS)));
-    if (baseOk) { res = 'ganho'; obs.push('Rescisão descontou a mais que o saldo das compras — pedir ao RH a origem; se não houver compra, devolver'); }
-    else { res = 'conferir'; obs.push(o.saldo <= 0.009 ? 'Descontou sem compra encontrada na base (compra com outro nome/CPF ou fora dos arquivos) — conferir no TRCT e na lista Diversos do RH'
-      : `Descontou acima do saldo encontrado, mas a base de ${compBR(mS)} está incompleta (compras quitadas sem lote de baixa confiável) — provável compra que a base não tem; conferir no TRCT`); } }
+    res = baseOk ? 'ganho' : 'conferir'; }
   else res = 'ok';
-  const L = o.led, ccTxt = L ? `conta corrente ${compBR(L.c0)} a ${compBR(mS)}: descontado ${brl(L.desc)} × compras ${brl(L.compras)}` : '';
-  const ccTxt1 = L && L.c1 != null ? `sem ${compBR(L.c0)} (lote misturado com dez/2025): descontado ${brl(L.desc1)} × compras ${brl(L.compras1)}` : '';
-  const semBxTxt = L && L.semBx && L.semBx.length ? ` · folha descontou mais do que o crediário baixou em ${L.semBx.map(x => compBR(x.c) + ' ' + brl(x.v)).join(', ')} (compra fora do crediário, desconto em dobro ou lançamento errado) — pedir a lista Diversos do RH` : '';
-  let sinal = '+';
-  if (L && res === 'perda') { const d0 = -L.dif, d1 = L.c1 != null ? -L.dif1 : d0, dC = rd2(Math.min(d0, d1)), dM = Math.max(d0, d1);
-    if (Math.min(L.dif, L.c1 != null ? L.dif1 : L.dif) > R.cfg.tol) { res = 'conferir'; valor = rd2(Math.min(L.dif, L.c1 != null ? L.dif1 : L.dif)); obs = [`Sem perda, mas descontou a mais — ${ccTxt}${ccTxt1 ? '; ' + ccTxt1 : ''}: ${brl(valor)} descontados além de todas as compras do crediário (compra que não está no sistema ou devolução) — pedir ao RH a origem`]; }
-    else if (dM <= R.cfg.tol) { res = 'ok'; valor = 0; obs = [`Sem perda — ${ccTxt}: o total descontado cobre todas as compras (a diferença da rescisão é de parcela paga em outra folha)`]; }
-    else if (dC > R.cfg.tol) { const v0 = valor; valor = rd2(Math.min(valor, dC)); const resto = rd2(v0 - valor), sb = L.semBx ? rd2(L.semBx.reduce((t, x) => t + x.v, 0)) : 0;
-      obs.push(`${ccTxt}${ccTxt1 ? '; ' + ccTxt1 : ''} — confirma${resto > R.cfg.tol ? ` ${brl(valor)} de ${brl(v0)}: ` + (sb >= resto - R.cfg.tol ? `os outros ${brl(resto)} batem com o que a folha descontou a mais sem baixa no crediário — se for parcela de compra fora do crediário, a perda é ${brl(valor)}; se for desconto errado do RH, a perda é ${brl(v0)}` : `os outros ${brl(resto)} dependem do lote de baixa de jan (misturado com dez/2025)`) : ''}`); }
-    else { res = 'conferir'; sinal = '−'; obs = [`Perda não confirmada (${brl(valor)} pela rescisão): ${ccTxt}, mas ${ccTxt1} — fecha sem o lote de jan; ${obs.join(' · ')}`]; } }
-  else if (L && (res === 'ganho' || res === 'conferir')) { const e = Math.min(L.dif, L.c1 != null ? L.dif1 : L.dif);
-    if (e <= R.cfg.tol) { res = 'ok'; valor = 0; obs = [`Sem ganho — ${ccTxt}: o total descontado não passa das compras (o a mais da rescisão é parcela que o sistema achou paga numa folha anterior)${L.dif < -R.cfg.tol ? ` · na conta corrente faltam ${brl(-L.dif)}, que podem ser parcelas de dez/2025 no lote de baixa de jan (folha de 2025 não importada)` : ''}`]; }
-    else { valor = rd2(Math.min(valor, e)); obs.push(ccTxt + ` — ${brl(e)} descontados além de todas as compras`); } }
-  if (semBxTxt && res !== 'ok') obs.push(semBxTxt.slice(3));
-  if (o.d.inferida) obs.unshift('Saída não confirmada (não está nos desligados) — confirmar com o RH');
-  if (trct) obs.push('Desconto informado pelo TRCT (até a folha do mês ser importada)');
-  if (o.bxSemDesc > 0.009) obs.push(`Crediário baixou ${brl(o.bxSemDesc)} sem desconto — estornar a baixa`);
-  return {res, valor: rd2(valor), obs: obs.join(' · '), sinal: res === 'conferir' ? sinal : res === 'perda' ? '−' : '+'};
+  // conta corrente (com e sem jan/2026, cujo lote mistura dez/2025): perda/ganho só fica se as duas confirmarem
+  const L = o.led, dif1 = L && L.c1 != null ? L.dif1 : L && L.dif;
+  const semBx = L && L.semBx && L.semBx.length ? L.semBx.map(x => `${compBR(x.c)} ${brl(x.v)}`).join(', ') : '';
+  if (res === 'perda') {
+    if (L && Math.min(L.dif, dif1) > tol) { res = 'conferir'; valor = rd2(Math.min(L.dif, dif1)); obs.push(`Descontou ${brl(valor)} além das compras — pedir ao RH a origem`); }
+    else if (L && Math.max(-L.dif, -dif1) <= tol) { res = 'ok'; valor = 0; obs.push('Sem perda: o total descontado cobre as compras'); }
+    else if (L && Math.min(-L.dif, -dif1) <= tol) { res = 'conferir'; sinal = '−'; obs.push(`${motivo}. Não confirmado: sem o lote de jan/2026 o total descontado cobre as compras${semBx ? ` — ver com o RH o desconto a mais em ${semBx}` : ''}`); }
+    else { const v0 = valor; if (L) valor = rd2(Math.min(valor, -L.dif, -dif1)); const resto = rd2(v0 - valor);
+      obs.push(`${motivo}. Cobrar ${brl(valor)}`);
+      if (resto > tol) obs.push(`Os outros ${brl(resto)} dependem ${semBx ? `do RH explicar o desconto a mais em ${semBx}` : 'do lote de baixa de jan/2026'}`); } }
+  else if (res === 'ganho' || res === 'conferir') { const e = L ? Math.min(L.dif, dif1) : valor;
+    if (L && e <= tol) { res = 'ok'; valor = 0; obs.push('Sem ganho: o total descontado não passa das compras'); }
+    else { valor = rd2(Math.min(valor, e)); obs.push(res === 'ganho' ? 'Descontou a mais que as compras — se não houver compra, devolver' : 'Descontou sem compra encontrada — pedir ao RH a origem (lista Diversos)'); } }
+  if (o.d.inferida) obs.unshift('Saída não confirmada pelo RH');
+  if (trct) obs.push('Valor do TRCT informado');
+  return {res, valor: rd2(valor), obs: obs.join('. ') + (obs.length ? '.' : ''), sinal: res === 'conferir' ? sinal : res === 'perda' ? '−' : '+'};
 }
 const RES_EX = {perda: ['Perda', 'badt'], ganho: ['Ganho', 'okt'], conferir: ['A conferir', 'wt'], ok: ['OK', 'mut'], aguarda: ['Aguardando', 'wt']};
 const totEx = ls => { const t = {perda: 0, ganho: 0, conf: 0, nP: 0, nG: 0, nC: 0, nA: 0, sA: 0, nOk: 0}; ls.forEach(o => { const r = resEx(o);
