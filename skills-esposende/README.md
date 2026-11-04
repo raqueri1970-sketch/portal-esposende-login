@@ -6,3 +6,6 @@ Princípios: nunca inventar dado; informar período e fonte; distinguir fato, al
 Orquestração: Auditor Mestre chama a skill especializada e, quando necessário, skills de cruzamento. Sentinela cuida de alertas. Toda exceção deve permitir rastrear registro, regra, fonte e período.
 
 Skills: auditor-mestre, ajuste-express, inventario, saci, comercial, rh-folha, crediario, comissao, compras, financeiro, notas-fiscais, almoxarifado, cd-recebimento, transportadora, cruzamentos, treinamentos.
+
+## Regra de relatórios
+Todo relatório gerado pelo Portal (impressão, PDF, Excel) sai com a logo oficial da Esposende no topo. Fonte da logo: LOGO_B64 em almox-consumo-item-patch.js (mesma arte de orcamento-compras.html).
