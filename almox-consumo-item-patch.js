@@ -66,27 +66,26 @@
   var CSS=''
   +'#aci-ov{position:fixed;inset:0;z-index:2147483600;background:rgba(3,8,16,.82);display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow:auto;font-family:Inter,Arial,sans-serif}'
   +'#aci-box{background:#0b1626;color:#e8f0fa;border:1px solid #24405f;border-radius:14px;width:min(1400px,100%);box-shadow:0 20px 60px rgba(0,0,0,.6)}'
-  +'#aci-box .hd{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #1d3550}'
-  +'#aci-box .hd h2{margin:0;font-size:18px;flex:1;min-width:220px}#aci-box .hd button{flex-shrink:0}#aci-box .hd{flex-wrap:wrap}#aci-box .hd small{color:#8ca4bf;font-weight:400;font-size:12px;display:block}'
+  +'#aci-box .aci-hd{display:flex!important;flex-direction:row!important;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid #1d3550;position:static!important}'+'#aci-box .aci-tit{flex:1 1 auto;min-width:0}#aci-box .aci-tit b{display:block;font-size:18px;color:#fff}#aci-box .aci-tit small{display:block;color:#8ca4bf;font-size:12px;margin-top:2px}'+'#aci-box .aci-acoes{display:flex!important;flex-direction:row!important;gap:8px;flex:0 0 auto;align-items:center}'+'#aci-box .aci-acoes button{position:static!important;display:inline-block!important;width:auto!important;margin:0!important;white-space:nowrap}'
   +'#aci-box button{background:#15304d;color:#fff;border:1px solid #2f5478;border-radius:8px;padding:8px 13px;font-weight:700;cursor:pointer;font-size:13px}'
-  +'#aci-box button.pri{background:#0e7c66;border-color:#14a386}#aci-box button:hover{filter:brightness(1.15)}'
-  +'#aci-box .flt{display:grid;grid-template-columns:2fr 1.3fr 1fr .8fr .8fr;gap:12px;padding:14px 18px;align-items:end}'
+  +'#aci-box button.aci-pri{background:#0e7c66;border-color:#14a386}#aci-box button:hover{filter:brightness(1.15)}'
+  +'#aci-box .aci-flt{display:grid;grid-template-columns:2fr 1.3fr 1fr .8fr .8fr;gap:12px;padding:14px 18px;align-items:end}'
   +'#aci-box label{display:block;font-size:11px;color:#8ca4bf;font-weight:700;letter-spacing:.04em;margin-bottom:5px;text-transform:uppercase}'
   +'#aci-box input,#aci-box select{width:100%;box-sizing:border-box;background:#06101c;color:#fff;border:1px solid #2a4867;border-radius:8px;padding:9px 10px;font-size:14px}'
   +'#aci-box input#aci-q{font-size:16px;border-color:#14a386}'
   +'#aci-itens{margin:0 18px;padding:8px 10px;background:#081322;border:1px solid #1d3550;border-radius:8px;max-height:150px;overflow:auto;font-size:13px}'
-  +'#aci-itens .it{display:flex;gap:8px;align-items:center;padding:3px 0}#aci-itens input{width:auto}'
-  +'#aci-itens .top{display:flex;gap:14px;font-size:12px;color:#5fd3b8;margin-bottom:4px}#aci-itens .top a{cursor:pointer}'
+  +'#aci-itens .aci-it{display:flex;gap:8px;align-items:center;padding:3px 0}#aci-itens input{width:auto}'
+  +'#aci-itens .aci-top{display:flex;gap:14px;font-size:12px;color:#5fd3b8;margin-bottom:4px}#aci-itens .aci-top a{cursor:pointer}'
   +'#aci-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px 18px}'
   +'#aci-kpi div{background:#081322;border:1px solid #1d3550;border-radius:10px;padding:12px}#aci-kpi span{display:block;font-size:11px;color:#8ca4bf;font-weight:700}#aci-kpi b{font-size:22px}'
   +'#aci-res{padding:0 18px 18px}#aci-res h3{font-size:14px;margin:16px 0 8px;color:#bcd0e6}'
   +'#aci-res table{width:100%;border-collapse:collapse;font-size:12.5px}'
   +'#aci-res th{background:#13253c;color:#cfe0f2;padding:8px;text-align:right;position:sticky;top:0;white-space:nowrap}#aci-res th:first-child{text-align:left}'
   +'#aci-res table,#aci-res td{color:#e8f0fa}#aci-res td{padding:6px 8px;border-bottom:1px solid #16293f;text-align:right;white-space:nowrap}#aci-res td:first-child{text-align:left;white-space:normal}'
-  +'#aci-res td small{display:block;color:#7f97b2;font-size:11px}#aci-res tr.tot td{font-weight:800;background:#0f2136}'
-  +'#aci-res td.med{color:#5fd3b8;font-weight:800}#aci-res .vazio{color:#8ca4bf;padding:20px;text-align:center}'
-  +'#aci-res .wrap{max-height:420px;overflow:auto;border:1px solid #1d3550;border-radius:8px}'
-  +'@media(max-width:900px){#aci-box .flt{grid-template-columns:1fr 1fr}#aci-kpi{grid-template-columns:1fr 1fr}}';
+  +'#aci-res td small{display:block;color:#7f97b2;font-size:11px}#aci-res tr.aci-tot td{font-weight:800;background:#0f2136}'
+  +'#aci-res td.aci-med{color:#5fd3b8;font-weight:800}#aci-res .aci-vazio{color:#8ca4bf;padding:20px;text-align:center}'
+  +'#aci-res .aci-wrap{max-height:420px;overflow:auto;border:1px solid #1d3550;border-radius:8px}'
+  +'@media(max-width:900px){#aci-box .aci-flt{grid-template-columns:1fr 1fr}#aci-kpi{grid-template-columns:1fr 1fr}}';
 
   function abrir(){
     var ov=document.getElementById('aci-ov');
@@ -94,9 +93,9 @@
     if(!document.getElementById('aci-css')){var st=document.createElement('style');st.id='aci-css';st.textContent=CSS;document.head.appendChild(st);}
     ov=document.createElement('div');ov.id='aci-ov';
     ov.innerHTML='<div id="aci-box">'
-      +'<div class="hd"><h2>🔎 Consumo por Item<small>Digite o item, escolha a loja (ou todas) e veja o consumo de cada mês e a média mensal</small></h2>'
-      +'<button id="aci-xls">⬇ Excel</button><button id="aci-print">🖨 Imprimir</button><button id="aci-fechar">✕ Fechar</button></div>'
-      +'<div class="flt">'
+      +'<div class="aci-hd"><div class="aci-tit"><b>🔎 Consumo por Item</b><small>Digite o item, escolha a loja (ou todas) e veja o consumo de cada mês e a média mensal</small></div>'
+      +'<div class="aci-acoes"><button type="button" id="aci-xls">⬇ Excel</button><button type="button" id="aci-print">🖨 Imprimir</button><button type="button" id="aci-fechar">✕ Fechar</button></div></div>'
+      +'<div class="aci-flt">'
       +'<div><label>1. Item (parte do nome ou código)</label><input id="aci-q" placeholder="ex.: embalagem de presente" autocomplete="off"></div>'
       +'<div><label>2. Loja</label><select id="aci-loja"></select></div>'
       +'<div><label>Regional</label><select id="aci-reg"></select></div>'
@@ -162,8 +161,8 @@
     if(!document.getElementById('aci-q').value.trim()){box.innerHTML='<span style="color:#8ca4bf">Digite acima para encontrar os itens.</span>';return;}
     if(!its.length){box.innerHTML='<span style="color:#ff8a8a">Nenhum item encontrado com esse texto.</span>';return;}
     if(!state.itensMarcados)state.itensMarcados=new Set(its.map(function(i){return i.item;}));
-    box.innerHTML='<div class="top">'+its.length+' item(ns) encontrado(s) · <a id="aci-todos">marcar todos</a><a id="aci-nenhum">desmarcar</a></div>'
-      +its.map(function(i,ix){return '<label class="it" style="text-transform:none;font-size:13px;color:#e8f0fa;font-weight:400;margin:0"><input type="checkbox" data-i="'+ix+'"'+(state.itensMarcados.has(i.item)?' checked':'')+'> '+esc(i.codigo?i.codigo+' — ':'')+esc(i.item)+'</label>';}).join('');
+    box.innerHTML='<div class="aci-top">'+its.length+' item(ns) encontrado(s) · <a id="aci-todos">marcar todos</a><a id="aci-nenhum">desmarcar</a></div>'
+      +its.map(function(i,ix){return '<label class="aci-it" style="text-transform:none;font-size:13px;color:#e8f0fa;font-weight:400;margin:0"><input type="checkbox" data-i="'+ix+'"'+(state.itensMarcados.has(i.item)?' checked':'')+'> '+esc(i.codigo?i.codigo+' — ':'')+esc(i.item)+'</label>';}).join('');
     box.querySelectorAll('input').forEach(function(cb){cb.onchange=function(){var it=its[Number(cb.dataset.i)].item;if(cb.checked)state.itensMarcados.add(it);else state.itensMarcados.delete(it);calcular();};});
     document.getElementById('aci-todos').onclick=function(){state.itensMarcados=new Set(its.map(function(i){return i.item;}));listarItens();calcular();};
     document.getElementById('aci-nenhum').onclick=function(){state.itensMarcados=new Set();listarItens();calcular();};
@@ -177,8 +176,8 @@
     if(state.itensMarcados===null||termo!==state.ultimoTermo){state.ultimoTermo=termo;listarItens();}
     var kpi=$('aci-kpi'),res=$('aci-res');
     var L=linhas();
-    if(!L.length){kpi.innerHTML='';res.innerHTML='<div class="vazio">Os dados do Almoxarifado ainda não carregaram. Abra o módulo e aguarde a sincronização.</div>';ultimo=null;return;}
-    if(!termo||!state.itensMarcados||!state.itensMarcados.size){kpi.innerHTML='';res.innerHTML='<div class="vazio">Digite o nome do item (ex.: <b>embalagem</b>) para ver o consumo.</div>';ultimo=null;return;}
+    if(!L.length){kpi.innerHTML='';res.innerHTML='<div class="aci-vazio">Os dados do Almoxarifado ainda não carregaram. Abra o módulo e aguarde a sincronização.</div>';ultimo=null;return;}
+    if(!termo||!state.itensMarcados||!state.itensMarcados.size){kpi.innerHTML='';res.innerHTML='<div class="aci-vazio">Digite o nome do item (ex.: <b>embalagem</b>) para ver o consumo.</div>';ultimo=null;return;}
     var loja=$('aci-loja').value,reg=$('aci-reg').value,de=$('aci-de').value,ate=$('aci-ate').value;
     var meses=mesesEntre(de,ate);
     var sel=L.filter(function(l){
@@ -206,16 +205,16 @@
       +'<div><span>MÉDIA MENSAL ('+div+' '+(div>1?'meses fechados':'mês')+')</span><b style="color:#5fd3b8">'+n0(totMed/div)+' un./mês</b></div>'
       +'<div><span>CUSTO TOTAL</span><b>'+brl(totV)+'</b></div>'
       +'<div><span>LOJAS QUE PEDIRAM</span><b>'+porLoja.length+'</b></div>';
-    if(!sel.length){res.innerHTML='<div class="vazio">Nenhum consumo desse(s) item(ns) no período/loja escolhidos.</div>';ultimo=null;return;}
+    if(!sel.length){res.innerHTML='<div class="aci-vazio">Nenhum consumo desse(s) item(ns) no período/loja escolhidos.</div>';ultimo=null;return;}
     function tabela(titulo,grupos,comValor){
-      var h='<h3>'+titulo+'</h3><div class="wrap"><table><thead><tr><th>'+(grupos===porItem?'ITEM':'LOJA')+'</th>'
+      var h='<h3>'+titulo+'</h3><div class="aci-wrap"><table><thead><tr><th>'+(grupos===porItem?'ITEM':'LOJA')+'</th>'
         +meses.map(function(m){return '<th>'+mesLabel(m)+(m>=atual?' *':'')+'</th>';}).join('')+'<th>TOTAL</th><th>MÉDIA/MÊS</th></tr></thead><tbody>';
       grupos.forEach(function(g){
         h+='<tr><td>'+esc(g.nome)+'</td>'+meses.map(function(m){var c=g.meses[m];return '<td>'+(c?n0(c.q)+(comValor?'<small>'+brl(c.v)+'</small>':''):'—')+'</td>';}).join('')
-          +'<td><b>'+n0(g.qtd)+'</b>'+(comValor?'<small>'+brl(g.custo)+'</small>':'')+'</td><td class="med">'+n1(g.qMed/div)+'</td></tr>';
+          +'<td><b>'+n0(g.qtd)+'</b>'+(comValor?'<small>'+brl(g.custo)+'</small>':'')+'</td><td class="aci-med">'+n1(g.qMed/div)+'</td></tr>';
       });
-      h+='<tr class="tot"><td>TOTAL</td>'+meses.map(function(m){var c=totM[m];return '<td>'+(c?n0(c.q)+(comValor?'<small>'+brl(c.v)+'</small>':''):'—')+'</td>';}).join('')
-        +'<td>'+n0(totQ)+(comValor?'<small>'+brl(totV)+'</small>':'')+'</td><td class="med">'+n1(totMed/div)+'</td></tr></tbody></table></div>';
+      h+='<tr class="aci-tot"><td>TOTAL</td>'+meses.map(function(m){var c=totM[m];return '<td>'+(c?n0(c.q)+(comValor?'<small>'+brl(c.v)+'</small>':''):'—')+'</td>';}).join('')
+        +'<td>'+n0(totQ)+(comValor?'<small>'+brl(totV)+'</small>':'')+'</td><td class="aci-med">'+n1(totMed/div)+'</td></tr></tbody></table></div>';
       return h;
     }
     var onde=loja?loja:(reg?'Regional '+reg:'todas as lojas');
@@ -249,10 +248,10 @@
     if(!ultimo){alert('Faça uma busca primeiro.');return;}
     var w=window.open('','_blank');
     if(!w){alert('Libere pop-ups para imprimir.');return;}
-    var css='body{font-family:Arial,sans-serif;color:#111;margin:20px}h2{margin:0 0 4px}p{color:#555;margin:0 0 12px;font-size:12px}h3{font-size:14px;margin:18px 0 6px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#14284a;color:#fff;padding:6px;text-align:right}th:first-child,td:first-child{text-align:left}td{padding:5px 6px;border-bottom:1px solid #ddd;text-align:right}td small{display:block;color:#666}tr.tot td{font-weight:bold;background:#eef2f7}.wrap{}#k{display:flex;gap:20px;font-size:13px;margin:8px 0}';
+    var css='body{font-family:Arial,sans-serif;color:#111;margin:20px}h2{margin:0 0 4px}p{color:#555;margin:0 0 12px;font-size:12px}h3{font-size:14px;margin:18px 0 6px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#14284a;color:#fff;padding:6px;text-align:right}th:first-child,td:first-child{text-align:left}td{padding:5px 6px;border-bottom:1px solid #ddd;text-align:right}td small{display:block;color:#666}tr.aci-tot td{font-weight:bold;background:#eef2f7}.aci-wrap{}#k{display:flex;gap:20px;font-size:13px;margin:8px 0}';
     var k=document.getElementById('aci-kpi').innerText.replace(/\n+/g,' · ');
     w.document.write('<html><head><title>Consumo por Item</title><style>'+css+'</style></head><body><h2>ESPOSENDE · Almoxarifado — Consumo por Item</h2><p>'+esc(document.getElementById('aci-q').value)+' · '+esc(ultimo.onde)+' · Gerado em '+new Date().toLocaleString('pt-BR')+'</p><div id="k">'+esc(k)+'</div>'+document.getElementById('aci-res').innerHTML+'</body></html>');
-    w.document.close();setTimeout(function(){w.print();},300);
+    w.document.close();setTimeout(function(){w.aci-print();},300);
   }
 
   // ---------- Botão dentro do módulo Almoxarifado ----------
