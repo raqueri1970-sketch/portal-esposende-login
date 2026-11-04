@@ -67,7 +67,7 @@
   +'#aci-ov{position:fixed;inset:0;z-index:2147483600;background:rgba(3,8,16,.82);display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow:auto;font-family:Inter,Arial,sans-serif}'
   +'#aci-box{background:#0b1626;color:#e8f0fa;border:1px solid #24405f;border-radius:14px;width:min(1400px,100%);box-shadow:0 20px 60px rgba(0,0,0,.6)}'
   +'#aci-box .hd{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #1d3550}'
-  +'#aci-box .hd h2{margin:0;font-size:18px;flex:1}#aci-box .hd small{color:#8ca4bf;font-weight:400;font-size:12px;display:block}'
+  +'#aci-box .hd h2{margin:0;font-size:18px;flex:1;min-width:220px}#aci-box .hd button{flex-shrink:0}#aci-box .hd{flex-wrap:wrap}#aci-box .hd small{color:#8ca4bf;font-weight:400;font-size:12px;display:block}'
   +'#aci-box button{background:#15304d;color:#fff;border:1px solid #2f5478;border-radius:8px;padding:8px 13px;font-weight:700;cursor:pointer;font-size:13px}'
   +'#aci-box button.pri{background:#0e7c66;border-color:#14a386}#aci-box button:hover{filter:brightness(1.15)}'
   +'#aci-box .flt{display:grid;grid-template-columns:2fr 1.3fr 1fr .8fr .8fr;gap:12px;padding:14px 18px;align-items:end}'
