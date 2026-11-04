@@ -861,6 +861,8 @@ async function openPortal(){
   html=html.replace(/<\/body>/i,ORC_UNIFIED_PATCH+'</body>');
   // Correção isolada da regra do Almoxarifado. Não altera HTML, cards ou gráficos.
   html=html.replace(/<\/body>/i,ALMOX_MINIMO_PATCH+'</body>');
+  // Almoxarifado: botão "Consumo por Item" (busca item + loja/todas → consumo mês a mês e média mensal).
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('almox-consumo-item-patch.js?v=20261104-1',location.href).href+'"></scr'+'ipt>');
   // Capa oficial do card Treinamentos e Cursos.
   html=inserirAntesDoFimDoBody(html,TREINAMENTOS_CAPA_PATCH);
   // Capa do card Obras & Reformas (foto nova; o card original era só ícone e texto).
