@@ -94,7 +94,7 @@
     ov=document.createElement('div');ov.id='aci-ov';
     ov.innerHTML='<div id="aci-box">'
       +'<div class="aci-hd"><div class="aci-tit"><b>🔎 Consumo por Item</b><small>Digite o item, escolha a loja (ou todas) e veja o consumo de cada mês e a média mensal</small></div>'
-      +'<div class="aci-acoes"><button type="button" id="aci-xls">⬇ Excel</button><button type="button" id="aci-print">🖨 Imprimir</button><button type="button" id="aci-fechar">✕ Fechar</button></div></div>'
+      +'<div class="aci-acoes"><button type="button" id="aci-xls">⬇ Excel</button><button type="button" id="aci-print">🖨 Imprimir</button><button type="button" id="aci-pdf">📄 PDF</button><button type="button" id="aci-fechar">✕ Fechar</button></div></div>'
       +'<div class="aci-flt">'
       +'<div><label>1. Item (parte do nome ou código)</label><input id="aci-q" placeholder="ex.: embalagem de presente" autocomplete="off"></div>'
       +'<div><label>2. Loja</label><select id="aci-loja"></select></div>'
@@ -112,7 +112,7 @@
     var t;$('aci-q').addEventListener('input',function(){clearTimeout(t);t=setTimeout(function(){state.itensMarcados=null;listarItens();calcular();},200);});
     ['aci-loja','aci-reg','aci-de','aci-ate'].forEach(function(id){$(id).addEventListener('change',function(){if(id==='aci-reg')montarLojas();calcular();});});
     $('aci-xls').onclick=exportar;
-    $('aci-print').onclick=imprimir;
+    $('aci-print').onclick=function(){imprimir(false);};$('aci-pdf').onclick=function(){imprimir(true);};
     montarFiltros(true);
     setTimeout(function(){$('aci-q').focus();},50);
   }
@@ -244,14 +244,24 @@
     var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='consumo_por_item_'+new Date().toISOString().slice(0,10)+'.csv';
     document.body.appendChild(a);a.click();setTimeout(function(){a.remove();},500);
   }
-  function imprimir(){
+  function imprimir(pdf){
     if(!ultimo){alert('Faça uma busca primeiro.');return;}
     var w=window.open('','_blank');
     if(!w){alert('Libere pop-ups para imprimir.');return;}
-    var css='body{font-family:Arial,sans-serif;color:#111;margin:20px}h2{margin:0 0 4px}p{color:#555;margin:0 0 12px;font-size:12px}h3{font-size:14px;margin:18px 0 6px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#14284a;color:#fff;padding:6px;text-align:right}th:first-child,td:first-child{text-align:left}td{padding:5px 6px;border-bottom:1px solid #ddd;text-align:right}td small{display:block;color:#666}tr.aci-tot td{font-weight:bold;background:#eef2f7}.aci-wrap{}#k{display:flex;gap:20px;font-size:13px;margin:8px 0}';
+    var css='@page{size:A4 landscape;margin:10mm}body{font-family:Arial,sans-serif;color:#111;margin:20px}h2{margin:0 0 4px}p{color:#555;margin:0 0 12px;font-size:12px}h3{font-size:14px;margin:18px 0 6px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#14284a;color:#fff;padding:6px;text-align:right}th:first-child,td:first-child{text-align:left}td{padding:5px 6px;border-bottom:1px solid #ddd;text-align:right}td small{display:block;color:#666}tr.aci-tot td{font-weight:bold;background:#eef2f7}tr{page-break-inside:avoid}#k{font-size:13px;margin:8px 0}'
+      +'#barra{position:sticky;top:0;background:#0b1626;padding:10px 14px;margin:-20px -20px 16px;display:flex;gap:10px;align-items:center;z-index:5}#barra button{background:#0e7c66;color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer}#barra button.sec{background:#15304d}#barra span{color:#8ca4bf;font-size:12px}'
+      +'@media print{#barra{display:none}body{margin:0}th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}';
     var k=document.getElementById('aci-kpi').innerText.replace(/\n+/g,' · ');
-    w.document.write('<html><head><title>Consumo por Item</title><style>'+css+'</style></head><body><h2>ESPOSENDE · Almoxarifado — Consumo por Item</h2><p>'+esc(document.getElementById('aci-q').value)+' · '+esc(ultimo.onde)+' · Gerado em '+new Date().toLocaleString('pt-BR')+'</p><div id="k">'+esc(k)+'</div>'+document.getElementById('aci-res').innerHTML+'</body></html>');
-    w.document.close();setTimeout(function(){w.aci-print();},300);
+    var nome='consumo_por_item_'+new Date().toISOString().slice(0,10)+'.pdf';
+    var js='function salvarPDF(){var b=document.getElementById("bpdf");b.textContent="Gerando PDF...";b.disabled=true;'
+      +'function go(){var el=document.getElementById("doc");html2pdf().set({margin:8,filename:"'+nome+'",image:{type:"jpeg",quality:0.95},html2canvas:{scale:2},jsPDF:{unit:"mm",format:"a4",orientation:"landscape"},pagebreak:{mode:["css","legacy"],avoid:"tr"}}).from(el).save().then(function(){b.textContent="📄 Salvar PDF";b.disabled=false;});}'
+      +'if(window.html2pdf)return go();var s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js";s.onload=go;'
+      +'s.onerror=function(){b.textContent="📄 Salvar PDF";b.disabled=false;alert("Não consegui gerar o PDF direto. Use Imprimir e escolha Salvar como PDF.");window.print();};document.head.appendChild(s);}';
+    w.document.write('<html><head><meta charset="utf-8"><title>Consumo por Item</title><style>'+css+'</style></head><body>'
+      +'<div id="barra"><button onclick="window.print()">🖨 Imprimir</button><button id="bpdf" class="sec" onclick="salvarPDF()">📄 Salvar PDF</button><button class="sec" onclick="window.close()">✕ Fechar</button><span>A folha sai na horizontal (A4).</span></div>'
+      +'<div id="doc"><h2>ESPOSENDE · Almoxarifado — Consumo por Item</h2><p>'+esc(document.getElementById('aci-q').value)+' · '+esc(ultimo.onde)+' · Gerado em '+new Date().toLocaleString('pt-BR')+'</p><div id="k">'+esc(k)+'</div>'+document.getElementById('aci-res').innerHTML.replace(/class="aci-wrap"/g,'')+'</div>'
+      +'<scr'+'ipt>'+js+(pdf?'setTimeout(salvarPDF,300);':'setTimeout(function(){window.print()},400);')+'</scr'+'ipt></body></html>');
+    w.document.close();
   }
 
   // ---------- Botão dentro do módulo Almoxarifado ----------
