@@ -35,3 +35,22 @@ O custo gravado na base é o do Seta (antigo). Para os códigos abaixo, o custo 
 - Tabelas com cabeçalho azul-marinho (#14284a), linhas zebradas, Total e Média/mês destacados, linha de total marcada.
 - Rodapé: "Esposende · Central de Auditoria & Controle" + data/hora de geração. A4 horizontal.
 - Excel: logo e cards no topo de cada aba, sem linhas de grade, números em formato pt-BR.
+
+## Consumo Loja (menu Almoxarifado → 🏬 Consumo Loja; botão também dentro do módulo)
+Patch `almox-consumo-loja-patch.js`. Cruza o consumo (Qtd Atendida) dos itens controlados com o que gera esse consumo, aponta loja fora do padrão, prevê consumo e sugere compra.
+
+| Linha | Códigos | Motor | Padrão |
+|---|---|---|---|
+| Sacolas | 7894, 8209, 9516, 11094, 21604 | PA (pares vendidos) | **regra fixa: 1 sacola a cada 1,5 PA** |
+| Embalagem de presente | 11314, 11315, 11316 | PA | mediana das lojas (un./1.000 PA) |
+| Café / Pirulito / Balão (agrado) | 19388 / 15538 / 10546, 17314 | NFS (qtd de vendas); sem NFS usa PA | mediana das lojas (un./1.000 NFS) |
+| Fita PP 45mm / Etiqueta 70x24 | 7816 / 7982, 15483 | pares remanejados enviados pela loja (origem) | mediana das lojas (un./1.000 pares) |
+| Bobina PDV 79mm | 8002, 22203, 26104, 26153 | NFS | mediana das lojas (NFS por bobina) |
+| Papel A4, filme stretch | 7981, 14580 | — | só histórico |
+
+- Fonte do motor: `portal_sync` module_id = `almcl` → `vendas[{loja,mes,pares,nfs,valor}]`, `remanejo[{loja,mes,pares,pedidos}]`, `params`. Carregada na aba "Base de vendas e remanejo" (xlsx/csv; tipo reconhecido pelas colunas; carga nova troca só loja×mês do arquivo). Não existe venda por loja/mês em outro módulo da nuvem; o Remanejo só guarda o detalhe de 14 a 29/09/2026.
+- Comparação no **acumulado dos meses fechados** (loja pede a cada 2–3 meses). Índice da loja = consumo ÷ motor; Esperado = motor × padrão; Desvio = índice ÷ padrão − 1.
+- Situação: ACIMA (> +tolerância, padrão 25%), ABAIXO (< −tolerância), VENDE E NÃO PEDE (tem motor e consumo zero), POUCO DADO (motor < 20% da mediana), CD fora do padrão (entra no total). Padrão por mediana exige ≥ 3 lojas com base.
+- Previsão mensal: motor = média dos meses fechados × (1 + crescimento, padrão 10%, só para venda/NFS); consumo = motor previsto × padrão da rede (ou índice real da loja, parâmetro). Loja sem motor e CD: média de consumo. Item = previsão da linha × participação do item.
+- Sugestão de compra = previsão mensal × cobertura (padrão 3 meses) − estoque atual (`dbEstoqueRaw`); embalagens no custo real.
+- Saídas: Painel em cards, Comparativo entre lojas, Relatório mensal (itens × mês, qtd e R$, busca por loja/regional), Previsão & compra, Relatório Gerencial (impressão/PDF com logo) e Excel (Gerencial, Mensal, Comparativo, Previsão por loja, Sugestão de compra, Bases).
