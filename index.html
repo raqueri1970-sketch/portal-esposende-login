@@ -883,6 +883,8 @@ async function openPortal(){
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('financeiro-patch.js?v=20261021-1',location.href).href+'"></scr'+'ipt>');
   // Estado de tela dos módulos: não restaura filtros pela posição (NF-e mostrava só 4 notas após carga nova de outro usuário) e recalcula os cartões do NF-e.
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('estado-modulos-patch.js?v=20261105-1',location.href).href+'"></scr'+'ipt>');
+  // Última atualização de cada módulo (topo e Visão Geral) + recarga automática quando outro usuário atualiza a nuvem.
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('atualizacoes-patch.js?v=20261105-1',location.href).href+'"></scr'+'ipt>');
   // Desconto em Folha · Crediário e Ex-funcionários: cards na visão geral e grupo "Crediário" no menu (tela crediario/).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('crediario-patch.js?v=20261029-pasta',location.href).href+'"></scr'+'ipt>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
