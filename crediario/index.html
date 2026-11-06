@@ -687,6 +687,9 @@ function cruzar() {
   // ex-funcionário: depois da saída não há folha — as parcelas da folha do mês da saída em diante são o saldo que tem de sair
   // na rescisão (verba 1260 da folha desse mês) e passam todas para essa folha. Readmitido (voltou depois da saída) segue normal.
   const saidaDe = cpf => { const d = desl.get(cpf), f = porCpf.get(cpf); return d && !(f && f.noCadastro && f.admissao && f.admissao > d.saida) ? d.saida : ''; };
+  // plano BRA (mensalidade, não compra): a de depois do mês da saída é cancelada — não vai para a rescisão (05/11/2026: Victor, folha 10)
+  const planoPosSaida = (p, s) => /^BRA\d/i.test(String(p.documento || '')) && String(p.vencimento || '').slice(0, 7) > s.slice(0, 7);
+  for (let i = par.length - 1; i >= 0; i--) { const p = par[i], s = saidaDe(p.cpf); if (s && planoPosSaida(p, s)) par.splice(i, 1); }
   par.forEach(p => { const s = saidaDe(p.cpf); if (s && p.comp > s.slice(0, 7) && !(p.lancamento > s)) { p.compParcela = p.comp; p.comp = s.slice(0, 7); p.resc = true; } });
   // "COMPRA EM LOJA" (origem rh) = as compras do ciclo com todas as parcelas; os outros relatórios de compras = crediário da
   // loja (parcelas em aberto). Os dois são o DEVIDO: a mesma parcela nos dois vira uma linha só e "arquivos" diz em quais
@@ -1365,6 +1368,7 @@ function telaPainel() {
       (N.parcial && N.liquida > 0.009
         ? kpi('Descontado acima das compras da base', brl(N.liquida), 'parte é parcela de compra antiga', 't-cinza', "drill('liq')")
         : kpi('Diferença líquida', brl(N.liquida), N.liquida < -0.009 ? 'descontado a menos no total' : N.liquida > 0.009 ? 'descontado a mais no total' : 'confere', Math.abs(N.liquida) > 0.009 ? 't-laranja' : 't-verde', "drill('liq')")) +
+      kpi('Todas as divergências do mês', qtd(N.ls.filter(l => !['ok', 'prev'].includes(l.st)).length), 'ativos e ex-funcionários, por tipo', 't-vermelho', "drill('diverg')") +
       kpi('Funcionários que batem', `${qtd(N.ok)} de ${qtd(N.aud.length)}`, `${pctTxt(N.pctFunc)}${N.verif ? ` · ${qtd(N.verif)} a verificar` : ''}`, N.pctFunc >= 99 ? 't-verde' : N.verif ? 't-cinza' : 't-laranja', "drill('batem')");
     // compras do mês × compras anteriores × rescisão e conciliação com a folha
     const fecha = rd2(c.devido + N.cMenos + N.cMais + N.cVerif + N.cResc + N.cArred), bate = Math.abs(fecha - c.desc) <= 0.01;
@@ -2121,7 +2125,12 @@ const TIPOS_NAO_DESC = new Set(['Não descontou', 'Descontou a menos', 'Saldo n�
   'Valor lançado errado no RH (centavos)', 'Possível erro de centavos no RH', 'Ex-funcionário com débito em aberto', 'Fora da lista do RH', 'Fora do desconto do RH', 'Lista do RH a menos']);
 // não descontados por funcionário, separados: com erro de centavos no RH (corrigir o lançamento) e sem (outros motivos)
 function modeloNaoDesc() {
-  const ps = R.pend.filter(p => TIPOS_NAO_DESC.has(p.tipo) && !encerrada(p)), CENT = 'Valor lançado errado no RH (centavos)', por = new Map();
+  // ex-funcionário: entra pelo resultado da rescisão (conta corrente) — pendência bruta de quem fechou sem perda não aparece
+  // (05/11/2026: Murilo/Jorge apareciam como não descontados com a rescisão OK / a conferir)
+  const exRes = new Map(R.exs.map(o => [o.pe.cpf, resEx(o)])), CENT = 'Valor lançado errado no RH (centavos)', por = new Map();
+  const ps = R.pend.filter(p => TIPOS_NAO_DESC.has(p.tipo) && !encerrada(p) && !exRes.has(p.cpf)).concat(R.exs.filter(o => exRes.get(o.pe.cpf).res === 'perda' && !decidido(o)).map(o => {
+    const r = exRes.get(o.pe.cpf), pc = R.pend.find(p => p.cpf === o.pe.cpf && p.tipo === CENT), f = o.pe.cad || {};
+    return {id: 'resc|' + o.pe.cpf, tipo: pc ? CENT : 'Rescisão descontou a menos', cpf: o.pe.cpf, nome: o.pe.nome, matricula: f.matricula || o.d.matricula || '', loja: f.loja || o.d.estab || '', comp: o.d.saida.slice(0, 7), valor: r.valor, txt: (pc ? pc.txt + ' · ' : '') + r.obs, grav: 'alta', trat: null}; }));
   ps.forEach(p => { const o = por.get(p.cpf) || {cpf: p.cpf, nome: p.nome, loja: p.loja, cent: 0, outros: 0, compras: new Set(), mot: new Set(), folhas: new Set()};
     if (p.tipo === CENT) { o.cent += p.valor; ((p.txt.match(/compras? (CE[\d, CE]+?) lançadas/) || [])[1] || '').split(',').map(x => x.trim()).filter(Boolean).forEach(x => o.compras.add(x)); }
     else { o.outros += p.valor; o.mot.add(p.tipo); }
@@ -2143,6 +2152,26 @@ function modeloNaoDesc() {
       ['Ativos com erro de centavos', qtd(com.filter(o => !(pe(o.cpf) || {}).ex).length)]],
     secoes: [sCom, sSem, {titulo: `Pendências (${pendOrd.length})`, cab: CAB_PEND, linhas: pendOrd.map(linhaPend), direita: [8], cpfs: pendOrd.map(p => p.cpf)}],
     cpfs: sCom.cpfs, assinaturas: ['Auditoria', 'RH / Departamento Pessoal']};
+}
+// todas as divergências da folha do mês (COMP), ativos e ex-funcionários, uma seção por tipo (05/11/2026)
+function modeloDiverg() {
+  const N = numeros(), comp = compBR(COMP), pe = c => R.pessoas.get(c) || {}, sit = l => { const p = pe(l.cpf); return p.ex ? `Ex-funcionário (saída ${dataBR(p.desl.saida)})` : p.cad && p.cad.noCadastro ? 'Ativo' : 'Fora do cadastro'; };
+  const cab = ['Funcionário', 'CPF', 'Situação', 'Loja', 'Prestações do mês', 'Devido', 'Descontado', 'Diferença', 'No acumulado', 'O que fazer', 'Decisão'];
+  const btn = l => { const p = pe(l.cpf); if (p.ex) { const o = R.exs.find(x => x.pe.cpf === l.cpf); return o ? celDecEx(o, resEx(o)) || '' : ''; }
+    return ndAbertas(l.cpf).length ? {t: 'Sem decisão', html: `<button class="btn small" data-decidirnd="${l.cpf}">Decidir</button>`} : ''; };
+  const faz = l => { const p = pe(l.cpf); if (ehResc(l)) { const o = R.exs.find(x => x.pe.cpf === l.cpf), r = o && resEx(o); return r && r.obs ? r.obs : 'Rescisão OK — o saldo saiu na rescisão'; }
+    return {nao: p.cad && p.cad.noCadastro ? 'Não descontou — lançar na próxima folha' : 'Não está na folha — cobrar por boleto ou confirmar com o RH', menos: 'Descontou a menos — lançar a diferença na próxima folha',
+      mais: 'Descontou a mais — conferir a compra e devolver se não houver', semcompra: 'Desconto sem compra no crediário — pedir a origem ao RH (lista Diversos)',
+      verif: 'Descontou acima das compras da base — provável parcela de compra antiga já quitada; confirmar no próximo lote de baixa', comp: 'Diferença de outra folha compensada neste mês — OK', rh: 'Só no RH'}[l.st] || STAT[l.st][0]; };
+  const lin = l => [pe(l.cpf).nome || '', cpfF(l.cpf), sit(l), (pe(l.cpf).cad || {}).loja || '', l.parcelas.map(x => x.documento).join(', '), V(l.devido), V(l.desc), V(l.dif), l.acum != null && Math.abs(l.acum) > 0.009 ? V(l.acum) : '', faz(l), btn(l)];
+  const tot = ls => ['Total', `${ls.length} funcionário(s)`, '', '', '', V(ls.reduce((t, l) => t + l.devido, 0)), V(ls.reduce((t, l) => t + l.desc, 0)), V(ls.reduce((t, l) => t + l.dif, 0)), '', '', ''];
+  const d = N.ls.filter(l => !['ok', 'prev'].includes(l.st)).sort((a, b) => a.dif - b.dif);
+  const g = [['Ativos — não descontou ou descontou a menos (cobrar)', l => ['nao', 'menos'].includes(l.st) && !ehResc(l)], ['Rescisões do mês (ex-funcionários)', l => ehResc(l)],
+    ['Descontado a mais ou sem compra (conferir / devolver)', l => ['mais', 'semcompra'].includes(l.st) && !ehResc(l)], ['A verificar — descontou acima das compras da base', l => l.st === 'verif' && !ehResc(l)],
+    ['Compensado de outra folha (informativo)', l => l.st === 'comp' && !ehResc(l)], ['Outros', l => !['nao', 'menos', 'mais', 'semcompra', 'verif', 'comp'].includes(l.st) && !ehResc(l)]];
+  const secoes = g.map(([t, f]) => { const ls = d.filter(f); return {titulo: `${t} (${ls.length})`, cab, linhas: ls.map(lin), direita: [5, 6, 7, 8], rodape: tot(ls), cpfs: ls.map(l => l.cpf), n: ls.length, v: rd2(ls.reduce((a, l) => a + l.dif, 0))}; }).filter(x => x.n);
+  return {titulo: `Divergências da folha de ${comp}`, subtitulo: `${qtd(d.length)} funcionário(s) com diferença entre o devido (crediário) e o descontado (verba 1260) — ativos e ex-funcionários`, marca: MARCA, paisagem: true, arquivo: `divergencias_folha_${COMP}_${hojeISO()}`,
+    resumo: secoes.map(x => [x.titulo.replace(/ \(\d+\)$/, ''), `${qtd(x.n)} - ${brl(x.v)}`]), secoes, cpfs: secoes.length ? secoes[0].cpfs : [], assinaturas: ['Auditoria', 'RH / Departamento Pessoal']};
 }
 function drill(k) {
   const N = numeros(), comp = compBR(COMP), cel = (t, f) => lista(t, `Folha de ${comp}`, CAB_CEL, N.ls.filter(f).sort((a, b) => Math.abs(b.dif) - Math.abs(a.dif) || b.devido - a.devido), linhaCel, l => l.cpf, [4, 5, 6, 7],
@@ -2167,6 +2196,7 @@ function drill(k) {
     rh_bate: () => par('RH × crediário: parcelas que batem', crd, conjRH().ambos),
     rh_dif: () => { const x = conjRH(); return par('RH × crediário: parcelas que não batem', `${crd} · em aberto no crediário e fora do RH, no RH e não em aberto no crediário, ou em dois arquivos do RH`, [...x.soCred, ...x.soRH, ...x.dup]); },
     semrh: () => par('Parcelas de compras sem "COMPRA EM LOJA" do RH', 'Em aberto no crediário, de ciclos de compra sem o arquivo do RH', conjRH().semRHv),
+    diverg: () => modeloDiverg(),
     devido: () => cel(`Devido na folha de ${comp}`, l => l.devido > 0), desc: () => cel(`Descontado na folha de ${comp}`, l => l.desc > 0),
     liq: () => cel(`Diferenças na folha de ${comp}`, l => l.st !== 'prev' && Math.abs(l.dif) > 0.009), batem: () => cel(R.modoRH ? `Funcionários conferidos - ${comp}` : `Funcionários que batem - ${comp}`, l => R.modoRH ? !['prev', 'rh'].includes(l.st) : l.st === 'ok'),
     menos: () => cel(`Deixou de descontar - ${comp}`, l => ['menos', 'nao'].includes(l.st) && !ehResc(l)), mais: () => cel(`Descontado sem compra registrada - ${comp}`, l => ['mais', 'semcompra'].includes(l.st) && !ehResc(l)),
