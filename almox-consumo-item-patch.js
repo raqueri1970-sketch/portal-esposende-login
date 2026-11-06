@@ -4,7 +4,7 @@
 // (dbConsumoRaw: Qtd Atendida / Custo Atendido). Não altera nada no módulo.
 (function(){
   if(window.__almoxConsumoItemPatch)return;
-  window.__almoxConsumoItemPatch='2026-11-06.1';
+  window.__almoxConsumoItemPatch='2026-11-06.2';
 
   var MESES=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
   var state={itensMarcados:null,ultimoTermo:null};
@@ -415,8 +415,25 @@
   // Troca, na tela do módulo, o custo das embalagens de presente pelo custo real
   // (Sulnove 0,004 + DIFAL). O valor original do Seta fica em __custoSeta/__custoUnitSeta
   // e é o que continua sendo gravado na nuvem (montarPayloadAtual devolve os originais).
-  function ajustarCustos(w){
+  // ---------- Código do item padronizado (estoque x consumo) ----------
+  // O relatório de estoque grava o código com zeros à esquerda (007894) e as requisições sem (7894).
+  // O módulo cruza estoque e consumo pelo texto exato do código: nenhum item casava, e cada insumo
+  // aparecia duas vezes (consumo com estoque 0 = CRÍTICO; estoque cheio = SEM CONSUMO).
+  // Padroniza tudo sem zeros à esquerda antes de o painel calcular.
+  function codigoPadrao(c){var t=String(c==null?'':c).trim();return /^\d+$/.test(t)?String(parseInt(t,10)):t;}
+  function padronizarCodigos(w){
     var mudou=false;
+    ['dbEstoqueRaw','dbEstoqueTI','dbConsumoRaw','dbConsumoTI'].forEach(function(nome){
+      var arr;try{arr=w.eval("typeof "+nome+"!=='undefined'?"+nome+":[]")||[];}catch(e){return;}
+      for(var i=0;i<arr.length;i++){var r=arr[i];if(!r||r['Código']==null)continue;
+        var n=codigoPadrao(r['Código']);if(n!==r['Código']){r['Código']=n;mudou=true;}}
+    });
+    try{var ov=w.eval("typeof estoqueMinOverrides!=='undefined'?estoqueMinOverrides:null");
+      if(ov&&typeof ov==='object')Object.keys(ov).forEach(function(k){var n=codigoPadrao(k);if(n!==k){if(ov[n]==null)ov[n]=ov[k];delete ov[k];mudou=true;}});}catch(e){}
+    return mudou;
+  }
+  function ajustarCustos(w){
+    var mudou=padronizarCodigos(w);
     try{
       var cons=w.eval("typeof dbConsumoRaw!=='undefined'?dbConsumoRaw:[]")||[];
       for(var i=0;i<cons.length;i++){

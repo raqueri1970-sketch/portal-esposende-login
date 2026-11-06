@@ -862,7 +862,7 @@ async function openPortal(){
   // Correção isolada da regra do Almoxarifado. Não altera HTML, cards ou gráficos.
   html=html.replace(/<\/body>/i,ALMOX_MINIMO_PATCH+'</body>');
   // Almoxarifado: botão "Consumo por Item" (busca item + loja/todas → consumo mês a mês e média mensal).
-  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('almox-consumo-item-patch.js?v=20261106-1',location.href).href+'"></scr'+'ipt>');
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('almox-consumo-item-patch.js?v=20261106-2',location.href).href+'"></scr'+'ipt>');
   // Almoxarifado: menu "Consumo Loja" (consumo x venda/remanejo por loja, lojas fora do padrão, previsão e sugestão de compra).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('almox-consumo-loja-patch.js?v=20261106-8',location.href).href+'"></scr'+'ipt>');
   // Capa oficial do card Treinamentos e Cursos.
