@@ -461,4 +461,5 @@
   setInterval(instalarBotao,1500);
   new MutationObserver(function(){instalarBotao();}).observe(document.documentElement,{childList:true,subtree:true});
   window.abrirConsumoPorItem=abrir;
+  window.__ESPOSENDE_LOGO_B64=LOGO_B64; // usado pelo Consumo Loja (almox-consumo-loja-patch.js)
 })();
