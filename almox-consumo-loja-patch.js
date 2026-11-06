@@ -11,7 +11,7 @@
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-06.4';
+  window.__almoxConsumoLoja='2026-11-06.5';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -122,7 +122,7 @@
       var a=(r[0]&&r[0][0])||{};
       S.alm={consumo:a.c||[],estoque:a.e||[],reg:a.r||{},nomes:a.n||{}};
       var b=(r[1]&&r[1][0]&&r[1][0].payload)||{};
-      S.base={vendas:b.vendas||[],remanejo:b.remanejo||[],params:Object.assign({},PARAMS_PADRAO,b.params||{}),arquivos:b.arquivos||[],atualizadoEm:b.atualizadoEm||null,atualizadoPor:b.atualizadoPor||null};
+      S.base={vendas:b.vendas||[],remanejo:b.remanejo||[],estoque:b.estoque||null,params:Object.assign({},PARAMS_PADRAO,b.params||{}),arquivos:b.arquivos||[],atualizadoEm:b.atualizadoEm||null,atualizadoPor:b.atualizadoPor||null};
       S.carregado=true;
     }catch(e){console.error('[Consumo Loja]',e);S.erro=e.message||String(e);}
     S.carregando=false;
@@ -132,7 +132,7 @@
   async function salvarBase(){
     var tk=null;try{var sb=acharSb();if(sb){var s=(await sb.auth.getSession()).data.session;tk=s&&s.user&&s.user.email;}}catch(e){}
     S.base.atualizadoEm=new Date().toISOString();S.base.atualizadoPor=tk||(window.__PORTAL_SESSION&&window.__PORTAL_SESSION.email)||null;
-    var payload={vendas:S.base.vendas,remanejo:S.base.remanejo,params:S.base.params,arquivos:S.base.arquivos.slice(-30),atualizadoEm:S.base.atualizadoEm,atualizadoPor:S.base.atualizadoPor};
+    var payload={vendas:S.base.vendas,remanejo:S.base.remanejo,estoque:S.base.estoque,params:S.base.params,arquivos:S.base.arquivos.slice(-30),atualizadoEm:S.base.atualizadoEm,atualizadoPor:S.base.atualizadoPor};
     await rest('portal_sync?on_conflict=tenant_id,module_id',{method:'POST',prefer:'resolution=merge-duplicates,return=minimal',body:{module_id:MOD_ID,payload:payload,updated_at:S.base.atualizadoEm}});
   }
 
@@ -165,6 +165,10 @@
     var est={};
     S.alm.estoque.forEach(function(e){var c=String(parseInt(e['Código'],10));if(!COD_LINHA[c])return;
       var u=unitReal(c);est[c]={saldo:Number(e['Estoque Atual'])||0,custo:u!=null?u:(Number(e['Custo Unitário'])||0),ultCompra:e['Última Compra']||''};});
+    // Estoque carregado no menu (todos os depósitos: CD + AX...) substitui o do módulo para os itens que trouxer.
+    var eb=S.base.estoque&&S.base.estoque.itens;
+    if(eb)Object.keys(eb).forEach(function(c){var x=eb[c],u=unitReal(c),ant=est[c]||{};
+      est[c]={saldo:x.total,custo:u!=null?u:(x.custo||ant.custo||0),ultCompra:x.ultCompra||ant.ultCompra||'',deps:x.deps};});
     Object.keys(itens).forEach(function(c){var it=itens[c];if(!est[c])est[c]={saldo:0,custo:0,ultCompra:''};
       if(!est[c].custo){var q=0,v=0;Object.keys(it.meses).forEach(function(m){q+=it.meses[m].q;v+=it.meses[m].v;});est[c].custo=q?v/q:0;}});
     var meses=mesesEntre(S.de,S.ate);
@@ -259,7 +263,7 @@
       var resto=e.saldo,cobAtual=0;for(var k=0;k<futuros.length;k++){var q=pm[futuros[k]];if(!q){cobAtual=null;break;}if(resto>=q){resto-=q;cobAtual++;}else{cobAtual+=resto/q;resto=0;break;}}
       if(cobAtual!=null&&resto>0&&prevM)cobAtual+=resto/prevM;
       return {cod:it.cod,nome:it.nome,linha:L,share:share,media:M.fechados.length?it._qp/M.fechados.length:0,prevM:prevM,pm:pm,prevHz:soma(mHz),
-        saldo:e.saldo,custo:e.custo,cobAtual:prevM?cobAtual:null,alvo:alvo,sug:sug,sugV:sug*e.custo,ultCompra:e.ultCompra};
+        saldo:e.saldo,deps:e.deps||null,custo:e.custo,cobAtual:prevM?cobAtual:null,alvo:alvo,sug:sug,sugV:sug*e.custo,ultCompra:e.ultCompra};
     }).sort(function(a,b){return b.prevM-a.prevM;});
     return {porLoja:porLoja.sort(function(a,b){return b.prev-a.prev;}),total:total,totalMes:totalMes,itens:itensPrev,hz:hz,cob:cob,futuros:mHz,mCob:mCob,todos:futuros,ehVenda:ehVenda};
   }
@@ -338,7 +342,20 @@
     var cLoja=ehRem&&cOrig>=0?cOrig:col(COLS.loja),cData=col(COLS.data);
     if(cLoja<0)throw new Error('Não achei a coluna da loja (Loja / Filial / Empresa'+(ehRem?' / Origem':'')+').');
     var mesArq=cData<0?mesDoNome(nomeArq):null;
-    if(!ehRem&&(h.indexOf('DESCRICAO')>=0||h.indexOf('CODIGO')>=0)&&h.indexOf('QUANTIDADE')>=0&&cData<0)throw new Error('parece relatório de ESTOQUE, não de vendas.');
+    // Relatório de ESTOQUE (REPORTGROUP;CODIGO;DESCRICAO;...;QUANTIDADE): soma os depósitos (001 CD, AX - ALMOXARIFADO CONDE...).
+    // Estoque das lojas é desconsiderado (regra: a loja não dá baixa no uso dos insumos).
+    if(!ehRem&&h.indexOf('CODIGO')>=0&&h.indexOf('DESCRICAO')>=0&&h.indexOf('QUANTIDADE')>=0&&cData<0){
+      var cC=h.indexOf('CODIGO'),cDs=h.indexOf('DESCRICAO'),cQ2=h.indexOf('QUANTIDADE'),cCu=h.indexOf('CUSTOAQUISICAO'),cUc=h.indexOf('ULTIMACOMPRA'),its={},nl=0,nLoja=0;
+      for(var k=hi+1;k<rows.length;k++){var w=rows[k];if(!w||w[cC]==null||w[cC]==='')continue;
+        var grp=String(w[cLoja]||'').replace(/\s+/g,' ').trim(),ljk=codLoja(grp);
+        if(/^\d/.test(grp)&&ljk!=='1'){nLoja++;continue;}
+        var cod=String(parseInt(w[cC],10));if(!COD_LINHA[cod])continue;
+        var it=its[cod]=its[cod]||{cod:cod,nome:String(w[cDs]||'').replace(/\s+/g,' ').trim(),total:0,deps:{},custo:0,ultCompra:''};
+        var q=num(w[cQ2]);it.total+=q;it.deps[grp]=(it.deps[grp]||0)+q;nl++;
+        if(cCu>=0&&num(w[cCu]))it.custo=num(w[cCu]);
+        var uc=cUc>=0?w[cUc]:null;if(uc instanceof Date)uc=uc.toLocaleDateString('pt-BR');uc=String(uc||'').trim();if(/\d/.test(uc)&&(!it.ultCompra||uc>it.ultCompra))it.ultCompra=uc;}
+      return {tipo:'estoque',itens:its,linhas:[],lidas:nl,ignoradas:nLoja};
+    }
     if(cData<0&&!mesArq)throw new Error('Não achei a coluna de data/mês e o nome do arquivo não tem o mês (ex.: FEVEREIRO.CSV).');
     function mesLinha(r){return cData>=0?mesDe(r[cData]):mesArq;}
     var agg={},linhasLidas=0,ign=0;
@@ -373,6 +390,15 @@
       var f=files[i];
       try{
         var rows=await lerArquivo(f),r=interpretar(rows,f.name);
+        if(r.tipo==='estoque'){
+          var nIt=Object.keys(r.itens).length;if(!nIt)throw new Error('nenhum item controlado (sacola, embalagem, café...) no estoque.');
+          var ant=(S.base.estoque&&S.base.estoque.itens)||{};Object.keys(r.itens).forEach(function(c){ant[c]=r.itens[c];});
+          S.base.estoque={itens:ant,em:new Date().toISOString(),arquivo:f.name};
+          S.base.arquivos.push({nome:f.name,tipo:'estoque',em:new Date().toISOString(),meses:'-',lojas:0});
+          var deps={};Object.keys(r.itens).forEach(function(c){Object.keys(r.itens[c].deps).forEach(function(d){deps[d]=1;});});
+          msgs.push('✔ '+f.name+': ESTOQUE · '+nIt+' itens controlados · depósitos: '+Object.keys(deps).join(', ')+(r.ignoradas?' · '+n0(r.ignoradas)+' linhas de lojas desconsideradas':''));
+          continue;
+        }
         if(!r.linhas.length)throw new Error('nenhuma linha válida (loja + mês).');
         var ms={};r.linhas.forEach(function(x){ms[x.mes]=1;});var mk=Object.keys(ms).sort();
         if(r.tipo==='remanejo')S.base.remanejo=mesclar(S.base.remanejo,r.linhas);else S.base.vendas=mesclar(S.base.vendas,r.linhas);
@@ -664,7 +690,7 @@
       var cobCls=i.cobAtual==null?'':i.cobAtual<1?'up':i.cobAtual<mc.length?'dn':'ok';
       h+='<tr><td class="l">'+esc(i.nome)+'<small>'+i.cod+(i.ultCompra?' · última compra '+esc(i.ultCompra):'')+'</small></td><td>'+esc(i.linha.grupo)+'</td><td>'+n0(i.media)+'</td><td class="ok"><b>'+n0(i.prevM)+'</b></td>'
         +(dez?'<td class="dn"><b>'+n0(i.pm[dez])+'</b></td>':'')
-        +'<td>'+n0(i.saldo)+'</td><td class="'+cobCls+'">'+(i.cobAtual!=null?n1(i.cobAtual)+' m':'—')+'</td><td>'+n0(i.alvo)+'</td>'
+        +'<td>'+n0(i.saldo)+(i.deps?'<small>'+Object.keys(i.deps).map(function(d){return esc(d.replace(/\s*-\s*ALMOXARIFADO\s*/i,' ')).slice(0,14)+' '+n0(i.deps[d]);}).join(' + ')+'</small>':'')+'</td><td class="'+cobCls+'">'+(i.cobAtual!=null?n1(i.cobAtual)+' m':'—')+'</td><td>'+n0(i.alvo)+'</td>'
         +'<td><b class="'+(i.sug?'dn':'ok')+'">'+(i.sug?n0(i.sug):'—')+'</b></td><td>'+(i.custo?'R$ '+Number(i.custo).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4}):'—')+'</td><td><b>'+(i.sug?brl(i.sugV):'—')+'</b></td></tr>';});
     h+='<tr class="tot"><td>TOTAL</td><td></td><td></td><td>'+brl(t.pm)+'/mês</td>'+(dez?'<td></td>':'')+'<td></td><td></td><td></td><td></td><td></td><td>'+brl(t.sug)+'</td></tr></tbody></table></div>'
       +'<div class="nota">Sugestão = previsão de '+mc.map(mesLabel).join(' + ')+' (dezembro ×'+n2(P.fatorDez)+' nos itens de venda, agrado e bobina) − estoque atual do almoxarifado. Cobertura em vermelho = menos de 1 mês. '
@@ -684,7 +710,7 @@
       +'<div><span>Atualizado</span><b style="font-size:14px">'+(B.atualizadoEm?new Date(B.atualizadoEm).toLocaleString('pt-BR'):'—')+'</b><small>'+esc(B.atualizadoPor||'')+'</small></div></div>'
       +(S.msgBase?'<div class="aviso" style="background:#0d2233;border-color:#2f5478;color:#cfe0f2">'+S.msgBase.map(esc).join('<br>')+'</div>':'')
       +'<div class="drop" id="acl-drop">⬇ Arraste aqui as planilhas de <b>vendas por loja/mês</b> e/ou <b>pedidos de remanejo</b> (xlsx ou csv) — ou <label style="display:inline;color:#5fd3b8;cursor:pointer;text-transform:none;font-size:13px">clique para escolher<input type="file" id="acl-file" multiple accept=".xlsx,.xls,.csv" style="display:none"></label>'
-      +'<div style="margin-top:10px;font-size:12px">O tipo é reconhecido pelas colunas: <b>Loja + Mês/Data + Pares (PA) + NFS + Valor</b> = vendas · <b>Origem + Destino + Data + Qtde</b> = remanejo. Carga nova troca só os meses e lojas que vieram no arquivo.</div>'
+      +'<div style="margin-top:10px;font-size:12px">O tipo é reconhecido pelas colunas: <b>Loja + Mês/Data + Pares (PA) + NFS + Valor</b> = vendas · <b>Origem + Destino + Data + Qtde</b> = remanejo · <b>Código + Descrição + Quantidade</b> = estoque dos depósitos. Carga nova troca só os meses e lojas que vieram no arquivo.</div>'
       +'<div style="margin-top:10px"><button type="button" data-a="mod" data-m="ven">Modelo de vendas (.csv)</button> <button type="button" data-a="mod" data-m="rem">Modelo de remanejo (.csv)</button></div></div>'
       +'<h3>⚙ Parâmetros (valem para todos)</h3><div class="pgrid">'
       +'<div><label>PA por sacola (regra)</label><input type="number" step="0.1" min="0.5" id="p-pa" value="'+P.paPorSacola+'"></div>'
@@ -695,6 +721,10 @@
       +'<div><label>Horizonte da previsão (meses)</label><input type="number" step="1" min="1" max="12" id="p-hz" value="'+P.horizonte+'"></div>'
       +'<div><label>Base da previsão</label><select id="p-bp"><option value="padrao"'+(P.basePrev!=='real'?' selected':'')+'>Padrão da rede (auditoria)</option><option value="real"'+(P.basePrev==='real'?' selected':'')+'>Índice real de cada loja</option></select></div>'
       +'</div><div style="margin-top:10px"><button type="button" class="pri" data-a="salvarP">💾 Salvar parâmetros</button></div>'
+      +'<h3>Estoque dos depósitos (CD + AX)</h3>'+(B.estoque&&B.estoque.itens?'<div class="tw" style="max-height:300px"><table><thead><tr><th>Item</th><th>Depósitos</th><th>Total</th><th>Última compra</th></tr></thead><tbody>'
+        +Object.keys(B.estoque.itens).map(function(c){var x=B.estoque.itens[c];return '<tr><td class="l">'+esc(x.nome)+'<small>'+c+'</small></td><td class="l">'+Object.keys(x.deps).map(function(d){return esc(d)+': <b>'+n0(x.deps[d])+'</b>';}).join('<br>')+'</td><td><b>'+n0(x.total)+'</b></td><td>'+esc(x.ultCompra||'')+'</td></tr>';}).join('')
+        +'</tbody></table></div><div class="nota">Carregado em '+new Date(B.estoque.em).toLocaleString('pt-BR')+' ('+esc(B.estoque.arquivo||'')+'). Itens que não vieram no arquivo usam o estoque do módulo Almoxarifado (só 001 CD). Estoque das lojas é desconsiderado.</div><div style="margin-top:6px"><button type="button" data-a="limpar" data-m="est">Apagar estoque carregado</button></div>'
+        :'<div class="vazio" style="padding:14px">Nada carregado: usando o estoque do módulo Almoxarifado (só 001 CD). Arraste aqui o relatório de estoque com todos os depósitos (ex.: 001 CD + AX - ALMOXARIFADO CONDE).</div>')
       +'<h3>Vendas carregadas</h3>'+resumo(B.vendas,['pares','nfs','valor'])+(B.vendas.length?'<div style="margin-top:6px"><button type="button" data-a="limpar" data-m="ven">Apagar base de vendas</button></div>':'')
       +'<h3>Remanejo carregado (pares enviados pela loja de origem)</h3>'+resumo(B.remanejo,['pares','pedidos'])+(B.remanejo.length?'<div style="margin-top:6px"><button type="button" data-a="limpar" data-m="rem">Apagar base de remanejo</button></div>':'')
       +(B.arquivos.length?'<h3>Últimas cargas</h3><div class="nota">'+B.arquivos.slice(-10).reverse().map(function(a){return esc(new Date(a.em).toLocaleString('pt-BR')+' · '+a.nome+' · '+a.tipo+' · '+a.meses+' · '+a.lojas+' lojas');}).join('<br>')+'</div>':'');
@@ -715,9 +745,10 @@
     render();
   }
   async function limparBase(m){
-    if(!confirm('Apagar toda a base de '+(m==='rem'?'remanejo':'vendas')+' carregada neste módulo? (o consumo do almoxarifado não é afetado)'))return;
-    if(m==='rem')S.base.remanejo=[];else S.base.vendas=[];
-    try{await salvarBase();S.msgBase=['✔ Base de '+(m==='rem'?'remanejo':'vendas')+' apagada.'];}catch(e){S.msgBase=['✖ '+(e.message||e)];}
+    var nm=m==='rem'?'remanejo':m==='est'?'estoque':'vendas';
+    if(!confirm('Apagar toda a base de '+nm+' carregada neste módulo? (o consumo do almoxarifado não é afetado)'))return;
+    if(m==='rem')S.base.remanejo=[];else if(m==='est')S.base.estoque=null;else S.base.vendas=[];
+    try{await salvarBase();S.msgBase=['✔ Base de '+nm+' apagada.'];}catch(e){S.msgBase=['✖ '+(e.message||e)];}
     render();
   }
 
