@@ -11,7 +11,7 @@
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-06.6';
+  window.__almoxConsumoLoja='2026-11-06.7';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -119,11 +119,11 @@
     S.carregando=true;S.erro=null;render();
     try{
       var r=await Promise.all([
-        rest('portal_sync?module_id=eq.alm&select=c:payload->dbConsumoRaw,e:payload->dbEstoqueRaw,r:payload->dbRegionaisMap,n:payload->dbLojaNomeMap'),
+        rest('portal_sync?module_id=eq.alm&select=u:updated_at,c:payload->dbConsumoRaw,e:payload->dbEstoqueRaw,r:payload->dbRegionaisMap,n:payload->dbLojaNomeMap'),
         rest('portal_sync?module_id=eq.'+MOD_ID+'&select=payload')
       ]);
       var a=(r[0]&&r[0][0])||{};
-      S.alm={consumo:a.c||[],estoque:a.e||[],reg:a.r||{},nomes:a.n||{}};
+      S.alm={consumo:a.c||[],estoque:a.e||[],reg:a.r||{},nomes:a.n||{},atualizado:a.u||null};
       var b=(r[1]&&r[1][0]&&r[1][0].payload)||{};
       S.base={vendas:b.vendas||[],remanejo:b.remanejo||[],estoque:b.estoque||null,params:Object.assign({},PARAMS_PADRAO,b.params||{}),arquivos:b.arquivos||[],atualizadoEm:b.atualizadoEm||null,atualizadoPor:b.atualizadoPor||null};
       S.carregado=true;
@@ -168,8 +168,9 @@
     var est={};
     S.alm.estoque.forEach(function(e){var c=String(parseInt(e['Código'],10));if(!COD_LINHA[c])return;
       var u=unitReal(c);est[c]={saldo:Number(e['Estoque Atual'])||0,custo:u!=null?u:(Number(e['Custo Unitário'])||0),ultCompra:e['Última Compra']||''};});
-    // Estoque carregado no menu (todos os depósitos: CD + AX...) substitui o do módulo para os itens que trouxer.
-    var eb=S.base.estoque&&S.base.estoque.itens;
+    // Estoque: vem do sistema do almoxarifado (dbEstoqueRaw, já soma 001 CD + AX). A planilha carregada no
+    // menu só vale se for mais nova que a última atualização do módulo.
+    var eb=S.base.estoque&&S.base.estoque.itens&&(!S.alm.atualizado||String(S.base.estoque.em)>new Date(S.alm.atualizado).toISOString())?S.base.estoque.itens:null;
     if(eb)Object.keys(eb).forEach(function(c){var x=eb[c],u=unitReal(c),ant=est[c]||{};
       est[c]={saldo:x.total,custo:u!=null?u:(x.custo||ant.custo||0),ultCompra:x.ultCompra||ant.ultCompra||'',deps:x.deps};});
     Object.keys(itens).forEach(function(c){var it=itens[c];if(!est[c])est[c]={saldo:0,custo:0,ultCompra:''};
@@ -746,8 +747,8 @@
       +'</div><div style="margin-top:10px"><button type="button" class="pri" data-a="salvarP">💾 Salvar parâmetros</button></div>'
       +'<h3>Estoque dos depósitos (CD + AX)</h3>'+(B.estoque&&B.estoque.itens?'<div class="tw" style="max-height:300px"><table><thead><tr><th>Item</th><th>Depósitos</th><th>Total</th><th>Última compra</th></tr></thead><tbody>'
         +Object.keys(B.estoque.itens).map(function(c){var x=B.estoque.itens[c];return '<tr><td class="l">'+esc(x.nome)+'<small>'+c+'</small></td><td class="l">'+Object.keys(x.deps).map(function(d){return esc(d)+': <b>'+n0(x.deps[d])+'</b>';}).join('<br>')+'</td><td><b>'+n0(x.total)+'</b></td><td>'+esc(x.ultCompra||'')+'</td></tr>';}).join('')
-        +'</tbody></table></div><div class="nota">Carregado em '+new Date(B.estoque.em).toLocaleString('pt-BR')+' ('+esc(B.estoque.arquivo||'')+'). Itens que não vieram no arquivo usam o estoque do módulo Almoxarifado (só 001 CD). Estoque das lojas é desconsiderado.</div><div style="margin-top:6px"><button type="button" data-a="limpar" data-m="est">Apagar estoque carregado</button></div>'
-        :'<div class="vazio" style="padding:14px">Nada carregado: usando o estoque do módulo Almoxarifado (só 001 CD). Arraste aqui o relatório de estoque com todos os depósitos (ex.: 001 CD + AX - ALMOXARIFADO CONDE).</div>')
+        +'</tbody></table></div><div class="nota">Carregado em '+new Date(B.estoque.em).toLocaleString('pt-BR')+' ('+esc(B.estoque.arquivo||'')+'). Vale enquanto for mais novo que o estoque do módulo Almoxarifado (atualizado em '+(S.alm&&S.alm.atualizado?new Date(S.alm.atualizado).toLocaleString('pt-BR'):'—')+'). Estoque das lojas é desconsiderado.</div><div style="margin-top:6px"><button type="button" data-a="limpar" data-m="est">Apagar estoque carregado</button></div>'
+        :'<div class="vazio" style="padding:14px">Usando o estoque do módulo Almoxarifado (001 CD + AX), atualizado em '+(S.alm&&S.alm.atualizado?new Date(S.alm.atualizado).toLocaleString('pt-BR'):'—')+'. Arraste aqui o relatório de estoque com todos os depósitos (ex.: 001 CD + AX - ALMOXARIFADO CONDE).</div>')
       +'<h3>Vendas carregadas</h3>'+resumo(B.vendas,['pares','nfs','valor'])+(B.vendas.length?'<div style="margin-top:6px"><button type="button" data-a="limpar" data-m="ven">Apagar base de vendas</button></div>':'')
       +'<h3>Remanejo carregado (pares enviados pela loja de origem)</h3>'+resumo(B.remanejo,['pares','pedidos'])+(B.remanejo.length?'<div style="margin-top:6px"><button type="button" data-a="limpar" data-m="rem">Apagar base de remanejo</button></div>':'')
       +(B.arquivos.length?'<h3>Últimas cargas</h3><div class="nota">'+B.arquivos.slice(-10).reverse().map(function(a){return esc(new Date(a.em).toLocaleString('pt-BR')+' · '+a.nome+' · '+a.tipo+' · '+a.meses+' · '+a.lojas+' lojas');}).join('<br>')+'</div>':'');

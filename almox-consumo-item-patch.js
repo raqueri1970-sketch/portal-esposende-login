@@ -4,7 +4,7 @@
 // (dbConsumoRaw: Qtd Atendida / Custo Atendido). Não altera nada no módulo.
 (function(){
   if(window.__almoxConsumoItemPatch)return;
-  window.__almoxConsumoItemPatch='2026-11-04.1';
+  window.__almoxConsumoItemPatch='2026-11-06.1';
 
   var MESES=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
   var state={itensMarcados:null,ultimoTermo:null};
@@ -457,6 +457,69 @@
     if(ajustarCustos(w)){try{w.aplicarFiltros();}catch(e){try{w.calcularEAtualizarPainel();}catch(e2){}}}
   }
   setInterval(instalarCustoReal,1500);
+
+  // ---------- Leitura de CSV no módulo Almoxarifado ----------
+  // O relatório de estoque do sistema escreve a polegada como &QUOT; dentro da descrição
+  // (ex.: "ARRUELA LISA GALVAN 1/4&QUOT;"). O ";" final da entidade é o separador do CSV e o
+  // leitor do módulo separa as colunas sem respeitar aspas: a linha anda uma coluna e a
+  // QUANTIDADE vira 0. Antes de o módulo ler um .csv/.txt, troca as entidades HTML pelo
+  // caractere (sem ";"). Trabalha nos bytes, então a codificação do arquivo (Windows-1252/UTF-8) fica igual.
+  var ENT={quot:"''",amp:'&',lt:'<',gt:'>',apos:"'",nbsp:' '};
+  function limparBytesCSV(u8){
+    var out=[],i=0,n=u8.length,mudou=false;
+    while(i<n){
+      var c=u8[i];
+      if(c===38){ // '&'
+        var j=i+1,nome='';
+        while(j<n&&j-i<=8&&((u8[j]>=65&&u8[j]<=90)||(u8[j]>=97&&u8[j]<=122)||(u8[j]===35)||(u8[j]>=48&&u8[j]<=57))){nome+=String.fromCharCode(u8[j]);j++;}
+        var low=nome.toLowerCase(),rep=null;
+        if(j<n&&u8[j]===59&&nome){
+          if(ENT[low]!=null)rep=ENT[low];
+          else if(/^#\d{2,4}$/.test(nome)){var cc=parseInt(nome.slice(1),10);rep=cc<128?String.fromCharCode(cc):'';}
+        }
+        if(rep!=null){for(var k=0;k<rep.length;k++)out.push(rep.charCodeAt(k));i=j+1;mudou=true;continue;}
+      }
+      out.push(c);i++;
+    }
+    return mudou?new Uint8Array(out):null;
+  }
+  function instalarLeitorCSV(){
+    var m=moduloAlm();if(!m)return;var w=m.w;
+    if(w.__csvEntidadesFix||!w.FileReader)return;
+    w.__csvEntidadesFix='2026-11-06.1';
+    var FRp=w.FileReader.prototype,lerBytes=FRp.readAsArrayBuffer;
+    ['readAsText','readAsArrayBuffer','readAsBinaryString','readAsDataURL'].forEach(function(met){
+      var orig=FRp[met];if(typeof orig!=='function')return;
+      FRp[met]=function(blob){
+        var fr=this,args=Array.prototype.slice.call(arguments);
+        var nome=String((blob&&blob.name)||'');
+        if(!blob||!/\.(csv|txt)$/i.test(nome)||blob.__csvLimpo)return orig.apply(fr,args);
+        var leitor=new w.FileReader();
+        leitor.onload=function(){
+          var limpo=limparBytesCSV(new Uint8Array(leitor.result));
+          if(limpo){
+            var nb=new w.File([limpo],nome,{type:blob.type||'text/csv',lastModified:blob.lastModified});
+            nb.__csvLimpo=true;args[0]=nb;
+            console.info('[Almoxarifado] '+nome+': entidades HTML (&QUOT; etc.) corrigidas antes da leitura.');
+          }
+          orig.apply(fr,args);
+        };
+        leitor.onerror=function(){orig.apply(fr,args);};
+        lerBytes.call(leitor,blob);
+      };
+    });
+    // Arquivo lido com blob.text()/arrayBuffer() (sem FileReader)
+    var Bp=w.Blob&&w.Blob.prototype,origAB=Bp&&Bp.arrayBuffer,origTX=Bp&&Bp.text;
+    function ehCSV(b){return !b.__csvLimpo&&/\.(csv|txt)$/i.test(String(b.name||''));}
+    function bufLimpo(b){return origAB.call(b).then(function(ab){var l=limparBytesCSV(new Uint8Array(ab));return l?l.buffer:ab;});}
+    if(typeof origAB==='function')Bp.arrayBuffer=function(){return ehCSV(this)?bufLimpo(this):origAB.apply(this,arguments);};
+    if(typeof origTX==='function'&&typeof origAB==='function')Bp.text=function(){
+      if(!ehCSV(this))return origTX.apply(this,arguments);
+      return bufLimpo(this).then(function(ab){var nb=new w.Blob([ab]);nb.__csvLimpo=true;return origTX.call(nb);});
+    };
+  }
+  setInterval(instalarLeitorCSV,1500);
+  window.__limparBytesCSV=limparBytesCSV;
 
   setInterval(instalarBotao,1500);
   new MutationObserver(function(){instalarBotao();}).observe(document.documentElement,{childList:true,subtree:true});
