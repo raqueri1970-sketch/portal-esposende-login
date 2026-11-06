@@ -11,7 +11,7 @@
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-06.5';
+  window.__almoxConsumoLoja='2026-11-06.7';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -48,7 +48,10 @@
   var DRV_CURTO={pares:'PA',nfs:'NFS',rem:'pares rem.'};
   var GRUPO_COR={Venda:'#0e7c66',Agrado:'#b45309',Remanejo:'#7c3aed',NFS:'#0369a1','Histórico':'#64748b'};
   var COD_LINHA={};LINHAS.forEach(function(L){L.cods.forEach(function(c){COD_LINHA[c]=L.id;});});
-  var PARAMS_PADRAO={paPorSacola:1.5,crescimento:10,fatorDez:2.75,tolerancia:25,cobertura:3,horizonte:3,basePrev:'padrao'};
+  var PARAMS_PADRAO={paPorSacola:1.5,crescimento:10,fatorDez:2.75,tolerancia:25,cobertura:3,horizonte:3,basePrev:'padrao',mixP:35,mixM:50,mixG:15};
+  // Baliza de consumo de sacola por tamanho (Controladoria): P 35% · M 50% · G 15%.
+  var SAC_TAM={'9516':'P','7894':'M','8209':'G'};
+  function mixSac(P){var t={P:Number(P.mixP),M:Number(P.mixM),G:Number(P.mixG)};if(!(t.P>=0))t.P=35;if(!(t.M>=0))t.M=50;if(!(t.G>=0))t.G=15;var s=t.P+t.M+t.G||100;return {P:t.P/s,M:t.M/s,G:t.G/s};}
   // Fator do mês: dezembro vende 2,5x a 3x um mês comum (padrão 2,75x, ajustável). Os outros meses: média + crescimento.
   function fatorMes(P,m,ehVenda){if(!ehVenda)return 1;return m.slice(5)==='12'?(Number(P.fatorDez)||2.75):1+(Number(P.crescimento)||0)/100;}
 
@@ -116,11 +119,11 @@
     S.carregando=true;S.erro=null;render();
     try{
       var r=await Promise.all([
-        rest('portal_sync?module_id=eq.alm&select=c:payload->dbConsumoRaw,e:payload->dbEstoqueRaw,r:payload->dbRegionaisMap,n:payload->dbLojaNomeMap'),
+        rest('portal_sync?module_id=eq.alm&select=u:updated_at,c:payload->dbConsumoRaw,e:payload->dbEstoqueRaw,r:payload->dbRegionaisMap,n:payload->dbLojaNomeMap'),
         rest('portal_sync?module_id=eq.'+MOD_ID+'&select=payload')
       ]);
       var a=(r[0]&&r[0][0])||{};
-      S.alm={consumo:a.c||[],estoque:a.e||[],reg:a.r||{},nomes:a.n||{}};
+      S.alm={consumo:a.c||[],estoque:a.e||[],reg:a.r||{},nomes:a.n||{},atualizado:a.u||null};
       var b=(r[1]&&r[1][0]&&r[1][0].payload)||{};
       S.base={vendas:b.vendas||[],remanejo:b.remanejo||[],estoque:b.estoque||null,params:Object.assign({},PARAMS_PADRAO,b.params||{}),arquivos:b.arquivos||[],atualizadoEm:b.atualizadoEm||null,atualizadoPor:b.atualizadoPor||null};
       S.carregado=true;
@@ -165,8 +168,9 @@
     var est={};
     S.alm.estoque.forEach(function(e){var c=String(parseInt(e['Código'],10));if(!COD_LINHA[c])return;
       var u=unitReal(c);est[c]={saldo:Number(e['Estoque Atual'])||0,custo:u!=null?u:(Number(e['Custo Unitário'])||0),ultCompra:e['Última Compra']||''};});
-    // Estoque carregado no menu (todos os depósitos: CD + AX...) substitui o do módulo para os itens que trouxer.
-    var eb=S.base.estoque&&S.base.estoque.itens;
+    // Estoque: vem do sistema do almoxarifado (dbEstoqueRaw, já soma 001 CD + AX). A planilha carregada no
+    // menu só vale se for mais nova que a última atualização do módulo.
+    var eb=S.base.estoque&&S.base.estoque.itens&&(!S.alm.atualizado||String(S.base.estoque.em)>new Date(S.alm.atualizado).toISOString())?S.base.estoque.itens:null;
     if(eb)Object.keys(eb).forEach(function(c){var x=eb[c],u=unitReal(c),ant=est[c]||{};
       est[c]={saldo:x.total,custo:u!=null?u:(x.custo||ant.custo||0),ultCompra:x.ultCompra||ant.ultCompra||'',deps:x.deps};});
     Object.keys(itens).forEach(function(c){var it=itens[c];if(!est[c])est[c]={saldo:0,custo:0,ultCompra:''};
@@ -254,8 +258,9 @@
     var its=Object.keys(M.itens).map(function(c){return M.itens[c];}).filter(function(it){return it.linha===L.id;});
     var qt=0;its.forEach(function(it){it._qp=0;M.fechados.forEach(function(m){if(it.meses[m])it._qp+=it.meses[m].q;});qt+=it._qp;});
     var mHz=futuros.slice(0,hz),mCob=futuros.slice(0,cob);
-    var itensPrev=its.filter(function(it){return it._qp>0;}).map(function(it){
+    var itensPrev=its.filter(function(it){return it._qp>0||(L.id==='sac'&&SAC_TAM[it.cod]);}).map(function(it){
       var share=qt?it._qp/qt:0,e=M.est[it.cod]||{saldo:0,custo:0},pm={};
+      if(L.id==='sac'&&SAC_TAM[it.cod]){var outros=its.reduce(function(a,o){return a+(SAC_TAM[o.cod]?0:o._qp);},0);share=(1-(qt?outros/qt:0))*mixSac(P)[SAC_TAM[it.cod]];}
       futuros.forEach(function(m){pm[m]=totalMes[m]*share;});
       var soma=function(ms){return ms.reduce(function(s,m){return s+pm[m];},0);};
       var prevM=total*share,alvo=soma(mCob),sug=Math.max(0,Math.ceil(alvo-e.saldo));
@@ -569,6 +574,7 @@
       +'<div style="border-top-color:#be123c"><span>Acima do padrão (+'+n0(C.tol*100)+'%)</span><b class="up">'+C.acima+' lojas</b><small>excesso '+brl(C.excesso)+'</small></div>'
       +'<div style="border-top-color:#b45309"><span>Abaixo / não pede</span><b class="dn">'+C.abaixo+' lojas</b><small>loja usa menos que o padrão — verificar</small></div></div>';
     h+=mesAMes(M,L,C);
+    if(L.id==='sac')h+=mixTamanho(M);
     if(!rows.length)return h+'<div class="vazio">Nenhuma loja com esse filtro.</div>';
     var dc=C.dk?DRV_CURTO[C.dk]:'';
     h+='<h3>Lojas — acumulado dos meses fechados com base</h3>';
@@ -591,6 +597,23 @@
     return h;
   }
 
+  // Sacolas: participação P/M/G de cada loja (meses fechados) x baliza 35/50/15. Desvio > 10 p.p. é destacado.
+  function mixTamanho(M){
+    var b=mixSac(M.P),lojas={},rede={P:0,M:0,G:0};
+    Object.keys(M.itens).forEach(function(c){var t=SAC_TAM[c];if(!t)return;var it=M.itens[c];
+      Object.keys(it.lojas).forEach(function(lj){if(ehCD(lj)||!M.lojas[lj]||!bateLoja(M.lojas[lj]))return;var o=lojas[lj]=lojas[lj]||{P:0,M:0,G:0};
+        M.fechados.forEach(function(m){var x=it.lojas[lj][m];if(x){o[t]+=x.q;rede[t]+=x.q;}});});});
+    function pc(o){var t=o.P+o.M+o.G;return t?{P:o.P/t,M:o.M/t,G:o.G/t,t:t}:null;}
+    function cel(v,ref){var d=(v-ref)*100;return '<td class="'+(d>10?'up':d<-10?'dn':'ok')+'">'+n0(v*100)+'%<small>'+(d>0?'+':'')+n0(d)+' p.p.</small></td>';}
+    var ls=Object.keys(lojas).map(function(lj){return {lj:lj,p:pc(lojas[lj])};}).filter(function(x){return x.p;})
+      .sort(function(a,b){return (b.p.G-a.p.G);});
+    var r=pc(rede);if(!r)return '';
+    var h='<h3>Sacola por tamanho — baliza P '+n0(b.P*100)+'% · M '+n0(b.M*100)+'% · G '+n0(b.G*100)+'%</h3><div class="tw" style="max-height:360px"><table><thead><tr><th>Loja</th><th>Regional</th><th>Sacolas P+M+G</th><th>P (35x55)</th><th>M (50x60)</th><th>G (60x70)</th><th>G acima da baliza</th></tr></thead><tbody>'
+      +'<tr class="tot"><td>REDE</td><td></td><td>'+n0(r.t)+'</td>'+cel(r.P,b.P)+cel(r.M,b.M)+cel(r.G,b.G)+'<td>'+(r.G>b.G?n0((r.G-b.G)*r.t)+' un.':'—')+'</td></tr>';
+    ls.forEach(function(x){var l=M.lojas[x.lj];h+='<tr><td class="l">'+esc(l.nome)+'</td><td>'+esc(l.reg)+'</td><td>'+n0(x.p.t)+'</td>'+cel(x.p.P,b.P)+cel(x.p.M,b.M)+cel(x.p.G,b.G)
+      +'<td class="'+(x.p.G-b.G>0.10?'up':'')+'">'+(x.p.G>b.G?n0((x.p.G-b.G)*x.p.t)+' un.':'—')+'</td></tr>';});
+    return h+'</tbody></table></div><div class="nota">Pedidos ao almoxarifado nos meses fechados. Vermelho = mais de 10 p.p. acima da baliza (sacola grande custa R$ 0,28 contra R$ 0,20 da média e R$ 0,12 da pequena). A previsão e a compra repartem a sacola por esta baliza.</div>';
+  }
   // Rede mês a mês: motor x consumo das lojas que têm base naquele mês (sem o CD). Ex.: % das vendas com presente por mês.
   function mesAMes(M,L,C){
     if(!C.dk)return '';
@@ -716,6 +739,7 @@
       +'<div><label>PA por sacola (regra)</label><input type="number" step="0.1" min="0.5" id="p-pa" value="'+P.paPorSacola+'"></div>'
       +'<div><label>Previsão de venda (+% sobre a média)</label><input type="number" step="1" id="p-cr" value="'+P.crescimento+'"></div>'
       +'<div><label>Dezembro (× venda de um mês comum)</label><input type="number" step="0.05" min="1" max="5" id="p-dez" value="'+P.fatorDez+'"></div>'
+      +'<div><label>Sacola P / M / G (% baliza)</label><div style="display:flex;gap:4px"><input type="number" min="0" max="100" id="p-mp" value="'+P.mixP+'" style="width:33%"><input type="number" min="0" max="100" id="p-mm" value="'+P.mixM+'" style="width:33%"><input type="number" min="0" max="100" id="p-mg" value="'+P.mixG+'" style="width:33%"></div></div>'
       +'<div><label>Tolerância do padrão (±%)</label><input type="number" step="1" min="5" id="p-tol" value="'+P.tolerancia+'"></div>'
       +'<div><label>Cobertura de estoque (meses)</label><input type="number" step="0.5" min="0.5" id="p-cob" value="'+P.cobertura+'"></div>'
       +'<div><label>Horizonte da previsão (meses)</label><input type="number" step="1" min="1" max="12" id="p-hz" value="'+P.horizonte+'"></div>'
@@ -723,8 +747,8 @@
       +'</div><div style="margin-top:10px"><button type="button" class="pri" data-a="salvarP">💾 Salvar parâmetros</button></div>'
       +'<h3>Estoque dos depósitos (CD + AX)</h3>'+(B.estoque&&B.estoque.itens?'<div class="tw" style="max-height:300px"><table><thead><tr><th>Item</th><th>Depósitos</th><th>Total</th><th>Última compra</th></tr></thead><tbody>'
         +Object.keys(B.estoque.itens).map(function(c){var x=B.estoque.itens[c];return '<tr><td class="l">'+esc(x.nome)+'<small>'+c+'</small></td><td class="l">'+Object.keys(x.deps).map(function(d){return esc(d)+': <b>'+n0(x.deps[d])+'</b>';}).join('<br>')+'</td><td><b>'+n0(x.total)+'</b></td><td>'+esc(x.ultCompra||'')+'</td></tr>';}).join('')
-        +'</tbody></table></div><div class="nota">Carregado em '+new Date(B.estoque.em).toLocaleString('pt-BR')+' ('+esc(B.estoque.arquivo||'')+'). Itens que não vieram no arquivo usam o estoque do módulo Almoxarifado (só 001 CD). Estoque das lojas é desconsiderado.</div><div style="margin-top:6px"><button type="button" data-a="limpar" data-m="est">Apagar estoque carregado</button></div>'
-        :'<div class="vazio" style="padding:14px">Nada carregado: usando o estoque do módulo Almoxarifado (só 001 CD). Arraste aqui o relatório de estoque com todos os depósitos (ex.: 001 CD + AX - ALMOXARIFADO CONDE).</div>')
+        +'</tbody></table></div><div class="nota">Carregado em '+new Date(B.estoque.em).toLocaleString('pt-BR')+' ('+esc(B.estoque.arquivo||'')+'). Vale enquanto for mais novo que o estoque do módulo Almoxarifado (atualizado em '+(S.alm&&S.alm.atualizado?new Date(S.alm.atualizado).toLocaleString('pt-BR'):'—')+'). Estoque das lojas é desconsiderado.</div><div style="margin-top:6px"><button type="button" data-a="limpar" data-m="est">Apagar estoque carregado</button></div>'
+        :'<div class="vazio" style="padding:14px">Usando o estoque do módulo Almoxarifado (001 CD + AX), atualizado em '+(S.alm&&S.alm.atualizado?new Date(S.alm.atualizado).toLocaleString('pt-BR'):'—')+'. Arraste aqui o relatório de estoque com todos os depósitos (ex.: 001 CD + AX - ALMOXARIFADO CONDE).</div>')
       +'<h3>Vendas carregadas</h3>'+resumo(B.vendas,['pares','nfs','valor'])+(B.vendas.length?'<div style="margin-top:6px"><button type="button" data-a="limpar" data-m="ven">Apagar base de vendas</button></div>':'')
       +'<h3>Remanejo carregado (pares enviados pela loja de origem)</h3>'+resumo(B.remanejo,['pares','pedidos'])+(B.remanejo.length?'<div style="margin-top:6px"><button type="button" data-a="limpar" data-m="rem">Apagar base de remanejo</button></div>':'')
       +(B.arquivos.length?'<h3>Últimas cargas</h3><div class="nota">'+B.arquivos.slice(-10).reverse().map(function(a){return esc(new Date(a.em).toLocaleString('pt-BR')+' · '+a.nome+' · '+a.tipo+' · '+a.meses+' · '+a.lojas+' lojas');}).join('<br>')+'</div>':'');
@@ -738,7 +762,7 @@
   }
   async function salvarParametros(b){
     var P=S.base.params,g=function(id){return document.getElementById(id);};
-    P.paPorSacola=Number(g('p-pa').value)||1.5;P.crescimento=Number(g('p-cr').value)||0;P.fatorDez=Number(g('p-dez').value)||2.75;P.tolerancia=Number(g('p-tol').value)||25;
+    P.paPorSacola=Number(g('p-pa').value)||1.5;P.crescimento=Number(g('p-cr').value)||0;P.fatorDez=Number(g('p-dez').value)||2.75;P.mixP=Number(g('p-mp').value);P.mixM=Number(g('p-mm').value);P.mixG=Number(g('p-mg').value);P.tolerancia=Number(g('p-tol').value)||25;
     P.cobertura=Number(g('p-cob').value)||3;P.horizonte=Math.min(12,Math.max(1,Math.round(Number(g('p-hz').value)||3)));P.basePrev=g('p-bp').value;
     b.disabled=true;b.textContent='Salvando...';
     try{await salvarBase();S.msgBase=['✔ Parâmetros salvos.'];}catch(e){S.msgBase=['✖ '+(e.message||e)];}
