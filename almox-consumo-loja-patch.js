@@ -11,7 +11,7 @@
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-06.1';
+  window.__almoxConsumoLoja='2026-11-06.2';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -540,7 +540,7 @@
       +'<div><span>Motor</span><b style="font-size:15px">'+(C.dk?DRV_NOME[C.dk]:'—')+'</b><small>'+(C.dk&&L.drivers[0]!==C.dk?'sem '+DRV_NOME[L.drivers[0]]+' na base — usando '+DRV_CURTO[C.dk]:'')+'</small></div>'
       +'<div><span>Padrão da rede</span><b>'+(C.padrao!=null?fmtTaxa(L,C.padrao):'—')+'</b><small>'+esc(C.fonte)+'</small></div>'
       +'<div style="border-top-color:#be123c"><span>Acima do padrão (+'+n0(C.tol*100)+'%)</span><b class="up">'+C.acima+' lojas</b><small>excesso '+brl(C.excesso)+'</small></div>'
-      +'<div style="border-top-color:#b45309"><span>Abaixo / não pede</span><b class="dn">'+C.abaixo+' lojas</b><small>ver estoque parado ou falta de uso</small></div></div>';
+      +'<div style="border-top-color:#b45309"><span>Abaixo / não pede</span><b class="dn">'+C.abaixo+' lojas</b><small>loja usa menos que o padrão — verificar</small></div></div>';
     h+=mesAMes(M,L,C);
     if(!rows.length)return h+'<div class="vazio">Nenhuma loja com esse filtro.</div>';
     var dc=C.dk?DRV_CURTO[C.dk]:'';
@@ -559,7 +559,7 @@
     });
     h+='<tr class="tot"><td>TOTAL (sem CD)</td><td></td><td>'+n0(t.drv)+'</td><td></td><td>'+n0(t.cons)+'</td><td></td><td></td><td>'+n0(t.esp)+'</td><td>'+(t.dif>0?'+':'')+n0(t.dif)+'</td><td>'+brl(t.difV)+'</td><td></td><td></td></tr></tbody></table></div>';
     h+='<div class="nota"><b>Como ler:</b> o índice compara o consumo da loja com o motor dela (ex.: PA por sacola). <b>Esperado</b> = motor × padrão da rede. '
-      +'<b>▲ Acima</b>: a loja consome mais que o padrão (desperdício, uso indevido ou desvio — verificar). <b>▼ Abaixo / vende e não pede</b>: pode ter estoque parado, receber de outra loja ou deixar de usar o item no atendimento. '
+      +'<b>▲ Acima</b>: a loja consome mais que o padrão (desperdício, uso indevido ou desvio — verificar). <b>▼ Abaixo / vende e não pede</b>: a loja pode estar deixando de usar o item no atendimento ou recebendo de outra loja. O saldo de insumos no estoque da loja não é considerado (a loja não dá baixa no uso). '
       +'A comparação usa o acumulado dos meses fechados porque a loja pede a cada 2–3 meses. O CD entra no total da rede, mas não no padrão.</div>';
     return h;
   }
