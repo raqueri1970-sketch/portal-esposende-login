@@ -11,7 +11,7 @@
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-06.2';
+  window.__almoxConsumoLoja='2026-11-06.3';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -158,7 +158,8 @@
       var cl=cons[lid]=cons[lid]||{};var cll=cl[lj]=cl[lj]||{};var c2=cll[mes]=cll[mes]||{q:0,v:0};c2.q+=q;c2.v+=v;
     });
     S.base.vendas.forEach(function(x){var lj=String(x.loja);loja(lj);
-      ['pares','nfs','valor'].forEach(function(k){if(x[k]==null)return;var d=drv[k][lj]=drv[k][lj]||{};d[x.mes]=(d[x.mes]||0)+Number(x[k]||0);});});
+      // Regra: cada venda é uma NF — sem quantidade de NFS na base, NFS = quantidade vendida.
+      ['pares','nfs','valor'].forEach(function(k){var val=x[k];if(k==='nfs'&&val==null)val=x.pares;if(val==null)return;var d=drv[k][lj]=drv[k][lj]||{};d[x.mes]=(d[x.mes]||0)+Number(val||0);});});
     S.base.remanejo.forEach(function(x){var lj=String(x.loja);loja(lj);var d=drv.rem[lj]=drv.rem[lj]||{};d[x.mes]=(d[x.mes]||0)+Number(x.pares||0);});
     // estoque e custo unitário por item
     var est={};
@@ -357,7 +358,7 @@
       if(cP>=0)b.pares+=num(x[cP]);if(cN>=0)b.nfs+=num(x[cN]);if(cV>=0)b.valor+=num(x[cV]);
       if(cN<0&&cD>=0&&x[cD]!=null)b.docs[String(x[cD])]=1;linhasLidas++;}
     return {tipo:'vendas',linhas:Object.keys(agg).map(function(k){var a=agg[k];var nd=Object.keys(a.docs).length;
-      return {loja:a.loja,mes:a.mes,pares:a.pares,nfs:a.nfs!=null?a.nfs:(nd?nd:null),valor:a.valor};}),lidas:linhasLidas,ignoradas:ign,
+      return {loja:a.loja,mes:a.mes,pares:a.pares,nfs:a.nfs!=null?a.nfs:(nd?nd:a.pares),valor:a.valor};}),lidas:linhasLidas,ignoradas:ign,
       colunas:{pares:cP>=0,nfs:cN>=0||cD>=0,valor:cV>=0}};
   }
   // Carga nova substitui só os meses (por loja) que vieram no arquivo; o resto da base fica.
@@ -376,7 +377,7 @@
         if(r.tipo==='remanejo')S.base.remanejo=mesclar(S.base.remanejo,r.linhas);else S.base.vendas=mesclar(S.base.vendas,r.linhas);
         S.base.arquivos.push({nome:f.name,tipo:r.tipo,em:new Date().toISOString(),meses:mk[0]+' a '+mk[mk.length-1],lojas:Object.keys(r.linhas.reduce(function(o,x){o[x.loja]=1;return o;},{})).length});
         msgs.push('✔ '+f.name+': '+(r.tipo==='remanejo'?'REMANEJO':'VENDAS')+' · '+n0(r.lidas)+' linhas · '+mesLabel(mk[0])+' a '+mesLabel(mk[mk.length-1])+(r.ignoradas?' · '+n0(r.ignoradas)+' ignoradas (sem loja/data)':'')
-          +(r.colunas&&!r.colunas.nfs?' · sem coluna de NFS (agrado e bobina usam PA)':''));
+          +(r.colunas&&!r.colunas.nfs?' · NFS = quantidade vendida (cada venda = 1 NF)':''));
       }catch(e){console.warn('[Consumo Loja]',f.name,e.message);msgs.push('✖ '+f.name+': '+(e.message||e));}
     }
     try{await salvarBase();msgs.push('☁ Base salva na nuvem.');}catch(e){msgs.push('✖ Não salvou na nuvem: '+(e.message||e));}
@@ -497,7 +498,6 @@
     var temV=S.base.vendas.length,temR=S.base.remanejo.length,a=[];
     if(!temV)a.push('<b>Falta a base de vendas</b> (pares PA e quantidade de NFS por loja e mês). Sem ela, sacolas, embalagens, agrado e bobina ficam só com média de consumo e não dá para apontar loja fora do padrão.');
     if(!temR)a.push('<b>Falta a base de remanejo do ano</b> (pedidos de remanejo com origem, data e qtde). O módulo Remanejo só guarda o detalhe de 14/09 a 29/09.');
-    if(temV&&!S.base.vendas.some(function(x){return x.nfs!=null;}))a.push('A base de vendas não tem <b>quantidade de NFS</b>: agrado (café, pirulito, balão) e bobina estão sendo medidos por <b>PA</b>.');
     return a.length?'<div class="aviso">⚠ '+a.join('<br>⚠ ')+'<br>Carregue na aba <b>📥 Base de vendas e remanejo</b>.</div>':'';
   }
   function stTag(s){var cls=/ACIMA|ABAIXO|OK/.test(s)?s:(s==='SEM PEDIDO'?'SEM PEDIDO':'x');var t={ACIMA:'▲ ACIMA DO PADRÃO',ABAIXO:'▼ ABAIXO DO PADRÃO','SEM PEDIDO':'▼ VENDE E NÃO PEDE',OK:'● NO PADRÃO'}[s]||s;return '<span class="st '+cls+'">'+t+'</span>';}
