@@ -42,7 +42,7 @@ Patch `almox-consumo-loja-patch.js`. Cruza o consumo (Qtd Atendida) dos itens co
 | Linha | Códigos | Motor | Padrão |
 |---|---|---|---|
 | Sacolas | 7894, 8209, 9516, 11094, 21604 | PA (pares vendidos) | **regra fixa: 1 sacola a cada 1,5 PA** |
-| Embalagem de presente | 11314, 11315, 11316 | PA | mediana das lojas (un./1.000 PA) |
+| Embalagem de presente | 11314, 11315, 11316 | PA | mediana das lojas, em **% das vendas que saem com presente** (embalagens ÷ PA) |
 | Café / Pirulito / Balão (agrado) | 19388 / 15538 / 10546, 17314 | NFS (qtd de vendas); sem NFS usa PA | mediana das lojas (un./1.000 NFS) |
 | Fita PP 45mm / Etiqueta 70x24 | 7816 / 7982, 15483 | pares remanejados enviados pela loja (origem) | mediana das lojas (un./1.000 pares) |
 | Bobina PDV 79mm | 8002, 22203, 26104, 26153 | NFS | mediana das lojas (NFS por bobina) |
@@ -51,6 +51,10 @@ Patch `almox-consumo-loja-patch.js`. Cruza o consumo (Qtd Atendida) dos itens co
 - Fonte do motor: `portal_sync` module_id = `almcl` → `vendas[{loja,mes,pares,nfs,valor}]`, `remanejo[{loja,mes,pares,pedidos}]`, `params`. Carregada na aba "Base de vendas e remanejo" (xlsx/csv; tipo reconhecido pelas colunas; carga nova troca só loja×mês do arquivo). Não existe venda por loja/mês em outro módulo da nuvem; o Remanejo só guarda o detalhe de 14 a 29/09/2026.
 - Comparação no **acumulado dos meses fechados** (loja pede a cada 2–3 meses). Índice da loja = consumo ÷ motor; Esperado = motor × padrão; Desvio = índice ÷ padrão − 1.
 - Situação: ACIMA (> +tolerância, padrão 25%), ABAIXO (< −tolerância), VENDE E NÃO PEDE (tem motor e consumo zero), POUCO DADO (motor < 20% da mediana), CD fora do padrão (entra no total). Padrão por mediana exige ≥ 3 lojas com base.
-- Previsão mensal: motor = média dos meses fechados × (1 + crescimento, padrão 10%, só para venda/NFS); consumo = motor previsto × padrão da rede (ou índice real da loja, parâmetro). Loja sem motor e CD: média de consumo. Item = previsão da linha × participação do item.
-- Sugestão de compra = previsão mensal × cobertura (padrão 3 meses) − estoque atual (`dbEstoqueRaw`); embalagens no custo real.
+- Previsão mensal: motor = média dos meses fechados × (1 + crescimento, padrão 10%) nos meses comuns e × **fator de dezembro (padrão 2,75; a venda de dezembro é 2,5x a 3x um mês comum)** em dezembro — só para venda, agrado e bobina; remanejo e histórico sem fator. Consumo = motor previsto × padrão da rede (ou índice real da loja, parâmetro). Loja sem motor e CD: média de consumo. Item = previsão da linha × participação do item.
+- Sugestão de compra = soma da previsão dos meses de cobertura a partir do mês corrente (padrão 3: ex. NOV + DEZ + JAN) − estoque atual (`dbEstoqueRaw`); embalagens no custo real. O pedido de dezembro sai das lojas em novembro.
+- Loja com base em menos da metade dos meses da rede = LOJA NOVA (fora do padrão; recebe enxoval na inauguração).
+- Relatório de vendas do sistema (`REPORTGROUP;QUANTIDADE;AVISTA;APRAZO;TOTAL;CUSTO;...`, um arquivo por mês) é aceito: QUANTIDADE = PA, TOTAL = valor, mês pelo nome do arquivo (FEVEREIRO.CSV). Não traz NFS: agrado e bobina usam PA até ter a quantidade de vendas.
+- `ESTOQUE_LOJAS` (REPORTGROUP;CODIGO;DESCRICAO;...) **não serve** como saldo de insumo na loja: a loja recebe e não dá baixa no uso (ex.: 7,6 mi sacolas "em estoque" nas lojas x ~2 mi consumidas no ano). O módulo recusa esse arquivo na base de vendas.
+- Referência real (FEV/ABR/AGO 2026, rede): 1,19 / 1,16 / 1,57 PA por sacola (regra 1,5); presente 14,8% / 31,1% (abastecimento do Dia das Mães) / 13,7% das vendas.
 - Saídas: Painel em cards, Comparativo entre lojas, Relatório mensal (itens × mês, qtd e R$, busca por loja/regional), Previsão & compra, Relatório Gerencial (impressão/PDF com logo) e Excel (Gerencial, Mensal, Comparativo, Previsão por loja, Sugestão de compra, Bases).
