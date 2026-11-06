@@ -11,7 +11,7 @@
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-06.7';
+  window.__almoxConsumoLoja='2026-11-06.8';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -427,48 +427,65 @@
   var CSS=''
   +'#acl-ov{position:fixed;inset:0;z-index:2147483600;background:#060c17;display:flex;flex-direction:column;font-family:Inter,Segoe UI,Arial,sans-serif;color:#e8f0fa}'
   +'#acl-ov *{box-sizing:border-box}'
-  +'#acl-ov .hd{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #1d3550;background:#0b1626;flex:0 0 auto;flex-wrap:wrap}'
-  +'#acl-ov .hd img{height:38px;border-radius:6px}#acl-ov .hd .tt{flex:1 1 220px;min-width:0}#acl-ov .hd b{display:block;font-size:17px;color:#fff}#acl-ov .hd small{display:block;color:#8ca4bf;font-size:12px}'
-  +'#acl-ov button{background:#15304d;color:#fff;border:1px solid #2f5478;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;font-size:13px}#acl-ov button:hover{filter:brightness(1.15)}#acl-ov button.pri{background:#0e7c66;border-color:#14a386}#acl-ov button:disabled{opacity:.6;cursor:wait}'
-  +'#acl-ov .tabs{display:flex;gap:4px;padding:8px 16px 0;background:#0b1626;border-bottom:1px solid #1d3550;flex:0 0 auto;overflow-x:auto}'
-  +'#acl-ov .tabs button{background:transparent;border:0;border-bottom:3px solid transparent;border-radius:0;color:#8ca4bf;padding:9px 12px;white-space:nowrap}#acl-ov .tabs button.on{color:#fff;border-bottom-color:#14a386}'
-  +'#acl-ov .flt{display:flex;gap:10px;flex-wrap:wrap;align-items:end;padding:12px 16px 0}'
+  +'#acl-ov .acl-hd{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #1d3550;background:#0b1626;flex:0 0 auto;flex-wrap:wrap}'
+  +'#acl-ov .acl-hd img{height:38px;border-radius:6px}#acl-ov .acl-hd .acl-tt{flex:1 1 220px;min-width:0}#acl-ov .acl-hd b{display:block;font-size:17px;color:#fff}#acl-ov .acl-hd small{display:block;color:#8ca4bf;font-size:12px}'
+  +'#acl-ov button{background:#15304d;color:#fff;border:1px solid #2f5478;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;font-size:13px}#acl-ov button:hover{filter:brightness(1.15)}#acl-ov button.acl-pri{background:#0e7c66;border-color:#14a386}#acl-ov button:disabled{opacity:.6;cursor:wait}'
+  +'#acl-ov .acl-tabs{display:flex;gap:4px;padding:8px 16px 0;background:#0b1626;border-bottom:1px solid #1d3550;flex:0 0 auto;overflow-x:auto}'
+  +'#acl-ov .acl-tabs button{background:transparent;border:0;border-bottom:3px solid transparent;border-radius:0;color:#8ca4bf;padding:9px 12px;white-space:nowrap}#acl-ov .acl-tabs button.acl-on{color:#fff;border-bottom-color:#14a386}'
+  +'#acl-ov .acl-flt{display:flex;gap:10px;flex-wrap:wrap;align-items:end;padding:12px 16px 0}'
   +'#acl-ov label{display:block;font-size:10.5px;color:#8ca4bf;font-weight:700;letter-spacing:.04em;margin-bottom:4px;text-transform:uppercase}'
   +'#acl-ov input,#acl-ov select{background:#06101c;color:#fff;border:1px solid #2a4867;border-radius:8px;padding:8px 9px;font-size:13.5px}'
-  +'#acl-ov .bd{flex:1 1 auto;overflow:auto;padding:12px 16px 30px}'
-  +'#acl-ov .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:4px 0 14px}'
-  +'#acl-ov .kpi div{background:#0b1626;border:1px solid #1d3550;border-top:3px solid #14a386;border-radius:10px;padding:10px 12px}#acl-ov .kpi span{display:block;font-size:10.5px;color:#8ca4bf;font-weight:700;text-transform:uppercase}#acl-ov .kpi b{display:block;font-size:20px;margin-top:3px}#acl-ov .kpi small{color:#8ca4bf;font-size:11px}'
-  +'#acl-ov .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}'
-  +'#acl-ov .cd{background:#0b1626;border:1px solid #1d3550;border-left:4px solid #14a386;border-radius:10px;padding:12px 14px;cursor:pointer}#acl-ov .cd:hover{border-color:#2f5478}'
-  +'#acl-ov .cd h4{margin:0 0 2px;font-size:15px;color:#fff}#acl-ov .cd .rg{font-size:11px;color:#8ca4bf;margin-bottom:8px}'
-  +'#acl-ov .cd .g{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:12px}#acl-ov .cd .g span{color:#8ca4bf;display:block;font-size:10px;text-transform:uppercase;font-weight:700}#acl-ov .cd .g b{font-size:14px}'
+  +'#acl-ov .acl-bd{flex:1 1 auto;overflow:auto;padding:12px 16px 30px}'
+  +'#acl-ov .acl-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:4px 0 14px}'
+  +'#acl-ov .acl-kpi div{background:#0b1626;border:1px solid #1d3550;border-top:3px solid #14a386;border-radius:10px;padding:10px 12px}#acl-ov .acl-kpi span{display:block;font-size:10.5px;color:#8ca4bf;font-weight:700;text-transform:uppercase}#acl-ov .acl-kpi b{display:block;font-size:20px;margin-top:3px}#acl-ov .acl-kpi small{color:#8ca4bf;font-size:11px}'
+  +'#acl-ov .acl-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}'
+  +'#acl-ov .acl-cd{background:#0b1626;border:1px solid #1d3550;border-left:4px solid #14a386;border-radius:10px;padding:12px 14px;cursor:pointer}#acl-ov .acl-cd:hover{border-color:#2f5478}'
+  +'#acl-ov .acl-cd h4{margin:0 0 2px;font-size:15px;color:#fff}#acl-ov .acl-cd .acl-rg{font-size:11px;color:#8ca4bf;margin-bottom:8px}'
+  +'#acl-ov .acl-cd .acl-g{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:12px}#acl-ov .acl-cd .acl-g span{color:#8ca4bf;display:block;font-size:10px;text-transform:uppercase;font-weight:700;white-space:nowrap}#acl-ov .acl-cd .acl-g small{white-space:nowrap}#acl-ov .acl-cd .acl-g b{font-size:14px}'
   +'#acl-ov h3{font-size:14px;margin:18px 0 8px;color:#bcd0e6}'
-  +'#acl-ov .tw{overflow:auto;border:1px solid #1d3550;border-radius:8px;max-height:62vh}'
+  +'#acl-ov .acl-tw{overflow:auto;border:1px solid #1d3550;border-radius:8px;max-height:62vh}'
   +'#acl-ov table{width:100%;border-collapse:collapse;font-size:12.5px}#acl-ov th{background:#13253c;color:#cfe0f2;padding:7px 8px;text-align:right;position:sticky;top:0;white-space:nowrap;z-index:1}#acl-ov th:first-child,#acl-ov td:first-child{text-align:left}'
-  +'#acl-ov td{padding:6px 8px;border-bottom:1px solid #16293f;text-align:right;white-space:nowrap;color:#e8f0fa}#acl-ov td.l{text-align:left;white-space:normal}#acl-ov td small{display:block;color:#7f97b2;font-size:10.5px}'
-  +'#acl-ov tr.tot td{font-weight:800;background:#0f2136}#acl-ov tr.sub td{font-weight:700;background:#0c1b2e;color:#bcd0e6}'
-  +'#acl-ov .st{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:800}'
-  +'#acl-ov .st.ACIMA{background:#5b1520;color:#ffb3bd}#acl-ov .st.ABAIXO,#acl-ov .st.SEM.PEDIDO{background:#4a3410;color:#ffd58a}#acl-ov .st.OK{background:#0d3b30;color:#7ff0cf}#acl-ov .st.x{background:#1d2b3d;color:#9fb3c8}'
-  +'#acl-ov .up{color:#ff8a9a}#acl-ov .dn{color:#ffc66b}#acl-ov .ok{color:#5fd3b8}'
-  +'#acl-ov .nota{color:#8ca4bf;font-size:11.5px;margin-top:8px;line-height:1.5}'
-  +'#acl-ov .aviso{background:#2a1f08;border:1px solid #6b4d12;color:#ffd58a;border-radius:8px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;line-height:1.5}'
-  +'#acl-ov .vazio{color:#8ca4bf;padding:30px;text-align:center}'
-  +'#acl-ov .drop{border:2px dashed #2f5478;border-radius:10px;padding:22px;text-align:center;color:#8ca4bf;margin:8px 0}#acl-ov .drop.on{border-color:#14a386;color:#fff}'
-  +'#acl-ov .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}'
-  +'@media(max-width:700px){#acl-ov .hd img{display:none}#acl-ov .bd{padding:10px}}';
+  +'#acl-ov td{padding:6px 8px;border-bottom:1px solid #16293f;text-align:right;white-space:nowrap;color:#e8f0fa}#acl-ov td.acl-l{text-align:left;white-space:normal}#acl-ov td small{display:block;color:#7f97b2;font-size:10.5px}'
+  +'#acl-ov tr.acl-tot td{font-weight:800;background:#0f2136}#acl-ov tr.acl-sub td{font-weight:700;background:#0c1b2e;color:#bcd0e6}'
+  +'#acl-ov .acl-st{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:800}'
+  +'#acl-ov .acl-st.acl-ACIMA{background:#5b1520;color:#ffb3bd}#acl-ov .acl-st.acl-ABAIXO,#acl-ov .acl-st.acl-SEM-PEDIDO{background:#4a3410;color:#ffd58a}#acl-ov .acl-st.acl-OK{background:#0d3b30;color:#7ff0cf}#acl-ov .acl-st.acl-x{background:#1d2b3d;color:#9fb3c8}'
+  +'#acl-ov .acl-up{color:#ff8a9a}#acl-ov .acl-dn{color:#ffc66b}#acl-ov .acl-ok{color:#5fd3b8}'
+  +'#acl-ov .acl-nota{color:#8ca4bf;font-size:11.5px;margin-top:8px;line-height:1.5}'
+  +'#acl-ov .acl-aviso{background:#2a1f08;border:1px solid #6b4d12;color:#ffd58a;border-radius:8px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;line-height:1.5}'
+  +'#acl-ov .acl-vazio{color:#8ca4bf;padding:30px;text-align:center}'
+  +'#acl-ov .acl-drop{border:2px dashed #2f5478;border-radius:10px;padding:22px;text-align:center;color:#8ca4bf;margin:8px 0}#acl-ov .acl-drop.acl-on{border-color:#14a386;color:#fff}'
+  +'#acl-ov .acl-pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}'
+  +'@media(max-width:700px){#acl-ov .acl-hd img{display:none}#acl-ov .acl-bd{padding:10px}}';
 
+  // Blindagem contra o CSS do Portal (botão com largura 100%, cabeçalho em coluna etc.): layout travado com !important.
+  CSS+='#acl-ov{display:flex!important;flex-direction:column!important}'
+  +'#acl-ov .acl-hd{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;position:static!important;width:auto!important;height:auto!important;min-height:0!important}'
+  +'#acl-ov .acl-hd .acl-tt{display:block!important;position:static!important;width:auto!important;flex:1 1 260px!important;min-width:0!important}'
+  +'#acl-ov .acl-hd .acl-tt b,#acl-ov .acl-hd .acl-tt small{white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important}'
+  +'#acl-ov .acl-acoes{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;gap:8px!important;align-items:center!important;position:static!important;width:auto!important}'
+  +'#acl-ov button{width:auto!important;min-width:0!important;max-width:none!important;height:auto!important;position:static!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;margin:0!important;line-height:1.2!important;white-space:nowrap!important;float:none!important;transform:none!important}'
+  +'#acl-ov .acl-tabs{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;position:static!important;width:auto!important}'
+  +'#acl-ov .acl-flt{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;position:static!important}'
+  +'#acl-ov .acl-flt>div{position:static!important;width:auto!important;flex:0 1 auto}'
+  +'#acl-ov label{display:block!important;position:static!important;width:auto!important;float:none!important}'
+  +'#acl-ov input,#acl-ov select{position:static!important;display:block!important;float:none!important;max-width:100%!important;height:auto!important;margin:0!important}'
+  +'#acl-ov img{position:static!important;max-width:none!important;float:none!important}'
+  +'#acl-ov table{display:table!important;width:100%!important;table-layout:auto!important}#acl-ov thead{display:table-header-group!important}#acl-ov tbody{display:table-row-group!important}#acl-ov tr{display:table-row!important}#acl-ov td{display:table-cell!important;position:static!important}#acl-ov th{display:table-cell!important}'
+  +'#acl-ov .acl-kpi,#acl-ov .acl-cards,#acl-ov .acl-pgrid{display:grid!important}#acl-ov .acl-cd .acl-g{display:grid!important}'
+  +'#acl-ov h3,#acl-ov h4{position:static!important;float:none!important;width:auto!important}'
+  +'@media(max-width:700px){#acl-ov .acl-acoes{width:100%!important}#acl-ov .acl-acoes button{flex:1 1 auto}}';
   function logo(){return window.__ESPOSENDE_LOGO_B64||'';}
   function abrir(){
     var ov=document.getElementById('acl-ov');
     if(!document.getElementById('acl-css')){var st=document.createElement('style');st.id='acl-css';st.textContent=CSS;document.head.appendChild(st);}
     if(!ov){
       ov=document.createElement('div');ov.id='acl-ov';
-      ov.innerHTML='<div class="hd">'+(logo()?'<img src="data:image/jpeg;base64,'+logo()+'" alt="Esposende">':'')
-        +'<div class="tt"><b>🏬 Consumo Loja · Almoxarifado</b><small>Consumo x venda x remanejo por loja · lojas fora do padrão · previsão e sugestão de compra</small></div>'
-        +'<button type="button" data-a="xls">⬇ Excel</button><button type="button" data-a="ger" class="pri">🖨 Relatório Gerencial</button><button type="button" data-a="rec">↻ Atualizar</button><button type="button" data-a="fechar">← Voltar</button></div>'
-        +'<div class="tabs">'+[['painel','📊 Painel'],['comp','⚖️ Comparativo entre lojas'],['mensal','📅 Relatório mensal'],['prev','🔮 Previsão & compra'],['base','📥 Base de vendas e remanejo']]
+      ov.innerHTML='<div class="acl-hd">'+(logo()?'<img src="data:image/jpeg;base64,'+logo()+'" alt="Esposende">':'')
+        +'<div class="acl-tt"><b>🏬 Consumo Loja · Almoxarifado</b><small>Consumo x venda x remanejo por loja · lojas fora do padrão · previsão e sugestão de compra</small></div>'
+        +'<div class="acl-acoes"><button type="button" data-a="xls">⬇ Excel</button><button type="button" data-a="ger" class="acl-pri">🖨 Relatório Gerencial</button><button type="button" data-a="rec">↻ Atualizar</button><button type="button" data-a="fechar">← Voltar</button></div></div>'
+        +'<div class="acl-tabs">'+[['painel','📊 Painel'],['comp','⚖️ Comparativo entre lojas'],['mensal','📅 Relatório mensal'],['prev','🔮 Previsão & compra'],['base','📥 Base de vendas e remanejo']]
           .map(function(t){return '<button type="button" data-t="'+t[0]+'">'+t[1]+'</button>';}).join('')+'</div>'
-        +'<div class="flt" id="acl-flt"></div><div class="bd" id="acl-bd"></div>';
+        +'<div class="acl-flt" id="acl-flt"></div><div class="acl-bd" id="acl-bd"></div>';
       document.body.appendChild(ov);
       ov.addEventListener('click',function(e){
         var b=e.target.closest('[data-a],[data-t]');if(!b||!ov.contains(b)||b.tagName==='LABEL')return;
@@ -516,9 +533,9 @@
 
   function render(soCorpo){
     var bd=document.getElementById('acl-bd');if(!bd)return;
-    document.querySelectorAll('#acl-ov .tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.t===S.aba);});
-    if(S.carregando){bd.innerHTML='<div class="vazio">Carregando consumo, estoque e base de vendas...</div>';return;}
-    if(S.erro){bd.innerHTML='<div class="vazio" style="color:#ff8a8a">Erro: '+esc(S.erro)+'<br><br><button type="button" data-a="rec">Tentar de novo</button></div>';return;}
+    document.querySelectorAll('#acl-ov .acl-tabs button').forEach(function(b){b.classList.toggle('acl-on',b.dataset.t===S.aba);});
+    if(S.carregando){bd.innerHTML='<div class="acl-vazio">Carregando consumo, estoque e base de vendas...</div>';return;}
+    if(S.erro){bd.innerHTML='<div class="acl-vazio" style="color:#ff8a8a">Erro: '+esc(S.erro)+'<br><br><button type="button" data-a="rec">Tentar de novo</button></div>';return;}
     if(!S.carregado){bd.innerHTML='';return;}
     S._M=modelo();S.ultimo=tudo();
     if(!soCorpo)filtros();
@@ -530,9 +547,9 @@
     var temV=S.base.vendas.length,temR=S.base.remanejo.length,a=[];
     if(!temV)a.push('<b>Falta a base de vendas</b> (pares PA e quantidade de NFS por loja e mês). Sem ela, sacolas, embalagens, agrado e bobina ficam só com média de consumo e não dá para apontar loja fora do padrão.');
     if(!temR)a.push('<b>Falta a base de remanejo do ano</b> (pedidos de remanejo com origem, data e qtde). O módulo Remanejo só guarda o detalhe de 14/09 a 29/09.');
-    return a.length?'<div class="aviso">⚠ '+a.join('<br>⚠ ')+'<br>Carregue na aba <b>📥 Base de vendas e remanejo</b>.</div>':'';
+    return a.length?'<div class="acl-aviso">⚠ '+a.join('<br>⚠ ')+'<br>Carregue na aba <b>📥 Base de vendas e remanejo</b>.</div>':'';
   }
-  function stTag(s){var cls=/ACIMA|ABAIXO|OK/.test(s)?s:(s==='SEM PEDIDO'?'SEM PEDIDO':'x');var t={ACIMA:'▲ ACIMA DO PADRÃO',ABAIXO:'▼ ABAIXO DO PADRÃO','SEM PEDIDO':'▼ VENDE E NÃO PEDE',OK:'● NO PADRÃO'}[s]||s;return '<span class="st '+cls+'">'+t+'</span>';}
+  function stTag(s){var cls=/ACIMA|ABAIXO|OK/.test(s)?s:(s==='SEM PEDIDO'?'SEM PEDIDO':'x');var t={ACIMA:'▲ ACIMA DO PADRÃO',ABAIXO:'▼ ABAIXO DO PADRÃO','SEM PEDIDO':'▼ VENDE E NÃO PEDE',OK:'● NO PADRÃO'}[s]||s;return '<span class="acl-st acl-'+cls.replace(/ /g,'-')+'">'+t+'</span>';}
   function fmtTaxa(L,t){if(t==null)return '—';if(L.pct)return n1(t*100)+'% das vendas';if(L.porUn)return t>0?n1(1/t)+' '+(L.id==='sac'?'PA/sac.':'por un.'):'—';return n1(t*1000)+' /mil';}
 
   function vPainel(R){
@@ -541,57 +558,57 @@
       Object.keys(M.cons[x.L.id]||{}).forEach(function(lj){M.meses.forEach(function(m){var c=M.cons[x.L.id][lj][m];if(c)totV+=c.v;});});
       x.F.itens.forEach(function(i){totPrevV+=i.prevM*i.custo;totSug+=i.sugV;});acima+=x.C.acima;exc+=x.C.excesso;});
     var h=avisoBase(R)
-      +'<div class="kpi"><div><span>Consumo no período (R$)</span><b>'+brl(totV)+'</b><small>'+(M.meses.length?mesLabel(M.meses[0])+' a '+mesLabel(M.meses[M.meses.length-1]):'')+'</small></div>'
+      +'<div class="acl-kpi"><div><span>Consumo no período (R$)</span><b>'+brl(totV)+'</b><small>'+(M.meses.length?mesLabel(M.meses[0])+' a '+mesLabel(M.meses[M.meses.length-1]):'')+'</small></div>'
       +'<div style="border-top-color:#7c3aed"><span>Previsão de consumo / mês</span><b>'+brl(totPrevV)+'</b><small>venda +'+n0(M.P.crescimento)+'% · '+(M.P.basePrev==='real'?'índice real da loja':'índice padrão')+'</small></div>'
       +'<div style="border-top-color:#b45309"><span>Sugestão de compra</span><b>'+brl(totSug)+'</b><small>cobertura de '+n0(M.P.cobertura)+' meses − estoque</small></div>'
       +'<div style="border-top-color:#be123c"><span>Lojas acima do padrão</span><b>'+n0(acima)+'</b><small>ocorrências (loja × item)</small></div>'
       +'<div style="border-top-color:#be123c"><span>Excesso estimado (R$)</span><b>'+brl(exc)+'</b><small>consumo acima do esperado</small></div></div>'
-      +'<div class="cards">';
+      +'<div class="acl-cards">';
     R.linhas.forEach(function(x){
       var L=x.L,C=x.C,F=x.F,cor=GRUPO_COR[L.grupo];
       var q=0,v=0;Object.keys(M.cons[L.id]||{}).forEach(function(lj){M.fechados.forEach(function(m){var c=M.cons[L.id][lj][m];if(c){q+=c.q;v+=c.v;}});});
       var saldo=F.itens.reduce(function(s,i){return s+i.saldo;},0),sug=F.itens.reduce(function(s,i){return s+i.sugV;},0);
-      h+='<div class="cd" style="border-left-color:'+cor+'" data-a="linha" data-l="'+L.id+'" role="button" tabindex="0"><h4>'+L.icone+' '+esc(L.nome)+'</h4>'
-        +'<div class="rg">'+esc(L.grupo)+' · '+(C.dk?'motor: '+DRV_NOME[C.dk]:'sem motor — média de consumo')+'</div><div class="g">'
-        +'<div><span>Consumo (meses fechados)</span><b>'+n0(q)+'</b> <small>'+brl(v)+'</small></div>'
+      h+='<div class="acl-cd" style="border-left-color:'+cor+'" data-a="linha" data-l="'+L.id+'" role="button" tabindex="0"><h4>'+L.icone+' '+esc(L.nome)+'</h4>'
+        +'<div class="acl-rg">'+esc(L.grupo)+' · '+(C.dk?'motor: '+DRV_NOME[C.dk]:'sem motor — média de consumo')+'</div><div class="acl-g">'
+        +'<div><span>Consumo no ano</span><b>'+n0(q)+'</b> <small>'+brl(v)+'</small></div>'
         +'<div><span>Média / mês</span><b>'+n0(M.fechados.length?q/M.fechados.length:0)+'</b></div>'
         +'<div><span>Padrão da rede</span><b>'+(C.padrao!=null?fmtTaxa(L,C.padrao):'—')+'</b></div>'
-        +'<div><span>Fora do padrão</span><b class="'+(C.acima?'up':'ok')+'">▲ '+C.acima+'</b> <b class="'+(C.abaixo?'dn':'ok')+'">▼ '+C.abaixo+'</b></div>'
+        +'<div><span>Fora do padrão</span><b class="'+(C.acima?'acl-up':'acl-ok')+'">▲ '+C.acima+'</b> <b class="'+(C.abaixo?'acl-dn':'acl-ok')+'">▼ '+C.abaixo+'</b></div>'
         +'<div><span>Previsão / mês</span><b>'+n0(F.total)+'</b></div>'
         +'<div><span>Estoque · compra</span><b>'+n0(saldo)+'</b> <small>'+(sug?'comprar '+brl(sug):'sem compra')+'</small></div>'
         +'</div></div>';
     });
-    h+='</div><div class="nota">Clique num card para ver o comparativo entre lojas. O consumo é a <b>Qtd Atendida</b> do almoxarifado; o mês corrente ('+mesLabel(M.atual)+') não entra nas médias. Embalagens de presente usam o custo real (Sulnove 0,004 + DIFAL).</div>';
+    h+='</div><div class="acl-nota">Clique num card para ver o comparativo entre lojas. O consumo é a <b>Qtd Atendida</b> do almoxarifado; o mês corrente ('+mesLabel(M.atual)+') não entra nas médias. Embalagens de presente usam o custo real (Sulnove 0,004 + DIFAL).</div>';
     return h;
   }
 
   function vComp(R){
     var x=R.linhas.find(function(l){return l.L.id===S.linha;}),L=x.L,C=x.C,M=R.M;
     var rows=C.linhas.filter(bateLoja);
-    var h=avisoBase(R)+'<div class="kpi"><div><span>Regra</span><b style="font-size:14px">'+esc(L.regra)+'</b></div>'
+    var h=avisoBase(R)+'<div class="acl-kpi"><div><span>Regra</span><b style="font-size:14px">'+esc(L.regra)+'</b></div>'
       +'<div><span>Motor</span><b style="font-size:15px">'+(C.dk?DRV_NOME[C.dk]:'—')+'</b><small>'+(C.dk&&L.drivers[0]!==C.dk?'sem '+DRV_NOME[L.drivers[0]]+' na base — usando '+DRV_CURTO[C.dk]:'')+'</small></div>'
       +'<div><span>Padrão da rede</span><b>'+(C.padrao!=null?fmtTaxa(L,C.padrao):'—')+'</b><small>'+esc(C.fonte)+'</small></div>'
-      +'<div style="border-top-color:#be123c"><span>Acima do padrão (+'+n0(C.tol*100)+'%)</span><b class="up">'+C.acima+' lojas</b><small>excesso '+brl(C.excesso)+'</small></div>'
-      +'<div style="border-top-color:#b45309"><span>Abaixo / não pede</span><b class="dn">'+C.abaixo+' lojas</b><small>loja usa menos que o padrão — verificar</small></div></div>';
+      +'<div style="border-top-color:#be123c"><span>Acima do padrão (+'+n0(C.tol*100)+'%)</span><b class="acl-up">'+C.acima+' lojas</b><small>excesso '+brl(C.excesso)+'</small></div>'
+      +'<div style="border-top-color:#b45309"><span>Abaixo / não pede</span><b class="acl-dn">'+C.abaixo+' lojas</b><small>loja usa menos que o padrão — verificar</small></div></div>';
     h+=mesAMes(M,L,C);
     if(L.id==='sac')h+=mixTamanho(M);
-    if(!rows.length)return h+'<div class="vazio">Nenhuma loja com esse filtro.</div>';
+    if(!rows.length)return h+'<div class="acl-vazio">Nenhuma loja com esse filtro.</div>';
     var dc=C.dk?DRV_CURTO[C.dk]:'';
     h+='<h3>Lojas — acumulado dos meses fechados com base</h3>';
-    h+='<div class="tw"><table><thead><tr><th>Loja</th><th>Regional</th><th>'+(C.dk?DRV_NOME[C.dk]:'Motor')+'</th><th>Média '+dc+'/mês</th><th>Consumo</th><th>Média cons./mês</th><th>Índice da loja</th><th>Esperado</th><th>Diferença</th><th>Diferença R$</th><th>Desvio</th><th>Situação</th></tr></thead><tbody>';
+    h+='<div class="acl-tw"><table><thead><tr><th>Loja</th><th>Regional</th><th>'+(C.dk?DRV_NOME[C.dk]:'Motor')+'</th><th>Média '+dc+'/mês</th><th>Consumo</th><th>Média cons./mês</th><th>Índice da loja</th><th>Esperado</th><th>Diferença</th><th>Diferença R$</th><th>Desvio</th><th>Situação</th></tr></thead><tbody>';
     var t={drv:0,cons:0,esp:0,dif:0,difV:0};
     rows.forEach(function(r){
       if(!r.cd){t.drv+=r.drv;t.cons+=r.consTot;if(r.esperado!=null){t.esp+=r.esperado;t.dif+=r.dif;t.difV+=r.difV;}}
-      h+='<tr><td class="l">'+esc(r.nome)+(r.nMeses&&r.nMeses<M.fechados.length?'<small>'+r.nMeses+' de '+M.fechados.length+' meses com base</small>':'')+'</td><td>'+esc(r.reg)+'</td>'
+      h+='<tr><td class="acl-l">'+esc(r.nome)+(r.nMeses&&r.nMeses<M.fechados.length?'<small>'+r.nMeses+' de '+M.fechados.length+' meses com base</small>':'')+'</td><td>'+esc(r.reg)+'</td>'
         +'<td>'+(r.drv?n0(r.drv):'—')+'</td><td>'+(r.mediaDrv?n0(r.mediaDrv):'—')+'</td>'
         +'<td><b>'+n0(r.consTot)+'</b>'+(r.consBase!==r.consTot&&r.drv?'<small>'+n0(r.consBase)+' nos meses c/ base</small>':'')+'</td><td>'+n1(r.mediaCons)+'</td>'
         +'<td>'+fmtTaxa(L,r.taxa)+'</td><td>'+(r.esperado!=null?n0(r.esperado):'—')+'</td>'
-        +'<td class="'+(r.dif>0?'up':r.dif<0?'dn':'')+'">'+(r.dif!=null?(r.dif>0?'+':'')+n0(r.dif):'—')+'</td>'
-        +'<td class="'+(r.difV>0?'up':r.difV<0?'dn':'')+'">'+(r.difV!=null?brl(r.difV):'—')+'</td>'
-        +'<td class="'+(r.desvio>C.tol?'up':r.desvio<-C.tol?'dn':'ok')+'">'+(r.desvio!=null?pct(r.desvio):'—')+'</td><td>'+stTag(r.status)+'</td></tr>';
+        +'<td class="'+(r.dif>0?'acl-up':r.dif<0?'acl-dn':'')+'">'+(r.dif!=null?(r.dif>0?'+':'')+n0(r.dif):'—')+'</td>'
+        +'<td class="'+(r.difV>0?'acl-up':r.difV<0?'acl-dn':'')+'">'+(r.difV!=null?brl(r.difV):'—')+'</td>'
+        +'<td class="'+(r.desvio>C.tol?'acl-up':r.desvio<-C.tol?'acl-dn':'acl-ok')+'">'+(r.desvio!=null?pct(r.desvio):'—')+'</td><td>'+stTag(r.status)+'</td></tr>';
     });
-    h+='<tr class="tot"><td>TOTAL (sem CD)</td><td></td><td>'+n0(t.drv)+'</td><td></td><td>'+n0(t.cons)+'</td><td></td><td></td><td>'+n0(t.esp)+'</td><td>'+(t.dif>0?'+':'')+n0(t.dif)+'</td><td>'+brl(t.difV)+'</td><td></td><td></td></tr></tbody></table></div>';
-    h+='<div class="nota"><b>Como ler:</b> o índice compara o consumo da loja com o motor dela (ex.: PA por sacola). <b>Esperado</b> = motor × padrão da rede. '
+    h+='<tr class="acl-tot"><td>TOTAL (sem CD)</td><td></td><td>'+n0(t.drv)+'</td><td></td><td>'+n0(t.cons)+'</td><td></td><td></td><td>'+n0(t.esp)+'</td><td>'+(t.dif>0?'+':'')+n0(t.dif)+'</td><td>'+brl(t.difV)+'</td><td></td><td></td></tr></tbody></table></div>';
+    h+='<div class="acl-nota"><b>Como ler:</b> o índice compara o consumo da loja com o motor dela (ex.: PA por sacola). <b>Esperado</b> = motor × padrão da rede. '
       +'<b>▲ Acima</b>: a loja consome mais que o padrão (desperdício, uso indevido ou desvio — verificar). <b>▼ Abaixo / vende e não pede</b>: a loja pode estar deixando de usar o item no atendimento ou recebendo de outra loja. O saldo de insumos no estoque da loja não é considerado (a loja não dá baixa no uso). '
       +'A comparação usa o acumulado dos meses fechados porque a loja pede a cada 2–3 meses. O CD entra no total da rede, mas não no padrão.</div>';
     return h;
@@ -604,15 +621,15 @@
       Object.keys(it.lojas).forEach(function(lj){if(ehCD(lj)||!M.lojas[lj]||!bateLoja(M.lojas[lj]))return;var o=lojas[lj]=lojas[lj]||{P:0,M:0,G:0};
         M.fechados.forEach(function(m){var x=it.lojas[lj][m];if(x){o[t]+=x.q;rede[t]+=x.q;}});});});
     function pc(o){var t=o.P+o.M+o.G;return t?{P:o.P/t,M:o.M/t,G:o.G/t,t:t}:null;}
-    function cel(v,ref){var d=(v-ref)*100;return '<td class="'+(d>10?'up':d<-10?'dn':'ok')+'">'+n0(v*100)+'%<small>'+(d>0?'+':'')+n0(d)+' p.p.</small></td>';}
+    function cel(v,ref){var d=(v-ref)*100;return '<td class="'+(d>10?'acl-up':d<-10?'acl-dn':'acl-ok')+'">'+n0(v*100)+'%<small>'+(d>0?'+':'')+n0(d)+' p.p.</small></td>';}
     var ls=Object.keys(lojas).map(function(lj){return {lj:lj,p:pc(lojas[lj])};}).filter(function(x){return x.p;})
       .sort(function(a,b){return (b.p.G-a.p.G);});
     var r=pc(rede);if(!r)return '';
-    var h='<h3>Sacola por tamanho — baliza P '+n0(b.P*100)+'% · M '+n0(b.M*100)+'% · G '+n0(b.G*100)+'%</h3><div class="tw" style="max-height:360px"><table><thead><tr><th>Loja</th><th>Regional</th><th>Sacolas P+M+G</th><th>P (35x55)</th><th>M (50x60)</th><th>G (60x70)</th><th>G acima da baliza</th></tr></thead><tbody>'
-      +'<tr class="tot"><td>REDE</td><td></td><td>'+n0(r.t)+'</td>'+cel(r.P,b.P)+cel(r.M,b.M)+cel(r.G,b.G)+'<td>'+(r.G>b.G?n0((r.G-b.G)*r.t)+' un.':'—')+'</td></tr>';
-    ls.forEach(function(x){var l=M.lojas[x.lj];h+='<tr><td class="l">'+esc(l.nome)+'</td><td>'+esc(l.reg)+'</td><td>'+n0(x.p.t)+'</td>'+cel(x.p.P,b.P)+cel(x.p.M,b.M)+cel(x.p.G,b.G)
-      +'<td class="'+(x.p.G-b.G>0.10?'up':'')+'">'+(x.p.G>b.G?n0((x.p.G-b.G)*x.p.t)+' un.':'—')+'</td></tr>';});
-    return h+'</tbody></table></div><div class="nota">Pedidos ao almoxarifado nos meses fechados. Vermelho = mais de 10 p.p. acima da baliza (sacola grande custa R$ 0,28 contra R$ 0,20 da média e R$ 0,12 da pequena). A previsão e a compra repartem a sacola por esta baliza.</div>';
+    var h='<h3>Sacola por tamanho — baliza P '+n0(b.P*100)+'% · M '+n0(b.M*100)+'% · G '+n0(b.G*100)+'%</h3><div class="acl-tw" style="max-height:360px"><table><thead><tr><th>Loja</th><th>Regional</th><th>Sacolas P+M+G</th><th>P (35x55)</th><th>M (50x60)</th><th>G (60x70)</th><th>G acima da baliza</th></tr></thead><tbody>'
+      +'<tr class="acl-tot"><td>REDE</td><td></td><td>'+n0(r.t)+'</td>'+cel(r.P,b.P)+cel(r.M,b.M)+cel(r.G,b.G)+'<td>'+(r.G>b.G?n0((r.G-b.G)*r.t)+' un.':'—')+'</td></tr>';
+    ls.forEach(function(x){var l=M.lojas[x.lj];h+='<tr><td class="acl-l">'+esc(l.nome)+'</td><td>'+esc(l.reg)+'</td><td>'+n0(x.p.t)+'</td>'+cel(x.p.P,b.P)+cel(x.p.M,b.M)+cel(x.p.G,b.G)
+      +'<td class="'+(x.p.G-b.G>0.10?'acl-up':'')+'">'+(x.p.G>b.G?n0((x.p.G-b.G)*x.p.t)+' un.':'—')+'</td></tr>';});
+    return h+'</tbody></table></div><div class="acl-nota">Pedidos ao almoxarifado nos meses fechados. Vermelho = mais de 10 p.p. acima da baliza (sacola grande custa R$ 0,28 contra R$ 0,20 da média e R$ 0,12 da pequena). A previsão e a compra repartem a sacola por esta baliza.</div>';
   }
   // Rede mês a mês: motor x consumo das lojas que têm base naquele mês (sem o CD). Ex.: % das vendas com presente por mês.
   function mesAMes(M,L,C){
@@ -623,11 +640,11 @@
       if(n)ms.push({m:m,d:d,q:q,n:n});});
     if(!ms.length)return '';
     var td=0,tq=0;ms.forEach(function(x){td+=x.d;tq+=x.q;});
-    return '<h3>Rede mês a mês — '+esc(L.nome)+' x '+DRV_NOME[C.dk]+(S.filtroLoja||S.filtroReg?' · '+esc(S.filtroLoja||('Regional '+S.filtroReg)):'')+'</h3><div class="tw" style="max-height:none"><table><thead><tr><th>Mês</th><th>Lojas com base</th><th>'+DRV_NOME[C.dk]+'</th><th>Consumo pedido</th><th>Índice</th><th>Padrão</th></tr></thead><tbody>'
+    return '<h3>Rede mês a mês — '+esc(L.nome)+' x '+DRV_NOME[C.dk]+(S.filtroLoja||S.filtroReg?' · '+esc(S.filtroLoja||('Regional '+S.filtroReg)):'')+'</h3><div class="acl-tw" style="max-height:none"><table><thead><tr><th>Mês</th><th>Lojas com base</th><th>'+DRV_NOME[C.dk]+'</th><th>Consumo pedido</th><th>Índice</th><th>Padrão</th></tr></thead><tbody>'
       +ms.map(function(x){var t=x.d?x.q/x.d:null,dv=C.padrao&&t!=null?t/C.padrao-1:null;
-        return '<tr><td>'+mesLabel(x.m)+(x.m>=M.atual?' *':'')+'</td><td>'+x.n+'</td><td>'+n0(x.d)+'</td><td>'+n0(x.q)+'</td><td class="'+(dv>C.tol?'up':dv<-C.tol?'dn':'ok')+'"><b>'+fmtTaxa(L,t)+'</b></td><td>'+(C.padrao!=null?fmtTaxa(L,C.padrao):'—')+'</td></tr>';}).join('')
-      +'<tr class="tot"><td>ACUMULADO</td><td></td><td>'+n0(td)+'</td><td>'+n0(tq)+'</td><td>'+fmtTaxa(L,td?tq/td:null)+'</td><td></td></tr></tbody></table></div>'
-      +'<div class="nota">Consumo = o que as lojas <b>pediram</b> ao almoxarifado no mês. Mês de abastecimento (ex.: abril, antes do Dia das Mães; novembro, antes do Natal) sai alto e o mês seguinte baixo. Por isso a situação de cada loja é medida no acumulado.</div>';
+        return '<tr><td>'+mesLabel(x.m)+(x.m>=M.atual?' *':'')+'</td><td>'+x.n+'</td><td>'+n0(x.d)+'</td><td>'+n0(x.q)+'</td><td class="'+(dv>C.tol?'acl-up':dv<-C.tol?'acl-dn':'acl-ok')+'"><b>'+fmtTaxa(L,t)+'</b></td><td>'+(C.padrao!=null?fmtTaxa(L,C.padrao):'—')+'</td></tr>';}).join('')
+      +'<tr class="acl-tot"><td>ACUMULADO</td><td></td><td>'+n0(td)+'</td><td>'+n0(tq)+'</td><td>'+fmtTaxa(L,td?tq/td:null)+'</td><td></td></tr></tbody></table></div>'
+      +'<div class="acl-nota">Consumo = o que as lojas <b>pediram</b> ao almoxarifado no mês. Mês de abastecimento (ex.: abril, antes do Dia das Mães; novembro, antes do Natal) sai alto e o mês seguinte baixo. Por isso a situação de cada loja é medida no acumulado.</div>';
   }
   function vMensal(R){
     var M=R.M,meses=M.meses;
@@ -635,7 +652,7 @@
     var filtrando=!!(S.filtroLoja||S.filtroReg);
     function cel(o){return o&&o.q?n0(o.q)+'<small>'+brl(o.v)+'</small>':'—';}
     var h='<h3>Itens controlados — totalizado por mês'+(filtrando?' · '+esc(S.filtroLoja||('Regional '+S.filtroReg)):' · todas as lojas')+'</h3>'
-      +'<div class="tw"><table><thead><tr><th>Item</th>'+meses.map(function(m){return '<th>'+mesLabel(m)+(m>=M.atual?' *':'')+'</th>';}).join('')+'<th>Total</th><th>Média/mês</th></tr></thead><tbody>';
+      +'<div class="acl-tw"><table><thead><tr><th>Item</th>'+meses.map(function(m){return '<th>'+mesLabel(m)+(m>=M.atual?' *':'')+'</th>';}).join('')+'<th>Total</th><th>Média/mês</th></tr></thead><tbody>';
     var totM={},totG={q:0,v:0},grupos={};
     LINHAS.forEach(function(L){(grupos[L.grupo]=grupos[L.grupo]||[]).push(L);});
     var lojaM={};
@@ -650,20 +667,20 @@
           if(!tq)return;
           meses.forEach(function(m){if(tm[m]){var s=subM[m]=subM[m]||{v:0};s.v+=tm[m].v;var t=totM[m]=totM[m]||{v:0};t.v+=tm[m].v;}});
           sub.v+=tv;totG.v+=tv;
-          linhasG+='<tr><td class="l">'+esc(it.nome)+'<small>'+it.cod+' · '+esc(L.nome)+'</small></td>'+meses.map(function(m){return '<td>'+cel(tm[m])+'</td>';}).join('')
-            +'<td><b>'+n0(tq)+'</b><small>'+brl(tv)+'</small></td><td class="ok"><b>'+n1(M.fechados.length?qf/M.fechados.length:0)+'</b></td></tr>';
+          linhasG+='<tr><td class="acl-l">'+esc(it.nome)+'<small>'+it.cod+' · '+esc(L.nome)+'</small></td>'+meses.map(function(m){return '<td>'+cel(tm[m])+'</td>';}).join('')
+            +'<td><b>'+n0(tq)+'</b><small>'+brl(tv)+'</small></td><td class="acl-ok"><b>'+n1(M.fechados.length?qf/M.fechados.length:0)+'</b></td></tr>';
         });
       });
       if(!linhasG)return;
-      h+='<tr class="sub"><td class="l" style="color:'+GRUPO_COR[g]+'">'+esc(g.toUpperCase())+'</td>'+meses.map(function(m){return '<td>'+(subM[m]?brl(subM[m].v):'—')+'</td>';}).join('')+'<td>'+brl(sub.v)+'</td><td></td></tr>'+linhasG;
+      h+='<tr class="acl-sub"><td class="acl-l" style="color:'+GRUPO_COR[g]+'">'+esc(g.toUpperCase())+'</td>'+meses.map(function(m){return '<td>'+(subM[m]?brl(subM[m].v):'—')+'</td>';}).join('')+'<td>'+brl(sub.v)+'</td><td></td></tr>'+linhasG;
     });
-    h+='<tr class="tot"><td>TOTAL R$</td>'+meses.map(function(m){return '<td>'+(totM[m]?brl(totM[m].v):'—')+'</td>';}).join('')+'<td>'+brl(totG.v)+'</td><td>'
+    h+='<tr class="acl-tot"><td>TOTAL R$</td>'+meses.map(function(m){return '<td>'+(totM[m]?brl(totM[m].v):'—')+'</td>';}).join('')+'<td>'+brl(totG.v)+'</td><td>'
       +brl(M.fechados.reduce(function(s,m){return s+(totM[m]?totM[m].v:0);},0)/(M.fechados.length||1))+'</td></tr></tbody></table></div>';
     // por loja (R$ de todos os itens controlados)
     var ls=Object.keys(lojaM).map(function(lj){var t=0;meses.forEach(function(m){if(lojaM[lj][m])t+=lojaM[lj][m].v;});return {lj:lj,t:t};}).sort(function(a,b){return b.t-a.t;});
-    h+='<h3>Por loja — R$ dos itens controlados por mês</h3><div class="tw"><table><thead><tr><th>Loja</th><th>Regional</th>'+meses.map(function(m){return '<th>'+mesLabel(m)+(m>=M.atual?' *':'')+'</th>';}).join('')+'<th>Total</th></tr></thead><tbody>'
-      +ls.map(function(o){var l=M.lojas[o.lj];return '<tr><td class="l">'+esc(l.nome)+'</td><td>'+esc(l.reg)+'</td>'+meses.map(function(m){var c=lojaM[o.lj][m];return '<td>'+(c?brl(c.v):'—')+'</td>';}).join('')+'<td><b>'+brl(o.t)+'</b></td></tr>';}).join('')
-      +'</tbody></table></div><div class="nota">* mês em andamento — aparece na tabela, mas não entra na média.</div>';
+    h+='<h3>Por loja — R$ dos itens controlados por mês</h3><div class="acl-tw"><table><thead><tr><th>Loja</th><th>Regional</th>'+meses.map(function(m){return '<th>'+mesLabel(m)+(m>=M.atual?' *':'')+'</th>';}).join('')+'<th>Total</th></tr></thead><tbody>'
+      +ls.map(function(o){var l=M.lojas[o.lj];return '<tr><td class="acl-l">'+esc(l.nome)+'</td><td>'+esc(l.reg)+'</td>'+meses.map(function(m){var c=lojaM[o.lj][m];return '<td>'+(c?brl(c.v):'—')+'</td>';}).join('')+'<td><b>'+brl(o.t)+'</b></td></tr>';}).join('')
+      +'</tbody></table></div><div class="acl-nota">* mês em andamento — aparece na tabela, mas não entra na média.</div>';
     return h;
   }
 
@@ -671,18 +688,18 @@
     var M=R.M,x=R.linhas.find(function(l){return l.L.id===S.linha;}),L=x.L,C=x.C,F=x.F,P=M.P,fut=F.futuros;
     var h=avisoBase(R)+previsaoVenda(R)+'<h3>Sugestão de compra — todos os itens controlados</h3>'+tabelaCompra(R)
       +'<h3>'+L.icone+' '+esc(L.nome)+' — previsão de consumo por loja ('+fut.map(mesLabel).join(', ')+')</h3>'
-      +'<div class="nota" style="margin:0 0 8px">'+(C.dk?'Motor previsto = média mensal de '+DRV_NOME[C.dk]+' no ano':'Sem motor: média mensal de consumo')
+      +'<div class="acl-nota" style="margin:0 0 8px">'+(C.dk?'Motor previsto = média mensal de '+DRV_NOME[C.dk]+' no ano':'Sem motor: média mensal de consumo')
       +(F.ehVenda?' · mês comum +'+n0(P.crescimento)+'% · dezembro ×'+n2(P.fatorDez):'')
       +(C.dk?'. Consumo previsto = motor previsto × '+(P.basePrev==='real'?'índice real de cada loja':'padrão da rede ('+fmtTaxa(L,C.padrao)+')')+'. Loja sem base usa a própria média de consumo.':'.')+'</div>';
     var rows=F.porLoja.filter(bateLoja);
-    h+='<div class="tw"><table><thead><tr><th>Loja</th><th>Regional</th>'+(C.dk?'<th>Média '+DRV_CURTO[C.dk]+'/mês</th>':'')+'<th>Consumo médio/mês</th><th>Previsão mês comum</th>'
+    h+='<div class="acl-tw"><table><thead><tr><th>Loja</th><th>Regional</th>'+(C.dk?'<th>Média '+DRV_CURTO[C.dk]+'/mês</th>':'')+'<th>Consumo médio/mês</th><th>Previsão mês comum</th>'
       +fut.map(function(m){return '<th>'+mesLabel(m)+'</th>';}).join('')+'<th>Total '+fut.length+' meses</th><th>Base</th></tr></thead><tbody>';
     var t={md:0,mc:0,p:0,pm:{},hz:0};
     rows.forEach(function(r){var hzr=0;fut.forEach(function(m){hzr+=r.pm[m];t.pm[m]=(t.pm[m]||0)+r.pm[m];});t.md+=r.mediaDrv||0;t.mc+=r.mediaCons;t.p+=r.prev;t.hz+=hzr;
-      h+='<tr><td class="l">'+esc(r.nome)+'</td><td>'+esc(r.reg)+'</td>'+(C.dk?'<td>'+(r.mediaDrv?n0(r.mediaDrv):'—')+'</td>':'')
-        +'<td>'+n1(r.mediaCons)+'</td><td class="ok"><b>'+n1(r.prev)+'</b></td>'+fut.map(function(m){return '<td'+(m.slice(5)==='12'?' class="dn"':'')+'>'+n0(r.pm[m])+'</td>';}).join('')
+      h+='<tr><td class="acl-l">'+esc(r.nome)+'</td><td>'+esc(r.reg)+'</td>'+(C.dk?'<td>'+(r.mediaDrv?n0(r.mediaDrv):'—')+'</td>':'')
+        +'<td>'+n1(r.mediaCons)+'</td><td class="acl-ok"><b>'+n1(r.prev)+'</b></td>'+fut.map(function(m){return '<td'+(m.slice(5)==='12'?' class="acl-dn"':'')+'>'+n0(r.pm[m])+'</td>';}).join('')
         +'<td><b>'+n0(hzr)+'</b></td><td><small>'+esc(r.base)+'</small></td></tr>';});
-    h+='<tr class="tot"><td>TOTAL</td><td></td>'+(C.dk?'<td>'+n0(t.md)+'</td>':'')+'<td>'+n0(t.mc)+'</td><td>'+n0(t.p)+'</td>'+fut.map(function(m){return '<td>'+n0(t.pm[m])+'</td>';}).join('')+'<td>'+n0(t.hz)+'</td><td></td></tr></tbody></table></div>';
+    h+='<tr class="acl-tot"><td>TOTAL</td><td></td>'+(C.dk?'<td>'+n0(t.md)+'</td>':'')+'<td>'+n0(t.mc)+'</td><td>'+n0(t.p)+'</td>'+fut.map(function(m){return '<td>'+n0(t.pm[m])+'</td>';}).join('')+'<td>'+n0(t.hz)+'</td><td></td></tr></tbody></table></div>';
     return h;
   }
   // Previsão de venda (PA) por loja: média do ano, meses comuns +crescimento, dezembro × fator.
@@ -696,27 +713,27 @@
       rows.push({nome:info.nome,reg:info.reg,n:ms.length,tot:tot,med:med,pm:fut.map(function(m){return med*fatorMes(P,m,true);})});});
     rows.sort(function(a,b){return b.med-a.med;});
     var T={tot:0,med:0,pm:fut.map(function(){return 0;})};
-    var h='<h3>📈 Previsão de venda (PA) por loja — média do ano'+' · mês comum +'+n0(P.crescimento)+'% · dezembro ×'+n2(P.fatorDez)+'</h3><div class="tw" style="max-height:340px"><table><thead><tr><th>Loja</th><th>Regional</th><th>Meses com venda</th><th>PA no ano</th><th>Média PA/mês</th>'
+    var h='<h3>📈 Previsão de venda (PA) por loja — média do ano'+' · mês comum +'+n0(P.crescimento)+'% · dezembro ×'+n2(P.fatorDez)+'</h3><div class="acl-tw" style="max-height:340px"><table><thead><tr><th>Loja</th><th>Regional</th><th>Meses com venda</th><th>PA no ano</th><th>Média PA/mês</th>'
       +fut.map(function(m){return '<th>'+mesLabel(m)+'</th>';}).join('')+'<th>Total</th></tr></thead><tbody>';
     rows.forEach(function(r){T.tot+=r.tot;T.med+=r.med;r.pm.forEach(function(v,i){T.pm[i]+=v;});
-      h+='<tr><td class="l">'+esc(r.nome)+'</td><td>'+esc(r.reg)+'</td><td>'+r.n+'</td><td>'+n0(r.tot)+'</td><td class="ok"><b>'+n0(r.med)+'</b></td>'
-        +r.pm.map(function(v,i){return '<td'+(fut[i].slice(5)==='12'?' class="dn"':'')+'>'+n0(v)+'</td>';}).join('')+'<td><b>'+n0(r.pm.reduce(function(s,v){return s+v;},0))+'</b></td></tr>';});
-    h+='<tr class="tot"><td>TOTAL</td><td></td><td></td><td>'+n0(T.tot)+'</td><td>'+n0(T.med)+'</td>'+T.pm.map(function(v){return '<td>'+n0(v)+'</td>';}).join('')+'<td>'+n0(T.pm.reduce(function(s,v){return s+v;},0))+'</td></tr></tbody></table></div>';
+      h+='<tr><td class="acl-l">'+esc(r.nome)+'</td><td>'+esc(r.reg)+'</td><td>'+r.n+'</td><td>'+n0(r.tot)+'</td><td class="acl-ok"><b>'+n0(r.med)+'</b></td>'
+        +r.pm.map(function(v,i){return '<td'+(fut[i].slice(5)==='12'?' class="acl-dn"':'')+'>'+n0(v)+'</td>';}).join('')+'<td><b>'+n0(r.pm.reduce(function(s,v){return s+v;},0))+'</b></td></tr>';});
+    h+='<tr class="acl-tot"><td>TOTAL</td><td></td><td></td><td>'+n0(T.tot)+'</td><td>'+n0(T.med)+'</td>'+T.pm.map(function(v){return '<td>'+n0(v)+'</td>';}).join('')+'<td>'+n0(T.pm.reduce(function(s,v){return s+v;},0))+'</td></tr></tbody></table></div>';
     return h;
   }
   function linhasCompra(R){var o=[];R.linhas.forEach(function(x){x.F.itens.forEach(function(i){o.push(i);});});return o;}
   function tabelaCompra(R){
     var its=linhasCompra(R),P=R.M.P,t={pm:0,sug:0},F0=R.linhas[0].F,mc=F0.mCob,dez=F0.todos.filter(function(m){return m.slice(5)==='12';})[0];
-    var h='<div class="tw" style="max-height:none"><table><thead><tr><th>Item</th><th>Grupo</th><th>Média real/mês</th><th>Previsão mês comum</th>'+(dez?'<th>Previsão '+mesLabel(dez)+'</th>':'')
+    var h='<div class="acl-tw" style="max-height:none"><table><thead><tr><th>Item</th><th>Grupo</th><th>Média real/mês</th><th>Previsão mês comum</th>'+(dez?'<th>Previsão '+mesLabel(dez)+'</th>':'')
       +'<th>Estoque atual</th><th>Cobertura atual</th><th>Precisa ('+mc.map(mesLabel).join(' + ')+')</th><th>Sugestão de compra</th><th>Custo un.</th><th>Valor da compra</th></tr></thead><tbody>';
     its.forEach(function(i){t.pm+=i.prevM*i.custo;t.sug+=i.sugV;
-      var cobCls=i.cobAtual==null?'':i.cobAtual<1?'up':i.cobAtual<mc.length?'dn':'ok';
-      h+='<tr><td class="l">'+esc(i.nome)+'<small>'+i.cod+(i.ultCompra?' · última compra '+esc(i.ultCompra):'')+'</small></td><td>'+esc(i.linha.grupo)+'</td><td>'+n0(i.media)+'</td><td class="ok"><b>'+n0(i.prevM)+'</b></td>'
-        +(dez?'<td class="dn"><b>'+n0(i.pm[dez])+'</b></td>':'')
+      var cobCls=i.cobAtual==null?'':i.cobAtual<1?'acl-up':i.cobAtual<mc.length?'acl-dn':'acl-ok';
+      h+='<tr><td class="acl-l">'+esc(i.nome)+'<small>'+i.cod+(i.ultCompra?' · última compra '+esc(i.ultCompra):'')+'</small></td><td>'+esc(i.linha.grupo)+'</td><td>'+n0(i.media)+'</td><td class="acl-ok"><b>'+n0(i.prevM)+'</b></td>'
+        +(dez?'<td class="acl-dn"><b>'+n0(i.pm[dez])+'</b></td>':'')
         +'<td>'+n0(i.saldo)+(i.deps?'<small>'+Object.keys(i.deps).map(function(d){return esc(d.replace(/\s*-\s*ALMOXARIFADO\s*/i,' ')).slice(0,14)+' '+n0(i.deps[d]);}).join(' + ')+'</small>':'')+'</td><td class="'+cobCls+'">'+(i.cobAtual!=null?n1(i.cobAtual)+' m':'—')+'</td><td>'+n0(i.alvo)+'</td>'
-        +'<td><b class="'+(i.sug?'dn':'ok')+'">'+(i.sug?n0(i.sug):'—')+'</b></td><td>'+(i.custo?'R$ '+Number(i.custo).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4}):'—')+'</td><td><b>'+(i.sug?brl(i.sugV):'—')+'</b></td></tr>';});
-    h+='<tr class="tot"><td>TOTAL</td><td></td><td></td><td>'+brl(t.pm)+'/mês</td>'+(dez?'<td></td>':'')+'<td></td><td></td><td></td><td></td><td></td><td>'+brl(t.sug)+'</td></tr></tbody></table></div>'
-      +'<div class="nota">Sugestão = previsão de '+mc.map(mesLabel).join(' + ')+' (dezembro ×'+n2(P.fatorDez)+' nos itens de venda, agrado e bobina) − estoque atual do almoxarifado. Cobertura em vermelho = menos de 1 mês. '
+        +'<td><b class="'+(i.sug?'acl-dn':'acl-ok')+'">'+(i.sug?n0(i.sug):'—')+'</b></td><td>'+(i.custo?'R$ '+Number(i.custo).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4}):'—')+'</td><td><b>'+(i.sug?brl(i.sugV):'—')+'</b></td></tr>';});
+    h+='<tr class="acl-tot"><td>TOTAL</td><td></td><td></td><td>'+brl(t.pm)+'/mês</td>'+(dez?'<td></td>':'')+'<td></td><td></td><td></td><td></td><td></td><td>'+brl(t.sug)+'</td></tr></tbody></table></div>'
+      +'<div class="acl-nota">Sugestão = previsão de '+mc.map(mesLabel).join(' + ')+' (dezembro ×'+n2(P.fatorDez)+' nos itens de venda, agrado e bobina) − estoque atual do almoxarifado. Cobertura em vermelho = menos de 1 mês. '
       +'O pedido de dezembro sai das lojas em novembro: compre antes. Arredonde para a embalagem de compra (milheiro, caixa, fardo).</div>';
     return h;
   }
@@ -725,17 +742,17 @@
     var B=S.base,P=B.params;
     function resumo(lista,campos){
       var ms={};lista.forEach(function(x){var m=ms[x.mes]=ms[x.mes]||{lojas:{},v:{}};m.lojas[x.loja]=1;campos.forEach(function(c){if(x[c]!=null)m.v[c]=(m.v[c]||0)+Number(x[c]);});});
-      var ks=Object.keys(ms).sort();if(!ks.length)return '<div class="vazio" style="padding:14px">Nada carregado ainda.</div>';
-      return '<div class="tw" style="max-height:300px"><table><thead><tr><th>Mês</th><th>Lojas</th>'+campos.map(function(c){return '<th>'+({pares:'Pares',nfs:'NFS',valor:'Valor',pedidos:'Pedidos'}[c])+'</th>';}).join('')+'</tr></thead><tbody>'
+      var ks=Object.keys(ms).sort();if(!ks.length)return '<div class="acl-vazio" style="padding:14px">Nada carregado ainda.</div>';
+      return '<div class="acl-tw" style="max-height:300px"><table><thead><tr><th>Mês</th><th>Lojas</th>'+campos.map(function(c){return '<th>'+({pares:'Pares',nfs:'NFS',valor:'Valor',pedidos:'Pedidos'}[c])+'</th>';}).join('')+'</tr></thead><tbody>'
         +ks.map(function(k){var m=ms[k];return '<tr><td>'+mesLabel(k)+'</td><td>'+Object.keys(m.lojas).length+'</td>'+campos.map(function(c){return '<td>'+(m.v[c]!=null?(c==='valor'?brl(m.v[c]):n0(m.v[c])):'—')+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>';
     }
-    var h='<div class="kpi"><div><span>Base de vendas</span><b>'+n0(B.vendas.length)+'</b><small>linhas loja × mês</small></div><div><span>Base de remanejo</span><b>'+n0(B.remanejo.length)+'</b><small>linhas loja × mês</small></div>'
+    var h='<div class="acl-kpi"><div><span>Base de vendas</span><b>'+n0(B.vendas.length)+'</b><small>linhas loja × mês</small></div><div><span>Base de remanejo</span><b>'+n0(B.remanejo.length)+'</b><small>linhas loja × mês</small></div>'
       +'<div><span>Atualizado</span><b style="font-size:14px">'+(B.atualizadoEm?new Date(B.atualizadoEm).toLocaleString('pt-BR'):'—')+'</b><small>'+esc(B.atualizadoPor||'')+'</small></div></div>'
-      +(S.msgBase?'<div class="aviso" style="background:#0d2233;border-color:#2f5478;color:#cfe0f2">'+S.msgBase.map(esc).join('<br>')+'</div>':'')
-      +'<div class="drop" id="acl-drop">⬇ Arraste aqui as planilhas de <b>vendas por loja/mês</b> e/ou <b>pedidos de remanejo</b> (xlsx ou csv) — ou <label style="display:inline;color:#5fd3b8;cursor:pointer;text-transform:none;font-size:13px">clique para escolher<input type="file" id="acl-file" multiple accept=".xlsx,.xls,.csv" style="display:none"></label>'
+      +(S.msgBase?'<div class="acl-aviso" style="background:#0d2233;border-color:#2f5478;color:#cfe0f2">'+S.msgBase.map(esc).join('<br>')+'</div>':'')
+      +'<div class="acl-drop" id="acl-drop">⬇ Arraste aqui as planilhas de <b>vendas por loja/mês</b> e/ou <b>pedidos de remanejo</b> (xlsx ou csv) — ou <label style="display:inline;color:#5fd3b8;cursor:pointer;text-transform:none;font-size:13px">clique para escolher<input type="file" id="acl-file" multiple accept=".xlsx,.xls,.csv" style="display:none"></label>'
       +'<div style="margin-top:10px;font-size:12px">O tipo é reconhecido pelas colunas: <b>Loja + Mês/Data + Pares (PA) + NFS + Valor</b> = vendas · <b>Origem + Destino + Data + Qtde</b> = remanejo · <b>Código + Descrição + Quantidade</b> = estoque dos depósitos. Carga nova troca só os meses e lojas que vieram no arquivo.</div>'
       +'<div style="margin-top:10px"><button type="button" data-a="mod" data-m="ven">Modelo de vendas (.csv)</button> <button type="button" data-a="mod" data-m="rem">Modelo de remanejo (.csv)</button></div></div>'
-      +'<h3>⚙ Parâmetros (valem para todos)</h3><div class="pgrid">'
+      +'<h3>⚙ Parâmetros (valem para todos)</h3><div class="acl-pgrid">'
       +'<div><label>PA por sacola (regra)</label><input type="number" step="0.1" min="0.5" id="p-pa" value="'+P.paPorSacola+'"></div>'
       +'<div><label>Previsão de venda (+% sobre a média)</label><input type="number" step="1" id="p-cr" value="'+P.crescimento+'"></div>'
       +'<div><label>Dezembro (× venda de um mês comum)</label><input type="number" step="0.05" min="1" max="5" id="p-dez" value="'+P.fatorDez+'"></div>'
@@ -744,14 +761,14 @@
       +'<div><label>Cobertura de estoque (meses)</label><input type="number" step="0.5" min="0.5" id="p-cob" value="'+P.cobertura+'"></div>'
       +'<div><label>Horizonte da previsão (meses)</label><input type="number" step="1" min="1" max="12" id="p-hz" value="'+P.horizonte+'"></div>'
       +'<div><label>Base da previsão</label><select id="p-bp"><option value="padrao"'+(P.basePrev!=='real'?' selected':'')+'>Padrão da rede (auditoria)</option><option value="real"'+(P.basePrev==='real'?' selected':'')+'>Índice real de cada loja</option></select></div>'
-      +'</div><div style="margin-top:10px"><button type="button" class="pri" data-a="salvarP">💾 Salvar parâmetros</button></div>'
-      +'<h3>Estoque dos depósitos (CD + AX)</h3>'+(B.estoque&&B.estoque.itens?'<div class="tw" style="max-height:300px"><table><thead><tr><th>Item</th><th>Depósitos</th><th>Total</th><th>Última compra</th></tr></thead><tbody>'
-        +Object.keys(B.estoque.itens).map(function(c){var x=B.estoque.itens[c];return '<tr><td class="l">'+esc(x.nome)+'<small>'+c+'</small></td><td class="l">'+Object.keys(x.deps).map(function(d){return esc(d)+': <b>'+n0(x.deps[d])+'</b>';}).join('<br>')+'</td><td><b>'+n0(x.total)+'</b></td><td>'+esc(x.ultCompra||'')+'</td></tr>';}).join('')
-        +'</tbody></table></div><div class="nota">Carregado em '+new Date(B.estoque.em).toLocaleString('pt-BR')+' ('+esc(B.estoque.arquivo||'')+'). Vale enquanto for mais novo que o estoque do módulo Almoxarifado (atualizado em '+(S.alm&&S.alm.atualizado?new Date(S.alm.atualizado).toLocaleString('pt-BR'):'—')+'). Estoque das lojas é desconsiderado.</div><div style="margin-top:6px"><button type="button" data-a="limpar" data-m="est">Apagar estoque carregado</button></div>'
-        :'<div class="vazio" style="padding:14px">Usando o estoque do módulo Almoxarifado (001 CD + AX), atualizado em '+(S.alm&&S.alm.atualizado?new Date(S.alm.atualizado).toLocaleString('pt-BR'):'—')+'. Arraste aqui o relatório de estoque com todos os depósitos (ex.: 001 CD + AX - ALMOXARIFADO CONDE).</div>')
+      +'</div><div style="margin-top:10px"><button type="button" class="acl-pri" data-a="salvarP">💾 Salvar parâmetros</button></div>'
+      +'<h3>Estoque dos depósitos (CD + AX)</h3>'+(B.estoque&&B.estoque.itens?'<div class="acl-tw" style="max-height:300px"><table><thead><tr><th>Item</th><th>Depósitos</th><th>Total</th><th>Última compra</th></tr></thead><tbody>'
+        +Object.keys(B.estoque.itens).map(function(c){var x=B.estoque.itens[c];return '<tr><td class="acl-l">'+esc(x.nome)+'<small>'+c+'</small></td><td class="acl-l">'+Object.keys(x.deps).map(function(d){return esc(d)+': <b>'+n0(x.deps[d])+'</b>';}).join('<br>')+'</td><td><b>'+n0(x.total)+'</b></td><td>'+esc(x.ultCompra||'')+'</td></tr>';}).join('')
+        +'</tbody></table></div><div class="acl-nota">Carregado em '+new Date(B.estoque.em).toLocaleString('pt-BR')+' ('+esc(B.estoque.arquivo||'')+'). Vale enquanto for mais novo que o estoque do módulo Almoxarifado (atualizado em '+(S.alm&&S.alm.atualizado?new Date(S.alm.atualizado).toLocaleString('pt-BR'):'—')+'). Estoque das lojas é desconsiderado.</div><div style="margin-top:6px"><button type="button" data-a="limpar" data-m="est">Apagar estoque carregado</button></div>'
+        :'<div class="acl-vazio" style="padding:14px">Usando o estoque do módulo Almoxarifado (001 CD + AX), atualizado em '+(S.alm&&S.alm.atualizado?new Date(S.alm.atualizado).toLocaleString('pt-BR'):'—')+'. Arraste aqui o relatório de estoque com todos os depósitos (ex.: 001 CD + AX - ALMOXARIFADO CONDE).</div>')
       +'<h3>Vendas carregadas</h3>'+resumo(B.vendas,['pares','nfs','valor'])+(B.vendas.length?'<div style="margin-top:6px"><button type="button" data-a="limpar" data-m="ven">Apagar base de vendas</button></div>':'')
       +'<h3>Remanejo carregado (pares enviados pela loja de origem)</h3>'+resumo(B.remanejo,['pares','pedidos'])+(B.remanejo.length?'<div style="margin-top:6px"><button type="button" data-a="limpar" data-m="rem">Apagar base de remanejo</button></div>':'')
-      +(B.arquivos.length?'<h3>Últimas cargas</h3><div class="nota">'+B.arquivos.slice(-10).reverse().map(function(a){return esc(new Date(a.em).toLocaleString('pt-BR')+' · '+a.nome+' · '+a.tipo+' · '+a.meses+' · '+a.lojas+' lojas');}).join('<br>')+'</div>':'');
+      +(B.arquivos.length?'<h3>Últimas cargas</h3><div class="acl-nota">'+B.arquivos.slice(-10).reverse().map(function(a){return esc(new Date(a.em).toLocaleString('pt-BR')+' · '+a.nome+' · '+a.tipo+' · '+a.meses+' · '+a.lojas+' lojas');}).join('<br>')+'</div>':'');
     return h;
   }
   function ligarBase(){
