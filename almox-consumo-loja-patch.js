@@ -11,7 +11,7 @@
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-06.3';
+  window.__almoxConsumoLoja='2026-11-06.4';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -323,7 +323,8 @@
   var MESES_EXT=['JANEIRO','FEVEREIRO','MARCO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
   function mesDoNome(nome){
     var n=norm(String(nome||'').replace(/\.[a-z0-9]+$/i,'')).replace(/[^A-Z0-9]+/g,' ');
-    for(var i=0;i<12;i++){if(new RegExp('(^|\\s)'+MESES_EXT[i]+'(\\s|$)').test(n)){
+    // MARÇO pode chegar como MARCO, MAR_O ou MAR O (o Ç some no nome do arquivo)
+    for(var i=0;i<12;i++){if(new RegExp('(^|\\s)'+(i===2?'MAR(C|\\s)?O':MESES_EXT[i])+'(\\s|$)').test(n)){
       var y=(n.match(/(^|\s)(20\d{2})(\s|$)/)||[])[2],at=mesAtual();
       if(!y){y=at.slice(0,4);if(String(i+1).padStart(2,'0')>at.slice(5))y=String(Number(y)-1);}
       return y+'-'+String(i+1).padStart(2,'0');}}
