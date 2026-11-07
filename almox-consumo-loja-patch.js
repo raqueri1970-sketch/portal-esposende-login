@@ -11,7 +11,7 @@
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-07.9';
+  window.__almoxConsumoLoja='2026-11-07.10';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -114,21 +114,36 @@
   // ---------- estado ----------
   var S={carregado:false,carregando:false,erro:null,alm:null,base:null,aba:'painel',linha:'sac',filtroLoja:'',filtroReg:'',de:null,ate:null,ultimo:null};
 
+  // Carga com nova tentativa automática: se a sessão do Portal ainda não estiver pronta, se der erro de rede
+  // ou se o consumo/vendas vierem vazios, tenta de novo (2s, 4s, 8s) e avisa na tela o que está acontecendo.
+  var TENTATIVAS=4;
+  function esperar(ms){return new Promise(function(r){setTimeout(r,ms);});}
+  async function buscarTudo(){
+    var r=await Promise.all([
+      rest('portal_sync?module_id=eq.alm&select=u:updated_at,c:payload->dbConsumoRaw,e:payload->dbEstoqueRaw,r:payload->dbRegionaisMap,n:payload->dbLojaNomeMap'),
+      rest('portal_sync?module_id=eq.'+MOD_ID+'&select=payload')
+    ]);
+    var a=(r[0]&&r[0][0])||{},b=(r[1]&&r[1][0]&&r[1][0].payload)||{};
+    return {alm:{consumo:a.c||[],estoque:a.e||[],reg:a.r||{},nomes:a.n||{},atualizado:a.u||null},
+      base:{vendas:b.vendas||[],remanejo:b.remanejo||[],estoque:b.estoque||null,params:Object.assign({},PARAMS_PADRAO,b.params||{}),arquivos:b.arquivos||[],atualizadoEm:b.atualizadoEm||null,atualizadoPor:b.atualizadoPor||null}};
+  }
+  function faltando(d){var f=[];if(!d.alm.consumo.length)f.push('consumo do almoxarifado');if(!d.base.vendas.length)f.push('base de vendas');return f;}
   async function carregar(forcar){
     if(S.carregando)return;if(S.carregado&&!forcar)return;
-    S.carregando=true;S.erro=null;render();
-    try{
-      var r=await Promise.all([
-        rest('portal_sync?module_id=eq.alm&select=u:updated_at,c:payload->dbConsumoRaw,e:payload->dbEstoqueRaw,r:payload->dbRegionaisMap,n:payload->dbLojaNomeMap'),
-        rest('portal_sync?module_id=eq.'+MOD_ID+'&select=payload')
-      ]);
-      var a=(r[0]&&r[0][0])||{};
-      S.alm={consumo:a.c||[],estoque:a.e||[],reg:a.r||{},nomes:a.n||{},atualizado:a.u||null};
-      var b=(r[1]&&r[1][0]&&r[1][0].payload)||{};
-      S.base={vendas:b.vendas||[],remanejo:b.remanejo||[],estoque:b.estoque||null,params:Object.assign({},PARAMS_PADRAO,b.params||{}),arquivos:b.arquivos||[],atualizadoEm:b.atualizadoEm||null,atualizadoPor:b.atualizadoPor||null};
-      S.carregado=true;
-    }catch(e){console.error('[Consumo Loja]',e);S.erro=e.message||String(e);}
-    S.carregando=false;
+    S.carregando=true;S.erro=null;S.aviso=null;S.tentativa=0;render();
+    var d=null,ultimoErro=null;
+    for(var t=1;t<=TENTATIVAS;t++){
+      S.tentativa=t;
+      try{d=await buscarTudo();ultimoErro=null;}catch(e){console.error('[Consumo Loja] tentativa '+t,e);ultimoErro=e.message||String(e);d=null;}
+      var f=d?faltando(d):['dados'];
+      if(d&&!f.length)break;
+      if(t<TENTATIVAS){S.motivo=ultimoErro||('não veio: '+f.join(' e '));render();await esperar(2000*Math.pow(2,t-1));}
+    }
+    S.carregando=false;S.tentativa=0;S.motivo=null;
+    if(!d){S.erro=ultimoErro||'Não foi possível carregar os dados.';render();return;}
+    S.alm=d.alm;S.base=d.base;S.carregado=true;
+    var fl=faltando(d);
+    if(fl.length)S.aviso='⚠ Depois de '+TENTATIVAS+' tentativas não veio: '+fl.join(' e ')+'. Os números abaixo ficam incompletos (lojas aparecem SEM MOTOR). Confira a conexão e clique em Recarregar.';
     if(!S.de){var at=mesAtual();S.de=at.slice(0,4)+'-01';S.ate=at;}
     render();
   }
@@ -557,7 +572,7 @@
       document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ov.style.display!=='none')ov.style.display='none';});
     }
     ov.style.display='flex';
-    if(!S.carregado)carregar();else render();
+    if(!S.carregado||S.aviso)carregar(true);else render();
   }
 
   function filtros(){
@@ -588,13 +603,13 @@
   function render(soCorpo){
     var bd=document.getElementById('acl-bd');if(!bd)return;
     document.querySelectorAll('#acl-ov .acl-tabs button').forEach(function(b){b.classList.toggle('acl-on',b.dataset.t===S.aba);});
-    if(S.carregando){bd.innerHTML='<div class="acl-vazio">Carregando consumo, estoque e base de vendas...</div>';return;}
+    if(S.carregando){bd.innerHTML='<div class="acl-vazio">Carregando consumo, estoque e base de vendas...'+(S.tentativa>1||S.motivo?'<br><small style="color:#f5d38a">Ainda não veio tudo ('+esc(S.motivo||'')+'). Tentando de novo sozinho — tentativa '+Math.min(S.tentativa+1,TENTATIVAS)+' de '+TENTATIVAS+'...</small>':'')+'</div>';return;}
     if(S.erro){bd.innerHTML='<div class="acl-vazio" style="color:#ff8a8a">Erro: '+esc(S.erro)+'<br><br><button type="button" data-a="rec">Tentar de novo</button></div>';return;}
     if(!S.carregado){bd.innerHTML='';return;}
     S._M=modelo();S.ultimo=tudo();
     if(!soCorpo)filtros();
     var f={painel:vPainel,comp:vComp,mensal:vMensal,prev:vPrev,base:vBase}[S.aba];
-    bd.innerHTML=f(S.ultimo);
+    bd.innerHTML=(S.aviso?'<div class="acl-faixa" style="border-color:#7f1d1d;background:#1f0a0a;color:#fca5a5">'+esc(S.aviso)+' <a data-a="rec">Recarregar</a></div>':'')+f(S.ultimo);
     if(S.aba==='base')ligarBase();
   }
   function avisoBase(R){
@@ -738,7 +753,7 @@
     var x=R.linhas.find(function(l){return l.L.id===S.linha;}),L=x.L,C=x.C,M=R.M;
     var rows=C.linhas.filter(bateLoja),dc=C.dk?DRV_CURTO[C.dk]:'';
     var mix=L.id==='sac'?mixPorLoja(M):null;
-    var h=(!C.dk?'<div class="acl-faixa">Este item ainda não tem base para comparar lojas (vendas ou remanejo). Abaixo, só o consumo.</div>':'');
+    var h=(!C.dk?'<div class="acl-faixa">'+(!S.base.vendas.length?'A base de vendas não está carregada, por isso não dá para comparar as lojas. <a data-a="rec">Recarregar</a>':'Este item ainda não tem base para comparar lojas (vendas ou remanejo). Abaixo, só o consumo.')+'</div>':'');
     h+='<div class="acl-kpis2 acl-kpis-s">'
       +(C.modelo?'<div class="acl-k" style="--c:#38bdf8"><span>Esperado por loja</span><b style="font-size:17px">'+n1(C.modelo.A)+' pac./mês + 1 a cada R$ '+n1(1/C.modelo.B)+' mil faturados</b><small>calculado nas '+C.modelo.base+' lojas dentro do padrão</small></div>'
         :'<div class="acl-k" style="--c:#38bdf8"><span>Padrão da rede</span><b>'+(C.padrao!=null?fmtTaxa(L,C.padrao):'—')+'</b><small>'+(C.dk?'base: '+DRV_NOME[C.dk]:'sem base')+'</small></div>')
