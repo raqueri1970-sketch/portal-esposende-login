@@ -41,7 +41,7 @@ Patch `almox-consumo-loja-patch.js`. Cruza o consumo (Qtd Atendida) dos itens co
 
 | Linha | Códigos | Motor | Padrão |
 |---|---|---|---|
-| Sacolas | 7894, 8209, 9516, 11094, 21604 | PA (pares vendidos) | **regra fixa: 1 sacola a cada 1,5 PA** |
+| Sacolas | 7894, 8209, 9516, 21604 (11094 sacola antiga 25x35 fora das contas: sobra, não é mais comprada) | PA (pares vendidos) | **regra fixa: 1 sacola a cada 1,5 PA** |
 | Embalagem de presente | 11314, 11315, 11316 | PA | mediana das lojas, em **% das vendas que saem com presente** (embalagens ÷ PA) |
 | Café / Pirulito / Balão (agrado) | 19388 / 15538 / 10546, 17314 | NFS (qtd de vendas); sem NFS usa PA | mediana das lojas (un./1.000 NFS) |
 | Fita PP 45mm / Etiqueta 70x24 | 7816 / 7982, 15483 | pares remanejados enviados pela loja (origem) | mediana das lojas (un./1.000 pares) |
