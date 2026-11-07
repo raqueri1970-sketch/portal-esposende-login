@@ -11,7 +11,7 @@
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-07.4';
+  window.__almoxConsumoLoja='2026-11-07.5';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -37,7 +37,7 @@
       regra:'Pacotes a cada 1.000 vendas (NFS) · padrão = mediana das lojas'},
     {id:'fit',grupo:'Remanejo',nome:'Fita adesiva PP 45mm',icone:'📦',cods:['7816'],drivers:['rem'],porUn:false,
       regra:'Rolos a cada 1.000 pares remanejados (enviados pela loja) · padrão = mediana das lojas'},
-    {id:'etq',grupo:'Remanejo',nome:'Etiqueta 70x24',icone:'🏷️',cods:['7982','15483'],drivers:['rem'],porUn:false,
+    {id:'etq',grupo:'Remanejo',nome:'Etiqueta 70x24',icone:'🏷️',cods:['7982','15483'],drivers:['rem','pares'],porUn:false,fator:630,unFator:'etiquetas',
       regra:'Rolos a cada 1.000 pares remanejados (enviados pela loja) · padrão = mediana das lojas'},
     {id:'bob',grupo:'NFS',nome:'Bobina PDV 79mm',icone:'🧾',cods:['8002','22203','26104','26153'],drivers:['nfs','pares'],porUn:true,
       regra:'Vendas (NFS) por bobina · padrão = mediana das lojas'},
@@ -243,7 +243,7 @@
   // Previsão por loja e por mês: "mês comum" = média do motor + crescimento; dezembro = média × fator de dezembro.
   // Item = previsão da linha × participação do item. Compra = soma da previsão dos meses de cobertura − estoque.
   function prever(M,L,C){
-    var P=M.P,ehVenda=C.dk?(C.dk==='pares'||C.dk==='nfs'):(L.grupo==='Venda'||L.grupo==='Agrado'||L.grupo==='NFS');
+    var P=M.P,ehVenda=L.grupo!=='Remanejo'&&(C.dk?(C.dk==='pares'||C.dk==='nfs'):(L.grupo==='Venda'||L.grupo==='Agrado'||L.grupo==='NFS'));
     var hz=Math.min(12,Math.max(1,Math.round(Number(P.horizonte)||3))),cob=Math.max(1,Math.round(Number(P.cobertura)||3));
     var futuros=[];for(var i=0;i<Math.max(hz,cob);i++)futuros.push(somaMes(M.atual,i));
     var comum=ehVenda?1+(Number(P.crescimento)||0)/100:1;
@@ -574,7 +574,7 @@
     return a.length?'<div class="acl-aviso">⚠ '+a.join('<br>⚠ ')+'<br>Carregue na aba <b>📥 Base de vendas e remanejo</b>.</div>':'';
   }
   function stTag(s){var cls=/ACIMA|ABAIXO|OK/.test(s)?s:(s==='SEM PEDIDO'?'SEM PEDIDO':'x');var t={ACIMA:'▲ ACIMA DO PADRÃO',ABAIXO:'▼ ABAIXO DO PADRÃO','SEM PEDIDO':'▼ VENDE E NÃO PEDE',OK:'● NO PADRÃO'}[s]||s;return '<span class="acl-st acl-'+cls.replace(/ /g,'-')+'">'+t+'</span>';}
-  function fmtTaxa(L,t){if(t==null)return '—';if(L.pct)return n1(t*100)+'% das vendas';if(L.porUn)return t>0?n1(1/t)+' '+(L.id==='sac'?'PA/sac.':'por un.'):'—';return n1(t*1000)+' /mil';}
+  function fmtTaxa(L,t){if(t==null)return '—';if(L.fator)return n2(t*L.fator)+' etiq./par';if(L.pct)return n1(t*100)+'% das vendas';if(L.porUn)return t>0?n1(1/t)+' '+(L.id==='sac'?'PA/sac.':'por un.'):'—';return n1(t*1000)+' /mil';}
 
   // ================== Gráficos (SVG puro, funcionam na tela e na impressão) ==================
   var TEMA_ESCURO={txt:'#cfe0f2',sub:'#8ca4bf',grid:'#1d3550',fundo:'transparent'};
@@ -625,7 +625,7 @@
         I.consV+=tv;I.grupos[L.grupo]=(I.grupos[L.grupo]||0)+tv;
         var p3=0;x.F.mCob.forEach(function(m){p3+=(i.pm[m]||0)*i.custo;I.prev[m]=(I.prev[m]||0)+(i.pm[m]||0)*i.custo;});I.prevTot+=p3;
         I.compra+=i.sugV;I.estV+=i.saldo*i.custo;
-        var row={cod:i.cod,nome:i.nome,L:L,estoque:i.saldo,custo:i.custo,media:M.fechados.length?qf/M.fechados.length:0,mq:mq,tq:tq,tv:tv,prev3:x.F.mCob.reduce(function(s,m){return s+(i.pm[m]||0);},0),cob:i.cobAtual,sug:i.sug,sugV:i.sugV,acima:x.C.acima,abaixo:x.C.abaixo};
+        var row={cod:i.cod,nome:i.nome,L:L,fator:L.fator||0,estoque:i.saldo,custo:i.custo,media:M.fechados.length?qf/M.fechados.length:0,mq:mq,tq:tq,tv:tv,prev3:x.F.mCob.reduce(function(s,m){return s+(i.pm[m]||0);},0),cob:i.cobAtual,sug:i.sug,sugV:i.sugV,acima:x.C.acima,abaixo:x.C.abaixo};
         I.itens.push(row);if(row.cob!=null&&row.cob<1)I.urg.push(row);});
       x.C.linhas.forEach(function(r){
         if(['ACIMA','ABAIXO','SEM PEDIDO','OK'].indexOf(r.status)>=0)I.lojasAval[r.cod]=1;
@@ -670,7 +670,7 @@
       +'<div class="acl-box"><h5>O que cada loja exagera</h5><div class="acl-lista">'+I.lojasL.filter(function(o){return o.exc>0;}).sort(function(a,b){return b.exc-a.exc;}).slice(0,10).map(function(o){return '<div><b>'+esc(o.nome)+' <em class="acl-up" style="font-style:normal;float:right">'+brl(o.exc)+'</em></b><span>'+o.det.filter(function(d){return d.status==='ACIMA';}).sort(function(a,b){return b.difV-a.difV;}).map(function(d){return esc(d.item)+' ▲ +'+n0(d.dif)+' ('+pct(d.desvio)+')';}).join(' · ')+'</span></div>';}).join('')+'</div></div></div>';
     // Tabela única de itens
     h+='<h3>Estoque e consumo por item</h3><div class="acl-tw" style="max-height:none"><table><thead><tr><th>Item</th><th>Estoque</th><th>Consumo médio/mês</th><th>Tendência '+(M.meses.length?mesLabel(M.meses[0]).slice(0,3)+'–'+mesLabel(M.fechados[M.fechados.length-1]||M.meses[0]).slice(0,3):'')+'</th><th>Cobertura</th><th>Previsão 3 meses</th><th>Comprar</th><th>Valor</th><th>Lojas ▲ / ▼</th></tr></thead><tbody>'
-      +I.itens.map(function(r){return '<tr data-a="linha" data-l="'+r.L.id+'" style="cursor:pointer"><td class="acl-l"><b>'+esc(nomeCurto(r.nome,r.cod))+'</b><small>'+r.cod+' · '+esc(r.L.grupo)+'</small></td><td>'+n0(r.estoque)+'</td><td>'+n0(r.media)+'</td><td>'+spark(M.fechados.map(function(m){return r.mq[m]||0;}),GRUPO_COR_G[r.L.grupo])+'</td>'
+      +I.itens.map(function(r){return '<tr data-a="linha" data-l="'+r.L.id+'" style="cursor:pointer"><td class="acl-l"><b>'+esc(nomeCurto(r.nome,r.cod))+'</b><small>'+r.cod+' · '+esc(r.L.grupo)+'</small></td><td>'+n0(r.estoque)+(r.fator?'<small>'+abrev(r.estoque*r.fator)+' etiq.</small>':'')+'</td><td>'+n0(r.media)+(r.fator?'<small>'+abrev(r.media*r.fator)+' etiq.</small>':'')+'</td><td>'+spark(M.fechados.map(function(m){return r.mq[m]||0;}),GRUPO_COR_G[r.L.grupo])+'</td>'
         +'<td><span class="acl-chip" style="background:'+corCob(r.cob)+'22;color:'+corCob(r.cob)+'">'+(r.cob==null?'—':(r.cob>=12?'12+':n1(r.cob))+' m')+'</span></td><td>'+n0(r.prev3)+'</td><td><b>'+(r.sug?n0(r.sug):'—')+'</b></td><td>'+(r.sug?brl(r.sugV):'—')+'</td>'
         +'<td>'+(r.acima||r.abaixo?'<span class="acl-up">▲ '+r.acima+'</span> · <span class="acl-dn">▼ '+r.abaixo+'</span>':'—')+'</td></tr>';}).join('')
       +'<tr class="acl-tot"><td>TOTAL</td><td>'+brl(I.estV)+'</td><td></td><td></td><td></td><td>'+brl(I.prevTot)+'</td><td></td><td>'+brl(I.compra)+'</td><td></td></tr></tbody></table></div>'
@@ -680,7 +680,7 @@
   var NOME_CURTO={'7894':'Sacola M 50x60','8209':'Sacola G 60x70','9516':'Sacola P 35x55','11094':'Sacola antiga 25x35','21604':'Sacola ES Sports (papel)',
     '11314':'Embalagem presente P','11315':'Embalagem presente M','11316':'Embalagem presente G','8002':'Bobina PDV Esposende','22203':'Bobina PDV ES Sports',
     '26104':'Bobina PDV 79mm','26153':'Bobina PDV 79mm','19388':'Café Petinho','15538':'Pirulito','10546':'Balão nº7','17314':'Balão nº7',
-    '7816':'Fita PP 45mm','7982':'Etiqueta 70x24','15483':'Etiqueta 70x24 (adesiva)','7981':'Papel A4 (resma)','14580':'Filme stretch'};
+    '7816':'Fita PP 45mm','7982':'Etiqueta 70x24 (rolo)','15483':'Etiqueta 70x24 (adesiva)','7981':'Papel A4 (resma)','14580':'Filme stretch'};
   function nomeCurto(n,cod){if(cod!=null&&NOME_CURTO[String(cod)])return NOME_CURTO[String(cod)];return String(n||'').replace(/ESPOSENDE /,'').replace(/ - ESPOSENDE CALÇADOS/,'').replace(/SAO ROQUE /,'').replace(/ ROLO C\/630 ETIQUETAS/,'').replace(/ C\/50 AZ COBALTO/,'').replace(/ALLTAPE TR /,'').replace(/ SK270/,'').replace(/\s+/g,' ').trim();}
   var GRUPO_COR_G={Venda:'#10b981',Agrado:'#f59e0b',NFS:'#38bdf8',Remanejo:'#a78bfa','Histórico':'#64748b'};
   function detalheKpi(k,I,R){
@@ -778,8 +778,8 @@
     I.itens.slice().sort(function(a,b){return GR.indexOf(a.L.grupo)-GR.indexOf(b.L.grupo)||b.tq-a.tq;}).forEach(function(r){
       if(r.L.grupo!==grupoAnt){grupoAnt=r.L.grupo;t1+='<tr class="gr"><td colspan="'+(ms.length+6)+'">'+esc(grupoAnt.toUpperCase())+'</td></tr>';}
       ms.forEach(function(m){totM[m]+=(r.mq[m]||0)*r.custo;});
-      t1+='<tr><td class="nm">'+esc(nomeCurto(r.nome,r.cod))+'</td>'+ms.map(function(m){var q=r.mq[m]||0;return '<td'+(q?'':' class="z"')+'>'+(q?n0(q):'—')+'</td>';}).join('')
-        +'<td class="t"><b>'+n0(r.tq)+'</b></td><td class="t">'+n0(r.media)+'</td><td class="t">'+n0(r.estoque)+'</td><td class="t" style="color:'+(r.cob==null?'#94a3b8':r.cob<1?'#be123c':r.cob<2?'#d97706':'#0e7c66')+';font-weight:800">'+(r.cob==null?'—':(r.cob>=12?'12+':n1(r.cob))+' m')+'</td><td class="t"><b>'+(r.sug?n0(r.sug):'—')+'</b></td></tr>';});
+      t1+='<tr><td class="nm">'+esc(nomeCurto(r.nome,r.cod))+(r.fator?' <span style="font-weight:400;color:#5b6b80">(rolo c/'+r.fator+')</span>':'')+'</td>'+ms.map(function(m){var q=r.mq[m]||0;return '<td'+(q?'':' class="z"')+'>'+(q?n0(q):'—')+'</td>';}).join('')
+        +'<td class="t"><b>'+n0(r.tq)+'</b>'+(r.fator?'<br><span style="font-size:8.5px;color:#5b6b80">'+abrev(r.tq*r.fator)+' etiq.</span>':'')+'</td><td class="t">'+n0(r.media)+'</td><td class="t">'+n0(r.estoque)+'</td><td class="t" style="color:'+(r.cob==null?'#94a3b8':r.cob<1?'#be123c':r.cob<2?'#d97706':'#0e7c66')+';font-weight:800">'+(r.cob==null?'—':(r.cob>=12?'12+':n1(r.cob))+' m')+'</td><td class="t"><b>'+(r.sug?n0(r.sug):'—')+'</b></td></tr>';});
     var totG=ms.reduce(function(s,m){return s+totM[m];},0);
     t1+='<tr class="tt"><td class="nm">TOTAL (R$)</td>'+ms.map(function(m){return '<td>'+abrev(totM[m])+'</td>';}).join('')+'<td class="t">'+brl(totG)+'</td><td class="t">'+brl(totG/(ms.length||1))+'</td><td class="t">'+brl(I.estV)+'</td><td class="t"></td><td class="t">'+brl(I.compra)+'</td></tr></tbody></table>';
     // Compra
