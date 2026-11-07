@@ -43,7 +43,8 @@ Patch `almox-consumo-loja-patch.js`. Cruza o consumo (Qtd Atendida) dos itens co
 |---|---|---|---|
 | Sacolas | 7894, 8209, 9516, 21604 (11094 sacola antiga 25x35 fora das contas: sobra, não é mais comprada) | PA (pares vendidos) | **regra fixa: 1 sacola a cada 1,5 PA** |
 | Embalagem de presente | 11314, 11315, 11316 | PA | mediana das lojas, em **% das vendas que saem com presente** (embalagens ÷ PA) |
-| Café / Pirulito / Balão (agrado) | 19388 / 15538 / 10546, 17314 | NFS (qtd de vendas); sem NFS usa PA | mediana das lojas (un./1.000 NFS) |
+| Café (agrado + equipe) | 19388 | **modelo: equipe + clientes** — esperado = a × funcionários ativos (Base Mãe `portal_funcionarios`, loja 9xx = xx) × meses + b × visitantes (vendas ÷ conversão 33%); a e b por mínimos quadrados nas lojas com o ano inteiro. Jan–out/26: a = 1,39 pacote/funcionário/mês, b = 0,25 pacote/mil visitantes → ~80% do café é da equipe (≈1,6 cafezinho/func/dia com 30 cafezinhos por pacote). Parâmetros: conversão, cafezinhos/pacote (garrafa térmica) | resíduo por loja |
+| Pirulito / Balão (agrado) | 15538 / 10546, 17314 | NFS (qtd de vendas); sem NFS usa PA | mediana das lojas (un./1.000 NFS) |
 | Fita PP 45mm / Etiqueta 70x24 | 7816 / 7982, 15483 | pares remanejados enviados pela loja (origem); etiqueta usa pares vendidos enquanto não houver base de remanejo | mediana das lojas; **etiqueta: 1 rolo = 630 etiquetas, medida em etiquetas por par** (mediana jan–out/26 = 1,46). Remanejo sem fator de dezembro. Anomalia: 028 ES Sports Manaíra pediu 1.000 rolos (630 mil etiquetas) em set/26 para 4.844 pares no ano |
 | Bobina PDV 79mm | 8002, 22203, 26104, 26153 | NFS | mediana das lojas (NFS por bobina) |
 | Papel A4, filme stretch | 7981, 14580 | — | só histórico |

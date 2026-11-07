@@ -11,7 +11,7 @@
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-07.5';
+  window.__almoxConsumoLoja='2026-11-07.6';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -48,7 +48,7 @@
   var DRV_CURTO={pares:'PA',nfs:'NFS',rem:'pares rem.'};
   var GRUPO_COR={Venda:'#0e7c66',Agrado:'#b45309',Remanejo:'#7c3aed',NFS:'#0369a1','Histórico':'#64748b'};
   var COD_LINHA={};LINHAS.forEach(function(L){L.cods.forEach(function(c){COD_LINHA[c]=L.id;});});
-  var PARAMS_PADRAO={paPorSacola:1.5,crescimento:10,fatorDez:2.75,tolerancia:25,cobertura:3,horizonte:3,basePrev:'padrao',mixP:35,mixM:50,mixG:15};
+  var PARAMS_PADRAO={paPorSacola:1.5,crescimento:10,fatorDez:2.75,tolerancia:25,cobertura:3,horizonte:3,basePrev:'padrao',mixP:35,mixM:50,mixG:15,conversao:33,xicaras:30,diasMes:26};
   // Baliza de consumo de sacola por tamanho (Controladoria): P 35% · M 50% · G 15%.
   var SAC_TAM={'9516':'P','7894':'M','8209':'G'};
   function mixSac(P){var t={P:Number(P.mixP),M:Number(P.mixM),G:Number(P.mixG)};if(!(t.P>=0))t.P=35;if(!(t.M>=0))t.M=50;if(!(t.G>=0))t.G=15;var s=t.P+t.M+t.G||100;return {P:t.P/s,M:t.M/s,G:t.G/s};}
@@ -120,8 +120,10 @@
     try{
       var r=await Promise.all([
         rest('portal_sync?module_id=eq.alm&select=u:updated_at,c:payload->dbConsumoRaw,e:payload->dbEstoqueRaw,r:payload->dbRegionaisMap,n:payload->dbLojaNomeMap'),
-        rest('portal_sync?module_id=eq.'+MOD_ID+'&select=payload')
+        rest('portal_sync?module_id=eq.'+MOD_ID+'&select=payload'),
+        rest('portal_funcionarios?select=loja_codigo&ativo=eq.true').catch(function(){return [];})
       ]);
+      S.func={};(r[2]||[]).forEach(function(f){var c=codLoja(f.loja_codigo);if(c)S.func[c]=(S.func[c]||0)+1;});
       var a=(r[0]&&r[0][0])||{};
       S.alm={consumo:a.c||[],estoque:a.e||[],reg:a.r||{},nomes:a.n||{},atualizado:a.u||null};
       var b=(r[1]&&r[1][0]&&r[1][0].payload)||{};
@@ -233,12 +235,37 @@
       else if(x.desvio<-tol)x.status='ABAIXO';
       else x.status='OK';
     });
+    var modelo=L.id==='caf'?modeloCafe(M,linhas,tol,custoMedio):null;
+    if(modelo){padrao=null;fonte='Equipe + clientes';}
     var ordem={ACIMA:0,'SEM PEDIDO':1,ABAIXO:2,OK:3,'LOJA NOVA':4,'POUCO DADO':4,'SEM PADRÃO':5,'SEM BASE':6,'SEM MOTOR':7,CD:8};
     linhas.sort(function(a,b){return (ordem[a.status]-ordem[b.status])||((b.desvio||0)-(a.desvio||0))||(b.consTot-a.consTot);});
-    return {L:L,dk:dk,padrao:padrao,fonte:fonte,custoMedio:custoMedio,linhas:linhas,tol:tol,
+    return {L:L,dk:dk,padrao:padrao,fonte:fonte,custoMedio:custoMedio,linhas:linhas,tol:tol,modelo:modelo,
       acima:linhas.filter(function(x){return x.status==='ACIMA';}).length,
       abaixo:linhas.filter(function(x){return x.status==='ABAIXO'||x.status==='SEM PEDIDO';}).length,
       excesso:linhas.reduce(function(s,x){return s+(x.status==='ACIMA'&&x.difV>0?x.difV:0);},0)};
+  }
+  // Café: parte é da equipe (fixa, por funcionário) e parte é dos clientes (fluxo = vendas ÷ taxa de conversão).
+  // Os dois coeficientes saem dos próprios dados (mínimos quadrados nas lojas com o período inteiro de venda).
+  function modeloCafe(M,linhas,tol,custoMedio){
+    var F=S.func||{};if(!Object.keys(F).length)return null;
+    var conv=(Number(M.P.conversao)||33)/100,mx=linhas.reduce(function(m,x){return Math.max(m,x.nMeses);},0);
+    var base=linhas.filter(function(x){return !x.cd&&!x.nova&&x.nMeses===mx&&x.drv>0&&x.consBase>0&&F[x.cod];});
+    if(base.length<5)return null;
+    var a11=0,a12=0,a22=0,b1=0,b2=0;
+    base.forEach(function(x){var x1=F[x.cod]*x.nMeses,x2=x.drv/conv;a11+=x1*x1;a12+=x1*x2;a22+=x2*x2;b1+=x1*x.consBase;b2+=x2*x.consBase;});
+    var det=a11*a22-a12*a12,a=det?(b1*a22-b2*a12)/det:0,b=det?(a11*b2-a12*b1)/det:0;
+    var sx1=base.reduce(function(s,x){return s+F[x.cod]*x.nMeses;},0),sx2=base.reduce(function(s,x){return s+x.drv/conv;},0),sp=base.reduce(function(s,x){return s+x.consBase;},0);
+    if(a<0){a=0;b=sp/sx2;}if(b<0){b=0;a=sp/sx1;}
+    var xi=Number(M.P.xicaras)||30,dias=Number(M.P.diasMes)||26;
+    linhas.forEach(function(x){
+      if(x.cd||!x.drv||x.status==='LOJA NOVA'||x.status==='POUCO DADO')return;
+      var fn=F[x.cod];if(!fn){x.status='SEM BASE';x.esperado=null;x.dif=null;x.difV=null;x.desvio=null;return;}
+      x.func=fn;x.visit=x.drv/conv;x.espEq=a*fn*x.nMeses;x.espCli=b*x.visit;x.esperado=x.espEq+x.espCli;
+      x.dif=x.consBase-x.esperado;x.difV=x.dif*custoMedio;x.desvio=x.esperado?x.consBase/x.esperado-1:null;
+      x.status=x.consBase===0?'SEM PEDIDO':x.desvio>tol?'ACIMA':x.desvio<-tol?'ABAIXO':'OK';
+    });
+    var eq=base.reduce(function(s,x){return s+a*F[x.cod]*x.nMeses;},0);
+    return {a:a,b:b,conv:conv,xi:xi,dias:dias,cafFuncDia:a*xi/dias,pctVisit:b*xi,pctEquipe:sp?eq/sp:0,lojas:base.length};
   }
   // Previsão por loja e por mês: "mês comum" = média do motor + crescimento; dezembro = média × fator de dezembro.
   // Item = previsão da linha × participação do item. Compra = soma da previsão dos meses de cobertura − estoque.
@@ -249,6 +276,12 @@
     var comum=ehVenda?1+(Number(P.crescimento)||0)/100:1;
     var porLoja=C.linhas.map(function(x){
       var base,mensal;
+      if(C.modelo&&x.func&&x.nMeses&&!x.cd){
+        var eqM=C.modelo.a*x.func,cliM=C.modelo.b*(x.mediaDrv/C.modelo.conv);
+        mensal=eqM+cliM;base='equipe + clientes';
+        var pmC={};futuros.forEach(function(m){pmC[m]=eqM+cliM*fatorMes(P,m,ehVenda);});
+        return {cod:x.cod,nome:x.nome,reg:x.reg,cd:x.cd,mediaDrv:x.mediaDrv,prevDrv:x.mediaDrv*comum,mediaCons:x.mediaCons,prev:eqM+cliM*comum,pm:pmC,base:base};
+      }
       if(C.dk&&x.nMeses&&!x.cd){
         var taxa=(P.basePrev==='real'&&x.taxa!=null&&x.consBase>0)?x.taxa:(C.padrao!=null?C.padrao:x.taxa);
         mensal=x.mediaDrv*(taxa||0);base=P.basePrev==='real'?'real da loja':'padrão';
@@ -710,7 +743,8 @@
     var mix=L.id==='sac'?mixPorLoja(M):null;
     var h=(!C.dk?'<div class="acl-faixa">Este item ainda não tem base para comparar lojas (vendas ou remanejo). Abaixo, só o consumo.</div>':'');
     h+='<div class="acl-kpis2 acl-kpis-s">'
-      +'<div class="acl-k" style="--c:#38bdf8"><span>Padrão da rede</span><b>'+(C.padrao!=null?fmtTaxa(L,C.padrao):'—')+'</b><small>'+(C.dk?'base: '+DRV_NOME[C.dk]:'sem base')+'</small></div>'
+      +(C.modelo?'<div class="acl-k" style="--c:#38bdf8"><span>Como o café é consumido</span><b>'+n0(C.modelo.pctEquipe*100)+'% equipe · '+n0((1-C.modelo.pctEquipe)*100)+'% clientes</b><small>'+n1(C.modelo.cafFuncDia)+' cafezinho/funcionário/dia · '+n2(C.modelo.pctVisit*100)+'% dos visitantes tomam (conversão '+n0(C.modelo.conv*100)+'%, '+n0(C.modelo.xi)+' cafezinhos/pacote)</small></div>'
+        :'<div class="acl-k" style="--c:#38bdf8"><span>Padrão da rede</span><b>'+(C.padrao!=null?fmtTaxa(L,C.padrao):'—')+'</b><small>'+(C.dk?'base: '+DRV_NOME[C.dk]:'sem base')+'</small></div>')
       +'<div class="acl-k" style="--c:#e11d48"><span>Lojas acima do padrão</span><b>'+C.acima+'</b><small>excesso '+brl(C.excesso)+'</small></div>'
       +'<div class="acl-k" style="--c:#f59e0b"><span>Lojas abaixo / sem pedido</span><b>'+C.abaixo+'</b><small>usam menos que o padrão</small></div>'
       +(mix?'<div class="acl-k" style="--c:#a78bfa"><span>Sacola P · M · G (rede)</span><b>'+n0(mix.rede.P*100)+' · '+n0(mix.rede.M*100)+' · '+n0(mix.rede.G*100)+'%</b><small>baliza '+n0(mix.b.P*100)+' · '+n0(mix.b.M*100)+' · '+n0(mix.b.G*100)+'%</small></div>':'')
@@ -722,13 +756,13 @@
       if(vals.length)h+='<div class="acl-box acl-mini"><h5>Rede mês a mês — '+esc(fmtUn(L))+' <small>(linha tracejada = padrão)</small></h5>'
         +svgColunas(rot,[{nome:fmtUn(L),cor:'#38bdf8',vals:vals}],{w:1600,h:170,fmt:function(v){return n1(v);},linha:pad,rotTot:false})+'</div>';}
     if(!rows.length)return h+'<div class="acl-vazio">Nenhuma loja com esse filtro.</div>';
-    h+='<div class="acl-tw"><table><thead><tr><th>Loja</th><th>Regional</th>'+(C.dk?'<th>'+esc(DRV_NOME[C.dk])+'</th>':'')+'<th>Consumo</th><th>Índice</th><th>Esperado</th><th>Diferença</th><th>Desvio</th>'+(mix?'<th>Sacola P · M · G</th>':'')+'<th>Situação</th></tr></thead><tbody>';
+    h+='<div class="acl-tw"><table><thead><tr><th>Loja</th><th>Regional</th>'+(C.dk?'<th>'+esc(DRV_NOME[C.dk])+'</th>':'')+'<th>Consumo</th><th>'+(C.modelo?'Equipe · fluxo':'Índice')+'</th><th>Esperado</th><th>Diferença</th><th>Desvio</th>'+(mix?'<th>Sacola P · M · G</th>':'')+'<th>Situação</th></tr></thead><tbody>';
     var t={drv:0,cons:0,esp:0,dif:0,difV:0};
     rows.forEach(function(r){
       if(!r.cd&&r.status!=='LOJA NOVA'){t.drv+=r.drv;t.cons+=r.consBase;if(r.esperado!=null){t.esp+=r.esperado;t.dif+=r.dif;t.difV+=r.difV;}}
       var mx=mix&&mix.lojas[r.cod];
       h+='<tr><td class="acl-l">'+esc(r.nome)+(r.status==='LOJA NOVA'?'<small>'+(r.nova?'loja nova · abriu em '+(r.primeiro?mesLabel(r.primeiro):'—'):'só '+r.nMeses+' meses com venda (fechada/reaberta)')+' · fora do padrão</small>':'')+'</td><td>'+esc(r.reg)+'</td>'
-        +(C.dk?'<td>'+(r.drv?n0(r.drv):'—')+'</td>':'')+'<td><b>'+n0(r.consBase)+'</b>'+(r.consTot>r.consBase?'<small>+'+n0(r.consTot-r.consBase)+' antes da 1ª venda</small>':'')+'</td><td>'+fmtTaxa(L,r.taxa)+'</td><td>'+(r.esperado!=null?n0(r.esperado):'—')+'</td>'
+        +(C.dk?'<td>'+(r.drv?n0(r.drv):'—')+'</td>':'')+'<td><b>'+n0(r.consBase)+'</b>'+(r.consTot>r.consBase?'<small>+'+n0(r.consTot-r.consBase)+' antes da 1ª venda</small>':'')+'</td><td>'+(C.modelo&&r.func?'<small style="display:block">'+r.func+' func. · '+abrev(r.visit)+' visit.</small>':fmtTaxa(L,r.taxa))+'</td><td>'+(r.esperado!=null?n0(r.esperado):'—')+(C.modelo&&r.espEq!=null?'<small>equipe '+n0(r.espEq)+' + clientes '+n0(r.espCli)+'</small>':'')+'</td>'
         +'<td class="'+(r.dif>0?'acl-up':r.dif<0?'acl-dn':'')+'">'+(r.dif!=null?(r.dif>0?'+':'')+n0(r.dif):'—')+(r.difV?'<small>'+brl(r.difV)+'</small>':'')+'</td>'
         +'<td class="'+(r.desvio>C.tol?'acl-up':r.desvio<-C.tol?'acl-dn':'acl-ok')+'">'+(r.desvio!=null?pct(r.desvio):'—')+'</td>'
         +(mix?'<td>'+(mx?barraMix(mx,mix.b):'—')+'</td>':'')+'<td>'+stTag(r.status)+'</td></tr>';
@@ -934,6 +968,8 @@
       +'<div><label>Previsão de venda (+% sobre a média)</label><input type="number" step="1" id="p-cr" value="'+P.crescimento+'"></div>'
       +'<div><label>Dezembro (× venda de um mês comum)</label><input type="number" step="0.05" min="1" max="5" id="p-dez" value="'+P.fatorDez+'"></div>'
       +'<div><label>Sacola P / M / G (% baliza)</label><div style="display:flex;gap:4px"><input type="number" min="0" max="100" id="p-mp" value="'+P.mixP+'" style="width:33%"><input type="number" min="0" max="100" id="p-mm" value="'+P.mixM+'" style="width:33%"><input type="number" min="0" max="100" id="p-mg" value="'+P.mixG+'" style="width:33%"></div></div>'
+      +'<div><label>Café: conversão (vendas ÷ visitantes, %)</label><input type="number" step="1" min="1" max="100" id="p-conv" value="'+P.conversao+'"></div>'
+      +'<div><label>Café: cafezinhos por pacote 194g</label><input type="number" step="1" min="5" id="p-xic" value="'+P.xicaras+'"></div>'
       +'<div><label>Tolerância do padrão (±%)</label><input type="number" step="1" min="5" id="p-tol" value="'+P.tolerancia+'"></div>'
       +'<div><label>Cobertura de estoque (meses)</label><input type="number" step="0.5" min="0.5" id="p-cob" value="'+P.cobertura+'"></div>'
       +'<div><label>Horizonte da previsão (meses)</label><input type="number" step="1" min="1" max="12" id="p-hz" value="'+P.horizonte+'"></div>'
@@ -956,7 +992,7 @@
   }
   async function salvarParametros(b){
     var P=S.base.params,g=function(id){return document.getElementById(id);};
-    P.paPorSacola=Number(g('p-pa').value)||1.5;P.crescimento=Number(g('p-cr').value)||0;P.fatorDez=Number(g('p-dez').value)||2.75;P.mixP=Number(g('p-mp').value);P.mixM=Number(g('p-mm').value);P.mixG=Number(g('p-mg').value);P.tolerancia=Number(g('p-tol').value)||25;
+    P.paPorSacola=Number(g('p-pa').value)||1.5;P.crescimento=Number(g('p-cr').value)||0;P.fatorDez=Number(g('p-dez').value)||2.75;P.conversao=Number(g('p-conv').value)||33;P.xicaras=Number(g('p-xic').value)||30;P.mixP=Number(g('p-mp').value);P.mixM=Number(g('p-mm').value);P.mixG=Number(g('p-mg').value);P.tolerancia=Number(g('p-tol').value)||25;
     P.cobertura=Number(g('p-cob').value)||3;P.horizonte=Math.min(12,Math.max(1,Math.round(Number(g('p-hz').value)||3)));P.basePrev=g('p-bp').value;
     b.disabled=true;b.textContent='Salvando...';
     try{await salvarBase();S.msgBase=['✔ Parâmetros salvos.'];}catch(e){S.msgBase=['✖ '+(e.message||e)];}
