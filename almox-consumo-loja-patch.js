@@ -11,7 +11,7 @@
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-07.3';
+  window.__almoxConsumoLoja='2026-11-07.4';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -195,11 +195,15 @@
       M.fechados.forEach(function(m){if(c[m])consTot+=c[m].q;});
       mesesBase.forEach(function(m){drvTot+=dm[m];if(c[m]){consBase+=c[m].q;valBase+=c[m].v;}});
       if(!consTot&&!drvTot)return;
-      linhas.push({cod:lj,nome:info.nome,reg:info.reg,cd:ehCD(lj),consTot:consTot,consBase:consBase,valBase:valBase,drv:drvTot,nMeses:mesesBase.length,
+      linhas.push({cod:lj,nome:info.nome,reg:info.reg,cd:ehCD(lj),consTot:consTot,consBase:consBase,valBase:valBase,drv:drvTot,nMeses:mesesBase.length,primeiro:mesesBase[0]||null,
         mediaDrv:mesesBase.length?drvTot/mesesBase.length:0,mediaCons:M.fechados.length?consTot/M.fechados.length:0,
         taxa:drvTot?consBase/drvTot:null});
     });
     var maxMeses=linhas.reduce(function(m,x){return Math.max(m,x.nMeses);},0);
+    // Loja inaugurada no período: o pedido de abertura (estoque inicial da loja) não é consumo do mês.
+    // Ela fica fora do padrão e de acima/abaixo até completar o período inteiro com venda.
+    var primRede=linhas.reduce(function(m,x){return x.primeiro&&!x.cd&&(!m||x.primeiro<m)?x.primeiro:m;},null);
+    linhas.forEach(function(x){x.nova=!x.cd&&!!x.primeiro&&!!primRede&&x.primeiro>primRede;});
     // padrão: regra fixa (sacolas) ou mediana das lojas com volume (fora o CD, lojas sem consumo e lojas novas)
     var padrao=null,fonte='';
     if(dk){
@@ -207,7 +211,7 @@
       else{
         var vols=linhas.filter(function(x){return !x.cd&&x.drv>0;}).map(function(x){return x.drv;});
         var corte=mediana(vols)*0.2;
-        var taxas=linhas.filter(function(x){return !x.cd&&x.drv>0&&x.drv>=corte&&x.consBase>0&&x.nMeses*2>=maxMeses;}).map(function(x){return x.taxa;});
+        var taxas=linhas.filter(function(x){return !x.cd&&x.drv>0&&x.drv>=corte&&x.consBase>0&&x.nMeses*2>=maxMeses&&!x.nova;}).map(function(x){return x.taxa;});
         padrao=taxas.length>=3?mediana(taxas):null;fonte=taxas.length>=3?'Mediana de '+taxas.length+' lojas':'Poucas lojas com base';
       }
     }
@@ -222,7 +226,7 @@
       else if(!dk)x.status='SEM MOTOR';
       else if(!x.drv)x.status='SEM BASE';
       else if(padrao==null)x.status='SEM PADRÃO';
-      else if(x.nMeses*2<maxMeses)x.status='LOJA NOVA';
+      else if(x.nova||x.nMeses*2<maxMeses)x.status='LOJA NOVA';
       else if(x.drv<volMed*0.2)x.status='POUCO DADO';
       else if(x.consBase===0)x.status='SEM PEDIDO';
       else if(x.desvio>tol)x.status='ACIMA';
@@ -721,16 +725,16 @@
     h+='<div class="acl-tw"><table><thead><tr><th>Loja</th><th>Regional</th>'+(C.dk?'<th>'+esc(DRV_NOME[C.dk])+'</th>':'')+'<th>Consumo</th><th>Índice</th><th>Esperado</th><th>Diferença</th><th>Desvio</th>'+(mix?'<th>Sacola P · M · G</th>':'')+'<th>Situação</th></tr></thead><tbody>';
     var t={drv:0,cons:0,esp:0,dif:0,difV:0};
     rows.forEach(function(r){
-      if(!r.cd){t.drv+=r.drv;t.cons+=r.consTot;if(r.esperado!=null){t.esp+=r.esperado;t.dif+=r.dif;t.difV+=r.difV;}}
+      if(!r.cd&&r.status!=='LOJA NOVA'){t.drv+=r.drv;t.cons+=r.consBase;if(r.esperado!=null){t.esp+=r.esperado;t.dif+=r.dif;t.difV+=r.difV;}}
       var mx=mix&&mix.lojas[r.cod];
-      h+='<tr><td class="acl-l">'+esc(r.nome)+(r.status==='LOJA NOVA'?'<small>loja nova · '+r.nMeses+' meses</small>':'')+'</td><td>'+esc(r.reg)+'</td>'
-        +(C.dk?'<td>'+(r.drv?n0(r.drv):'—')+'</td>':'')+'<td><b>'+n0(r.consTot)+'</b></td><td>'+fmtTaxa(L,r.taxa)+'</td><td>'+(r.esperado!=null?n0(r.esperado):'—')+'</td>'
+      h+='<tr><td class="acl-l">'+esc(r.nome)+(r.status==='LOJA NOVA'?'<small>'+(r.nova?'loja nova · abriu em '+(r.primeiro?mesLabel(r.primeiro):'—'):'só '+r.nMeses+' meses com venda (fechada/reaberta)')+' · fora do padrão</small>':'')+'</td><td>'+esc(r.reg)+'</td>'
+        +(C.dk?'<td>'+(r.drv?n0(r.drv):'—')+'</td>':'')+'<td><b>'+n0(r.consBase)+'</b>'+(r.consTot>r.consBase?'<small>+'+n0(r.consTot-r.consBase)+' antes da 1ª venda</small>':'')+'</td><td>'+fmtTaxa(L,r.taxa)+'</td><td>'+(r.esperado!=null?n0(r.esperado):'—')+'</td>'
         +'<td class="'+(r.dif>0?'acl-up':r.dif<0?'acl-dn':'')+'">'+(r.dif!=null?(r.dif>0?'+':'')+n0(r.dif):'—')+(r.difV?'<small>'+brl(r.difV)+'</small>':'')+'</td>'
         +'<td class="'+(r.desvio>C.tol?'acl-up':r.desvio<-C.tol?'acl-dn':'acl-ok')+'">'+(r.desvio!=null?pct(r.desvio):'—')+'</td>'
         +(mix?'<td>'+(mx?barraMix(mx,mix.b):'—')+'</td>':'')+'<td>'+stTag(r.status)+'</td></tr>';
     });
-    h+='<tr class="acl-tot"><td>TOTAL</td><td></td>'+(C.dk?'<td>'+n0(t.drv)+'</td>':'')+'<td>'+n0(t.cons)+'</td><td></td><td>'+n0(t.esp)+'</td><td>'+(t.dif>0?'+':'')+n0(t.dif)+'<small>'+brl(t.difV)+'</small></td><td></td>'+(mix?'<td></td>':'')+'<td></td></tr></tbody></table></div>'
-      +'<div class="acl-nota">Comparação no acumulado dos meses com venda (a loja pede a cada 2–3 meses). Esperado = base da loja × padrão da rede. CD fora do padrão.</div>';
+    h+='<tr class="acl-tot"><td>TOTAL (sem CD e lojas novas)</td><td></td>'+(C.dk?'<td>'+n0(t.drv)+'</td>':'')+'<td>'+n0(t.cons)+'</td><td></td><td>'+n0(t.esp)+'</td><td>'+(t.dif>0?'+':'')+n0(t.dif)+'<small>'+brl(t.difV)+'</small></td><td></td>'+(mix?'<td></td>':'')+'<td></td></tr></tbody></table></div>'
+      +'<div class="acl-nota">Consumo = o que a loja pediu nos meses em que vendeu (acumulado, porque a loja pede a cada 2–3 meses). Esperado = venda da loja × padrão da rede. Loja inaugurada no período e CD ficam fora do padrão. Atenção: a base começa em JAN/26; loja que estocou em dez/25 pode aparecer abaixo.</div>';
     return h;
   }
   function fmtUn(L){return L.pct?'% das vendas com presente':L.porUn?(L.id==='sac'?'PA por sacola':'vendas por unidade'):'unidades a cada 1.000';}
