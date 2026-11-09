@@ -68,3 +68,14 @@ Patch `almox-consumo-loja-patch.js`. Cruza o consumo (Qtd Atendida) dos itens co
 - **Lojas acima do padrão (Relatório Diretoria):** tabela, uma linha por loja × item — Loja, Regional, Item, Pediu, Esperado, Excesso (qtd + unidade), Desvio, Excesso R$; subtotal quando a loja tem mais de um item e total geral.
 - **Relatório Diretoria — só itens (09/11/2026):** a tabela de estoque e consumo lista só os itens (sem linhas de grupo Venda/Agrado/NFS/Remanejo/Média mensal, sem observações como "rolo c/630", "etiq.", embalagem entre parênteses) e não há nota explicativa no rodapé. A compra não mostra a coluna Segurança.
 - **Gráfico Consumo x esperado por mês** (Painel e Relatório): barras = consumo (vermelho quando acima do esperado), linha = esperado; seletor "Todos os itens (R$)" ou um item (quantidade). Esperado do mês = motor do mês × padrão da rede (café: parte fixa + faturamento); loja sem motor, CD e loja nova entram com o próprio consumo; itens de média mensal = média do período; item = esperado da linha × participação (sacola pela baliza P/M/G). Só meses fechados.
+
+## Painel da Visão Geral (patch `almox-painel-patch.js`, 09/11/2026)
+Substitui os 6 cards antigos (Almoxarifado/TI/Fortpel/Total geral/Lojas acima do limite/Itens críticos) e a rosca "Participação por Estoque", que misturavam consumo do período com estoque e fornecedores.
+- **Estoque do almoxarifado hoje** = Σ saldo × custo unitário de `dbEstoqueRaw` (001 CD + AX; embalagens no custo real). Estoque de TI aparece separado, embaixo.
+- **Consumo do mês** = último mês fechado (escolhe outro no seletor ou clicando na barra), comparado com a média mensal dos meses anteriores e com o mês anterior.
+- **O estoque dura** = estoque R$ ÷ consumo médio dos últimos 3 meses fechados com base completa.
+- **Itens para repor** = itens com cobertura < 1 mês; valor para repor 2 meses.
+- Linha de apoio: requisições do mês, Fortpel do mês (compra direta das lojas, fora do almoxarifado) e consumo do ano.
+- Gráfico do consumo mês a mês com a média; tabelas: o que mais saiu, quem mais pediu, por regional, repor primeiro. Seletor de regional (Rede toda / regional).
+- **Mês incompleto**: se o mês tem menos de 40% das requisições da média, o painel avisa e a barra fica cinza. Em 09/11/2026 às 10:53 a base de consumo foi regravada sem outubro (1.591 → 8 requisições) e com setembro parcial (2.249 → 2.041); a versão completa está em `portal_sync_historico` id 8296 (10:49).
+- **Regionais fixas** (Controladoria, 09/11/2026): 001 CD e 090 Escritório = **CD**; 064 ES Sports Petrolina = **ALEX**; 017 Mix Mateus Boa Viagem, 025 Conde da Boa Vista e 097 CD Macaíba-RN = **FECHADA** (fecharam / não existem mais). Gravadas em `dbRegionaisMap` e forçadas pelo patch, então "NÃO MAPEADO" não aparece mais. No Consumo Loja, 090 conta como CD (fora do padrão).

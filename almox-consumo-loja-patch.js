@@ -13,7 +13,7 @@
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-09.2';
+  window.__almoxConsumoLoja='2026-11-09.3';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -165,8 +165,9 @@
 
   // ---------- modelo de cálculo ----------
   function nomeLoja(cod,fallback){var n=S.alm.nomes[cod]||S.alm.nomes[String(cod).padStart(2,'0')];return n?String(n).replace(/^\d+\s*-\s*/,String(cod).padStart(3,'0')+' - '):(fallback||String(cod).padStart(3,'0'));}
-  function regDe(cod){return String(S.alm.reg[cod]||S.alm.reg[String(cod).padStart(3,'0')]||'NÃO MAPEADO').toUpperCase();}
-  function ehCD(cod){return cod==='1';}
+  var REG_FIXA={'1':'CD','90':'CD','64':'ALEX','17':'FECHADA','25':'FECHADA','97':'FECHADA'};
+  function regDe(cod){return String(REG_FIXA[cod]||S.alm.reg[cod]||S.alm.reg[String(cod).padStart(3,'0')]||'NÃO MAPEADO').toUpperCase();}
+  function ehCD(cod){return cod==='1'||cod==='90';} // 001 CD e 090 Escritório
 
   function modelo(){
     var P=S.base.params,atual=mesAtual(),paNF=Number(P.paPorNF)||1.5;
