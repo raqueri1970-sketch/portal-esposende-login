@@ -9,7 +9,7 @@
 // Lê os dados já carregados no módulo (dbEstoqueRaw, dbConsumoRaw, dbFortpelRaw, dbEstoqueTI, dbRegionaisMap).
 (function(){
   if(window.__almoxPainel)return;
-  window.__almoxPainel='2026-11-09.2';
+  window.__almoxPainel='2026-11-09.3';
 
   var MESES=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
   var MESES_LONGO=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -64,6 +64,7 @@
     var cons=ler(w,'dbConsumoRaw',[])||[],est=ler(w,'dbEstoqueRaw',[])||[],estTI=ler(w,'dbEstoqueTI',[])||[];
     var fort=ler(w,'dbFortpelRaw',[])||[],anoF=Number(ler(w,'fortpelAnoRef',0))||new Date().getFullYear();
     var reg=ler(w,'dbRegionaisMap',{})||{},nomes=ler(w,'dbLojaNomeMap',{})||{};
+    var hojeISO=new Date(Date.now()-3*36e5).toISOString().slice(0,10);
     var atual=mesAtual(),D={atual:atual,meses:{},itens:{},lojas:{},regs:{},setores:{},estoque:0,nEst:0,estTI:0,fort:{},nLinhasEst:est.length};
     // Estoque do almoxarifado trocado pelo de TI (mesmo arquivo carregado no lugar errado)
     var codTI={};estTI.forEach(function(e){codTI[codItem(e['Código'])]=1;});
@@ -74,13 +75,17 @@
     est.forEach(function(e){
       var c=codItem(e['Código']),q=num(e['Estoque Atual']),u=unitReal(c);u=u!=null?u:num(e['Custo Unitário']);
       var it=D.itens[c]=D.itens[c]||{cod:c,nome:limpa(e['Insumo']),saldo:0,custo:0,meses:{},v:{}};
-      it.saldo+=q;it.custo=u;if(!it.nome)it.nome=limpa(e['Insumo']);
+      it.saldo+=q;it.custo=u;it.emEstoque=true;if(!it.nome)it.nome=limpa(e['Insumo']);
       if(q>0){D.estoque+=q*u;D.nEst++;}
+      // Posição do estoque = movimento mais recente do relatório (última compra), nunca no futuro.
+      var dc=String(e['Última Compra']||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if(dc){var iso=dc[3]+'-'+dc[2]+'-'+dc[1];if(iso<=hojeISO&&(!D.posEstoque||iso>D.posEstoque))D.posEstoque=iso;}
     });
     estTI.forEach(function(e){var q=num(e['Estoque Atual']);if(q>0)D.estTI+=q*num(e['Custo Unitário']);});
     // Consumo (quantidade atendida) por mês, item, loja e regional
     cons.forEach(function(r){
       var m=mesDe(r['Data Solicitação']);if(!m)return;
+      var tq=Date.parse(r['Data Solicitação']);if(!isNaN(tq)&&(!D.ultReq||tq>D.ultReq))D.ultReq=tq;
       var q=num(r['Qtd Atendida']);if(!q)return;
       var c=codItem(r['Código']),u=unitReal(c),v=u!=null?Math.round(q*u*100)/100:num(r['Custo Atendido']);
       var lj=codLoja(r['Empresa Solicitante']),rg=lj?regionalDe(reg,lj):'NÃO MAPEADO';
@@ -118,6 +123,10 @@
     A.mesesCob=ult;
     A.consMedio3=ult.length?ult.reduce(function(s,m){return s+D.meses[m].v;},0)/ult.length:0;
     A.cobertura=A.consMedio3?D.estoque/A.consMedio3:null;
+    // Mesma conta sem as obras (Facilities), que distorcem o consumo médio.
+    var facM=function(m){return (D.setores.FACILITIES&&D.setores.FACILITIES.v[m])||0;};
+    A.consOper3=ult.length?ult.reduce(function(s,m){return s+D.meses[m].v-facM(m);},0)/ult.length:0;
+    A.cobOper=A.consOper3?D.estoque/A.consOper3:null;
     // Itens: consumo do mês x média do item; cobertura de cada item
     var itens=Object.keys(D.itens).map(function(c){return D.itens[c];});
     itens.forEach(function(it){
@@ -125,9 +134,18 @@
       var qm=ult.reduce(function(s,m){return s+(it.meses[m]||0);},0)/(ult.length||1);
       it.media=qm;it.mediaAntes=antes.length?antes.reduce(function(s,m){return s+(it.meses[m]||0);},0)/antes.length:0;
       it.dura=qm>0?Math.max(0,it.saldo)/qm:null;
+      it.nUlt=ult.filter(function(m){return (it.meses[m]||0)>0;}).length;
+      it.semSaida6=ms.slice(-6).every(function(m){return !(it.meses[m]>0);});
     });
+    // Estoque: composição (maiores valores) e o que está parado (sem saída nos últimos 6 meses fechados)
+    var comSaldo=itens.filter(function(i){return i.emEstoque&&i.saldo>0;}).map(function(i){i.valorEst=i.saldo*(i.custo||0);return i;}).sort(function(a,b){return b.valorEst-a.valorEst;});
+    A.topEst=comSaldo.slice(0,15);A.restoEst={n:Math.max(0,comSaldo.length-15),v:comSaldo.slice(15).reduce(function(s,i){return s+i.valorEst;},0)};
+    A.parado=comSaldo.filter(function(i){return i.semSaida6;});A.paradoV=A.parado.reduce(function(s,i){return s+i.valorEst;},0);
+    // Itens que saem na requisição mas não existem no estoque (compra direta / obra): não são "repor".
+    A.compraDireta=itens.filter(function(i){return !i.emEstoque&&i.media>0;}).length;
     A.topItens=itens.filter(function(i){return i.vRef>0;}).sort(function(a,b){return b.vRef-a.vRef;}).slice(0,10);
-    A.repor=itens.filter(function(i){return i.media>0&&i.dura!=null&&i.dura<1;}).sort(function(a,b){return a.dura-b.dura||b.media*b.custo-a.media*a.custo;});
+    // Repor = item de estoque, com saída recorrente (2 dos 3 últimos meses) e que acaba em menos de 1 mês.
+    A.repor=itens.filter(function(i){return i.emEstoque&&i.nUlt>=2&&i.media>0&&i.dura!=null&&i.dura<1;}).sort(function(a,b){return a.dura-b.dura||b.media*b.custo-a.media*a.custo;});
     A.reporV=A.repor.reduce(function(s,i){return s+Math.max(0,Math.ceil(i.media*2-Math.max(0,i.saldo)))*(i.custo||0);},0);
     A.topLojas=Object.keys(D.lojas).map(function(k){var l=D.lojas[k],ma=antes.length?antes.reduce(function(s,m){return s+(l.v[m]||0);},0)/antes.length:0;
       return {nome:l.nome,reg:l.reg,v:l.v[ref]||0,media:ma,vs:ma?(l.v[ref]||0)/ma-1:null};}).filter(function(l){return l.v>0;}).sort(function(a,b){return b.v-a.v;}).slice(0,10);
@@ -168,6 +186,8 @@
     +'#apn .apn-k span{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#9fb3c8}'
     +'#apn .apn-k b{display:block;font-size:26px;line-height:1.15;margin-top:6px;color:var(--c);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
     +'#apn .apn-k small{display:block;color:#9fb3c8;font-size:12px;margin-top:6px;line-height:1.45}#apn .apn-k small em{font-style:normal;font-weight:800}'
+    +'#apn .apn-k{cursor:pointer;position:relative}#apn .apn-k:hover{border-color:var(--c)}#apn .apn-k.apn-on{box-shadow:0 0 0 2px var(--c) inset}#apn .apn-ver{position:absolute;right:12px;bottom:8px;font-style:normal;font-size:10.5px;color:var(--c);opacity:.8}'
+    +'#apn tr.apn-tot td{font-weight:800;color:#e8f0fa;border-top:2px solid #2a4566}'
     +'#apn .up{color:#fb7185}#apn .dn{color:#34d399}#apn .apn-mini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}@media(max-width:1100px){#apn .apn-mini{grid-template-columns:1fr}}'
     +'#apn .apn-m{background:#0b1726;border:1px solid #1a2f4a;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#9fb3c8;line-height:1.5}#apn .apn-m b{color:#e8f0fa;font-size:15px}'
     +'#apn .apn-box{background:#0d1b2e;border:1px solid #1f3654;border-radius:12px;padding:14px 16px;margin-top:12px;min-width:0}#apn .apn-box h4{margin:0 0 8px;font-size:13.5px;color:#fff;font-weight:800}'
@@ -177,7 +197,7 @@
     +'#apn .apn-aviso{background:#3a1d08;border:1px solid #b45309;color:#fed7aa;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;line-height:1.5}'
     +'#apn .apn-leg{display:flex;gap:14px;font-size:11px;color:#8ca4bf;margin-top:4px;flex-wrap:wrap}#apn .apn-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}';
 
-  var estado={mes:null,reg:'',assinatura:'',html:''};
+  var estado={mes:null,reg:'',kpi:null,assinatura:'',html:''};
   function assinatura(w){
     var c=ler(w,'dbConsumoRaw',[])||[],e=ler(w,'dbEstoqueRaw',[])||[],f=ler(w,'dbFortpelRaw',[])||[];
     var u=c.length?(c[c.length-1]['Data Solicitação']+'|'+c[0]['Qtd Atendida']):'';
@@ -193,15 +213,26 @@
     if(D.estoqueEhTI)h+='<div class="apn-aviso" style="background:#3b0d16;border-color:#e11d48;color:#fecdd3">⛔ <b>O estoque do almoxarifado carregado é o arquivo de TI</b> ('+n0(D.nLinhasEst)+' itens de informática). O valor abaixo não é o estoque real do CD + AX. Em <b>Carregar Planilhas</b>, coloque o <b>ESTOQUE 01 + AX</b> no campo de estoque do almoxarifado e o <b>TI</b> no campo de TI.</div>';
     if(A.incompleto)h+='<div class="apn-aviso">⚠ <b>'+esc(mesLongo(A.ref))+' está incompleto na base</b>: só '+n0(A.n)+' requisições, quando a média é '+n0(A.mediaN)+' por mês. Carregue de novo a planilha de consumo com o mês inteiro — até lá o consumo do mês aparece menor do que foi.</div>';
     var corV=A.vsMedia==null?'#22d3ee':A.vsMedia>0.1?'#fb7185':A.vsMedia<-0.1?'#34d399':'#22d3ee';
+    var fd=function(iso){return iso?iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4):'—';};
+    var ultReqISO=D.ultReq?new Date(D.ultReq-3*36e5).toISOString().slice(0,10):null;
+    function card(k,cor,tit,val,sub){return '<div class="apn-k'+(estado.kpi===k?' apn-on':'')+'" data-k="'+k+'" style="--c:'+cor+'" title="Clique para ver a composição"><span>'+tit+'</span><b>'+val+'</b><small>'+sub+'</small><i class="apn-ver">'+(estado.kpi===k?'fechar ▴':'ver composição ▾')+'</i></div>';}
     h+='<div class="apn-kpis">'
-      +'<div class="apn-k" style="--c:#38bdf8"><span>Estoque do almoxarifado hoje</span><b>'+brl0(D.estoque)+'</b><small>'+n0(D.nEst)+' itens com saldo · valor = saldo × custo unitário'+(D.estTI?'<br>Estoque de TI (separado): <em>'+brl0(D.estTI)+'</em>':'')+'</small></div>'
-      +'<div class="apn-k" style="--c:'+corV+'"><span>Consumo de '+esc(mesLabel(A.ref))+'</span><b>'+brl0(A.valor)+'</b><small>'
-        +(A.media!=null?'<em class="'+(A.vsMedia>0?'up':'dn')+'">'+pct(A.vsMedia)+'</em> vs média mensal ('+brl0(A.media)+')':'')
+      +card('est','#38bdf8','Estoque hoje',brl0(D.estoque),'posição de <em>'+fd(D.posEstoque)+'</em> · 001 CD + AX · '+n0(D.nEst)+' itens'
+        +(A.paradoV?'<br>parado (sem saída há 6 meses): <em class="up">'+brl0(A.paradoV)+'</em> em '+n0(A.parado.length)+' itens':'')
+        +(D.estTI?'<br>Estoque de TI (separado): <em>'+brl0(D.estTI)+'</em>':''))
+      +card('cons',corV,'Consumo de '+esc(mesLabel(A.ref)),brl0(A.valor),
+        (A.media!=null?'<em class="'+(A.vsMedia>0?'up':'dn')+'">'+pct(A.vsMedia)+'</em> vs média mensal ('+brl0(A.media)+')':'')
         +(A.ant?'<br><em class="'+(A.vsAnt>0?'up':'dn')+'">'+pct(A.vsAnt)+'</em> vs '+esc(mesLabel(A.ant))+' ('+brl0(D.meses[A.ant].v)+')':'')
-        +(A.fac.v||A.fac.media?'<br>Operação <em>'+brl0(A.oper.v)+'</em> <em class="'+(A.oper.vs>0.1?'up':A.oper.vs<-0.1?'dn':'')+'">('+pct(A.oper.vs)+')</em> · Facilities/obras <em>'+brl0(A.fac.v)+'</em>':'')+'</small></div>'
-      +'<div class="apn-k" style="--c:'+(A.cobertura==null?'#94a3b8':A.cobertura<1?'#fb7185':A.cobertura<2?'#f59e0b':'#34d399')+'"><span>O estoque dura</span><b>'+(A.cobertura==null?'—':n1(A.cobertura)+' meses')+'</b><small>estoque ÷ consumo médio de '+brl0(A.consMedio3)+'/mês<br>(média de '+A.mesesCob.map(mesLabel).join(', ')+')</small></div>'
-      +'<div class="apn-k" style="--c:#f59e0b"><span>Itens para repor</span><b>'+n0(A.repor.length)+' itens</b><small>acabam em menos de 1 mês'+(A.reporV?'<br>repor 2 meses ≈ <em>'+brl0(A.reporV)+'</em>':'')+'</small></div>'
+        +(A.fac.v||A.fac.media?'<br>Operação <em>'+brl0(A.oper.v)+'</em> <em class="'+(A.oper.vs>0.1?'up':A.oper.vs<-0.1?'dn':'')+'">('+pct(A.oper.vs)+')</em> · Facilities/obras <em>'+brl0(A.fac.v)+'</em>':'')
+        +'<br>base de requisições até <em>'+fd(ultReqISO)+'</em>')
+      +card('dura',A.cobertura==null?'#94a3b8':A.cobertura<1?'#fb7185':A.cobertura<2?'#f59e0b':'#34d399','O estoque dura',A.cobertura==null?'—':n1(A.cobertura)+' meses',
+        'estoque hoje ÷ consumo médio de '+brl0(A.consMedio3)+'/mês ('+A.mesesCob.map(mesLabel).join(', ')+')'
+        +(A.cobOper!=null&&A.consOper3<A.consMedio3*0.95?'<br>só operação, sem obras: <em class="dn">'+n1(A.cobOper)+' meses</em> ('+brl0(A.consOper3)+'/mês)':''))
+      +card('repor','#f59e0b','Itens para repor',n0(A.repor.length)+' itens','itens de estoque com saída todo mês que acabam em menos de 1 mês'
+        +(A.reporV?'<br>repor 2 meses ≈ <em>'+brl0(A.reporV)+'</em>':'')
+        +(A.compraDireta?'<br><em style="color:#7f96b2;font-weight:400">'+n0(A.compraDireta)+' itens de compra direta/obra não entram (não ficam em estoque)</em>':''))
       +'</div>';
+    if(estado.kpi)h+=detalhe(estado.kpi,D,A,fd);
     h+='<div class="apn-mini">'
       +'<div class="apn-m">Requisições atendidas em '+esc(mesLabel(A.ref))+': <b>'+n0(A.n)+'</b>'+(A.mediaN?' · média '+n0(A.mediaN)+'/mês':'')+'</div>'
       +'<div class="apn-m">Fortpel em '+esc(mesLabel(A.ref))+' (compra direta das lojas, fora do almoxarifado): <b>'+brl0(A.fort)+'</b></div>'
@@ -226,6 +257,31 @@
           +(A.repor.length>10?'<tr><td colspan="4" style="color:#8ca4bf">+ '+(A.repor.length-10)+' itens</td></tr>':''):'<tr><td colspan="4" style="color:#34d399">Nenhum item acaba em menos de 1 mês.</td></tr>')+'</tbody></table></div>'
       +'</div>';
     return h;
+  }
+  // Composição de cada card (a soma do detalhe bate com o número do card).
+  function detalhe(k,D,A,fd){
+    var t='',tit='';
+    if(k==='est'){tit='Estoque hoje — maiores valores (posição de '+fd(D.posEstoque)+')';
+      t='<table><thead><tr><th>Item</th><th>Estoque</th><th>Custo un.</th><th>Valor</th><th>% do estoque</th><th>Dura</th></tr></thead><tbody>'
+        +A.topEst.map(function(i){return '<tr><td>'+esc(i.nome)+'<small>'+esc(i.cod)+(i.semSaida6?' · sem saída há 6 meses':'')+'</small></td><td>'+n0(i.saldo)+'</td><td>'+brl(i.custo)+'</td><td>'+brl0(i.valorEst)+'</td><td>'+n1(D.estoque?i.valorEst/D.estoque*100:0)+'%</td><td'+(i.dura!=null&&i.dura<1?' class="up"':'')+'>'+(i.dura==null?'sem saída':(i.dura>=24?'24+':n1(i.dura))+' m')+'</td></tr>';}).join('')
+        +(A.restoEst.n?'<tr><td>Demais '+n0(A.restoEst.n)+' itens</td><td></td><td></td><td>'+brl0(A.restoEst.v)+'</td><td>'+n1(D.estoque?A.restoEst.v/D.estoque*100:0)+'%</td><td></td></tr>':'')
+        +'<tr class="apn-tot"><td>TOTAL — Estoque hoje</td><td></td><td></td><td>'+brl0(D.estoque)+'</td><td>100%</td><td></td></tr></tbody></table>'
+        +(A.parado.length?'<h4 style="margin-top:14px">Parado: sem saída nos últimos 6 meses — '+brl0(A.paradoV)+'</h4><table><thead><tr><th>Item</th><th>Estoque</th><th>Valor</th></tr></thead><tbody>'
+          +A.parado.slice(0,15).map(function(i){return '<tr><td>'+esc(i.nome)+'<small>'+esc(i.cod)+'</small></td><td>'+n0(i.saldo)+'</td><td>'+brl0(i.valorEst)+'</td></tr>';}).join('')
+          +(A.parado.length>15?'<tr><td colspan="3" style="color:#8ca4bf">+ '+(A.parado.length-15)+' itens</td></tr>':'')+'</tbody></table>':'');}
+    else if(k==='cons'){tit='Consumo de '+mesLabel(A.ref)+' — por setor';
+      t='<table><thead><tr><th>Setor</th><th>R$ no mês</th><th>% do mês</th><th>Média mensal</th><th>vs média</th></tr></thead><tbody>'
+        +A.setores.filter(function(g){return g.v>0;}).map(function(g){return '<tr><td>'+esc(g.setor)+(g.setor==='FACILITIES'?'<small>obras, manutenção e equipamentos</small>':'')+'</td><td>'+brl0(g.v)+'</td><td>'+n1(A.valor?g.v/A.valor*100:0)+'%</td><td>'+brl0(g.media)+'</td><td class="'+(g.vs>0.1?'up':g.vs<-0.1?'dn':'')+'">'+pct(g.vs)+'</td></tr>';}).join('')
+        +'<tr class="apn-tot"><td>TOTAL — Consumo de '+mesLabel(A.ref)+'</td><td>'+brl0(A.valor)+'</td><td>100%</td><td>'+brl0(A.media)+'</td><td>'+pct(A.vsMedia)+'</td></tr></tbody></table>';}
+    else if(k==='dura'){tit='Como sai o "estoque dura"';
+      t='<table><thead><tr><th>Mês</th><th>Consumo (R$)</th></tr></thead><tbody>'+A.mesesCob.map(function(m){return '<tr><td>'+mesLabel(m)+'</td><td>'+brl0(D.meses[m].v)+'</td></tr>';}).join('')
+        +'<tr class="apn-tot"><td>Média mensal</td><td>'+brl0(A.consMedio3)+'</td></tr><tr><td>Média mensal só operação (sem Facilities/obras)</td><td>'+brl0(A.consOper3)+'</td></tr><tr><td>Estoque hoje</td><td>'+brl0(D.estoque)+'</td></tr><tr class="apn-tot"><td>Estoque hoje ÷ média = meses</td><td>'+(A.cobertura==null?'—':n1(A.cobertura))+'</td></tr><tr class="apn-tot"><td>Estoque hoje ÷ média só operação = meses</td><td>'+(A.cobOper==null?'—':n1(A.cobOper))+'</td></tr></tbody></table>'
+        ;}
+    else if(k==='repor'){tit='Itens para repor — estoque acaba em menos de 1 mês';
+      t='<table><thead><tr><th>Item</th><th>Estoque</th><th>Saída média/mês</th><th>Dura</th><th>Repor 2 meses</th><th>R$</th></tr></thead><tbody>'
+        +A.repor.map(function(i){var q=Math.max(0,Math.ceil(i.media*2-Math.max(0,i.saldo)));return '<tr><td>'+esc(i.nome)+'<small>'+esc(i.cod)+'</small></td><td>'+n0(Math.max(0,i.saldo))+'</td><td>'+n0(i.media)+'</td><td class="up">'+n1(i.dura)+' m</td><td>'+n0(q)+'</td><td>'+brl0(q*(i.custo||0))+'</td></tr>';}).join('')
+        +'<tr class="apn-tot"><td>TOTAL — '+n0(A.repor.length)+' itens</td><td></td><td></td><td></td><td></td><td>'+brl0(A.reporV)+'</td></tr></tbody></table>';}
+    return '<div class="apn-box apn-det"><h4 style="display:flex;justify-content:space-between">'+esc(tit)+'<a data-k="'+k+'" style="cursor:pointer;color:#8ca4bf;font-weight:400">fechar ✕</a></h4>'+t+'</div>';
   }
   function calcularRegs(w){var reg=ler(w,'dbRegionaisMap',{})||{},o={};Object.keys(reg).forEach(function(k){o[String(reg[k]).toUpperCase()]=1;});Object.keys(REG_FIXA).forEach(function(k){o[REG_FIXA[k]]=1;});return o;}
 
@@ -258,7 +314,8 @@
     var box=doc.getElementById('apn');
     if(!box||box.nextElementSibling!==cards){if(box)box.remove();box=doc.createElement('div');box.id='apn';cards.parentNode.insertBefore(box,cards);estado.assinatura='';
       box.addEventListener('change',function(e){var a=e.target.getAttribute('data-apn');if(a==='mes')estado.mes=e.target.value;if(a==='reg')estado.reg=e.target.value;desenhar(true);});
-      box.addEventListener('click',function(e){var m=e.target.getAttribute&&e.target.getAttribute('data-m');if(m){estado.mes=m;desenhar(true);}});}
+      box.addEventListener('click',function(e){var m=e.target.getAttribute&&e.target.getAttribute('data-m');if(m){estado.mes=m;desenhar(true);return;}
+        var c=e.target.closest&&e.target.closest('[data-k]');if(c){var k=c.getAttribute('data-k');estado.kpi=estado.kpi===k?null:k;desenhar(true);}});}
     desenhar(false);
     function desenhar(forcar){
       var a=assinatura(w);if(!forcar&&a===estado.assinatura)return;

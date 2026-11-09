@@ -10,3 +10,6 @@ Skills: auditor-mestre, ajuste-express, inventario, saci, comercial, rh-folha, c
 ## Regra de relatórios
 Todo relatório gerado pelo Portal (impressão, PDF, Excel) sai com a logo oficial da Esposende no topo. Fonte da logo: LOGO_B64 em almox-consumo-item-patch.js (mesma arte de orcamento-compras.html).
 Valores principais sempre em cards; tabelas com cabeçalho azul-marinho, linhas zebradas e total destacado; rodapé com "Esposende · Central de Auditoria & Controle" e data de geração. Modelo completo em almoxarifado.md (Padrão de relatório).
+
+## Regra geral: cards inteligentes (todo módulo, sempre)
+Definida pela Controladoria em 09/11/2026 — texto completo em `CLAUDE.md` na raiz do repositório. Resumo: título diz exatamente o que é o número; sempre a data da base; sempre comparação com cor; clicar mostra a composição (que soma o card); separar o que distorce (obra × operação, compra direta × estoque, CD × lojas); só contar o acionável; alertar base errada/incompleta; conferir na nuvem antes de publicar.
