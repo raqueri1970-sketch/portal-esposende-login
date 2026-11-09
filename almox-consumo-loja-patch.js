@@ -3,15 +3,17 @@
 // Cruza o consumo dos itens controlados com o que gera esse consumo:
 //   Sacolas e embalagens de presente ........ pares vendidos (PA)   · regra: 1 sacola a cada 1,5 PA
 //   Agrado (café, pirulito, balão) ............ vendas (NFS)         · padrão = mediana das lojas
-//   Fita PP e etiqueta 70x24 .................. pares remanejados     · padrão = mediana das lojas
+//   Etiqueta 70x24 ............................ pares remanejados     · padrão = mediana das lojas
 //   Bobina PDV ................................ vendas (NFS)         · padrão = mediana das lojas
-//   Papel A4 e filme stretch .................. só histórico
+//   Fita PP, papel A4, filme stretch, trava anel,
+//   alfinete e suporte de etiqueta ............ média mensal de consumo (filme stretch: 3 meses de estoque no total)
+// NFS = PA ÷ 1,5 (regra: cada NF leva em média 1,5 par). Balão nº7 (10546 + 17314) somado num item só.
 // Fontes: portal_sync alm (dbConsumoRaw, dbEstoqueRaw, dbRegionaisMap, dbLojaNomeMap) e
 // portal_sync almcl (base de vendas/remanejo por loja e mês carregada aqui + parâmetros).
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-07.10';
+  window.__almoxConsumoLoja='2026-11-09.1';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -35,20 +37,27 @@
       regra:'Pacotes a cada 1.000 vendas (NFS) · padrão = mediana das lojas'},
     {id:'bal',grupo:'Agrado',nome:'Balão (agrado)',icone:'🎈',cods:['10546','17314'],drivers:['nfs','pares'],porUn:false,
       regra:'Pacotes a cada 1.000 vendas (NFS) · padrão = mediana das lojas'},
-    {id:'fit',grupo:'Remanejo',nome:'Fita adesiva PP 45mm',icone:'📦',cods:['7816'],drivers:['rem'],porUn:false,
-      regra:'Rolos a cada 1.000 pares remanejados (enviados pela loja) · padrão = mediana das lojas'},
     {id:'etq',grupo:'Remanejo',nome:'Etiqueta 70x24',icone:'🏷️',cods:['7982','15483'],drivers:['rem','pares'],porUn:false,fator:630,unFator:'etiquetas',
       regra:'Rolos a cada 1.000 pares remanejados (enviados pela loja) · padrão = mediana das lojas'},
     {id:'bob',grupo:'NFS',nome:'Bobina PDV 79mm',icone:'🧾',cods:['8002','22203','26104','26153'],drivers:['nfs','pares'],porUn:true,
       regra:'Vendas (NFS) por bobina · padrão = mediana das lojas'},
-    {id:'a4',grupo:'Histórico',nome:'Papel A4 (resma)',icone:'📄',cods:['7981'],drivers:[],porUn:false,regra:'Previsão pela média de consumo'},
-    {id:'str',grupo:'Histórico',nome:'Filme stretch',icone:'🎞️',cods:['14580'],drivers:[],porUn:false,regra:'Previsão pela média de consumo'}
+    // Média mensal: previsão e compra pela média mensal de consumo (meses fechados), sem motor de venda/remanejo.
+    {id:'fit',grupo:'Média mensal',nome:'Fita adesiva PP 45mm',icone:'📦',cods:['7816'],drivers:[],porUn:false,regra:'Previsão pela média mensal de consumo'},
+    {id:'a4',grupo:'Média mensal',nome:'Papel A4 (resma)',icone:'📄',cods:['7981'],drivers:[],porUn:false,regra:'Previsão pela média mensal de consumo'},
+    {id:'str',grupo:'Média mensal',nome:'Filme stretch',icone:'🎞️',cods:['14580'],drivers:[],porUn:false,seg:'segStretch',
+      regra:'Previsão pela média mensal de consumo · estoque de segurança de 3 meses no total'},
+    {id:'trv',grupo:'Média mensal',nome:'Trava anel 125',icone:'🔗',cods:['8014'],drivers:[],porUn:false,regra:'Previsão pela média mensal de consumo'},
+    {id:'alf',grupo:'Média mensal',nome:'Alfinete de aço nº32',icone:'📌',cods:['9474'],drivers:[],porUn:false,regra:'Previsão pela média mensal de consumo'},
+    {id:'sup',grupo:'Média mensal',nome:'Suporte p/ etiquetas (aro)',icone:'🏷️',cods:['9727','9728'],drivers:[],porUn:false,regra:'Previsão pela média mensal de consumo'}
   ];
-  var DRV_NOME={pares:'PA (pares vendidos)',nfs:'Vendas (NFS)',rem:'Pares remanejados'};
+  // Códigos do mesmo item com cadastro duplicado: estoque e consumo somados no código principal.
+  var COD_ALIAS={'17314':'10546'}; // Balão nº7
+  function codItem(c){c=String(parseInt(c,10));return COD_ALIAS[c]||c;}
+  var DRV_NOME={pares:'PA (pares vendidos)',nfs:'Vendas (NFS = PA ÷ 1,5)',rem:'Pares remanejados'};
   var DRV_CURTO={pares:'PA',nfs:'NFS',rem:'pares rem.'};
-  var GRUPO_COR={Venda:'#0e7c66',Agrado:'#b45309',Remanejo:'#7c3aed',NFS:'#0369a1','Histórico':'#64748b'};
+  var GRUPO_COR={Venda:'#0e7c66',Agrado:'#b45309',Remanejo:'#7c3aed',NFS:'#0369a1','Média mensal':'#64748b'};
   var COD_LINHA={};LINHAS.forEach(function(L){L.cods.forEach(function(c){COD_LINHA[c]=L.id;});});
-  var PARAMS_PADRAO={paPorSacola:1.5,crescimento:10,fatorDez:2.75,tolerancia:25,cobertura:3,horizonte:3,basePrev:'padrao',mixP:35,mixM:50,mixG:15,conversao:33};
+  var PARAMS_PADRAO={paPorSacola:1.5,paPorNF:1.5,segStretch:3,crescimento:10,fatorDez:2.75,tolerancia:25,cobertura:3,horizonte:3,basePrev:'padrao',mixP:35,mixM:50,mixG:15,conversao:33};
   // Baliza de consumo de sacola por tamanho (Controladoria): P 35% · M 50% · G 15%.
   var SAC_TAM={'9516':'P','7894':'M','8209':'G'};
   function mixSac(P){var t={P:Number(P.mixP),M:Number(P.mixM),G:Number(P.mixG)};if(!(t.P>=0))t.P=35;if(!(t.M>=0))t.M=50;if(!(t.G>=0))t.G=15;var s=t.P+t.M+t.G||100;return {P:t.P/s,M:t.M/s,G:t.G/s};}
@@ -160,35 +169,40 @@
   function ehCD(cod){return cod==='1';}
 
   function modelo(){
-    var P=S.base.params,atual=mesAtual();
+    var P=S.base.params,atual=mesAtual(),paNF=Number(P.paPorNF)||1.5;
     var lojas={},cons={},itens={},drv={pares:{},nfs:{},rem:{},valor:{}};
     function loja(cod,nome){if(!lojas[cod])lojas[cod]={cod:cod,nome:nomeLoja(cod,nome),reg:regDe(cod)};return lojas[cod];}
     S.alm.consumo.forEach(function(r){
-      var c=String(parseInt(r['Código'],10));var lid=COD_LINHA[c];if(!lid)return;
+      var c0=String(parseInt(r['Código'],10)),c=codItem(c0);var lid=COD_LINHA[c0];if(!lid)return;
       var mes=mesBrasilia(r['Data Solicitação']);if(!mes)return;
       var lj=codLoja(r['Empresa Solicitante']);if(!lj)return;
       loja(lj,String(r['Empresa Solicitante']||'').replace(/\s+/g,' ').trim());
       var q=Number(r['Qtd Atendida'])||0;if(!q)return;
       var u=unitReal(c),v=u!=null?Math.round(q*u*100)/100:(Number(r['Custo Atendido'])||0);
-      var it=itens[c]=itens[c]||{cod:c,nome:String(r['Insumo']||'').replace(/\s+/g,' ').trim(),linha:lid,meses:{},q:0,v:0,lojas:{}};
+      var it=itens[c]=itens[c]||{cod:c,nome:String(c0===c&&r['Insumo']||NOME_CURTO[c]||r['Insumo']||'').replace(/\s+/g,' ').trim(),linha:lid,meses:{},q:0,v:0,lojas:{}};
       var im=it.meses[mes]=it.meses[mes]||{q:0,v:0};im.q+=q;im.v+=v;
       var il=it.lojas[lj]=it.lojas[lj]||{};var ilm=il[mes]=il[mes]||{q:0,v:0};ilm.q+=q;ilm.v+=v;
       var cl=cons[lid]=cons[lid]||{};var cll=cl[lj]=cl[lj]||{};var c2=cll[mes]=cll[mes]||{q:0,v:0};c2.q+=q;c2.v+=v;
     });
     S.base.vendas.forEach(function(x){var lj=String(x.loja);loja(lj);
-      // Regra: cada venda é uma NF — sem quantidade de NFS na base, NFS = quantidade vendida.
-      ['pares','nfs','valor'].forEach(function(k){var val=x[k];if(k==='nfs'&&val==null)val=x.pares;if(val==null)return;var d=drv[k][lj]=drv[k][lj]||{};d[x.mes]=(d[x.mes]||0)+Number(val||0);});});
+      // Regra (Controladoria, 09/11/2026): NFS = PA ÷ 1,5 (cada NF leva em média 1,5 par; vendeu 1.000 pares ≈ 666 NFs).
+      ['pares','nfs','valor'].forEach(function(k){var val=x[k];if(k==='nfs')val=x.pares!=null?Number(x.pares)/paNF:x.nfs;if(val==null)return;var d=drv[k][lj]=drv[k][lj]||{};d[x.mes]=(d[x.mes]||0)+Number(val||0);});});
     S.base.remanejo.forEach(function(x){var lj=String(x.loja);loja(lj);var d=drv.rem[lj]=drv.rem[lj]||{};d[x.mes]=(d[x.mes]||0)+Number(x.pares||0);});
     // estoque e custo unitário por item
     var est={};
-    S.alm.estoque.forEach(function(e){var c=String(parseInt(e['Código'],10));if(!COD_LINHA[c])return;
-      var u=unitReal(c);est[c]={saldo:Number(e['Estoque Atual'])||0,custo:u!=null?u:(Number(e['Custo Unitário'])||0),ultCompra:e['Última Compra']||''};});
+    function porEstoque(c0,saldo,custo,ultCompra,deps){var c=codItem(c0),u=unitReal(c),ant=est[c];
+      if(ant&&ant.src.indexOf(c0)<0){ant.saldo+=saldo;ant.src.push(c0);if(!ant.custo)ant.custo=custo;if(!ant.ultCompra)ant.ultCompra=ultCompra;
+        if(deps){ant.deps=ant.deps||{};Object.keys(deps).forEach(function(d){ant.deps[d]=(ant.deps[d]||0)+deps[d];});}return;}
+      est[c]={saldo:saldo,custo:u!=null?u:custo,ultCompra:ultCompra,deps:deps||null,src:[c0]};}
+    S.alm.estoque.forEach(function(e){var c0=String(parseInt(e['Código'],10));if(!COD_LINHA[c0])return;
+      porEstoque(c0,Number(e['Estoque Atual'])||0,Number(e['Custo Unitário'])||0,e['Última Compra']||'');});
     // Estoque: vem do sistema do almoxarifado (dbEstoqueRaw, já soma 001 CD + AX). A planilha carregada no
     // menu só vale se for mais nova que a última atualização do módulo.
     var eb=S.base.estoque&&S.base.estoque.itens&&(!S.alm.atualizado||String(S.base.estoque.em)>new Date(S.alm.atualizado).toISOString())?S.base.estoque.itens:null;
-    if(eb)Object.keys(eb).forEach(function(c){var x=eb[c],u=unitReal(c),ant=est[c]||{};
-      est[c]={saldo:x.total,custo:u!=null?u:(x.custo||ant.custo||0),ultCompra:x.ultCompra||ant.ultCompra||'',deps:x.deps};});
-    Object.keys(itens).forEach(function(c){var it=itens[c];if(!est[c])est[c]={saldo:0,custo:0,ultCompra:''};
+    if(eb){var antE=est;est={};Object.keys(eb).forEach(function(c0){var x=eb[c0],ant=antE[codItem(c0)]||{};if(!COD_LINHA[String(parseInt(c0,10))])return;
+      porEstoque(String(parseInt(c0,10)),Number(x.total)||0,x.custo||ant.custo||0,x.ultCompra||ant.ultCompra||'',x.deps?Object.assign({},x.deps):null);});
+      Object.keys(antE).forEach(function(c){if(!est[c])est[c]=antE[c];});}
+    Object.keys(itens).forEach(function(c){var it=itens[c];if(!est[c])est[c]={saldo:0,custo:0,ultCompra:'',src:[c]};
       if(!est[c].custo){var q=0,v=0;Object.keys(it.meses).forEach(function(m){q+=it.meses[m].q;v+=it.meses[m].v;});est[c].custo=q?v/q:0;}});
     var meses=mesesEntre(S.de,S.ate);
     var fechados=meses.filter(function(m){return m<atual;});
@@ -312,12 +326,15 @@
       if(L.id==='sac'&&SAC_TAM[it.cod]){var outros=its.reduce(function(a,o){return a+(SAC_TAM[o.cod]?0:o._qp);},0);share=(1-(qt?outros/qt:0))*mixSac(P)[SAC_TAM[it.cod]];}
       futuros.forEach(function(m){pm[m]=totalMes[m]*share;});
       var soma=function(ms){return ms.reduce(function(s,m){return s+pm[m];},0);};
-      var prevM=total*share,alvo=soma(mCob),sug=Math.max(0,Math.ceil(alvo-e.saldo));
+      // Estoque de segurança (ex.: filme stretch = 3 meses da média mensal) é o TOTAL mínimo a ter, não soma ao período
+      // de cobertura: alvo = maior entre o que precisa na cobertura e os meses de segurança. segQ = só o que a segurança acrescenta.
+      var segMeses=L.seg?Math.max(0,Number(P[L.seg])||0):0;
+      var prevM=total*share,base=soma(mCob),alvo=Math.max(base,segMeses*prevM),segQ=alvo-base,sug=Math.max(0,Math.ceil(alvo-e.saldo));
       // cobertura atual: quantos meses o estoque aguenta, mês a mês (com dezembro mais forte)
       var resto=e.saldo,cobAtual=0;for(var k=0;k<futuros.length;k++){var q=pm[futuros[k]];if(!q){cobAtual=null;break;}if(resto>=q){resto-=q;cobAtual++;}else{cobAtual+=resto/q;resto=0;break;}}
       if(cobAtual!=null&&resto>0&&prevM)cobAtual+=resto/prevM;
       return {cod:it.cod,nome:it.nome,linha:L,share:share,media:M.fechados.length?it._qp/M.fechados.length:0,prevM:prevM,pm:pm,prevHz:soma(mHz),
-        saldo:e.saldo,deps:e.deps||null,custo:e.custo,cobAtual:prevM?cobAtual:null,alvo:alvo,sug:sug,sugV:sug*e.custo,ultCompra:e.ultCompra};
+        saldo:e.saldo,deps:e.deps||null,custo:e.custo,cobAtual:prevM?cobAtual:null,segMeses:segMeses,segQ:segQ,alvo:alvo,sug:sug,sugV:sug*e.custo,ultCompra:e.ultCompra};
     }).sort(function(a,b){return b.prevM-a.prevM;});
     return {porLoja:porLoja.sort(function(a,b){return b.prev-a.prev;}),total:total,totalMes:totalMes,itens:itensPrev,hz:hz,cob:cob,futuros:mHz,mCob:mCob,todos:futuros,ehVenda:ehVenda};
   }
@@ -458,7 +475,7 @@
         if(r.tipo==='remanejo')S.base.remanejo=mesclar(S.base.remanejo,r.linhas);else S.base.vendas=mesclar(S.base.vendas,r.linhas);
         S.base.arquivos.push({nome:f.name,tipo:r.tipo,em:new Date().toISOString(),meses:mk[0]+' a '+mk[mk.length-1],lojas:Object.keys(r.linhas.reduce(function(o,x){o[x.loja]=1;return o;},{})).length});
         msgs.push('✔ '+f.name+': '+(r.tipo==='remanejo'?'REMANEJO':'VENDAS')+' · '+n0(r.lidas)+' linhas · '+mesLabel(mk[0])+' a '+mesLabel(mk[mk.length-1])+(r.ignoradas?' · '+n0(r.ignoradas)+' ignoradas (sem loja/data)':'')
-          +(r.colunas&&!r.colunas.nfs?' · NFS = quantidade vendida (cada venda = 1 NF)':''));
+          +' · NFS = PA ÷ '+n1(Number(S.base.params.paPorNF)||1.5));
       }catch(e){console.warn('[Consumo Loja]',f.name,e.message);msgs.push('✖ '+f.name+': '+(e.message||e));}
     }
     try{await salvarBase();msgs.push('☁ Base salva na nuvem.');}catch(e){msgs.push('✖ Não salvou na nuvem: '+(e.message||e));}
@@ -670,13 +687,13 @@
         I.consV+=tv;I.grupos[L.grupo]=(I.grupos[L.grupo]||0)+tv;
         var p3=0;x.F.mCob.forEach(function(m){p3+=(i.pm[m]||0)*i.custo;I.prev[m]=(I.prev[m]||0)+(i.pm[m]||0)*i.custo;});I.prevTot+=p3;
         I.compra+=i.sugV;I.estV+=i.saldo*i.custo;
-        var row={cod:i.cod,nome:i.nome,L:L,fator:L.fator||0,estoque:i.saldo,custo:i.custo,media:M.fechados.length?qf/M.fechados.length:0,mq:mq,tq:tq,tv:tv,prev3:x.F.mCob.reduce(function(s,m){return s+(i.pm[m]||0);},0),cob:i.cobAtual,sug:i.sug,sugV:i.sugV,acima:x.C.acima,abaixo:x.C.abaixo};
+        var row={cod:i.cod,nome:i.nome,L:L,fator:L.fator||0,estoque:i.saldo,custo:i.custo,media:M.fechados.length?qf/M.fechados.length:0,mq:mq,tq:tq,tv:tv,prev3:x.F.mCob.reduce(function(s,m){return s+(i.pm[m]||0);},0),segQ:i.segQ||0,segMeses:i.segMeses||0,cob:i.cobAtual,sug:i.sug,sugV:i.sugV,acima:x.C.acima,abaixo:x.C.abaixo};
         I.itens.push(row);if(row.cob!=null&&row.cob<1)I.urg.push(row);});
       x.C.linhas.forEach(function(r){
         if(['ACIMA','ABAIXO','SEM PEDIDO','OK'].indexOf(r.status)>=0)I.lojasAval[r.cod]=1;
         if(r.status!=='ACIMA'&&r.status!=='ABAIXO'&&r.status!=='SEM PEDIDO')return;
         var o=I.lojas[r.cod]=I.lojas[r.cod]||{cod:r.cod,nome:r.nome,reg:r.reg,acima:[],abaixo:[],exc:0,falta:0,det:[]};
-        o.det.push({item:L.nome.replace(/ \(agrado\)/,''),un:({sac:'un',emb:'un',bob:'un',fit:'rolos',etq:'rolos',caf:'pct',pir:'pct',bal:'pct',a4:'resmas',str:'un'})[L.id]||'un',pediu:r.consBase,esperado:r.esperado||0,dif:r.dif||0,difV:r.difV||0,desvio:r.desvio,status:r.status});
+        o.det.push({item:L.nome.replace(/ \(agrado\)/,''),un:({sac:'un',emb:'un',bob:'un',fit:'rolos',etq:'rolos',caf:'pct',pir:'pct',bal:'pct',a4:'resmas',str:'un',trv:'pct',alf:'kg',sup:'cx'})[L.id]||'un',pediu:r.consBase,esperado:r.esperado||0,dif:r.dif||0,difV:r.difV||0,desvio:r.desvio,status:r.status});
         if(r.difV<0)o.falta+=-r.difV;
         if(r.status==='ACIMA'){o.acima.push(L.nome.replace(/ \(agrado\)/,''));o.exc+=Math.max(0,r.difV||0);I.exc+=Math.max(0,r.difV||0);}else o.abaixo.push(L.nome.replace(/ \(agrado\)/,''));});});
     I.itens.sort(function(a,b){return (a.cob==null?99:a.cob)-(b.cob==null?99:b.cob);});
@@ -690,7 +707,7 @@
 
   function vPainel(R){
     var M=R.M,I=indicadores(R),P=M.P,fut=R.linhas[0].F.mCob;
-    var aviso=(!S.base.vendas.length||!S.base.remanejo.length)?'<div class="acl-faixa">'+(!S.base.vendas.length?'⚠ Sem base de vendas: a comparação entre lojas fica desligada. ':'')+(!S.base.remanejo.length?'ℹ Fita e etiqueta sem a base de remanejo: medidas só pela média de consumo. ':'')+'<a data-t="base">Carregar base</a></div>':'';
+    var aviso=(!S.base.vendas.length||!S.base.remanejo.length)?'<div class="acl-faixa">'+(!S.base.vendas.length?'⚠ Sem base de vendas: a comparação entre lojas fica desligada. ':'')+(!S.base.remanejo.length?'ℹ Etiqueta sem a base de remanejo: medida pelos pares vendidos. ':'')+'<a data-t="base">Carregar base</a></div>':'';
     var kp=[
       {k:'cons',cor:'#14a386',t:'Consumo no período',v:brl(I.consV),s:top3(I.grupos,I.consV)},
       {k:'est',cor:'#38bdf8',t:'Estoque atual (CD + AX)',v:brl(I.estV),s:I.itens.length+' itens · '+I.urg.length+' acabam em menos de 1 mês'},
@@ -702,7 +719,7 @@
     var h=aviso+'<div class="acl-kpis2">'+kp.map(function(c){return '<div class="acl-k'+(S.kpi===c.k?' acl-k-on':'')+'" data-a="kpi" data-k="'+c.k+'" style="--c:'+c.cor+'" title="Clique para ver de onde vem este número"><span>'+c.t+'</span><b>'+c.v+'</b><small>'+c.s+'</small><i>detalhar ▾</i></div>';}).join('')+'</div>';
     if(S.kpi)h+=detalheKpi(S.kpi,I,R);
     // Gráficos
-    var GR=['Venda','Agrado','NFS','Remanejo','Histórico'];
+    var GR=['Venda','Agrado','NFS','Remanejo','Média mensal'];
     var serie=GR.map(function(g){return {nome:g,cor:GRUPO_COR_G[g],vals:M.meses.map(function(m){return I.mesG[m][g]||0;})};});
     var cobRows=I.itens.filter(function(r){return r.cob!=null;}).slice(0,14).map(function(r){return {label:nomeCurto(r.nome,r.cod),val:Math.min(r.cob,6),cor:corCob(r.cob),txt:(r.cob>=6?'6+':n1(r.cob))+' m'};});
     var top=I.lojasL.filter(function(o){return o.exc>0;}).sort(function(a,b){return b.exc-a.exc;}).slice(0,10).map(function(o){return {label:o.nome,val:o.exc,cor:'#e11d48',txt:brl(o.exc).replace('R$ ','R$ ')};});
@@ -725,15 +742,16 @@
   var NOME_CURTO={'7894':'Sacola M 50x60','8209':'Sacola G 60x70','9516':'Sacola P 35x55','11094':'Sacola antiga 25x35','21604':'Sacola ES Sports (papel)',
     '11314':'Embalagem presente P','11315':'Embalagem presente M','11316':'Embalagem presente G','8002':'Bobina PDV Esposende','22203':'Bobina PDV ES Sports',
     '26104':'Bobina PDV 79mm','26153':'Bobina PDV 79mm','19388':'Café Petinho','15538':'Pirulito','10546':'Balão nº7','17314':'Balão nº7',
-    '7816':'Fita PP 45mm','7982':'Etiqueta 70x24 (rolo)','15483':'Etiqueta 70x24 (adesiva)','7981':'Papel A4 (resma)','14580':'Filme stretch'};
+    '7816':'Fita PP 45mm','7982':'Etiqueta 70x24 (rolo)','15483':'Etiqueta 70x24 (adesiva)','7981':'Papel A4 (resma)','14580':'Filme stretch',
+    '8014':'Trava anel 125 (pct c/1000)','9474':'Alfinete aço nº32 (kg)','9727':'Suporte etiqueta aro duplo (cx 100)','9728':'Suporte etiqueta aro simples (cx 100)'};
   function nomeCurto(n,cod){if(cod!=null&&NOME_CURTO[String(cod)])return NOME_CURTO[String(cod)];return String(n||'').replace(/ESPOSENDE /,'').replace(/ - ESPOSENDE CALÇADOS/,'').replace(/SAO ROQUE /,'').replace(/ ROLO C\/630 ETIQUETAS/,'').replace(/ C\/50 AZ COBALTO/,'').replace(/ALLTAPE TR /,'').replace(/ SK270/,'').replace(/\s+/g,' ').trim();}
-  var GRUPO_COR_G={Venda:'#10b981',Agrado:'#f59e0b',NFS:'#38bdf8',Remanejo:'#a78bfa','Histórico':'#64748b'};
+  var GRUPO_COR_G={Venda:'#10b981',Agrado:'#f59e0b',NFS:'#38bdf8',Remanejo:'#a78bfa','Média mensal':'#64748b'};
   function detalheKpi(k,I,R){
     var M=R.M,h='<div class="acl-det"><div class="acl-det-h">',corpo='';
     if(k==='cons'){h+='Consumo no período por grupo e item';corpo='<table><thead><tr><th>Item</th><th>Grupo</th><th>Quantidade</th><th>R$</th><th>% do total</th></tr></thead><tbody>'+I.itens.slice().sort(function(a,b){return b.tv-a.tv;}).map(function(r){return '<tr><td class="acl-l">'+esc(nomeCurto(r.nome,r.cod))+'</td><td>'+esc(r.L.grupo)+'</td><td>'+n0(r.tq)+'</td><td>'+brl(r.tv)+'</td><td>'+n1(I.consV?r.tv/I.consV*100:0)+'%</td></tr>';}).join('')+'</tbody></table>';}
     else if(k==='est'){h+='Estoque atual por item (001 CD + AX) e quanto tempo dura';corpo='<table><thead><tr><th>Item</th><th>Estoque</th><th>Valor</th><th>Consumo médio/mês</th><th>Dura</th></tr></thead><tbody>'+I.itens.map(function(r){return '<tr><td class="acl-l">'+esc(nomeCurto(r.nome,r.cod))+'</td><td>'+n0(r.estoque)+'</td><td>'+brl(r.estoque*r.custo)+'</td><td>'+n0(r.media)+'</td><td style="color:'+corCob(r.cob)+'">'+(r.cob==null?'—':n1(r.cob)+' m')+'</td></tr>';}).join('')+'</tbody></table>';}
     else if(k==='prev'){var fut=R.linhas[0].F.mCob;h+='Consumo previsto por mês (média do ano + '+n0(M.P.crescimento)+'% · dezembro ×'+n2(M.P.fatorDez)+')';corpo='<table><thead><tr><th>Item</th>'+fut.map(function(m){return '<th>'+mesLabel(m)+'</th>';}).join('')+'<th>Total</th></tr></thead><tbody>'+R.linhas.map(function(x){return x.F.itens.map(function(i){var t=0;return '<tr><td class="acl-l">'+esc(nomeCurto(i.nome,i.cod))+'</td>'+fut.map(function(m){t+=i.pm[m]||0;return '<td>'+n0(i.pm[m])+'</td>';}).join('')+'<td><b>'+n0(t)+'</b></td></tr>';}).join('');}).join('')+'</tbody></table>';}
-    else if(k==='compra'){h+='O que comprar e por quê';corpo='<table><thead><tr><th>Item</th><th>Estoque</th><th>Dura</th><th>Precisa (3 meses)</th><th>Comprar</th><th>Valor</th></tr></thead><tbody>'+I.itens.filter(function(r){return r.sug;}).map(function(r){return '<tr><td class="acl-l">'+esc(nomeCurto(r.nome,r.cod))+'</td><td>'+n0(r.estoque)+'</td><td style="color:'+corCob(r.cob)+'">'+(r.cob==null?'—':n1(r.cob)+' m')+'</td><td>'+n0(r.prev3)+'</td><td><b>'+n0(r.sug)+'</b></td><td>'+brl(r.sugV)+'</td></tr>';}).join('')+'</tbody></table>';}
+    else if(k==='compra'){h+='O que comprar e por quê';corpo='<table><thead><tr><th>Item</th><th>Estoque</th><th>Dura</th><th>Precisa (3 meses)</th><th>Segurança</th><th>Comprar</th><th>Valor</th></tr></thead><tbody>'+I.itens.filter(function(r){return r.sug;}).map(function(r){return '<tr><td class="acl-l">'+esc(nomeCurto(r.nome,r.cod))+'</td><td>'+n0(r.estoque)+'</td><td style="color:'+corCob(r.cob)+'">'+(r.cob==null?'—':n1(r.cob)+' m')+'</td><td>'+n0(r.prev3)+'</td><td>'+(r.segQ?n0(r.segQ)+' ('+n0(r.segMeses)+' m)':'—')+'</td><td><b>'+n0(r.sug)+'</b></td><td>'+brl(r.sugV)+'</td></tr>';}).join('')+'</tbody></table>';}
     else if(k==='lojas'||k==='exc'){h+=(k==='lojas'?'Lojas fora do padrão: cada loja e em quais itens':'Consumo acima do esperado por loja');
       // uma linha por loja x item: quanto pediu, quanto era esperado e a diferença (▲ a mais / ▼ a menos)
       corpo='<table><thead><tr><th>Loja</th><th>Regional</th><th>Item</th><th>Pediu</th><th>Esperado</th><th>Diferença</th><th>Desvio</th><th>Diferença R$</th></tr></thead><tbody>'
@@ -811,7 +829,7 @@
       +card('#0369a1','Estoque atual (CD + AX)',brl(I.estV),I.itens.length+' itens controlados')
       +card('#b45309','Comprar agora',brl(I.compra),I.urg.length+' itens acabam em menos de 1 mês')
       +card('#be123c','Lojas fora do padrão',I.nAcima+' acima · '+I.nAbaixo+' abaixo','de '+I.nAval+' lojas · excesso '+brl(I.exc));
-    var GR=['Venda','Agrado','NFS','Remanejo','Histórico'],GC={Venda:'#0e7c66',Agrado:'#d97706',NFS:'#0369a1',Remanejo:'#7c3aed','Histórico':'#94a3b8'};
+    var GR=['Venda','Agrado','NFS','Remanejo','Média mensal'],GC={Venda:'#0e7c66',Agrado:'#d97706',NFS:'#0369a1',Remanejo:'#7c3aed','Média mensal':'#94a3b8'};
     var serie=GR.map(function(g){return {nome:g,cor:GC[g],vals:M.meses.map(function(m){return I.mesG[m][g]||0;})};});
     var g1=svgColunas(M.meses.map(function(m){return mesLabel(m)+(m>=M.atual?'*':'');}),serie,{tema:TC,w:620,h:210,fmt:function(v){return 'R$ '+abrev(v);},rotTot:true});
     var g2=svgBarras(I.itens.filter(function(r){return r.cob!=null;}).slice(0,12).map(function(r){return {label:nomeCurto(r.nome,r.cod),val:Math.min(r.cob,6),cor:r.cob<1?'#be123c':r.cob<2?'#d97706':'#0e7c66',txt:(r.cob>=6?'6+':n1(r.cob))+' m'};}),{tema:TC,w:620,max:6,marcas:[1,2,3,6],sufMarca:' m',pl:170,lh:20});
@@ -829,12 +847,18 @@
     var totG=ms.reduce(function(s,m){return s+totM[m];},0);
     t1+='<tr class="tt"><td class="nm">TOTAL (R$)</td>'+ms.map(function(m){return '<td>'+abrev(totM[m])+'</td>';}).join('')+'<td class="t">'+brl(totG)+'</td><td class="t">'+brl(totG/(ms.length||1))+'</td><td class="t">'+brl(I.estV)+'</td><td class="t"></td><td class="t">'+brl(I.compra)+'</td></tr></tbody></table>';
     // Compra
-    var t2='<table><thead><tr><th>Item</th><th>Estoque</th><th>Dura</th><th>Precisa '+fut.map(mesLabel).join(' + ')+'</th><th>Comprar</th><th>Valor</th></tr></thead><tbody>'
-      +I.itens.filter(function(r){return r.sug;}).map(function(r){return '<tr><td class="nm">'+esc(nomeCurto(r.nome,r.cod))+'</td><td>'+n0(r.estoque)+'</td><td style="color:'+(r.cob<1?'#be123c':r.cob<2?'#d97706':'#0e7c66')+';font-weight:800">'+n1(r.cob)+' m</td><td>'+n0(r.prev3)+'</td><td><b>'+n0(r.sug)+'</b></td><td><b>'+brl(r.sugV)+'</b></td></tr>';}).join('')
-      +'<tr class="tt"><td class="nm">TOTAL</td><td></td><td></td><td></td><td></td><td>'+brl(I.compra)+'</td></tr></tbody></table>';
+    var t2='<table><thead><tr><th>Item</th><th>Estoque</th><th>Dura</th><th>Precisa '+fut.map(mesLabel).join(' + ')+'</th><th>Segurança</th><th>Comprar</th><th>Valor</th></tr></thead><tbody>'
+      +I.itens.filter(function(r){return r.sug;}).map(function(r){return '<tr><td class="nm">'+esc(nomeCurto(r.nome,r.cod))+'</td><td>'+n0(r.estoque)+'</td><td style="color:'+(r.cob<1?'#be123c':r.cob<2?'#d97706':'#0e7c66')+';font-weight:800">'+n1(r.cob)+' m</td><td>'+n0(r.prev3)+'</td><td>'+(r.segQ?n0(r.segQ)+' <span style="color:#8091a7;font-size:8.5px">('+n0(r.segMeses)+' m)</span>':'—')+'</td><td><b>'+n0(r.sug)+'</b></td><td><b>'+brl(r.sugV)+'</b></td></tr>';}).join('')
+      +'<tr class="tt"><td class="nm">TOTAL</td><td></td><td></td><td></td><td></td><td></td><td>'+brl(I.compra)+'</td></tr></tbody></table>';
     // Lojas
     var lj=I.lojasL.filter(function(o){return o.acima.length;}).sort(function(a,b){return b.exc-a.exc;}).slice(0,12);
-    var t3=lj.length?'<table><thead><tr><th>Loja</th><th>Regional</th><th>Item: pediu × esperado</th><th>Excesso R$</th></tr></thead><tbody>'+lj.map(function(o){return '<tr><td class="nm">'+esc(o.nome)+'</td><td>'+esc(o.reg)+'</td><td class="nm" style="font-weight:400">'+o.det.filter(function(d){return d.status==='ACIMA';}).sort(function(a,b){return b.difV-a.difV;}).map(function(d){return esc(d.item)+': pediu '+n0(d.pediu)+' · esperado '+n0(d.esperado)+' · <b style="color:#be123c">▲ +'+n0(d.dif)+'</b>';}).join('<br>')+'</td><td><b>'+brl(o.exc)+'</b></td></tr>';}).join('')+'</tbody></table>':'';
+    // Uma linha por loja × item (tabela, sem texto corrido): pediu, esperado, excesso em quantidade, desvio e R$.
+    var t3=lj.length?'<table class="lj"><thead><tr><th>Loja</th><th>Regional</th><th style="text-align:left">Item</th><th>Pediu</th><th>Esperado</th><th>Excesso</th><th>Desvio</th><th>Excesso R$</th></tr></thead><tbody>'
+      +lj.map(function(o){var ds=o.det.filter(function(d){return d.status==='ACIMA';}).sort(function(a,b){return b.difV-a.difV;}),n=ds.length+(ds.length>1?1:0);
+        return ds.map(function(d,ix){return '<tr'+(ix===0?' class="l1"':'')+'>'+(ix===0?'<td class="nm" rowspan="'+n+'">'+esc(o.nome)+'</td><td rowspan="'+n+'">'+esc(o.reg)+'</td>':'')
+          +'<td class="nm" style="font-weight:400">'+esc(d.item)+'</td><td>'+n0(d.pediu)+'</td><td>'+n0(d.esperado)+'</td><td class="up">▲ +'+n0(d.dif)+' <span class="un">'+d.un+'</span></td><td class="up">'+(d.desvio!=null?pct(d.desvio):'—')+'</td><td><b>'+brl(Math.max(0,d.difV))+'</b></td></tr>';}).join('')
+          +(ds.length>1?'<tr class="st"><td class="nm">Total da loja</td><td></td><td></td><td></td><td></td><td><b>'+brl(o.exc)+'</b></td></tr>':'');}).join('')
+      +'<tr class="tt"><td class="nm" colspan="7">TOTAL ('+lj.length+' lojas)</td><td>'+brl(lj.reduce(function(s,o){return s+o.exc;},0))+'</td></tr></tbody></table>':'';
     var css='@page{size:A4 landscape;margin:9mm}*{box-sizing:border-box}body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#1b2533;margin:0;background:#eef2f7}'
       +'#doc{background:#fff;max-width:1400px;margin:18px auto;padding:22px 26px;border-radius:12px;box-shadow:0 4px 18px rgba(20,40,74,.12)}'
       +'.cab{display:flex;align-items:center;gap:18px;padding-bottom:12px;border-bottom:3px solid #14284a}.cab img{height:54px;border-radius:6px}.cab .tt1{flex:1}.cab h1{margin:0;font-size:21px;color:#14284a}.cab p{margin:3px 0 0;color:#5b6b80;font-size:12px}'
@@ -848,6 +872,7 @@
       +'td{padding:5px;text-align:right;border-bottom:1px solid #eef2f7}td.nm{text-align:left;padding-left:10px;font-weight:600}td.z{color:#c3ccd8}td.t{background:#f1f5fb}tbody tr:nth-child(even) td{background:#fafbfd}'
       +'tr.gr td{background:#e8eef6!important;color:#14284a;font-weight:800;font-size:9.5px;text-align:left;padding-left:10px;letter-spacing:.06em}'
       +'tr.tt td{background:#dfe8f4!important;font-weight:800;color:#14284a;border-top:2px solid #14284a}tr{page-break-inside:avoid}thead{display:table-header-group}'
+      +'table.lj td{vertical-align:middle}table.lj tr.l1 td{border-top:1px solid #c9d4e3}table.lj td[rowspan]{background:#fff!important;border-right:1px solid #eef2f7}table.lj td.up{color:#be123c;font-weight:700}table.lj .un{font-weight:400;color:#8091a7;font-size:8.5px}table.lj tr.st td{background:#fdf2f4!important;color:#be123c;font-weight:700}'
       +'.duas{display:grid;grid-template-columns:1fr 1fr;gap:14px}.nota{color:#8091a7;font-size:9.5px;margin-top:8px}.rod{display:flex;justify-content:space-between;color:#8091a7;font-size:10px;margin-top:16px;padding-top:8px;border-top:1px solid #e1e7ef}'
       +'#barra{position:sticky;top:0;background:#0b1626;padding:10px 14px;display:flex;gap:10px;align-items:center;z-index:5}#barra button{background:#0e7c66;color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer}#barra button.s2{background:#15304d}'
       +'@media print{#barra{display:none}body{background:#fff}#doc{box-shadow:none;margin:0;padding:0;max-width:none;border-radius:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}';
@@ -863,7 +888,7 @@
       +'<div class="sec">Estoque e consumo por item — quantidade por mês</div>'+t1
       +'<div class="duas"><div><div class="sec">Compra necessária ('+fut.map(mesLabel).join(' + ')+')</div>'+t2+'</div>'
       +(t3?'<div><div class="sec">Lojas acima do padrão</div>'+t3+'</div>':'')+'</div>'
-      +'<div class="nota">* mês em andamento. Consumo = quantidade atendida pelo almoxarifado. Embalagens de presente no custo real. Estoque das lojas não considerado.</div>'
+      +'<div class="nota">* mês em andamento. Consumo = quantidade atendida pelo almoxarifado. NFS = PA ÷ '+n1(Number(M.P.paPorNF)||1.5)+'. Grupo Média mensal: previsão pela média mensal de consumo; filme stretch com estoque de segurança de '+n0(Number(M.P.segStretch)||0)+' meses no total. Balão nº7 = códigos 10546 + 17314. Embalagens de presente no custo real. Estoque das lojas não considerado.</div>'
       +'<div class="rod"><span>Esposende · Central de Auditoria &amp; Controle</span><span>Gerado em '+new Date().toLocaleString('pt-BR')+'</span></div></div>'
       +'<scr'+'ipt>'+js+'</scr'+'ipt></body></html>');
     w.document.close();
@@ -953,10 +978,10 @@
       var cobCls=i.cobAtual==null?'':i.cobAtual<1?'acl-up':i.cobAtual<mc.length?'acl-dn':'acl-ok';
       h+='<tr><td class="acl-l">'+esc(i.nome)+'<small>'+i.cod+(i.ultCompra?' · última compra '+esc(i.ultCompra):'')+'</small></td><td>'+esc(i.linha.grupo)+'</td><td>'+n0(i.media)+'</td><td class="acl-ok"><b>'+n0(i.prevM)+'</b></td>'
         +(dez?'<td class="acl-dn"><b>'+n0(i.pm[dez])+'</b></td>':'')
-        +'<td>'+n0(i.saldo)+(i.deps?'<small>'+Object.keys(i.deps).map(function(d){return esc(d.replace(/\s*-\s*ALMOXARIFADO\s*/i,' ')).slice(0,14)+' '+n0(i.deps[d]);}).join(' + ')+'</small>':'')+'</td><td class="'+cobCls+'">'+(i.cobAtual!=null?n1(i.cobAtual)+' m':'—')+'</td><td>'+n0(i.alvo)+'</td>'
+        +'<td>'+n0(i.saldo)+(i.deps?'<small>'+Object.keys(i.deps).map(function(d){return esc(d.replace(/\s*-\s*ALMOXARIFADO\s*/i,' ')).slice(0,14)+' '+n0(i.deps[d]);}).join(' + ')+'</small>':'')+'</td><td class="'+cobCls+'">'+(i.cobAtual!=null?n1(i.cobAtual)+' m':'—')+'</td><td>'+n0(i.alvo)+(i.segQ?'<small>inclui '+n0(i.segQ)+' de segurança ('+n0(i.segMeses)+' m)</small>':'')+'</td>'
         +'<td><b class="'+(i.sug?'acl-dn':'acl-ok')+'">'+(i.sug?n0(i.sug):'—')+'</b></td><td>'+(i.custo?'R$ '+Number(i.custo).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4}):'—')+'</td><td><b>'+(i.sug?brl(i.sugV):'—')+'</b></td></tr>';});
     h+='<tr class="acl-tot"><td>TOTAL</td><td></td><td></td><td>'+brl(t.pm)+'/mês</td>'+(dez?'<td></td>':'')+'<td></td><td></td><td></td><td></td><td></td><td>'+brl(t.sug)+'</td></tr></tbody></table></div>'
-      +'<div class="acl-nota">Sugestão = previsão de '+mc.map(mesLabel).join(' + ')+' (dezembro ×'+n2(P.fatorDez)+' nos itens de venda, agrado e bobina) − estoque atual do almoxarifado. Cobertura em vermelho = menos de 1 mês. '
+      +'<div class="acl-nota">Sugestão = previsão de '+mc.map(mesLabel).join(' + ')+' (dezembro ×'+n2(P.fatorDez)+' nos itens de venda, agrado e bobina) (filme stretch: no mínimo '+n0(Number(P.segStretch)||0)+' meses de estoque de segurança no total) − estoque atual do almoxarifado. Cobertura em vermelho = menos de 1 mês. '
       +'O pedido de dezembro sai das lojas em novembro: compre antes. Arredonde para a embalagem de compra (milheiro, caixa, fardo).</div>';
     return h;
   }
@@ -977,6 +1002,8 @@
       +'<div style="margin-top:10px"><button type="button" data-a="mod" data-m="ven">Modelo de vendas (.csv)</button> <button type="button" data-a="mod" data-m="rem">Modelo de remanejo (.csv)</button></div></div>'
       +'<h3>⚙ Parâmetros (valem para todos)</h3><div class="acl-pgrid">'
       +'<div><label>PA por sacola (regra)</label><input type="number" step="0.1" min="0.5" id="p-pa" value="'+P.paPorSacola+'"></div>'
+      +'<div><label>PA por NF (NFS = PA ÷ este número)</label><input type="number" step="0.05" min="1" id="p-panf" value="'+(P.paPorNF||1.5)+'"></div>'
+      +'<div><label>Filme stretch: estoque de segurança (meses no total)</label><input type="number" step="0.5" min="0" id="p-seg" value="'+(P.segStretch!=null?P.segStretch:3)+'"></div>'
       +'<div><label>Previsão de venda (+% sobre a média)</label><input type="number" step="1" id="p-cr" value="'+P.crescimento+'"></div>'
       +'<div><label>Dezembro (× venda de um mês comum)</label><input type="number" step="0.05" min="1" max="5" id="p-dez" value="'+P.fatorDez+'"></div>'
       +'<div><label>Sacola P / M / G (% baliza)</label><div style="display:flex;gap:4px"><input type="number" min="0" max="100" id="p-mp" value="'+P.mixP+'" style="width:33%"><input type="number" min="0" max="100" id="p-mm" value="'+P.mixM+'" style="width:33%"><input type="number" min="0" max="100" id="p-mg" value="'+P.mixG+'" style="width:33%"></div></div>'
@@ -1003,6 +1030,7 @@
   async function salvarParametros(b){
     var P=S.base.params,g=function(id){return document.getElementById(id);};
     P.paPorSacola=Number(g('p-pa').value)||1.5;P.crescimento=Number(g('p-cr').value)||0;P.fatorDez=Number(g('p-dez').value)||2.75;P.mixP=Number(g('p-mp').value);P.mixM=Number(g('p-mm').value);P.mixG=Number(g('p-mg').value);P.tolerancia=Number(g('p-tol').value)||25;
+    P.paPorNF=Number(g('p-panf').value)||1.5;var sg=Number(g('p-seg').value);P.segStretch=sg>=0?sg:3;
     P.cobertura=Number(g('p-cob').value)||3;P.horizonte=Math.min(12,Math.max(1,Math.round(Number(g('p-hz').value)||3)));P.basePrev=g('p-bp').value;
     b.disabled=true;b.textContent='Salvando...';
     try{await salvarBase();S.msgBase=['✔ Parâmetros salvos.'];}catch(e){S.msgBase=['✖ '+(e.message||e)];}
@@ -1054,7 +1082,7 @@
     aba('Gerencial','Resumo por item controlado · '+(M.meses.length?mesLabel(M.meses[0])+' a '+mesLabel(M.meses[M.meses.length-1]):''),
       ['Item','Grupo','Motor','Regra','Consumo (meses fechados)','R$','Média/mês','Padrão da rede','Lojas acima','Lojas abaixo','Excesso R$','Previsão/mês'],
       R.linhas.map(function(x){var q=0,v=0;Object.keys(M.cons[x.L.id]||{}).forEach(function(lj){M.fechados.forEach(function(m){var c=M.cons[x.L.id][lj][m];if(c){q+=c.q;v+=c.v;}});});
-        return [x.L.nome,x.L.grupo,x.C.dk?DRV_NOME[x.C.dk]:'histórico',x.L.regra,q,v,M.fechados.length?q/M.fechados.length:0,x.C.padrao!=null?fmtTaxa(x.L,x.C.padrao):'—',x.C.acima,x.C.abaixo,x.C.excesso,x.F.total];}),
+        return [x.L.nome,x.L.grupo,x.C.dk?DRV_NOME[x.C.dk]:'média mensal',x.L.regra,q,v,M.fechados.length?q/M.fechados.length:0,x.C.padrao!=null?fmtTaxa(x.L,x.C.padrao):'—',x.C.acima,x.C.abaixo,x.C.excesso,x.F.total];}),
       [null,null,null,null,Q,RS,Q,null,Q,Q,RS,Q],[30,12,20,40,14,14,12,16,10,10,14,12]);
     // Mensal (itens)
     var cabM=['Item','Código','Grupo'].concat(M.meses.map(mesLabel)).concat(['Total qtd','Total R$','Média/mês']);
@@ -1076,10 +1104,10 @@
     // Compra
     var its=linhasCompra(R),tot=its.reduce(function(s,i){return s+i.sugV;},0);
     var mc=R.linhas[0].F.mCob;
-    aba('Sugestão de compra','Sugestão de compra · previsão de '+mc.map(mesLabel).join(' + ')+' (dezembro ×'+P.fatorDez+') − estoque atual',['Item','Código','Grupo','Média real/mês','Previsão mês comum'].concat(mc.map(mesLabel)).concat(['Estoque atual','Cobertura (meses)','Precisa','Comprar','Custo un.','Valor']),
-      its.map(function(i){return [i.nome,i.cod,i.linha.grupo,i.media,i.prevM].concat(mc.map(function(m){return i.pm[m];})).concat([i.saldo,i.cobAtual,i.alvo,i.sug,i.custo,i.sugV]);})
-        .concat([{__tot:true,v:(function(){var v=[];for(var k=0;k<11+mc.length;k++)v.push('');v[0]='TOTAL';v[v.length-1]=tot;return v;})()}]),
-      [null,null,null,Q,Q].concat(mc.map(function(){return Q;})).concat([Q,Q1,Q,Q,'"R$" #,##0.0000',RS]),[36,9,11]);
+    aba('Sugestão de compra','Sugestão de compra · previsão de '+mc.map(mesLabel).join(' + ')+' (dezembro ×'+P.fatorDez+') − estoque atual',['Item','Código','Grupo','Média real/mês','Previsão mês comum'].concat(mc.map(mesLabel)).concat(['Estoque atual','Cobertura (meses)','Segurança','Precisa','Comprar','Custo un.','Valor']),
+      its.map(function(i){return [i.nome,i.cod,i.linha.grupo,i.media,i.prevM].concat(mc.map(function(m){return i.pm[m];})).concat([i.saldo,i.cobAtual,i.segQ||null,i.alvo,i.sug,i.custo,i.sugV]);})
+        .concat([{__tot:true,v:(function(){var v=[];for(var k=0;k<12+mc.length;k++)v.push('');v[0]='TOTAL';v[v.length-1]=tot;return v;})()}]),
+      [null,null,null,Q,Q].concat(mc.map(function(){return Q;})).concat([Q,Q1,Q,Q,Q,'"R$" #,##0.0000',RS]),[36,9,11]);
     // Base de vendas / remanejo
     if(S.base.vendas.length)aba('Base vendas','Vendas por loja e mês (carregadas no módulo)',['Loja','Regional','Mês','Pares (PA)','NFS','Valor'],
       S.base.vendas.slice().sort(function(a,b){return a.mes.localeCompare(b.mes)||a.loja-b.loja;}).map(function(v){return [nomeLoja(v.loja),regDe(v.loja),mesLabel(v.mes),v.pares,v.nfs,v.valor];}),[null,null,null,Q,Q,RS],[32,12,10]);
