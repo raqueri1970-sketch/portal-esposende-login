@@ -362,8 +362,14 @@ function renderOS(p, snap) {
     Object.entries(r.base_tipo).sort((a, b) => b[1].n - a[1].n).map(([k, v]) => [esc(k), v.n, nf(v.prazo_mediano, 1) + ' d', v.horas_medianas == null ? '—' : nf(v.horas_medianas, 1) + ' h', v.pct_material + '%', v.material_mediano == null ? '—' : brl(v.material_mediano), v.pct_externo + '%', v.prestador_mediano == null ? '—' : brl(v.prestador_mediano)]), [1, 2, 3, 4, 5, 6, 7])}
   <div class="card small mut" style="margin-top:10px">Só ${fe.os_com_material} das ${fe.total} OS fechadas têm material lançado (${brl(fe.material_lancado)}), quase tudo lâmpada. Das ${fe.os_externas} OS externas, ${fe.externas_com_valor} têm valor (${brl(fe.prestador_lancado)}). Nenhuma OS tem hotel, refeição, combustível ou estacionamento: esses custos só existem no reembolso.</div>
 
-  <h2 id="osPreco">Preço do mesmo item varia</h2>
-  ${tabela(['Item', 'Compras', 'Menor', 'Maior', 'Mediana', 'Gasto', 'Se comprasse pelo menor'], r.precos_mt.map(x => [esc(x.item), x.n, brl(x.min), brl(x.max), brl(x.mediana), brl(x.gasto), x.economia_no_menor > 0 ? `<b style="color:#86efac">${brl(x.economia_no_menor)}</b>` : '—']), [1, 2, 3, 4, 5, 6])}
+  <h2 id="osPreco">Economia potencial da manutenção</h2>
+  <div class="card" style="margin-bottom:12px">
+    <h3>Compras repetidas e diferença de preços</h3>
+    <p class="small mut">Comparação preliminar entre compras registradas na manutenção. O menor preço histórico não é uma cotação do setor de Compras nem uma economia garantida. Para validar a economia, comparar a mesma especificação, quantidade, frete e data.</p>
+    ${kpi('Economia teórica pelo menor preço histórico', brl(r.precos_mt.reduce((s,x)=>s+Math.max(0,Number(x.economia_no_menor)||0),0)), 'Referência interna, ainda não validada por Compras', 'k-orc')}
+    <p class="small mut">Próxima etapa: vincular o catálogo e as cotações aprovadas do módulo de Compras. Sem produto equivalente cadastrado, não há comparação confiável com fabricante ou distribuidor.</p>
+  </div>
+  ${tabela(['Material', 'Compras', 'Menor pago', 'Maior pago', 'Preço mediano', 'Total gasto', 'Diferença teórica'], r.precos_mt.map(x => [esc(x.item), x.n, brl(x.min), brl(x.max), brl(x.mediana), brl(x.gasto), x.economia_no_menor > 0 ? `<b style="color:#86efac">${brl(x.economia_no_menor)}</b>` : '—']), [1, 2, 3, 4, 5, 6])}
 
   <h2 id="osRuim">OS fechadas sem resolver (${r.nao_resolvidas.length})</h2>
   <div class="pgrid">${r.nao_resolvidas.map(x => `<div class="card ach alto"><div class="row">${chip(x.avaliacao || 'sem avaliação', 'r-medio')}<span class="small mut">OS ${esc(x.os)} · fechada ${esc(x.fechada)}</span></div><b>${esc(x.loja)}</b><div class="ref">${esc(x.servico)}${x.prestador ? ' · ' + esc(x.prestador) : ''}</div><p>“…${esc(x.texto)}”</p></div>`).join('')}</div>
