@@ -10,108 +10,664 @@
 <style>
 :root{color-scheme:dark;--fa-bg:#070b13;--fa-panel:#0b1422;--fa-panel2:#101b2b;--fa-border:#1d2b40;--fa-text:#edf4fc;--fa-muted:#91a4ba;--fa-blue:#3b82f6;--fa-blue-soft:rgba(59,130,246,.14);--fa-green:#18b982;--fa-green-soft:rgba(24,185,130,.12);--fa-amber:#f3ad38;--fa-amber-soft:rgba(243,173,56,.12);--fa-red:#ff526b;--fa-red-soft:rgba(255,82,107,.12)}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--fa-bg);color:var(--fa-text);font:14px/1.45 Inter,Arial,sans-serif}body{padding:0 0 30px}.fa-top{position:sticky;top:0;z-index:4;display:flex;align-items:center;gap:12px;padding:12px 18px;background:rgba(8,15,28,.96);border-bottom:1px solid var(--fa-border);backdrop-filter:blur(12px)}.fa-logo{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:linear-gradient(145deg,#2466c6,#122845);font-weight:900}.fa-brand{font-weight:800;letter-spacing:.7px;font-size:12px}.fa-brand small{display:block;color:var(--fa-muted);font-size:9px;font-weight:500;letter-spacing:1.1px}.fa-top-title{margin-left:18px;color:#d7e3f2;font-size:12px;font-weight:700}.fa-top-right{margin-left:auto;color:var(--fa-muted);font-size:10px}.fa-wrap{max-width:1500px;margin:0 auto;padding:22px 22px}.fa-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:15px}.fa-kicker{color:#7eaeef;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px}.fa-title{font-size:24px;line-height:1.15;margin:4px 0 5px;letter-spacing:-.45px}.fa-subtitle{font-size:11px;color:var(--fa-muted)}.fa-actions{display:flex;gap:8px;flex-wrap:wrap}.fa-btn{border:1px solid #2a3c55;background:#101a2a;color:#e5eef9;border-radius:8px;padding:8px 11px;font-size:10px;font-weight:750;cursor:pointer}.fa-btn:hover{background:#16253a}.fa-btn.primary{background:#235aa7;border-color:#3476ca;color:white}.fa-btn.primary:hover{background:#2b6dc5}.fa-btn:disabled{opacity:.45;cursor:not-allowed}.fa-period{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--fa-border);border-radius:9px;background:#09111e;margin-bottom:12px}.fa-period-label{color:#7890ac;font-size:9px;font-weight:800;letter-spacing:.9px;text-transform:uppercase}.fa-period-value{font-size:11px;font-weight:750}.fa-period-state{margin-left:auto;font-size:10px;color:var(--fa-muted)}.fa-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#6c7f95;margin-right:6px}.fa-dot.good{background:var(--fa-green);box-shadow:0 0 8px rgba(24,185,130,.45)}.fa-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0}.fa-kpi{border:1px solid var(--fa-border);border-radius:10px;padding:12px 13px;background:linear-gradient(145deg,#0c1726,#09111d);min-height:91px;cursor:pointer}.fa-kpi:hover{border-color:#345273}.fa-kpi-top{display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#a5b5c9;font-weight:700}.fa-kpi-icon{display:grid;place-items:center;width:23px;height:23px;border-radius:7px;background:var(--fa-blue-soft);color:#9bc4ff}.fa-kpi-num{font-size:22px;font-weight:800;margin-top:5px;font-variant-numeric:tabular-nums}.fa-kpi-foot{color:#71869f;font-size:9px;margin-top:1px}.fa-kpi.good .fa-kpi-icon{background:var(--fa-green-soft);color:#72e4ba}.fa-kpi.warn .fa-kpi-icon{background:var(--fa-amber-soft);color:#ffd182}.fa-kpi.bad .fa-kpi-icon{background:var(--fa-red-soft);color:#ff8a9b}.fa-alert{display:none;gap:9px;padding:10px 12px;border-radius:8px;margin:12px 0;border:1px solid rgba(243,173,56,.3);background:linear-gradient(100deg,rgba(243,173,56,.09),rgba(243,173,56,.03));color:#e0c797;font-size:10px}.fa-alert.show{display:flex}.fa-alert b{color:#ffd182}.fa-tabs{display:flex;gap:5px;overflow-x:auto;border-bottom:1px solid var(--fa-border);margin:17px 0 12px}.fa-tab{white-space:nowrap;border:0;background:transparent;color:#8196af;padding:9px 11px;font-size:10px;font-weight:750;border-bottom:2px solid transparent;cursor:pointer}.fa-tab.active{color:#fff;border-color:var(--fa-blue)}.fa-page{display:none}.fa-page.active{display:block}.fa-panel{background:var(--fa-panel);border:1px solid var(--fa-border);border-radius:10px;overflow:hidden}.fa-panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 13px;border-bottom:1px solid var(--fa-border)}.fa-panel-title{font-size:11px;font-weight:800}.fa-panel-sub{font-size:9px;color:#788da6;margin-top:2px}.fa-panel-tools{display:flex;gap:6px;align-items:center}.fa-input{background:#070e18;border:1px solid #27384e;color:#e7eff9;border-radius:7px;padding:8px 9px;font-size:10px;outline:none}.fa-input:focus{border-color:#4984d1}.fa-toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:9px 12px;border-bottom:1px solid var(--fa-border)}.fa-search{flex:1;min-width:170px;max-width:300px}.fa-chip{border:1px solid var(--fa-border);background:#0b1421;color:#9db0c7;border-radius:20px;padding:6px 9px;font-size:9px;font-weight:700;cursor:pointer}.fa-chip.active{border-color:#315a91;background:var(--fa-blue-soft);color:#b7d6ff}.fa-table-wrap{overflow:auto}table{width:100%;min-width:900px;border-collapse:collapse}th{text-align:left;padding:9px 10px;background:#09111d;color:#788da6;border-bottom:1px solid var(--fa-border);font-size:8px;text-transform:uppercase;letter-spacing:.65px}td{padding:9px 10px;border-bottom:1px solid rgba(148,163,184,.07);font-size:10px;color:#d1ddec;vertical-align:middle}tbody tr:hover{background:rgba(255,255,255,.02)}.fa-person{font-weight:750;color:#f0f5fb}.fa-subline{display:block;color:#7389a3;font-size:8px;margin-top:2px}.fa-num{font-variant-numeric:tabular-nums;white-space:nowrap}.fa-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border-radius:20px;font-size:8px;font-weight:800;white-space:nowrap}.fa-badge:before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}.fa-badge.ok{color:#71dfb5;background:var(--fa-green-soft)}.fa-badge.warn{color:#ffd184;background:var(--fa-amber-soft)}.fa-badge.bad{color:#ff899a;background:var(--fa-red-soft)}.fa-expand{border:0;background:transparent;color:#8cbaff;font-size:14px;cursor:pointer}.fa-detail td{background:#07101b;padding:11px 14px}.fa-detail-list{display:flex;gap:6px;flex-wrap:wrap}.fa-event{border:1px solid #24354b;border-radius:6px;padding:5px 7px;font-size:9px;color:#aebed0}.fa-event b{color:#f2f6fc}.fa-note{color:#7d93ac;font-size:9px;margin-top:7px}.fa-empty{padding:35px;text-align:center;color:#7a8fa7;font-size:11px}.fa-import-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px}.fa-bulk{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:13px 14px;margin-bottom:10px;border:1px solid #2b4f7b;border-radius:9px;background:linear-gradient(105deg,rgba(35,90,167,.2),rgba(9,17,29,.95))}.fa-bulk-title{font-size:11px;font-weight:800}.fa-bulk-copy{font-size:9px;color:#92a9c3;margin-top:3px}.fa-bulk-status{font-size:9px;color:#9cb7d4;margin-top:5px;min-height:13px}.fa-import-card{padding:14px;border:1px dashed #30445e;border-radius:9px;background:#09111d}.fa-import-card h3{font-size:11px;margin:0 0 4px}.fa-import-card p{font-size:9px;color:#8398b0;margin:0 0 10px}.fa-file{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a4b74;background:#12243a;border-radius:7px;padding:7px 9px;color:#bad5f5;font-size:9px;font-weight:750;cursor:pointer}.fa-file input{display:none}.fa-file-name{font-size:9px;color:#94abc5;margin-top:7px;min-height:13px}.fa-instructions{padding:12px 14px;color:#9fb1c6;font-size:9px;line-height:1.6}.fa-instructions b{color:#e2ebf7}.fa-disclaimer{font-size:8px;color:#687f99;padding:9px 12px;border-top:1px solid var(--fa-border)}.fa-compare{font-weight:750}.fa-compare.up{color:#ff899a}.fa-compare.down{color:#71dfb5}.fa-compare.neutral{color:#ffd184}.fa-print-report{display:none}.fa-meter{height:5px;background:#172338;border-radius:8px;overflow:hidden;margin:8px 0 3px}.fa-meter i{display:block;width:0;height:100%;background:linear-gradient(90deg,#3b82f6,#16b981);border-radius:8px;transition:width .3s}.fa-toast{position:fixed;right:16px;bottom:16px;z-index:10;display:none;max-width:min(420px,90vw);padding:10px 13px;border:1px solid #29405e;border-radius:9px;background:#111d2d;box-shadow:0 12px 38px #0008;color:#deebfa;font-size:10px}.fa-summary-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:11px 13px}.fa-mini{border:1px solid var(--fa-border);border-radius:8px;padding:10px;background:#09111e}.fa-mini span{display:block;color:#8499b1;font-size:8px}.fa-mini b{display:block;font-size:13px;margin-top:4px}.fa-review-btn{border:1px solid #304b6b;border-radius:6px;background:#101d2e;color:#bed8f8;padding:5px 7px;font-size:8px;font-weight:750;cursor:pointer}.fa-review-btn.done{color:#78e0b6;border-color:#205e4b;background:var(--fa-green-soft)}@page{size:A4 landscape;margin:10mm}@media print{html,body{background:#fff!important;color:#111!important;height:auto!important}body{padding:0!important}.fa-top,.fa-wrap,.fa-toast{display:none!important}.fa-print-report{display:block!important;padding:0;color:#111;font:9pt Arial,sans-serif}.fa-print-header{display:flex;align-items:center;gap:14px;border-bottom:2px solid #12345b;padding:0 0 10px;margin-bottom:12px}.fa-print-header img{width:125px;height:auto;object-fit:contain}.fa-print-title{font-size:18pt;font-weight:700;color:#102c4e}.fa-print-sub{font-size:9pt;color:#46576a;margin-top:3px}.fa-print-stats{display:flex;gap:10px;margin:10px 0}.fa-print-stat{border:1px solid #bac5d1;border-radius:5px;padding:7px 9px;flex:1}.fa-print-stat small{display:block;color:#40556c;font-size:7pt;text-transform:uppercase}.fa-print-stat b{font-size:12pt}.fa-print-alert{padding:8px;background:#fff4d9;border:1px solid #e2b750;margin:8px 0;font-size:8pt}.fa-print-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.5pt}.fa-print-table th{background:#12345b!important;color:#fff!important;padding:6px;text-transform:none;letter-spacing:0;font-size:7.5pt}.fa-print-table td{color:#111!important;border:1px solid #b8c3cf;padding:5px;vertical-align:top;white-space:normal;word-break:break-word}.fa-print-foot{font-size:7pt;color:#485a6f;margin-top:9px;border-top:1px solid #bac5d1;padding-top:6px}.fa-print-table tr{break-inside:avoid}.fa-print-report h2{font-size:11pt;margin:10px 0 5px}}@media(max-width:760px){.fa-wrap{padding:16px 12px}.fa-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-summary-row{grid-template-columns:1fr}.fa-period-state{margin-left:0;width:100%}.fa-import-grid{grid-template-columns:1fr}.fa-head{flex-direction:column}.fa-actions{width:100%}.fa-actions .fa-btn{flex:1}.fa-top-title{display:none}}
+.fa-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+.fa-kpi-date{color:#5f7690;font-size:8px;margin-top:3px}
+.fa-load{border:1px solid #2b4f7b;border-radius:10px;background:linear-gradient(105deg,rgba(35,90,167,.16),rgba(9,17,29,.95));padding:12px 13px;margin-bottom:12px;transition:border-color .2s,background .2s}
+.fa-load.drag{border-color:#5fa0ff;background:rgba(59,130,246,.18)}
+.fa-load-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.fa-load-title{font-size:11px;font-weight:800}.fa-load-copy{font-size:9px;color:#92a9c3;margin-top:2px}
+.fa-load-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.fa-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.fa-slot{border:1px dashed #30445e;border-radius:8px;padding:9px 10px;background:#09111d;min-height:64px}
+.fa-slot.ok{border-style:solid;border-color:#1f6b52;background:rgba(24,185,130,.06)}
+.fa-slot.err{border-style:solid;border-color:#7a2a38;background:rgba(255,82,107,.06)}
+.fa-slot-top{display:flex;justify-content:space-between;gap:6px;font-size:9px;font-weight:800;color:#c9d8ea}
+.fa-slot-tag{font-size:8px;font-weight:800;padding:2px 6px;border-radius:10px;background:#16253a;color:#8fb3de}
+.fa-slot.ok .fa-slot-tag{background:var(--fa-green-soft);color:#71dfb5}
+.fa-slot.err .fa-slot-tag{background:var(--fa-red-soft);color:#ff899a}
+.fa-slot-file{font-size:9px;color:#e2ebf7;margin-top:5px;word-break:break-all}
+.fa-slot-info{font-size:8.5px;color:#8ea4bd;margin-top:3px;line-height:1.45}
+.fa-rejects{margin-top:8px;font-size:9px;color:#ffb3bf;line-height:1.5}
+.fa-rejects b{color:#ffd3da}
+.fa-progress{font-size:9px;color:#9cc2ec;margin-top:6px;min-height:12px}
+.fa-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.fa-bars{padding:10px 13px}
+.fa-bar-row{display:grid;grid-template-columns:110px 1fr 70px;gap:8px;align-items:center;font-size:9.5px;margin:5px 0}
+.fa-bar-row span:first-child{color:#c6d4e6}
+.fa-bar{height:9px;background:#132036;border-radius:6px;overflow:hidden}
+.fa-bar i{display:block;height:100%;background:linear-gradient(90deg,#3b82f6,#60a5fa);border-radius:6px}
+.fa-bar.hot i{background:linear-gradient(90deg,#f3ad38,#ff526b)}
+.fa-bar-val{text-align:right;color:#9fb3ca;font-variant-numeric:tabular-nums}
+.fa-check-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:11px 13px}
+.fa-check{border:1px solid var(--fa-border);border-radius:8px;padding:9px 10px;background:#09111e;cursor:pointer}
+.fa-check:hover{border-color:#345273}
+.fa-check-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.fa-check-name{font-size:10px;font-weight:800;color:#e5eef9}
+.fa-check-desc{font-size:8.5px;color:#8398b0;margin-top:3px;line-height:1.45}
+.fa-check-count{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.fa-check.bad .fa-check-count{color:#ff899a}.fa-check.warn .fa-check-count{color:#ffd184}.fa-check.ok .fa-check-count{color:#71dfb5}.fa-check.off{opacity:.55}.fa-check.off .fa-check-count{color:#7a8fa7;font-size:9px}
+.fa-flags{display:flex;flex-direction:column;gap:3px}
+.fa-flag{font-size:8.5px;line-height:1.35;padding:3px 6px;border-radius:5px;background:#101b2b;color:#c8d6e7;border-left:2px solid #4b6a91}
+.fa-flag.bad{border-color:#ff526b;background:rgba(255,82,107,.07)}
+.fa-flag.warn{border-color:#f3ad38;background:rgba(243,173,56,.07)}
+.fa-flag.info{border-color:#3b82f6}
+.fa-group-title{padding:9px 13px;font-size:10px;font-weight:800;background:#0a1320;border-bottom:1px solid var(--fa-border);color:#cfe0f5}
+.fa-pill{display:inline-block;font-size:8px;font-weight:800;padding:2px 6px;border-radius:9px;margin-left:5px}
+.fa-pill.falta{background:var(--fa-red-soft);color:#ff899a}.fa-pill.atraso{background:var(--fa-amber-soft);color:#ffd184}
+@media(max-width:1100px){.fa-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-check-list,.fa-grid2{grid-template-columns:1fr}}
+@media(max-width:760px){.fa-slots{grid-template-columns:1fr}.fa-bar-row{grid-template-columns:90px 1fr 60px}}
 </style>
 </head>
 <body>
-<header class="fa-top"><div class="fa-logo">E</div><div class="fa-brand">ESPOSENDE<small>RECURSOS HUMANOS</small></div><div class="fa-top-title">Faltas e Atrasos · Conferência ponto × folha</div><div class="fa-top-right" id="faPrivateStatus">Verificando acesso RH…</div></header>
+<header class="fa-top"><div class="fa-logo">E</div><div class="fa-brand">ESPOSENDE<small>RECURSOS HUMANOS</small></div><div class="fa-top-title">Faltas e Atrasos · Auditoria ponto × folha × cadastro</div><div class="fa-top-right" id="faPrivateStatus">Verificando acesso RH…</div></header>
 <main class="fa-wrap">
-  <div class="fa-head"><div><div class="fa-kicker">Auditoria de RH / Folha</div><h1 class="fa-title">Faltas e Atrasos</h1><div class="fa-subtitle">Cruze o cartão de ponto com as rubricas da folha e revise as diferenças por funcionário.</div></div><div class="fa-actions"><select class="fa-input" id="faPrintScope" aria-label="Conteúdo do relatório"><option value="issues">PDF: divergências</option><option value="all">PDF: completo</option></select><button class="fa-btn" id="fa-print" disabled onclick="faPrint()">▣ PDF / Imprimir</button><button class="fa-btn" id="fa-export" disabled onclick="faExport()">⇩ Excel</button><button class="fa-btn primary" onclick="fa$('faBatch').click()">＋ Carregar arquivos juntos</button><button class="fa-btn primary" id="faProcessTop" onclick="faProcess()" disabled>↻ Atualizar análise</button></div></div>
-  <div class="fa-period"><span class="fa-period-label">Período analisado</span><span class="fa-period-value" id="faPeriod">Aguardando arquivos</span><span class="fa-period-state"><i class="fa-dot" id="faDot"></i><span id="faState">Carregue o cartão de ponto e a folha detalhada.</span></span></div>
-  <section class="fa-kpis"><div class="fa-kpi"><div class="fa-kpi-top">Funcionários na folha <span class="fa-kpi-icon">♙</span></div><div class="fa-kpi-num" id="faKpiPayroll">—</div><div class="fa-kpi-foot">Pessoas identificadas na folha carregada</div></div><div class="fa-kpi" onclick="faFilter('all')"><div class="fa-kpi-top">Com ocorrência no ponto <span class="fa-kpi-icon">◷</span></div><div class="fa-kpi-num" id="faKpiPeople">—</div><div class="fa-kpi-foot" id="faKpiPeopleFoot">Colaboradores e percentual da folha</div></div><div class="fa-kpi" onclick="faFilter('all')"><div class="fa-kpi-top">Ocorrências no período <span class="fa-kpi-icon">◴</span></div><div class="fa-kpi-num" id="faKpiEvents">—</div><div class="fa-kpi-foot" id="faKpiEventsFoot">Faltas e atrasos listados no ponto</div></div><div class="fa-kpi warn" onclick="faFilter('partial')"><div class="fa-kpi-top" id="faKpiDelayTitle">Eventos de atraso / parcial <span class="fa-kpi-icon">◴</span></div><div class="fa-kpi-num" id="faKpiDelay">—</div><div class="fa-kpi-foot" id="faKpiDelayFoot">Eventos, pessoas afetadas e percentual da folha</div></div><div class="fa-kpi"><div class="fa-kpi-top">Horas apontadas <span class="fa-kpi-icon">◷</span></div><div class="fa-kpi-num" id="faKpiPoint">—</div><div class="fa-kpi-foot">Soma das durações no arquivo de ponto</div></div><div class="fa-kpi good" onclick="faFilter('review')"><div class="fa-kpi-top">Divergências de desconto <span class="fa-kpi-icon">!</span></div><div class="fa-kpi-num" id="faKpiReview">—</div><div class="fa-kpi-foot" id="faKpiReviewFoot">Sem desconto, desconto menor, maior ou sem ocorrência</div></div></section>
+  <div class="fa-head"><div><div class="fa-kicker">Auditoria de RH / Folha</div><h1 class="fa-title">Faltas e Atrasos</h1><div class="fa-subtitle">Absenteísmo por loja, cargo e dia da semana; conferência do desconto em folha (falta, atraso e DSR) e alertas de gestão de ponto.</div></div><div class="fa-actions"><select class="fa-input" id="faPrintScope" aria-label="Conteúdo do relatório"><option value="issues">PDF: pendências</option><option value="all">PDF: completo</option></select><button class="fa-btn" id="fa-print" disabled onclick="faPrint()">▣ PDF / Imprimir</button><button class="fa-btn" id="fa-export" disabled onclick="faExport()">⇩ Excel</button><button class="fa-btn primary" id="faProcessTop" onclick="faProcess()" disabled>↻ Atualizar análise</button></div></div>
+
+  <section class="fa-load" id="faLoad">
+    <div class="fa-load-head"><div><div class="fa-load-title">Arquivos do período</div><div class="fa-load-copy">Selecione ou arraste os arquivos juntos, com qualquer nome. O módulo reconhece cada um pelas colunas. Só o cartão de ponto é obrigatório; a folha libera a conferência do desconto, e a base ATIVOS libera quadro, afastados e absenteísmo por loja.</div></div>
+      <div class="fa-load-actions"><label class="fa-btn primary" style="display:inline-block">＋ Selecionar arquivos<input type="file" id="faFileInput" accept=".xlsx,.xls,.xlsm,.csv" multiple style="display:none"></label><button class="fa-btn" type="button" onclick="faClearFiles()">Limpar</button></div></div>
+    <div class="fa-slots">
+      <div class="fa-slot" id="faSlotPoint"><div class="fa-slot-top">1 · Cartão de ponto <span class="fa-slot-tag">obrigatório</span></div><div class="fa-slot-file">Nenhum arquivo</div><div class="fa-slot-info">Código, Nome, Data e Falta/atraso</div></div>
+      <div class="fa-slot" id="faSlotPayroll"><div class="fa-slot-top">2 · Folha detalhada <span class="fa-slot-tag">confere desconto</span></div><div class="fa-slot-file">Nenhum arquivo</div><div class="fa-slot-info">Matrícula, Verba_Código, Verba_Quant e Verba_Valor</div></div>
+      <div class="fa-slot" id="faSlotRoster"><div class="fa-slot-top">3 · Base ATIVOS <span class="fa-slot-tag">quadro e situação</span></div><div class="fa-slot-file">Nenhum arquivo</div><div class="fa-slot-info">Matrícula, Nome, CPF, Situação e Centro de custo</div></div>
+    </div>
+    <div class="fa-rejects" id="faRejects"></div>
+    <div class="fa-progress" id="faProgress" aria-live="polite"></div>
+  </section>
+
+  <div class="fa-period"><span class="fa-period-label">Período analisado</span><span class="fa-period-value" id="faPeriod">Aguardando arquivos</span><span class="fa-period-state"><i class="fa-dot" id="faDot"></i><span id="faState">Carregue ao menos o cartão de ponto.</span></span></div>
   <div class="fa-alert" id="faAlert"><span>⚠</span><div id="faAlertText"></div></div>
-  <div class="fa-tabs"><button class="fa-tab active" data-page="overview" onclick="faPage('overview',this)">Resumo</button><button class="fa-tab" data-page="detail" onclick="faPage('detail',this)">Conferência por funcionário</button><button class="fa-tab" data-page="issues" onclick="faPage('issues',this)">Pendências</button><button class="fa-tab" data-page="files" onclick="faPage('files',this)">Arquivos e regras</button></div>
-  <section class="fa-page active" id="faOverview"><div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Resumo das rubricas encontradas</div><div class="fa-panel-sub">Quantidades e valores extraídos da folha enviada</div></div><span class="fa-badge ok" id="faCoverage">Aguardando arquivos</span></div><div class="fa-summary-row"><div class="fa-mini"><span>1356 · Falta dia em horas</span><b id="faRub1356">—</b></div><div class="fa-mini"><span>1357 · DSR desconto em horas</span><b id="faRub1357">—</b></div><div class="fa-mini"><span>1354 · Atrasos</span><b id="faRub1354">—</b></div></div><div class="fa-disclaimer">As planilhas são lidas no navegador. O relatório, com CPF mascarado, fica salvo na base privada do Portal e só é consultado por usuário autenticado com acesso de RH.</div></div>
-    <div class="fa-panel" style="margin-top:10px"><div class="fa-panel-head"><div><div class="fa-panel-title">Maiores ocorrências do período</div><div class="fa-panel-sub">Clique no sinal + para ver datas e rubricas</div></div><button class="fa-btn" onclick="faPage('detail',document.querySelector('[data-page=detail]'))">Ver conferência completa</button></div><div class="fa-table-wrap"><table><thead><tr><th>Funcionário</th><th>Eventos</th><th>Horas no ponto</th><th>Horas descontadas</th><th>Valor descontado</th><th>DSR 1357</th><th>Status</th><th></th></tr></thead><tbody id="faTopRows"><tr><td colspan="8" class="fa-empty">Carregue os arquivos para iniciar o cruzamento.</td></tr></tbody></table></div></div></section>
-  <section class="fa-page" id="faDetail"><div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Conferência por funcionário</div><div class="fa-panel-sub">Comparação por matrícula, quantidade e rubrica</div></div><button class="fa-btn" onclick="faExport()" id="fa-export2" disabled>⇩ Exportar</button></div><div class="fa-toolbar"><input class="fa-input fa-search" id="faSearch" placeholder="Buscar nome ou matrícula" oninput="faRender()"><button class="fa-chip active" data-filter="all" onclick="faSetFilter('all',this)">Todos</button><button class="fa-chip" data-filter="missing" onclick="faSetFilter('missing',this)">Sem desconto</button><button class="fa-chip" data-filter="qty" onclick="faSetFilter('qty',this)">Qtd. divergente</button><button class="fa-chip" data-filter="review" onclick="faSetFilter('review',this)">Revisar</button><button class="fa-chip" data-filter="partial" onclick="faSetFilter('partial',this)">Atrasos / parciais</button></div><div class="fa-table-wrap"><table><thead><tr><th>Funcionário / matrícula</th><th>Ocorrências</th><th>Horas ponto</th><th>Horas descontadas (1356 + 1354)</th><th>Valor descontado</th><th>DSR 1357 (referência)</th><th>Status</th><th></th></tr></thead><tbody id="faAllRows"><tr><td colspan="8" class="fa-empty">Carregue os arquivos para iniciar o cruzamento.</td></tr></tbody></table></div><div class="fa-disclaimer">Horas do ponto comparadas à soma das rubricas 1356 e 1354. Valores em R$ são exibidos conforme a folha; o módulo não recalcula o valor-hora sem a regra salarial aplicável.</div></div></section>
-  <section class="fa-page" id="faIssues"><div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Divergências de desconto</div><div class="fa-panel-sub">Somente ausência de lançamento ou diferença entre as horas do ponto e as horas descontadas.</div></div><span class="fa-badge warn" id="faIssueCount">Aguardando arquivos</span></div><div class="fa-table-wrap"><table><thead><tr><th>Funcionário</th><th>Apontamento</th><th>Rubrica encontrada</th><th>Diferença</th><th>Classificação</th><th>Ação</th></tr></thead><tbody id="faIssueRows"><tr><td colspan="6" class="fa-empty">Carregue os arquivos para visualizar pendências.</td></tr></tbody></table></div></div></section>
-  <section class="fa-page" id="faFiles"><div class="fa-bulk"><div><div class="fa-bulk-title">Carregar ponto + folha + cadastro de uma vez</div><div class="fa-bulk-copy">Selecione juntos o cartão de ponto e a folha do mês; ATIVOS é opcional. Depois clique em Atualizar análise para processar.</div><div class="fa-bulk-status" id="faBatchStatus" aria-live="polite">Selecione ponto e folha. O botão Atualizar análise será habilitado quando os dois arquivos forem reconhecidos.</div></div><label class="fa-file">Selecionar arquivos do período<input type="file" id="faBatch" accept=".xlsx,.xls,.csv" multiple></label></div><div class="fa-import-grid"><div class="fa-import-card"><h3>1 · Cartão de ponto</h3><p>Relatório de funcionários com ocorrências; precisa conter Código, Nome, Data e Falta/atraso.</p><label class="fa-file">Selecionar arquivo<input type="file" id="faPoint" accept=".xlsx,.xls,.csv"></label><div class="fa-file-name" id="faPointName">Nenhum arquivo selecionado</div></div><div class="fa-import-card"><h3>2 · Folha detalhada</h3><p>Arquivo mensal com matrícula, Verba_Código, Verba_Título, Verba_Quant e Verba_Valor.</p><label class="fa-file">Selecionar arquivo<input type="file" id="faPayroll" accept=".xlsx,.xls,.csv"></label><div class="fa-file-name" id="faPayrollName">Nenhum arquivo selecionado</div></div><div class="fa-import-card"><h3>3 · Base de funcionários (opcional)</h3><p>Use CPF + Nome para confirmar o nome cadastral. O CPF ficará mascarado na tela e nos relatórios.</p><label class="fa-file">Selecionar base<input type="file" id="faRoster" accept=".xlsx,.xls,.csv"></label><div class="fa-file-name" id="faRosterName">Sem base adicional · nome será resolvido pelo CPF da folha</div></div></div><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 10px"><span class="fa-note" id="faProcessHint">Selecione o cartão de ponto e a folha; o botão será habilitado automaticamente.</span><button class="fa-btn primary" id="faProcess" onclick="faProcess()" disabled>Atualizar análise agora</button></div><div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Regras da conferência</div><div class="fa-panel-sub">Rubricas identificadas na folha enviada como referência</div></div></div><div class="fa-instructions"><b>Desconto por falta/atraso:</b> compara as horas do ponto com a soma das rubricas 1356 (faltas) e 1354 (atrasos). Só aponta falta, desconto menor ou desconto maior quando a diferença passar de 0,05 hora.<br><b>Desconto sem ocorrência:</b> também aponta lançamento em 1356/1354 para funcionário sem evento no arquivo de ponto.<br><b>DSR 1357:</b> fica visível como referência, mas não é chamado de divergência sem cruzar calendário semanal e escala.<br><b>Métricas de atraso:</b> se o cartão não trouxer uma coluna de tipo, ocorrências menores que 7h20 são exibidas como parciais/possíveis atrasos; a porcentagem é uma estimativa, não uma classificação confirmada.<br><b>Identificação:</b> o cartão é associado à folha pela matrícula; a folha fornece o CPF e o nome é resolvido por CPF. A base adicional, quando carregada, confirma o nome cadastral. O CPF é mascarado nos relatórios.<br><b>Privacidade:</b> os arquivos originais são lidos no navegador; o relatório com CPF mascarado é salvo na base privada quando há acesso RH autenticado.</div><div class="fa-disclaimer">A tela não determina se uma ausência foi justificada, compensada ou coberta por banco de horas. Essas evidências devem ser conferidas antes do fechamento.</div></div></section>
+
+  <section class="fa-kpis">
+    <div class="fa-kpi" onclick="faGo('indicators')"><div class="fa-kpi-top">Quadro de funcionários <span class="fa-kpi-icon">♙</span></div><div class="fa-kpi-num" id="kHead">—</div><div class="fa-kpi-foot" id="kHeadFoot">Base ATIVOS ou folha</div><div class="fa-kpi-date" id="kHeadDate"></div></div>
+    <div class="fa-kpi" onclick="faFilter('all')"><div class="fa-kpi-top">Colaboradores com ocorrência <span class="fa-kpi-icon">◷</span></div><div class="fa-kpi-num" id="kPeople">—</div><div class="fa-kpi-foot" id="kPeopleFoot">Percentual do quadro</div><div class="fa-kpi-date" id="kPeopleCmp"></div></div>
+    <div class="fa-kpi" onclick="faFilter('falta')"><div class="fa-kpi-top">Faltas de dia inteiro <span class="fa-kpi-icon">✕</span></div><div class="fa-kpi-num" id="kAbs">—</div><div class="fa-kpi-foot" id="kAbsFoot">Dias de falta · pessoas · % do quadro</div><div class="fa-kpi-date" id="kAbsCmp"></div></div>
+    <div class="fa-kpi warn" onclick="faFilter('atraso')"><div class="fa-kpi-top">Atrasos e saídas antecipadas <span class="fa-kpi-icon">◴</span></div><div class="fa-kpi-num" id="kLate">—</div><div class="fa-kpi-foot" id="kLateFoot">Eventos · pessoas · % do quadro</div><div class="fa-kpi-date" id="kLateCmp"></div></div>
+    <div class="fa-kpi" onclick="faGo('indicators')"><div class="fa-kpi-top">Taxa de absenteísmo <span class="fa-kpi-icon">%</span></div><div class="fa-kpi-num" id="kRate">—</div><div class="fa-kpi-foot" id="kRateFoot">Horas perdidas ÷ horas previstas</div><div class="fa-kpi-date" id="kRateCmp"></div></div>
+    <div class="fa-kpi" onclick="faFilter('all')"><div class="fa-kpi-top">Horas perdidas no ponto <span class="fa-kpi-icon">◷</span></div><div class="fa-kpi-num" id="kHours">—</div><div class="fa-kpi-foot" id="kHoursFoot">Faltas + atrasos registrados</div><div class="fa-kpi-date" id="kHoursCmp"></div></div>
+    <div class="fa-kpi good" id="kDiscCard" onclick="faGo('issues')"><div class="fa-kpi-top">Divergências de desconto <span class="fa-kpi-icon">!</span></div><div class="fa-kpi-num" id="kDisc">—</div><div class="fa-kpi-foot" id="kDiscFoot">Sem desconto, desconto errado ou DSR errado</div><div class="fa-kpi-date" id="kDiscCmp"></div></div>
+    <div class="fa-kpi good" id="kAlertCard" onclick="faGo('issues')"><div class="fa-kpi-top">Alertas de gestão de ponto <span class="fa-kpi-icon">⚑</span></div><div class="fa-kpi-num" id="kAlerts">—</div><div class="fa-kpi-foot" id="kAlertsFoot">Afastados, faltas seguidas, reincidência</div><div class="fa-kpi-date" id="kAlertsCmp"></div></div>
+  </section>
+
+  <div class="fa-tabs"><button class="fa-tab active" data-page="overview" onclick="faPage('overview',this)">Resumo</button><button class="fa-tab" data-page="indicators" onclick="faPage('indicators',this)">Indicadores</button><button class="fa-tab" data-page="detail" onclick="faPage('detail',this)">Conferência por funcionário</button><button class="fa-tab" data-page="issues" onclick="faPage('issues',this)">Pendências</button><button class="fa-tab" data-page="files" onclick="faPage('files',this)">Auditorias e regras</button></div>
+
+  <section class="fa-page active" id="faOverview">
+    <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Auditorias executadas</div><div class="fa-panel-sub">Cada verificação mostra quantos colaboradores caíram nela. Clique para ver a lista.</div></div><span class="fa-badge ok" id="faCoverage">Aguardando arquivos</span></div><div class="fa-check-list" id="faChecks"><div class="fa-empty" style="grid-column:1/-1">Carregue os arquivos para executar as auditorias.</div></div></div>
+    <div class="fa-panel" style="margin-top:10px"><div class="fa-panel-head"><div><div class="fa-panel-title">Rubricas de desconto encontradas na folha</div><div class="fa-panel-sub" id="faRubSub">Somente colaboradores do estabelecimento do cartão de ponto</div></div></div><div class="fa-summary-row"><div class="fa-mini"><span id="faRubFaltaLbl">Falta (1356)</span><b id="faRubFalta">—</b></div><div class="fa-mini"><span id="faRubDsrLbl">DSR (1357)</span><b id="faRubDsr">—</b></div><div class="fa-mini"><span id="faRubAtrasoLbl">Atraso (1354)</span><b id="faRubAtraso">—</b></div></div><div class="fa-disclaimer">As planilhas são lidas no navegador. O relatório, com CPF mascarado, fica salvo na base privada do Portal e só é consultado por usuário autenticado com acesso de RH.</div></div>
+    <div class="fa-panel" style="margin-top:10px"><div class="fa-panel-head"><div><div class="fa-panel-title">Maiores ocorrências do período</div><div class="fa-panel-sub">Ordenado por pendência e horas perdidas · clique em + para ver datas e rubricas</div></div><button class="fa-btn" onclick="faGo('detail')">Ver conferência completa</button></div><div class="fa-table-wrap"><table><thead><tr><th>Funcionário</th><th>Loja / cargo</th><th>Ocorrências</th><th>Horas no ponto</th><th>Desconto em folha</th><th>DSR</th><th>Resultado</th><th></th></tr></thead><tbody id="faTopRows"><tr><td colspan="8" class="fa-empty">Carregue os arquivos para iniciar o cruzamento.</td></tr></tbody></table></div></div>
+  </section>
+
+  <section class="fa-page" id="faIndicators">
+    <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Absenteísmo por loja / centro de custo</div><div class="fa-panel-sub" id="faStoreSub">Quadro da base ATIVOS; horas previstas = quadro ativo × dias úteis (seg–sáb, sem feriados nacionais) × 7h20</div></div></div><div class="fa-table-wrap"><table><thead><tr><th>Loja / centro de custo</th><th>Quadro</th><th>Com ocorrência</th><th>% do quadro</th><th>Faltas (dias)</th><th>Atrasos</th><th>Horas perdidas</th><th>Absenteísmo</th></tr></thead><tbody id="faStoreRows"><tr><td colspan="8" class="fa-empty">Sem dados.</td></tr></tbody></table></div></div>
+    <div class="fa-grid2">
+      <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Ocorrências por dia da semana</div><div class="fa-panel-sub">Concentração na segunda e no sábado indica emenda de fim de semana</div></div></div><div class="fa-bars" id="faWeekBars"></div></div>
+      <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Ocorrências por cargo</div><div class="fa-panel-sub">Pessoas com ocorrência e horas perdidas</div></div></div><div class="fa-bars" id="faRoleBars"></div></div>
+    </div>
+    <div class="fa-panel" style="margin-top:10px"><div class="fa-panel-head"><div><div class="fa-panel-title">Reincidentes no período</div><div class="fa-panel-sub">Colaboradores com 3 ou mais ocorrências, por número de eventos</div></div></div><div class="fa-table-wrap"><table><thead><tr><th>Funcionário</th><th>Loja / cargo</th><th>Faltas</th><th>Atrasos</th><th>Horas perdidas</th><th>Datas</th></tr></thead><tbody id="faRepeatRows"><tr><td colspan="6" class="fa-empty">Sem dados.</td></tr></tbody></table></div></div>
+  </section>
+
+  <section class="fa-page" id="faDetail"><div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Conferência por funcionário</div><div class="fa-panel-sub">Horas do ponto × rubricas de falta e atraso; DSR esperado × DSR lançado</div></div><button class="fa-btn" onclick="faExport()" id="fa-export2" disabled>⇩ Exportar</button></div><div class="fa-toolbar"><input class="fa-input fa-search" id="faSearch" placeholder="Buscar nome, matrícula, loja ou cargo" oninput="faRender()"><button class="fa-chip active" data-filter="all" onclick="faSetFilter('all',this)">Todos</button><button class="fa-chip" data-filter="disc" onclick="faSetFilter('disc',this)">Divergência de desconto</button><button class="fa-chip" data-filter="alert" onclick="faSetFilter('alert',this)">Alertas de gestão</button><button class="fa-chip" data-filter="falta" onclick="faSetFilter('falta',this)">Faltas</button><button class="fa-chip" data-filter="atraso" onclick="faSetFilter('atraso',this)">Atrasos</button><button class="fa-chip" data-filter="nopoint" onclick="faSetFilter('nopoint',this)">Desconto sem ponto</button></div><div class="fa-table-wrap"><table><thead><tr><th>Funcionário / matrícula</th><th>Loja / cargo</th><th>Ocorrências</th><th>Horas ponto</th><th>Desconto em folha</th><th>DSR esperado × folha</th><th>Resultado</th><th></th></tr></thead><tbody id="faAllRows"><tr><td colspan="8" class="fa-empty">Carregue os arquivos para iniciar o cruzamento.</td></tr></tbody></table></div><div class="fa-disclaimer">Valores em R$ conforme a folha; o módulo não recalcula salário. Tolerância de 0,05 h (3 min) por funcionário na comparação de horas.</div></div></section>
+
+  <section class="fa-page" id="faIssues">
+    <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Desconto em folha: o que precisa de correção</div><div class="fa-panel-sub">Só aparece quem está sem desconto, com desconto diferente do ponto, desconto sem ocorrência ou DSR fora do esperado.</div></div><span class="fa-badge warn" id="faIssueCount">Aguardando arquivos</span></div><div class="fa-table-wrap"><table><thead><tr><th>Funcionário</th><th>Ponto</th><th>Folha</th><th>O que está errado</th><th>Ação</th></tr></thead><tbody id="faIssueRows"><tr><td colspan="5" class="fa-empty">Carregue o cartão de ponto e a folha.</td></tr></tbody></table></div></div>
+    <div class="fa-panel" style="margin-top:10px"><div class="fa-panel-head"><div><div class="fa-panel-title">Gestão de ponto: conferir com a loja / RH</div><div class="fa-panel-sub">Não é erro de folha, mas exige ação: afastado com falta, faltas seguidas, reincidência, domingo/feriado, duplicidade, cadastro.</div></div><span class="fa-badge warn" id="faAlertCount">—</span></div><div class="fa-table-wrap"><table><thead><tr><th>Funcionário</th><th>Loja / cargo</th><th>Ponto</th><th>Alerta</th><th>Ação</th></tr></thead><tbody id="faAlertRows"><tr><td colspan="5" class="fa-empty">Carregue os arquivos.</td></tr></tbody></table></div></div>
+  </section>
+
+  <section class="fa-page" id="faFiles"><div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Catálogo de auditorias de faltas e atrasos</div><div class="fa-panel-sub">O que o módulo verifica, o arquivo que cada verificação exige e a base legal</div></div></div><div class="fa-instructions" id="faRulesText"></div><div class="fa-disclaimer">A tela não determina se uma ausência foi justificada (atestado, licença, banco de horas, acordo). Essas evidências devem ser conferidas antes do fechamento.</div></div>
+    <div class="fa-panel" style="margin-top:10px"><div class="fa-panel-head"><div><div class="fa-panel-title">Rubricas reconhecidas na folha</div><div class="fa-panel-sub">Códigos padrão 1356 (falta), 1357 (DSR) e 1354 (atraso), mais verbas de desconto cujo título indique falta, DSR ou atraso</div></div></div><div class="fa-instructions" id="faRubMap">Carregue a folha para ver as rubricas mapeadas.</div></div>
+  </section>
   <div style="text-align:center;color:#596f89;font-size:8px;margin-top:14px">Esposende · Central de Auditoria &amp; Controle</div>
 </main><section class="fa-print-report" id="faPrintReport"></section><div class="fa-toast" id="faToast"></div>
 <script>
-let faPointFile=null,faPayrollFile=null,faRosterFile=null,faRows=[],faFilterMode='all',faSb=null,faPrivateUser=null,faInitPromise=null,faCurrentAuditId=null;
-const fa$=id=>document.getElementById(id),faNorm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+'use strict';
+/* ===== Configuração ===== */
+const FA_RULE='fa-v3-auditoria-completa';
+const FA_DAY_MIN=440;              // jornada diária de referência: 7h20 (44h ÷ 6 dias)
+const FA_DSR_H=44/6;               // horas de um DSR na jornada de 44h semanais
+const FA_TOL_H=0.05;               // 3 minutos de tolerância na comparação de horas
+const FA_CLT_TOL_MIN=10;           // CLT art. 58 §1º: até 10 min/dia não são descontáveis
+const FA_RUB_DEFAULT={falta:['1356'],dsr:['1357'],atraso:['1354']};
+const FA_WD=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const FA_ALIAS={
+  code:['codigo','matricula','matric','codfuncionario','codigofuncionario','chapa','registro','cod'],
+  name:['nome','funcionario','colaborador','nomefuncionario','empregado','nomecolaborador'],
+  date:['data','dataocorrencia','dia','datafalta','dataevento'],
+  dur:['faltaatraso','faltaouatraso','faltaseatrasos','duracao','horas','qtdhoras','tempo','horasfalta','totalhoras'],
+  type:['tipo','tipoocorrencia','ocorrencia','evento','verba','codigoverba','verbacodigo','motivo'],
+  estab:['estab','estabelecimento','codestab','filial'],
+  lot:['lotacao','setor','departamento'],
+  cc:['ccusto','centrodecusto','centrocusto','nomeccusto','cc'],
+  role:['cargo','funcao'],
+  cpf:['cpf','cpffuncionario'],
+  rub:['verbacodigo','codigoverba','codverba','rubrica','codrubrica','codevento','codigoevento'],
+  rubTitle:['verbatitulo','descricaoverba','verbadescricao','titulo','nomeverba','descrubrica','descricao'],
+  rubType:['verbatipo','tipoverba','natureza'],
+  qty:['verbaquant','verbaquantidade','quantidade','qtd','quant','referencia','ref'],
+  val:['verbavalor','valorverba','valor','vlr'],
+  period:['mesanofolha','competencia','mesano','mesref','periodo'],
+  situ:['situacao','situacaofuncional','status'],
+  adm:['dataadmissao','admissao']
+};
+/* Catálogo de auditorias: grupo desc = desconto em folha; gest = gestão de ponto */
+const FA_CHECKS=[
+  {id:'sem_desconto',group:'desc',level:'bad',needs:'payroll',name:'Falta/atraso sem desconto',desc:'Ocorrência no ponto e nenhuma hora nas rubricas de falta ou atraso.',law:'CLT art. 462 e Lei 605/49'},
+  {id:'desc_menor',group:'desc',level:'bad',needs:'payroll',name:'Desconto menor que o ponto',desc:'Horas descontadas abaixo das horas registradas (descontadas as tolerâncias legais).'},
+  {id:'desc_maior',group:'desc',level:'bad',needs:'payroll',name:'Desconto maior que o ponto',desc:'Horas descontadas acima do registrado no ponto: risco de desconto indevido.',law:'CLT art. 462'},
+  {id:'desc_sem_ponto',group:'desc',level:'bad',needs:'payroll',name:'Desconto sem ocorrência no ponto',desc:'Rubrica de falta, atraso ou DSR lançada para quem não aparece no cartão do período. Conferir se é do período anterior.'},
+  {id:'tolerancia',group:'desc',level:'bad',needs:'payroll',name:'Atraso de até 10 min descontado',desc:'Variações de até 10 minutos no dia não podem ser descontadas.',law:'CLT art. 58 §1º · Súmula 366 TST'},
+  {id:'dsr_ausente',group:'desc',level:'bad',needs:'payroll',name:'Falta sem perda de DSR',desc:'Falta de dia inteiro na semana e nenhum DSR descontado. Se a falta for injustificada, o DSR da semana (e feriado) deveria ser descontado.',law:'Lei 605/49 art. 6º'},
+  {id:'dsr_maior',group:'desc',level:'bad',needs:'payroll',name:'DSR descontado a mais',desc:'Horas de DSR acima do esperado: 7h20 por semana com falta, mais 7h20 por feriado nacional na mesma semana.',law:'Lei 605/49'},
+  {id:'dsr_menor',group:'desc',level:'bad',needs:'payroll',name:'DSR descontado a menos',desc:'Há DSR lançado, mas abaixo do esperado para as semanas com falta.'},
+  {id:'dsr_sem_falta',group:'desc',level:'warn',needs:'payroll',name:'DSR descontado só com atraso',desc:'DSR lançado sem falta de dia inteiro no ponto. Confirmar a política adotada para atrasos.'},
+  {id:'valor_hora',group:'desc',level:'warn',needs:'payroll',name:'Valor-hora diferente entre rubricas',desc:'O valor por hora da falta, do atraso e do DSR deveria ser o mesmo para a pessoa (diferença acima de 3%).'},
+  {id:'afastado',group:'gest',level:'bad',needs:'roster',name:'Ocorrência de colaborador afastado',desc:'Falta lançada para quem está afastado, de férias ou em licença na base ATIVOS: não deveria gerar desconto.'},
+  {id:'fora_base',group:'gest',level:'warn',needs:'roster',name:'Fora da base ATIVOS',desc:'Matrícula do ponto não encontrada na base: desligado, transferido ou matrícula errada.'},
+  {id:'nome_diverge',group:'gest',level:'warn',needs:'roster',name:'Nome diferente do cadastro',desc:'Nome do ponto não confere com a base ATIVOS para a mesma matrícula.'},
+  {id:'duplicado',group:'gest',level:'bad',needs:null,name:'Ocorrência duplicada',desc:'Mesma pessoa com mais de um lançamento na mesma data.'},
+  {id:'consecutivas',group:'gest',level:'warn',needs:null,name:'3+ faltas seguidas',desc:'Faltas em dias úteis consecutivos: exigir atestado. Ausência injustificada por 30 dias caracteriza abandono.',law:'CLT art. 482 "i" · Súmula 32 TST'},
+  {id:'reincidencia',group:'gest',level:'warn',needs:null,name:'Reincidência (3+ ocorrências)',desc:'Três ou mais faltas/atrasos no período: avaliar medida disciplinar gradual.',law:'CLT art. 482 "e"'},
+  {id:'emenda',group:'gest',level:'warn',needs:null,name:'Padrão de emenda',desc:'Duas ou mais faltas na segunda-feira ou no sábado.'},
+  {id:'domingo_feriado',group:'gest',level:'warn',needs:null,name:'Ocorrência em feriado nacional',desc:'Falta registrada em feriado nacional: conferir a escala e se o feriado era dia de trabalho.'},
+  {id:'jornada',group:'info',level:'info',needs:null,name:'Duração acima de 7h20',desc:'Falta maior que 7h20 no dia: confirmar a jornada contratual (ex.: 8h48 ou 9h).'}
+];
+
+/* ===== Estado ===== */
+let faSlots={point:null,payroll:null,roster:null},faModel=null,faFilterMode='all',faSb=null,faPrivateUser=null,faInitPromise=null,faCurrentAuditId=null,faHistory=[],faBusy=false;
+
+/* ===== Utilitários ===== */
+const fa$=id=>document.getElementById(id);
+const faNorm=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const faEsc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const faBRL=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const faDec=n=>Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-function faToast(m){const t=fa$('faToast');t.textContent=m;t.style.display='block';clearTimeout(t._timer);t._timer=setTimeout(()=>t.style.display='none',4500)}
-function faCode(v){return String(v??'').trim().replace(/\.0$/,'').replace(/\s+/g,'')}
+const faBRL0=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+const faDec=(n,d=2)=>Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const faInt=n=>Number(n||0).toLocaleString('pt-BR');
+const faPct=(a,b,d=1)=>b?faDec(a/b*100,d)+'%':'—';
+function faToast(m){const t=fa$('faToast');t.textContent=m;t.style.display='block';clearTimeout(t._timer);t._timer=setTimeout(()=>t.style.display='none',5500)}
+function faCode(v){return String(v??'').trim().replace(/\.0+$/,'').replace(/\s+/g,'').replace(/^0+(?=\d{5,})/,'')}
 function faDigits(v){return String(v??'').replace(/\D/g,'')}
-function faMaskCpf(v){const s=String(v??'');if(s.includes('•••'))return s;const d=faDigits(v);return d.length===11?'•••.•••.'+d.slice(6,9)+'-'+d.slice(9):'CPF não localizado'}
-function faNum(v){if(typeof v==='number')return Number.isFinite(v)?v:0;let s=String(v??'').trim();if(!s)return 0;if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');else s=s.replace(',','.');const n=Number(s);return Number.isFinite(n)?n:0}
-function faCompareText(cur,prev,badUp){const d=cur-prev;const cls=d===0?'neutral':((d>0)===badUp?'up':'down');const sign=d>0?'+':'';const unit=Number.isInteger(d)?d.toLocaleString('pt-BR'):d.toLocaleString('pt-BR',{maximumFractionDigits:2});return '<span class=\"fa-compare '+cls+'\">'+sign+unit+' vs período anterior</span>'}
-function faMinutes(v){if(v instanceof Date)return v.getHours()*60+v.getMinutes();if(typeof v==='number'){if(v>=0&&v<1)return Math.round(v*1440);return Math.round(v*60)}const s=String(v??'').trim();let m=s.match(/^(\d{1,3}):(\d{1,2})$/);if(m)return Number(m[1])*60+Number(m[2]);m=s.match(/^(\d+(?:[.,]\d+)?)\s*h(?:oras?)?$/i);if(m)return Math.round(Number(m[1].replace(',','.'))*60);return 0}
-function faClock(min){const h=Math.floor(min/60),m=min%60;return h+'h'+String(m).padStart(2,'0')}
-function faHeaderRow(rows,need){for(let i=0;i<Math.min(rows.length,25);i++){const a=rows[i].map(faNorm);if(need.every(x=>a.includes(faNorm(x))))return {index:i,headers:a}}return null}
-function faCol(h,name){return h.indexOf(faNorm(name))}
-async function faWorkbook(file){const b=await file.arrayBuffer();if(file.name.toLowerCase().endsWith('.csv'))return XLSX.read(new TextDecoder('utf-8').decode(b),{type:'string',cellDates:true});return XLSX.read(b,{type:'array',cellDates:true})}
-function faRowsFromSheet(sheet){return XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:true,blankrows:false})}
-function faDate(v){if(v instanceof Date)return v.toLocaleDateString('pt-BR');if(typeof v==='number'){const d=XLSX.SSF.parse_date_code(v);if(d)return String(d.d).padStart(2,'0')+'/'+String(d.m).padStart(2,'0')+'/'+d.y}return String(v??'').slice(0,10)}
-function faSyncProcessButtons(processing=false){const ready=!!(faPointFile&&faPayrollFile);[['faProcessTop','↻ Atualizar análise'],['faProcess','Atualizar análise agora']].forEach(([id,label])=>{const b=fa$(id);if(!b)return;b.disabled=processing||!ready;b.textContent=processing?'Processando…':label});fa$('faProcessHint').textContent=ready?'Arquivos prontos. Clique em Atualizar análise para cruzar ponto e folha.':'Selecione o cartão de ponto e a folha; o botão será habilitado automaticamente.'}
-function faBatchFiles(files){const list=[...files];if(!list.length)return;faPointFile=null;faPayrollFile=null;faRosterFile=null;const unknown=[];for(const f of list){const n=faNorm(f.name);if((n.includes('falta')||n.includes('atraso')||n.includes('ponto'))&&!faPointFile)faPointFile=f;else if(n.includes('folha')&&!faPayrollFile)faPayrollFile=f;else if((n.includes('ativo')||n.includes('cadastro')||n.includes('funcionario')||n.includes('base'))&&!faRosterFile)faRosterFile=f;else unknown.push(f.name)}fa$('faPointName').textContent=faPointFile?.name||'Arquivo de ponto não identificado';fa$('faPayrollName').textContent=faPayrollFile?.name||'Arquivo de folha não identificado';fa$('faRosterName').textContent=faRosterFile?.name||'Sem base adicional · nome será resolvido pelo CPF da folha';fa$('faBatchStatus').textContent='Selecionados: '+list.map(f=>f.name).join(' · ')+(unknown.length?' · Não identificados: '+unknown.join(', '):'');faSyncProcessButtons();if(faPointFile&&faPayrollFile){fa$('faBatchStatus').textContent+=' · Arquivos prontos. Clique em Atualizar análise.';faToast('Arquivos reconhecidos. Clique em Atualizar análise para processar.')}else faToast('Não identifiquei cartão de ponto e folha. Selecione os dois arquivos; a base ATIVOS é opcional.') }
-async function faProcess(){
- if(!faPointFile||!faPayrollFile){faToast('Selecione o cartão de ponto e a folha.');return}
- faSyncProcessButtons(true);
- try{
-  const wp=await faWorkbook(faPointFile),wf=await faWorkbook(faPayrollFile);
-  const sp=wp.Sheets[wp.SheetNames[0]],sf=wf.Sheets['Sheet1']||wf.Sheets[wf.SheetNames[0]];
-  const pr=faRowsFromSheet(sp),fr=faRowsFromSheet(sf);
-  const ph=faHeaderRow(pr,['Código','Nome','Data','Falta/atraso']);
-  const fh=faHeaderRow(fr,['Código','CPF','Verba_Código','Verba_Quant','Verba_Valor']);
-  if(!ph)throw Error('No cartão de ponto não encontrei as colunas Código, Nome, Data e Falta/atraso.');
-  if(!fh)throw Error('A folha precisa conter Código, CPF, Verba_Código, Verba_Quant e Verba_Valor para identificar o colaborador por CPF.');
-  const pCode=faCol(ph.headers,'Código'),pName=faCol(ph.headers,'Nome'),pDate=faCol(ph.headers,'Data'),pTime=faCol(ph.headers,'Falta/atraso'),pEstab=faCol(ph.headers,'Estab'),pType=ph.headers.findIndex(h=>['tipo','tipo ocorrencia','ocorrencia','evento','verba','verba codigo','codigo verba'].includes(h));
-  const events=pr.slice(ph.index+1).filter(r=>faCode(r[pCode])&&faMinutes(r[pTime])>0).map(r=>({code:faCode(r[pCode]),name:String(r[pName]??'').trim(),date:faDate(r[pDate]),time:String(r[pTime]??''),minutes:faMinutes(r[pTime]),estab:pEstab>=0?faEstabKey(r[pEstab]):'',kind:pType>=0?faEventKind(r[pType]):'nao_informado'}));
-  if(!events.length)throw Error('O cartão de ponto não trouxe ocorrências para o período.');
-  const fCode=faCol(fh.headers,'Código'),fName=faCol(fh.headers,'Nome'),fCpf=faCol(fh.headers,'CPF'),fEstab=faCol(fh.headers,'Estab'),fRub=faCol(fh.headers,'Verba_Código'),fTitle=faCol(fh.headers,'Verba_Título'),fType=faCol(fh.headers,'Verba_Tipo'),fQty=faCol(fh.headers,'Verba_Quant'),fVal=faCol(fh.headers,'Verba_Valor'),fPeriod=faCol(fh.headers,'Mês_Ano Folha');
-  const payByCode=new Map(),payByCpf=new Map(),targetEstabs=new Set(events.map(e=>e.estab).filter(Boolean));
-  for(const r of fr.slice(fh.index+1)){
-   const estab=fEstab>=0?faEstabKey(r[fEstab]):'',code=faCode(r[fCode]),cpf=faDigits(r[fCpf]),rub=faCode(r[fRub]);if(!code||!rub||(targetEstabs.size&&fEstab>=0&&!targetEstabs.has(estab)))continue;
-   const name=String(r[fName]??'').trim(),period=fPeriod>=0?String(r[fPeriod]??'').trim():'';
-   let c=payByCode.get(code);if(!c){c={code,cpf,name,period,rubrics:{}};payByCode.set(code,c)}else{if(!c.cpf&&cpf)c.cpf=cpf;if(!c.name&&name)c.name=name;if(!c.period&&period)c.period=period}
-   const x=c.rubrics[rub]||{qty:0,value:0,title:String(r[fTitle]??''),type:String(r[fType]??'')};x.qty+=faNum(r[fQty]);x.value+=faNum(r[fVal]);c.rubrics[rub]=x;
-   if(cpf){let q=payByCpf.get(cpf);if(!q){q={cpf,code,name,period,rubrics:{}};payByCpf.set(cpf,q)}else{if(!q.code&&code)q.code=code;if(!q.name&&name)q.name=name;if(!q.period&&period)q.period=period}const y=q.rubrics[rub]||{qty:0,value:0,title:String(r[fTitle]??''),type:String(r[fType]??'')};y.qty+=faNum(r[fQty]);y.value+=faNum(r[fVal]);q.rubrics[rub]=y}
+function faCpf(v){const d=faDigits(v);return d?d.padStart(11,'0').slice(-11):''}
+function faMaskCpf(v){const s=String(v??'');if(s.includes('•••'))return s;const d=faCpf(v);return d.length===11?'•••.•••.'+d.slice(6,9)+'-'+d.slice(9):'CPF não localizado'}
+function faNum(v){if(typeof v==='number')return Number.isFinite(v)?v:0;let s=String(v??'').trim().replace(/[R$\s]/g,'');if(!s)return 0;if(/^\d{1,3}:\d{2}$/.test(s))return faMinutes(s)/60;if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');else s=s.replace(',','.');const n=Number(s);return Number.isFinite(n)?n:0}
+function faMinutes(v){if(v instanceof Date)return Math.round(v.getHours()*60+v.getMinutes()+v.getSeconds()/60);if(typeof v==='number'){if(v>0&&v<1)return Math.round(v*1440);return Math.round(v*60)}const s=String(v??'').trim();let m=s.match(/^(\d{1,3}):(\d{1,2})(?::\d{1,2})?$/);if(m)return Number(m[1])*60+Number(m[2]);m=s.match(/^(\d+(?:[.,]\d+)?)\s*h?(?:oras?)?$/i);if(m)return Math.round(Number(m[1].replace(',','.'))*60);m=s.match(/^(\d+)h(\d{1,2})/i);if(m)return Number(m[1])*60+Number(m[2]);return 0}
+function faClock(min){min=Math.round(min||0);const h=Math.floor(min/60),m=min%60;return h+'h'+String(m).padStart(2,'0')}
+function faH(h){return faDec(h)+'h'}
+function faToDate(v){if(v instanceof Date&&!isNaN(v)){const d=new Date(v.getTime()+12*3600e3);return new Date(d.getFullYear(),d.getMonth(),d.getDate())}if(typeof v==='number'&&window.XLSX){const p=XLSX.SSF.parse_date_code(v);if(p)return new Date(p.y,p.m-1,p.d)}const s=String(v??'').trim();let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);if(m){let y=Number(m[3]);if(y<100)y+=2000;return new Date(y,Number(m[2])-1,Number(m[1]))}m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));return null}
+function faISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function faFromISO(s){const [y,m,d]=String(s).split('-').map(Number);return new Date(y,m-1,d)}
+function faBR(d){if(typeof d==='string')d=faFromISO(d);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()}
+function faAddDays(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n)}
+function faEaster(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return new Date(y,mo-1,da)}
+const FA_HOL={'01-01':'Confraternização Universal','04-21':'Tiradentes','05-01':'Dia do Trabalho','09-07':'Independência','10-12':'N. Sra. Aparecida','11-02':'Finados','11-15':'Proclamação da República','11-20':'Consciência Negra','12-25':'Natal'};
+function faHoliday(d){const k=String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');if(FA_HOL[k])return FA_HOL[k];const gf=faAddDays(faEaster(d.getFullYear()),-2);return faISO(gf)===faISO(d)?'Sexta-feira Santa':''}
+function faWeekStart(d){return faAddDays(d,-d.getDay())}
+function faWorkdays(a,b){let n=0;for(let d=new Date(a);d<=b;d=faAddDays(d,1))if(d.getDay()!==0&&!faHoliday(d))n++;return n}
+function faFind(h,key){for(const a of FA_ALIAS[key]){const i=h.indexOf(a);if(i>=0)return i}return -1}
+function faStripCode(s){return String(s??'').replace(/^\s*[A-Z]{0,4}[\d.]+\s+/i,'').replace(/\s+/g,' ').trim()}
+function faEstabKey(v){const m=String(v??'').match(/(\d{2})\.?(\d{3})/);return m?m[1]+m[2]:faNorm(v)}
+function faEventKind(v){const s=faNorm(v);if(/atras|atrs|saida|delay/.test(s))return 'atraso';if(/falt|ausenc|absence/.test(s))return 'falta';return ''}
+function faFirstName(s){return faNorm(String(s||'').trim().split(/\s+/)[0])}
+const faTick=()=>new Promise(r=>setTimeout(r,20));
+
+/* ===== Leitura e reconhecimento de arquivos pelo conteúdo ===== */
+function faScan(rows){
+  for(let i=0;i<Math.min(rows.length,30);i++){
+    const h=(rows[i]||[]).map(faNorm);if(h.filter(Boolean).length<2)continue;
+    const has=k=>faFind(h,k)>=0;
+    if(has('rub')&&has('val')&&has('qty')&&(has('code')||has('cpf')))return {kind:'payroll',index:i,h};
+    if(has('code')&&has('date')&&has('dur'))return {kind:'point',index:i,h};
+    if((has('code')||has('cpf'))&&has('name')&&(has('situ')||has('cc')||has('adm')||has('role')))return {kind:'roster',index:i,h};
   }
-  const roster=new Map();
-  if(faRosterFile){const wr=await faWorkbook(faRosterFile),sr=wr.Sheets['Sheet1']||wr.Sheets[wr.SheetNames[0]],rr=faRowsFromSheet(sr),rh=faHeaderRow(rr,['CPF','NOME']);if(!rh)throw Error('A base de funcionários precisa conter as colunas CPF e NOME.');const rc=faCol(rh.headers,'CPF'),rn=faCol(rh.headers,'NOME');for(const row of rr.slice(rh.index+1)){const cpf=faDigits(row[rc]),name=String(row[rn]??'').trim();if(cpf&&name&&!roster.has(cpf))roster.set(cpf,name)}}
-  const groups=new Map();
-  for(const ev of events){const person=payByCode.get(ev.code),cpf=person?.cpf||'',key=cpf||'matricula:'+ev.code;let x=groups.get(key);if(!x){const canonical=cpf?(roster.get(cpf)||payByCpf.get(cpf)?.name||person?.name||ev.name):person?.name||ev.name;x={code:ev.code,codes:new Set(),cpf,name:canonical||'Nome não localizado',events:[],minutes:0,rosterMissing:!!(faRosterFile&&cpf&&!roster.has(cpf))}}x.codes.add(ev.code);x.events.push(ev);x.minutes+=ev.minutes;groups.set(key,x)}
-  const pointKeys=new Set(groups.keys());for(const person of payByCpf.values()){const r=person.rubrics||{},h=Number(r['1356']?.qty||0)+Number(r['1354']?.qty||0),v=Number(r['1356']?.value||0)+Number(r['1354']?.value||0),key=person.cpf;if((h>.05||v>.01)&&!pointKeys.has(key)){groups.set(key,{code:person.code||'',codes:new Set([person.code||'']),cpf:person.cpf,name:roster.get(person.cpf)||person.name||'Nome não localizado',events:[],minutes:0,rosterMissing:false});pointKeys.add(key)}}for(const person of payByCode.values()){const r=person.rubrics||{},h=Number(r['1356']?.qty||0)+Number(r['1354']?.qty||0),v=Number(r['1356']?.value||0)+Number(r['1354']?.value||0),key='matricula:'+person.code;if((h>.05||v>.01)&&!pointKeys.has(key)&&!person.cpf){groups.set(key,{code:person.code,codes:new Set([person.code]),cpf:'',name:person.name||'Nome não localizado',events:[],minutes:0,rosterMissing:false});pointKeys.add(key)}}
-  faRows=[...groups.values()].map(x=>{const p=x.cpf?payByCpf.get(x.cpf):payByCode.get(x.code),r=p?.rubrics||{},miss=r['1356']||{qty:0,value:0},dsr=r['1357']||{qty:0,value:0},late=r['1354']||{qty:0,value:0},hours=x.minutes/60,hours1356=Number(miss.qty||0),hours1354=Number(late.qty||0),deductedHours=hours1356+hours1354,deductedValue=Number(miss.value||0)+Number(late.value||0),diff=deductedHours-hours;const missing=x.minutes>0&&deductedHours<=.05,discountWithoutPoint=x.minutes===0&&(deductedHours>.05||deductedValue>.01),qtyDiff=!missing&&!discountWithoutPoint&&Math.abs(diff)>.05;let status=missing?'Sem desconto':discountWithoutPoint?'Desconto sem ocorrência no ponto':qtyDiff?(diff<0?'Desconto menor que o ponto':'Desconto maior que o ponto'):'Desconto compatível';let level=(missing||discountWithoutPoint||qtyDiff)?'bad':'ok';return {...x,codes:[...x.codes],hours1356,hours1354,value1356:Number(miss.value||0),payrollHours:deductedHours,payrollValue:deductedValue,dsrHours:Number(dsr.qty||0),dsrValue:Number(dsr.value||0),lateHours:hours1354,lateValue:Number(late.value||0),days:Number((r['2608']||{}).qty||0),diff,status,level,missing,discountWithoutPoint,qtyDiff,dsrReview:false,classReview:false,cpfReview:false,reviewed:false}}).sort((a,b)=>b.minutes-a.minutes);
-  const pointRows=faRows.filter(x=>x.events.length),pointTotal=events.reduce((s,x)=>s+x.minutes,0),noDiscount=faRows.filter(x=>x.missing).length,qtyDiff=faRows.filter(x=>x.qtyDiff).length,withoutPoint=faRows.filter(x=>x.discountWithoutPoint).length,partialEvents=events.filter(x=>x.kind==='nao_informado'&&x.minutes<440),explicitDelayEvents=events.filter(x=>x.kind==='atraso'),delayEvents=pType>=0?explicitDelayEvents:partialEvents,delayPeople=new Set(delayEvents.map(x=>{const p=payByCode.get(x.code);return p?.cpf||x.code})).size,review=faRows.filter(x=>x.level==='bad').length,totalEmployees=payByCpf.size||payByCode.size,employeesWithOccurrence=pointRows.length,occurrenceRate=totalEmployees?employeesWithOccurrence/totalEmployees*100:0,delayRate=totalEmployees?delayPeople/totalEmployees*100:0;
-  const period=faPeriodFromPoint(pr)||'Período informado no cartão',payrollPeriod=payByCpf.values().next().value?.period||payByCode.values().next().value?.period||'';window.faPayrollHeadcount=totalEmployees;window.faDelayEmployees=delayPeople;window.faDelayEvents=delayEvents.length;let previous=null;try{const prior=JSON.parse(localStorage.getItem('fa-summary-last')||'null');if(prior&&prior.period!==period)previous=prior}catch(e){}
-  fa$('faPeriod').textContent=period+(payrollPeriod?' · Folha '+payrollPeriod:'');localStorage.setItem('fa-summary-last',JSON.stringify({period,events:events.length,hours:pointTotal/60,review}));
-  fa$('faState').textContent='Conferência concluída · '+faRows.length+' colaboradores';fa$('faDot').className='fa-dot good';
-  fa$('faKpiPayroll').textContent=totalEmployees;fa$('faKpiPeople').textContent=employeesWithOccurrence;fa$('faKpiPeopleFoot').textContent=faDec(occurrenceRate)+'% da folha · colaboradores com registro no ponto';fa$('faKpiEvents').textContent=events.length;fa$('faKpiEventsFoot').textContent=faClock(pointTotal)+' · '+events.filter(x=>x.minutes<440).length+' abaixo de 7h20, '+events.filter(x=>x.minutes>=440).length+' iguais ou acima';fa$('faKpiDelayTitle').innerHTML=(pType>=0?'Atrasos identificados ':'Atrasos / parciais* ')+'<span class="fa-kpi-icon">◴</span>';fa$('faKpiDelay').textContent=delayEvents.length;fa$('faKpiDelayFoot').textContent=delayPeople+' colaborador(es) · '+faDec(delayRate)+'% da folha'+(pType>=0?' · tipo informado no cartão':' · estimativa: evento abaixo de 7h20');fa$('faKpiPoint').textContent=faClock(pointTotal);fa$('faKpiReview').textContent=review;fa$('faKpiReview').closest('.fa-kpi').className='fa-kpi '+(review?'bad':'good');fa$('faKpiReviewFoot').textContent=noDiscount+' sem desconto · '+qtyDiff+' quantidade divergente · '+withoutPoint+' desconto sem ponto';
-  fa$('faRub1356').textContent=faDec(faRows.reduce((s,x)=>s+x.value1356,0))+' · '+faDec(faRows.reduce((s,x)=>s+x.hours1356,0))+'h';fa$('faRub1357').textContent=faDec(faRows.reduce((s,x)=>s+x.dsrValue,0))+' · '+faDec(faRows.reduce((s,x)=>s+x.dsrHours,0))+'h';fa$('faRub1354').textContent=faDec(faRows.reduce((s,x)=>s+x.lateValue,0))+' · '+faDec(faRows.reduce((s,x)=>s+x.lateHours,0))+'h';
-  fa$('faCoverage').textContent=review?review+' divergência(s) de desconto':'Nenhuma divergência de desconto';fa$('faCoverage').className='fa-badge '+(review?'bad':'ok');
-  fa$('faAlert').classList.toggle('show',review>0);fa$('faAlertText').innerHTML=review?'<b>'+noDiscount+' sem desconto, '+qtyDiff+' com quantidade descontada diferente do ponto e '+withoutPoint+' desconto(s) sem ocorrência no ponto.</b> Confira somente estes lançamentos.':'';
-  fa$('fa-export').disabled=false;fa$('fa-export2').disabled=false;fa$('fa-print').disabled=false;faRender();faTop();faIssues();faToast('Cruzamento concluído. A lista de divergências mostra só descontos ausentes, diferentes ou sem ocorrência no ponto.');faPage('overview',document.querySelector('[data-page=overview]'));faSavePrivate(period,payrollPeriod)
- }catch(e){faToast(e.message||'Não consegui ler os arquivos.');console.error('[Faltas e Atrasos]',e)}finally{faSyncProcessButtons(false)}
+  return null;
 }
-function faEstabKey(v){const m=String(v??'').match(/^\s*(\d{2})\.(\d{3})/);return m?m[1]+m[2]:faNorm(v)}
-function faEventKind(v){const s=faNorm(v);if(/atras|atrs|delay/.test(s))return 'atraso';if(/falt|ausenc|absence/.test(s))return 'falta';return 'nao_informado'}
-function faPeriodFromPoint(rows){for(let i=0;i<Math.min(rows.length,8);i++){const s=rows[i].join(' '),m=s.match(/Per[ií]odo\s+de:?\s*([0-9/]+)\s+At[eé]\s*:??\s*([0-9/]+)/i);if(m)return m[1]+' a '+m[2]}return ''}
-function faStatus(r){const cls=r.level==='bad'?'bad':r.level==='warn'?'warn':'ok';return '<span class="fa-badge '+cls+'">'+faEsc(r.status)+'</span>'}
-function faRow(r){return `<tr data-code="${faEsc(r.code)}"><td><span class="fa-person">${faEsc(r.name)}</span><span class="fa-subline">CPF ${faEsc(faMaskCpf(r.cpf))} · Matrícula ${faEsc(r.codes.join(', '))}</span></td><td class="fa-num">${r.events.length}</td><td class="fa-num">${faClock(r.minutes)}</td><td class="fa-num">${faDec(r.payrollHours)}h</td><td class="fa-num">${faBRL(r.payrollValue)}</td><td class="fa-num">${r.dsrHours?faDec(r.dsrHours)+'h':'—'}</td><td>${faStatus(r)}</td><td><button class="fa-expand" onclick="faExpand('${faEsc(r.code)}',this)">＋</button></td></tr>`}
-function faDetail(r){const events=r.events.map(e=>'<span class="fa-event">'+faEsc(e.date)+' · <b>'+faEsc(e.time||faClock(e.minutes))+'</b></span>').join('');return '<tr class="fa-detail"><td colspan="8"><div class="fa-detail-list">'+(events||'<span class="fa-event">Nenhuma ocorrência neste cartão de ponto</span>')+'<span class="fa-event">1356 · '+faDec(r.hours1356??r.payrollHours)+'h · '+faBRL(r.value1356??r.payrollValue)+'</span><span class="fa-event">1354 · '+faDec(r.hours1354??r.lateHours)+'h · '+faBRL(r.lateValue)+'</span>'+(r.dsrHours?'<span class="fa-event">1357 · '+faDec(r.dsrHours)+'h · '+faBRL(r.dsrValue)+' · referência</span>':'')+'</div><div class="fa-note">'+faEsc(r.status)+'. Diferença de horas descontadas: '+(r.diff>0?'+':'')+faDec(r.diff)+'h.</div></td></tr>'}
-function faPopulate(el,arr,cols){el.innerHTML=arr.length?arr.map(faRow).join(''):'<tr><td colspan="'+cols+'" class="fa-empty">Nenhum funcionário encontrado.</td></tr>'}
-function faRender(){if(!faRows.length)return;const q=(fa$('faSearch')?.value||'').toLowerCase();let arr=faRows.filter(r=>(r.name+' '+r.codes.join(' ')+' '+faMaskCpf(r.cpf)).toLowerCase().includes(q));if(faFilterMode==='missing')arr=arr.filter(r=>r.missing);if(faFilterMode==='qty')arr=arr.filter(r=>r.qtyDiff);if(faFilterMode==='review')arr=arr.filter(r=>r.level==='bad');if(faFilterMode==='partial')arr=arr.filter(r=>r.events.some(e=>e.kind==='atraso'||(e.kind==='nao_informado'&&e.minutes<440)));faPopulate(fa$('faAllRows'),arr,8)}
-function faTop(){const flagged=faRows.filter(r=>r.level==='bad').sort((a,b)=>Math.abs(b.diff)-Math.abs(a.diff)||b.payrollValue-a.payrollValue);faPopulate(fa$('faTopRows'),(flagged.length?flagged:faRows.filter(r=>r.events.length)).slice(0,5),8)}
-function faIssues(){if(!faRows.length)return;const arr=faRows.filter(r=>r.level==='bad');fa$('faIssueCount').textContent=arr.length+' divergência(s)';fa$('faIssueRows').innerHTML=arr.length?arr.map(r=>'<tr><td>'+faEsc(r.name)+'<span class="fa-subline">Matrícula '+faEsc(r.code)+'</span></td><td>'+faClock(r.minutes)+' · '+r.events.length+' evento(s)</td><td>Ponto '+faDec(r.minutes/60)+'h · 1356 '+faDec(r.hours1356)+'h · 1354 '+faDec(r.hours1354)+'h</td><td>'+(r.discountWithoutPoint?'Desconto '+faDec(r.payrollHours)+'h sem ocorrência':r.missing?'Sem desconto':(r.diff<0?'Faltam ':'Excedem ')+faDec(Math.abs(r.diff))+'h')+'</td><td>'+faStatus(r)+'</td><td><button class="fa-review-btn '+(r.reviewed?'done':'')+'" onclick="faReview(\''+faEsc(r.code)+'\',this)">'+(r.reviewed?'✓ Revisado':'Marcar revisado')+'</button></td></tr>').join(''):'<tr><td colspan="6" class="fa-empty">Nenhuma divergência de desconto encontrada neste cruzamento.</td></tr>'}
-function faExpand(code,b){const tr=b.closest('tr'),next=tr.nextElementSibling;if(next?.classList.contains('fa-detail')){next.remove();b.textContent='＋';return}document.querySelectorAll('.fa-detail').forEach(x=>x.remove());document.querySelectorAll('.fa-expand').forEach(x=>x.textContent='＋');tr.insertAdjacentHTML('afterend',faDetail(faRows.find(r=>r.code===code)));b.textContent='−'}
-function faReview(code,b){const r=faRows.find(x=>x.code===code);if(!r)return;r.reviewed=!r.reviewed;b.classList.toggle('done',r.reviewed);b.textContent=r.reviewed?'✓ Revisado':'Marcar revisado';faPersistReviewed()}
-function faFilter(mode){faPage('detail',document.querySelector('[data-page=detail]'));faFilterMode=mode;document.querySelectorAll('.fa-chip').forEach(x=>x.classList.toggle('active',x.dataset.filter===mode));faRender()}
+function faHeadersPreview(rows){let best=[];for(let i=0;i<Math.min(rows.length,15);i++){const r=(rows[i]||[]).filter(x=>String(x??'').trim());if(r.length>best.length)best=r}return best.slice(0,10).map(x=>String(x).trim())}
+async function faReadFile(file){
+  if(!window.XLSX)throw Error('A biblioteca de planilhas não carregou. Verifique a internet e recarregue a página.');
+  const buf=await file.arrayBuffer();
+  const wb=/\.csv$/i.test(file.name)?XLSX.read(new TextDecoder('utf-8').decode(buf),{type:'string',cellDates:true}):XLSX.read(buf,{type:'array',cellDates:true});
+  let preview=[];
+  for(const sn of wb.SheetNames){
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:true,blankrows:false});
+    const hit=faScan(rows);
+    if(hit)return {...hit,file,sheet:sn,rows};
+    if(!preview.length)preview=faHeadersPreview(rows);
+  }
+  return {kind:null,file,preview};
+}
+function faRejectReason(r){
+  const cols=r.preview.map(faNorm);
+  let hint='Não encontrei as colunas de cartão de ponto, folha detalhada nem base de funcionários.';
+  if(cols.some(c=>/datasaida|totalareceber|rescis/.test(c)))hint='Parece um fechamento de rescisão, não a folha detalhada. A folha precisa ter Verba_Código, Verba_Quant e Verba_Valor.';
+  else if(cols.some(c=>/verba|rubrica/.test(c)))hint='Parece uma folha, mas faltam matrícula/CPF, quantidade ou valor da verba.';
+  return '<b>'+faEsc(r.file.name)+'</b>: '+hint+(r.preview.length?' Colunas encontradas: '+faEsc(r.preview.join(', '))+'.':'');
+}
+function faPointMeta(s){
+  const h=s.h,ic=faFind(h,'code'),id=faFind(h,'date'),idu=faFind(h,'dur');let n=0,people=new Set(),min=null,max=null;
+  for(const r of s.rows.slice(s.index+1)){const c=faCode(r[ic]),m=faMinutes(r[idu]);if(!c||m<=0)continue;n++;people.add(c);const d=faToDate(r[id]);if(d){if(!min||d<min)min=d;if(!max||d>max)max=d}}
+  let period=null;for(let i=0;i<Math.min(s.rows.length,10);i++){const t=(s.rows[i]||[]).join(' '),m=t.match(/Per[ií]odo\s*(?:de)?:?\s*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{2,4})\s*(?:At[eé]|a)\s*:?\s*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{2,4})/i);if(m){period={start:faToDate(m[1]),end:faToDate(m[2])};break}}
+  if(!period&&min)period={start:min,end:max};
+  return {events:n,people:people.size,start:period?faISO(period.start):null,end:period?faISO(period.end):null};
+}
+function faFileDate(name){const m=String(name).match(/(\d{2})[._-](\d{2})[._-](\d{4})/);if(m)return m[3]+'-'+m[2]+'-'+m[1];const n=String(name).match(/(\d{4})[._-](\d{2})[._-](\d{2})/);return n?n[1]+'-'+n[2]+'-'+n[3]:null}
+function faSlotHTML(kind){
+  const s=faSlots[kind],el=fa$({point:'faSlotPoint',payroll:'faSlotPayroll',roster:'faSlotRoster'}[kind]);
+  const base={point:['1 · Cartão de ponto','obrigatório','Código, Nome, Data e Falta/atraso'],payroll:['2 · Folha detalhada','confere desconto','Matrícula, Verba_Código, Verba_Quant e Verba_Valor'],roster:['3 · Base ATIVOS','quadro e situação','Matrícula, Nome, CPF, Situação e Centro de custo']}[kind];
+  if(!s){el.className='fa-slot'+(kind==='point'&&(faSlots.payroll||faSlots.roster)?' err':'');el.innerHTML='<div class="fa-slot-top">'+base[0]+' <span class="fa-slot-tag">'+base[1]+'</span></div><div class="fa-slot-file">Nenhum arquivo</div><div class="fa-slot-info">'+base[2]+'</div>';return}
+  let info='';
+  if(kind==='point'){const m=s.meta;info=faInt(m.events)+' ocorrências · '+faInt(m.people)+' colaboradores'+(m.start?' · '+faBR(m.start)+' a '+faBR(m.end):'')}
+  if(kind==='payroll'){const m=s.meta;info=faInt(m.people)+' colaboradores · '+faInt(m.lines)+' linhas de verba'+(m.periods.length?' · competência '+faEsc(m.periods.join(', ')):'')}
+  if(kind==='roster'){const m=s.meta;info=faInt(m.people)+' cadastros'+(m.date?' · base de '+faBR(m.date):'')}
+  el.className='fa-slot ok';el.innerHTML='<div class="fa-slot-top">'+base[0]+' <span class="fa-slot-tag">✓ reconhecido</span></div><div class="fa-slot-file">'+faEsc(s.file.name)+(s.sheet?' · aba '+faEsc(s.sheet):'')+'</div><div class="fa-slot-info">'+info+'</div>';
+}
+function faRenderSlots(){['point','payroll','roster'].forEach(faSlotHTML);const ready=!!faSlots.point;['faProcessTop'].forEach(id=>{const b=fa$(id);b.disabled=faBusy||!ready;b.textContent=faBusy?'Processando…':'↻ Atualizar análise'})}
+async function faAddFiles(list){
+  list=[...(list||[])].filter(f=>/\.(xlsx|xls|xlsm|csv)$/i.test(f.name));
+  if(!list.length){faToast('Selecione planilhas .xlsx, .xls ou .csv.');return}
+  const rejects=[];
+  for(const f of list){
+    fa$('faProgress').textContent='Lendo '+f.name+'…';await faTick();
+    try{
+      const r=await faReadFile(f);
+      if(!r.kind){rejects.push(faRejectReason(r));continue}
+      if(r.kind==='point')r.meta=faPointMeta(r);
+      if(r.kind==='payroll'){const ic=faFind(r.h,'code'),icp=faFind(r.h,'cpf'),ip=faFind(r.h,'period'),ppl=new Set(),per=new Map();let lines=0;for(const row of r.rows.slice(r.index+1)){const k=faCode(row[ic])||faCpf(row[icp]);if(!k)continue;lines++;ppl.add(k);if(ip>=0){const p=String(row[ip]??'').trim();if(p)per.set(p,(per.get(p)||0)+1)}}r.meta={people:ppl.size,lines,periods:[...per.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]).slice(0,3)}}
+      if(r.kind==='roster'){const ic=faFind(r.h,'code'),icp=faFind(r.h,'cpf');let n=0;for(const row of r.rows.slice(r.index+1))if(faCode(row[ic])||faCpf(row[icp]))n++;r.meta={people:n,date:faFileDate(f.name)}}
+      faSlots[r.kind]=r;
+    }catch(e){console.error('[Faltas] leitura',e);rejects.push('<b>'+faEsc(f.name)+'</b>: não consegui abrir ('+faEsc(e.message||e)+').')}
+  }
+  fa$('faRejects').innerHTML=rejects.join('<br>');
+  fa$('faProgress').textContent='';
+  faRenderSlots();
+  if(faSlots.point){await faProcess()}
+  else faToast(rejects.length?'Nenhum cartão de ponto reconhecido. Veja o motivo abaixo dos arquivos.':'Falta o cartão de ponto para iniciar.');
+}
+function faClearFiles(){faSlots={point:null,payroll:null,roster:null};fa$('faRejects').innerHTML='';fa$('faProgress').textContent='';faRenderSlots();faToast('Arquivos removidos. A última análise continua na tela até você processar outra.')}
+
+/* ===== Montagem da análise ===== */
+function faRubGroup(code,title,type,map){
+  for(const g of ['falta','dsr','atraso'])if(map[g].includes(code))return g;
+  const t=faNorm(title),tp=faNorm(type);
+  if(!t||/abono|justif|adiant|reembol|devol|estorno|ferias|13o|decimo|indeniz|aviso/.test(t))return '';
+  if(tp&&/^(p|provento|proventos|v|vencimento|vencimentos)$/.test(tp))return '';
+  if(/dsr|repouso|rsr/.test(t)&&/desc|falta|perda|atras/.test(t))return 'dsr';
+  if(/atras/.test(t))return 'atraso';
+  if(/falta/.test(t))return 'falta';
+  return '';
+}
+function faBuild(){
+  const P=faSlots.point,F=faSlots.payroll,R=faSlots.roster,meta=P.meta;
+  /* --- Ponto --- */
+  const h=P.h,iC=faFind(h,'code'),iN=faFind(h,'name'),iD=faFind(h,'date'),iDu=faFind(h,'dur'),iT=faFind(h,'type'),iE=faFind(h,'estab'),iL=faFind(h,'lot'),iCC=faFind(h,'cc'),iR=faFind(h,'role'),iCpf=faFind(h,'cpf');
+  const events=[];
+  for(const r of P.rows.slice(P.index+1)){
+    const code=faCode(r[iC]),minutes=faMinutes(r[iDu]);if(!code||minutes<=0)continue;
+    const d=faToDate(r[iD]);
+    let kind=iT>=0?faEventKind(r[iT]):'';if(!kind)kind=minutes>=FA_DAY_MIN?'falta':'atraso';
+    events.push({code,name:String(r[iN]??'').trim(),cpf:iCpf>=0?faCpf(r[iCpf]):'',date:d?faISO(d):'',wd:d?d.getDay():-1,holiday:d?faHoliday(d):'',minutes,time:typeof r[iDu]==='string'?r[iDu].trim():faClock(minutes),kind,typed:iT>=0,estab:iE>=0?faEstabKey(r[iE]):'',store:iCC>=0?faStripCode(r[iCC]):(iL>=0?faStripCode(r[iL]):''),role:iR>=0?faStripCode(r[iR]):''});
+  }
+  if(!events.length)throw Error('O cartão de ponto não trouxe ocorrências com duração maior que zero.');
+  const start=meta.start?faFromISO(meta.start):null,end=meta.end?faFromISO(meta.end):null;
+  const workdays=start&&end?faWorkdays(start,end):0;
+  const estabs=new Set(events.map(e=>e.estab).filter(Boolean));
+  const warnings=[];
+
+  /* --- Base ATIVOS --- */
+  const roster={byCode:new Map(),byCpf:new Map(),scoped:[],date:R?.meta?.date||null,file:R?.file?.name||null};
+  if(R){
+    const rh=R.h,c=faFind(rh,'code'),n=faFind(rh,'name'),cp=faFind(rh,'cpf'),s=faFind(rh,'situ'),cc=faFind(rh,'cc'),e=faFind(rh,'estab'),ro=faFind(rh,'role');
+    for(const r of R.rows.slice(R.index+1)){
+      const p={code:faCode(r[c]),name:String(r[n]??'').trim(),cpf:cp>=0?faCpf(r[cp]):'',situ:s>=0?String(r[s]??'').trim():'Ativo',store:cc>=0?faStripCode(r[cc]):'',estab:e>=0?faEstabKey(r[e]):'',role:ro>=0?faStripCode(r[ro]):''};
+      if(!p.code&&!p.cpf)continue;
+      if(p.code&&!roster.byCode.has(p.code))roster.byCode.set(p.code,p);
+      if(p.cpf&&!roster.byCpf.has(p.cpf))roster.byCpf.set(p.cpf,p);
+      if(!estabs.size||!p.estab||estabs.has(p.estab))roster.scoped.push(p);
+    }
+  }
+  const isActive=p=>/^ativo$/i.test(faNorm(p.situ));
+
+  /* --- Folha --- */
+  const pay={byCode:new Map(),byCpf:new Map(),rubMap:{},periods:new Map(),file:F?.file?.name||null,headcount:0};
+  if(F){
+    const fh=F.h,c=faFind(fh,'code'),cp=faFind(fh,'cpf'),n=faFind(fh,'name'),e=faFind(fh,'estab'),rb=faFind(fh,'rub'),ti=faFind(fh,'rubTitle'),ty=faFind(fh,'rubType'),q=faFind(fh,'qty'),v=faFind(fh,'val'),pe=faFind(fh,'period');
+    const lines=[];
+    for(const r of F.rows.slice(F.index+1)){
+      const code=faCode(r[c]),cpf=cp>=0?faCpf(r[cp]):'',rub=faCode(r[rb]);if((!code&&!cpf)||!rub)continue;
+      const estab=e>=0?faEstabKey(r[e]):'';if(estabs.size&&e>=0&&estab&&!estabs.has(estab))continue;
+      const period=pe>=0?String(r[pe]??'').trim():'';if(period)pay.periods.set(period,(pay.periods.get(period)||0)+1);
+      lines.push({code,cpf,name:n>=0?String(r[n]??'').trim():'',rub,title:ti>=0?String(r[ti]??'').trim():'',type:ty>=0?String(r[ty]??'').trim():'',qty:faNum(r[q]),val:Math.abs(faNum(r[v])),period});
+    }
+    /* competência: se houver mais de uma, usa a do mês final do ponto */
+    let chosen='';
+    if(pay.periods.size>1){
+      const endMY=end?[end.getMonth()+1,end.getFullYear()]:null;
+      const match=[...pay.periods.keys()].find(p=>{const d=p.match(/(\d{1,2})\D+(\d{4})|(\d{4})\D+(\d{1,2})/);if(!d||!endMY)return false;const m=Number(d[1]||d[4]),y=Number(d[2]||d[3]);return m===endMY[0]&&y===endMY[1]});
+      chosen=match||[...pay.periods.entries()].sort((a,b)=>b[1]-a[1])[0][0];
+      warnings.push('A folha tem '+pay.periods.size+' competências ('+[...pay.periods.keys()].join(', ')+'). Usei '+chosen+'.');
+    }else if(pay.periods.size===1)chosen=[...pay.periods.keys()][0];
+    pay.period=chosen;
+    const groupsCfg=FA_RUB_DEFAULT;
+    for(const l of lines){
+      if(chosen&&l.period&&l.period!==chosen)continue;
+      const key=l.code||('cpf:'+l.cpf);
+      let p=pay.byCode.get(key);if(!p){p={code:l.code,cpf:l.cpf,name:l.name,falta:{qty:0,value:0},dsr:{qty:0,value:0},atraso:{qty:0,value:0}};pay.byCode.set(key,p)}
+      if(!p.cpf&&l.cpf)p.cpf=l.cpf;if(!p.name&&l.name)p.name=l.name;
+      if(l.cpf&&!pay.byCpf.has(l.cpf))pay.byCpf.set(l.cpf,p);
+      const g=faRubGroup(l.rub,l.title,l.type,groupsCfg);
+      if(g){p[g].qty+=l.qty;p[g].value+=l.val;const m=pay.rubMap[l.rub]||(pay.rubMap[l.rub]={code:l.rub,title:l.title,group:g,qty:0,value:0,people:new Set()});m.qty+=l.qty;m.value+=l.val;m.people.add(key)}
+    }
+    pay.headcount=pay.byCode.size;
+    if(end&&chosen){const d=chosen.match(/(\d{1,2})\D+(\d{4})|(\d{4})\D+(\d{1,2})/);if(d){const m=Number(d[1]||d[4]),y=Number(d[2]||d[3]);if(m!==end.getMonth()+1||y!==end.getFullYear())warnings.push('A competência da folha ('+chosen+') não é o mês de fechamento do ponto ('+String(end.getMonth()+1).padStart(2,'0')+'/'+end.getFullYear()+'). Confira se os arquivos são do mesmo fechamento.')}}
+  }
+
+  /* --- Agrupar por colaborador --- */
+  const people=new Map();
+  for(const ev of events){
+    let x=people.get(ev.code);
+    if(!x){x={key:ev.code,code:ev.code,pointName:ev.name,cpf:ev.cpf,store:ev.store,role:ev.role,estab:ev.estab,events:[]};people.set(ev.code,x)}
+    x.events.push(ev);
+  }
+  if(F){for(const [k,p] of pay.byCode){const has=p.falta.qty+p.atraso.qty+p.dsr.qty>FA_TOL_H||p.falta.value+p.atraso.value+p.dsr.value>0.01;if(!has)continue;const code=p.code;if(code&&people.has(code))continue;if(!code&&[...people.values()].some(x=>x.cpf&&x.cpf===p.cpf))continue;people.set(k,{key:k,code:code||'',pointName:'',cpf:p.cpf,store:'',role:'',estab:'',events:[]})}}
+
+  const rows=[];
+  for(const x of people.values()){
+    const ro=R?(roster.byCode.get(x.code)||(x.cpf&&roster.byCpf.get(x.cpf))||null):null;
+    let p=F?(pay.byCode.get(x.code)||pay.byCode.get(x.key)||(x.cpf&&pay.byCpf.get(x.cpf))||(ro?.cpf&&pay.byCpf.get(ro.cpf))||null):null;
+    const cpf=x.cpf||p?.cpf||ro?.cpf||'';
+    const name=ro?.name||p?.name||x.pointName||'Nome não localizado';
+    const ev=x.events.slice().sort((a,b)=>a.date<b.date?-1:1);
+    const minutes=ev.reduce((s,e)=>s+e.minutes,0);
+    const faltas=ev.filter(e=>e.kind==='falta'),atrasos=ev.filter(e=>e.kind==='atraso');
+    /* tolerância CLT por dia */
+    const perDay=new Map();ev.forEach(e=>perDay.set(e.date,(perDay.get(e.date)||0)+e.minutes));
+    const tolMin=[...perDay.values()].filter(m=>m<=FA_CLT_TOL_MIN).reduce((s,m)=>s+m,0);
+    /* DSR esperado: 7h20 por semana com falta de dia inteiro + 7h20 por feriado nacional seg–sáb na mesma semana */
+    const weeks=new Map();
+    faltas.forEach(e=>{if(!e.date)return;const ws=faWeekStart(faFromISO(e.date));const k=faISO(ws);if(!weeks.has(k)){let hol=[];for(let i=1;i<=6;i++){const d=faAddDays(ws,i);const n=faHoliday(d);if(n)hol.push(faBR(d)+' '+n)}weeks.set(k,{start:k,holidays:hol})}});
+    const dsrExpected=[...weeks.values()].reduce((s,w)=>s+(1+w.holidays.length)*FA_DSR_H,0);
+    const row={key:x.key,code:x.code,cpf,name,pointName:x.pointName,store:ro?.store||x.store||'Sem lotação',role:ro?.role||x.role||'—',situ:ro?ro.situ:(R?'Não encontrado':''),inRoster:!!ro,
+      events:ev.map(e=>({date:e.date,wd:e.wd,holiday:e.holiday,minutes:e.minutes,time:e.time,kind:e.kind})),
+      minutes,faltaDays:faltas.length,faltaMin:faltas.reduce((s,e)=>s+e.minutes,0),atrasoCount:atrasos.length,atrasoMin:atrasos.reduce((s,e)=>s+e.minutes,0),tolMin,
+      dsrWeeks:[...weeks.values()],dsrExpected,
+      hasPay:!!p,falta:p?{...p.falta}:{qty:0,value:0},atraso:p?{...p.atraso}:{qty:0,value:0},dsr:p?{...p.dsr}:{qty:0,value:0},
+      flags:[],reviewed:false};
+    row.deductedH=row.falta.qty+row.atraso.qty;row.deductedV=row.falta.value+row.atraso.value;
+    row.expectedH=(minutes-tolMin)/60;row.diff=row.deductedH-row.expectedH;
+    faFlags(row,{payroll:!!F,roster:!!R});
+    rows.push(row);
+  }
+  const lvl={bad:3,warn:2,info:1};
+  rows.sort((a,b)=>(Math.max(0,...b.flags.filter(f=>f.group!=='info').map(f=>lvl[f.level]))-Math.max(0,...a.flags.filter(f=>f.group!=='info').map(f=>lvl[f.level])))||b.minutes-a.minutes);
+
+  /* --- Totais e indicadores --- */
+  const quadro=R?roster.scoped.length:(F?pay.headcount:0);
+  const ativos=R?roster.scoped.filter(isActive).length:quadro;
+  const situCount={};if(R)roster.scoped.forEach(p=>{if(!isActive(p)){const k=p.situ||'Sem situação';situCount[k]=(situCount[k]||0)+1}});
+  const pr=rows.filter(r=>r.events.length);
+  const T={events:events.length,people:pr.length,faltaEvents:events.filter(e=>e.kind==='falta').length,faltaPeople:pr.filter(r=>r.faltaDays).length,atrasoEvents:events.filter(e=>e.kind==='atraso').length,atrasoPeople:pr.filter(r=>r.atrasoCount).length,minutes:events.reduce((s,e)=>s+e.minutes,0),faltaMin:events.filter(e=>e.kind==='falta').reduce((s,e)=>s+e.minutes,0)};
+  T.expectedMin=ativos*workdays*FA_DAY_MIN;T.rate=T.expectedMin?T.minutes/T.expectedMin*100:null;
+  T.discPeople=rows.filter(r=>r.flags.some(f=>f.group==='desc')).length;
+  T.alertPeople=rows.filter(r=>r.flags.some(f=>f.group==='gest')).length;
+  T.discValueNoPoint=rows.filter(r=>r.flags.some(f=>f.id==='desc_sem_ponto')).reduce((s,r)=>s+r.deductedV+r.dsr.value,0);
+  const checkCount={};FA_CHECKS.forEach(c=>checkCount[c.id]=rows.filter(r=>r.flags.some(f=>f.id===c.id)).length);
+  /* por loja */
+  const storeHC=new Map();if(R)roster.scoped.filter(isActive).forEach(p=>{const k=faNorm(p.store);storeHC.set(k,(storeHC.get(k)||0)+1)});
+  const stores=new Map();
+  pr.forEach(r=>{const k=faNorm(r.store);let s=stores.get(k);if(!s){s={store:r.store,people:0,faltas:0,atrasos:0,minutes:0};stores.set(k,s)}s.people++;s.faltas+=r.faltaDays;s.atrasos+=r.atrasoCount;s.minutes+=r.minutes});
+  const byStore=[...stores.entries()].map(([k,s])=>{const hc=R?(storeHC.get(k)||null):null;return {...s,headcount:hc,pctPeople:hc?s.people/hc*100:null,rate:hc&&workdays?s.minutes/(hc*workdays*FA_DAY_MIN)*100:null}}).sort((a,b)=>b.minutes-a.minutes);
+  const roles=new Map();pr.forEach(r=>{const k=r.role||'—';let s=roles.get(k);if(!s){s={role:k,people:0,events:0,minutes:0};roles.set(k,s)}s.people++;s.events+=r.events.length;s.minutes+=r.minutes});
+  const byRole=[...roles.values()].sort((a,b)=>b.minutes-a.minutes);
+  const byWeekday=[0,1,2,3,4,5,6].map(d=>({wd:d,faltas:events.filter(e=>e.wd===d&&e.kind==='falta').length,atrasos:events.filter(e=>e.wd===d&&e.kind==='atraso').length}));
+  /* rubricas totais */
+  const rub={falta:{qty:0,value:0,codes:[]},dsr:{qty:0,value:0,codes:[]},atraso:{qty:0,value:0,codes:[]}};
+  Object.values(pay.rubMap).forEach(m=>{rub[m.group].qty+=m.qty;rub[m.group].value+=m.value;rub[m.group].codes.push(m.code)});
+  const rubMap=Object.values(pay.rubMap).map(m=>({code:m.code,title:m.title,group:m.group,qty:m.qty,value:m.value,people:m.people.size}));
+  if(F){const notFound=pr.filter(r=>!r.hasPay).length;if(notFound)warnings.push(notFound+' colaborador(es) do ponto não foram encontrados na folha por matrícula/CPF: aparecem como "sem desconto". Confira desligamentos e transferências.')}
+  if(R){const out=pr.filter(r=>!r.inRoster).length;if(out)warnings.push(out+' colaborador(es) do ponto não estão na base ATIVOS'+(roster.date?' de '+faBR(roster.date):'')+'.')}
+  if(!F)warnings.unshift('Folha não carregada: conferência de desconto desativada. Os indicadores de faltas e atrasos estão completos.');
+  if(!R)warnings.push('Base ATIVOS não carregada: quadro '+(F?'estimado pela folha':'indisponível')+'; absenteísmo por loja e situação de afastamento não calculados.');
+  return {ruleVersion:FA_RULE,period:{start:meta.start,end:meta.end,workdays},payrollPeriod:pay.period||'',sources:{point:P.file.name,payroll:pay.file,roster:roster.file,rosterDate:roster.date,payrollAvailable:!!F,rosterAvailable:!!R},estabs:[...estabs],quadro,ativos,situCount,totals:T,checkCount,byStore,byRole,byWeekday,rub,rubMap,warnings,rows,createdAt:new Date().toISOString()};
+}
+function faFlag(row,id,text){const c=FA_CHECKS.find(x=>x.id===id);row.flags.push({id,group:c.group,level:c.level,name:c.name,text})}
+function faFlags(r,has){
+  const hasPoint=r.events.length>0;
+  if(has.payroll){
+    const dsrH=r.dsr.qty;
+    if(hasPoint&&!r.hasPay){
+      if(r.expectedH>FA_TOL_H)faFlag(r,'sem_desconto','Ponto '+faClock(r.minutes)+' e o colaborador não foi encontrado na folha (matrícula/CPF): nada descontado. Conferir desligamento ou transferência.');
+    }else if(hasPoint){
+      if(r.deductedH<=FA_TOL_H&&r.expectedH>FA_TOL_H)faFlag(r,'sem_desconto','Ponto '+faClock(r.minutes)+' ('+r.faltaDays+' falta(s), '+r.atrasoCount+' atraso(s)) e nenhuma hora descontada em falta/atraso.');
+      else if(Math.abs(r.diff)>FA_TOL_H){
+        if(r.tolMin>0&&Math.abs(r.deductedH-r.minutes/60)<=FA_TOL_H)faFlag(r,'tolerancia','Descontou '+faClock(r.tolMin)+' de atraso(s) de até 10 min no dia, que não podem ser descontados.');
+        else if(r.diff<0)faFlag(r,'desc_menor','Descontou '+faH(r.deductedH)+'; o ponto pede '+faH(r.expectedH)+'. Faltam '+faH(-r.diff)+'.');
+        else faFlag(r,'desc_maior','Descontou '+faH(r.deductedH)+'; o ponto registra '+faH(r.expectedH)+'. Excedem '+faH(r.diff)+'.');
+      }
+      if(r.dsrExpected>0&&dsrH<=FA_TOL_H)faFlag(r,'dsr_ausente','Falta de dia inteiro em '+r.dsrWeeks.length+' semana(s); DSR esperado '+faH(r.dsrExpected)+' e nenhum DSR descontado.');
+      else if(r.dsrExpected>0&&dsrH>r.dsrExpected+FA_TOL_H)faFlag(r,'dsr_maior','DSR descontado '+faH(dsrH)+'; esperado '+faH(r.dsrExpected)+' ('+faDsrWhy(r)+').');
+      else if(r.dsrExpected>0&&dsrH<r.dsrExpected-FA_TOL_H)faFlag(r,'dsr_menor','DSR descontado '+faH(dsrH)+'; esperado '+faH(r.dsrExpected)+' ('+faDsrWhy(r)+').');
+      else if(r.dsrExpected===0&&dsrH>FA_TOL_H)faFlag(r,'dsr_sem_falta','DSR descontado '+faH(dsrH)+' sem falta de dia inteiro no ponto (só atraso).');
+    }else if(r.deductedH>FA_TOL_H||r.deductedV>0.01||dsrH>FA_TOL_H){
+      faFlag(r,'desc_sem_ponto','Folha desconta '+faH(r.deductedH)+' ('+faBRL(r.deductedV)+')'+(dsrH>FA_TOL_H?' + DSR '+faH(dsrH)+' ('+faBRL(r.dsr.value)+')':'')+' e não há ocorrência no cartão do período.');
+    }
+    const rates=[['falta',r.falta],['atraso',r.atraso],['DSR',r.dsr]].filter(([,x])=>x.qty>FA_TOL_H&&x.value>0).map(([n,x])=>[n,x.value/x.qty]);
+    if(rates.length>1){const mn=Math.min(...rates.map(x=>x[1])),mx=Math.max(...rates.map(x=>x[1]));if(mx/mn>1.03)faFlag(r,'valor_hora','Valor-hora: '+rates.map(([n,v])=>n+' '+faBRL(v)).join(' · ')+'.')}
+  }
+  if(has.roster&&hasPoint){
+    if(!r.inRoster)faFlag(r,'fora_base','Matrícula '+r.code+' não está na base ATIVOS.');
+    else{
+      if(!/^ativo$/i.test(faNorm(r.situ)))faFlag(r,'afastado','Situação na base: '+r.situ+'. Ocorrência no ponto deve ser abonada/ajustada, não descontada.');
+      if(r.pointName&&faFirstName(r.pointName)!==faFirstName(r.name))faFlag(r,'nome_diverge','Ponto: '+r.pointName+' · Cadastro: '+r.name+'.');
+    }
+  }
+  if(!hasPoint)return;
+  const dates=r.events.map(e=>e.date),dup=dates.filter((d,i)=>d&&dates.indexOf(d)!==i);
+  if(dup.length)faFlag(r,'duplicado','Mais de um lançamento em '+[...new Set(dup)].map(faBR).join(', ')+'.');
+  /* faltas consecutivas em dias úteis */
+  const fd=[...new Set(r.events.filter(e=>e.kind==='falta'&&e.date).map(e=>e.date))].sort();
+  let best=[],cur=[];
+  for(const d of fd){if(cur.length){let nx=faAddDays(faFromISO(cur[cur.length-1]),1);while(nx.getDay()===0||faHoliday(nx))nx=faAddDays(nx,1);if(faISO(nx)===d)cur.push(d);else cur=[d]}else cur=[d];if(cur.length>best.length)best=cur.slice()}
+  if(best.length>=3)faFlag(r,'consecutivas',best.length+' faltas seguidas de '+faBR(best[0])+' a '+faBR(best[best.length-1])+'. Exigir atestado ou justificativa.');
+  if(r.events.length>=3)faFlag(r,'reincidencia',r.events.length+' ocorrências no período ('+r.faltaDays+' falta(s), '+r.atrasoCount+' atraso(s)).');
+  const em=r.events.filter(e=>e.kind==='falta'&&(e.wd===1||e.wd===6));if(em.length>=2)faFlag(r,'emenda',em.length+' faltas em segunda/sábado: '+em.map(e=>faBR(e.date)+' ('+FA_WD[e.wd]+')').join(', ')+'.');
+  const sh=r.events.filter(e=>e.holiday);if(sh.length)faFlag(r,'domingo_feriado',sh.map(e=>faBR(e.date)+' '+e.holiday).join(', ')+'.');
+  const lg=r.events.filter(e=>e.minutes>FA_DAY_MIN);if(lg.length)faFlag(r,'jornada','Falta(s) de '+[...new Set(lg.map(e=>faClock(e.minutes)))].join(', ')+': confirmar jornada contratual.');
+}
+function faDsrWhy(r){return r.dsrWeeks.map(w=>'semana de '+faBR(w.start)+(w.holidays.length?' + feriado '+w.holidays.join(', '):'')).join('; ')}
+
+/* ===== Processamento ===== */
+async function faProcess(){
+  if(!faSlots.point){faToast('Carregue o cartão de ponto.');return}
+  if(faBusy)return;faBusy=true;faRenderSlots();fa$('faProgress').textContent='Cruzando ponto'+(faSlots.payroll?', folha':'')+(faSlots.roster?' e base ATIVOS':'')+'…';await faTick();
+  try{
+    const m=faBuild();
+    faModel=m;faCurrentAuditId=null;
+    faRenderAll();
+    faToast('Análise concluída: '+m.totals.events+' ocorrências, '+m.totals.discPeople+' divergência(s) de desconto e '+m.totals.alertPeople+' alerta(s) de gestão.');
+    faPage('overview',document.querySelector('[data-page=overview]'));
+    faRememberLocal(m);
+    faSavePrivate();
+  }catch(e){console.error('[Faltas e Atrasos]',e);faToast(e.message||'Não consegui processar os arquivos.');fa$('faRejects').innerHTML+=(fa$('faRejects').innerHTML?'<br>':'')+'<b>Erro no processamento:</b> '+faEsc(e.message||e)}
+  finally{faBusy=false;fa$('faProgress').textContent='';faRenderSlots()}
+}
+
+/* ===== Comparação com período anterior ===== */
+function faPeriodLabel(m){return m.period?.start?faBR(m.period.start)+' a '+faBR(m.period.end):'Período do cartão'}
+function faRememberLocal(m){try{const all=JSON.parse(localStorage.getItem('fa-hist-v3')||'{}');all[m.period.start+'_'+m.period.end]={period:m.period,quadro:m.quadro,ativos:m.ativos,totals:m.totals};localStorage.setItem('fa-hist-v3',JSON.stringify(all))}catch(e){}}
+function faPrevious(m){
+  const cands=[];
+  faHistory.forEach(h=>{const r=h.resumo||{};if(r.ruleVersion===FA_RULE&&r.period?.end)cands.push({period:r.period,quadro:r.quadro,ativos:r.ativos,totals:r.totals})});
+  try{Object.values(JSON.parse(localStorage.getItem('fa-hist-v3')||'{}')).forEach(x=>cands.push(x))}catch(e){}
+  return cands.filter(x=>x.period?.end&&x.period.end<m.period.start).sort((a,b)=>a.period.end<b.period.end?1:-1)[0]||null;
+}
+function faCmp(cur,prev,badUp,fmt){if(prev==null||cur==null)return '<span style="color:#5f7690">Sem período anterior salvo para comparar</span>';const d=cur-prev,pct=prev?d/prev*100:null;const cls=Math.abs(d)<1e-9?'neutral':((d>0)===badUp?'up':'down');return '<span class="fa-compare '+cls+'">'+(d>0?'▲ +':d<0?'▼ ':'= ')+(fmt?fmt(Math.abs(d)):faInt(Math.abs(d)))+(pct!=null&&isFinite(pct)?' ('+(pct>0?'+':'')+faDec(pct,1)+'%)':'')+' vs período anterior</span>'}
+
+/* ===== Renderização ===== */
+function faRenderAll(){
+  const m=faModel;if(!m)return;const T=m.totals,prev=faPrevious(m),pT=prev?.totals||null,q=m.ativos||m.quadro;
+  const per=faPeriodLabel(m),pointTag='Ponto '+per;
+  fa$('faPeriod').textContent=per+(m.payrollPeriod?' · Folha '+m.payrollPeriod:'')+' · '+m.period.workdays+' dias úteis';
+  fa$('faState').textContent='Análise de '+new Date(m.createdAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+' · '+m.rows.length+' colaboradores';fa$('faDot').className='fa-dot good';
+  const warn=m.warnings||[];fa$('faAlert').classList.toggle('show',warn.length>0);fa$('faAlertText').innerHTML=warn.map((w,i)=>i===0?'<b>'+faEsc(w)+'</b>':faEsc(w)).join('<br>');
+  /* KPIs */
+  fa$('kHead').textContent=m.quadro?faInt(m.quadro):'—';
+  fa$('kHeadFoot').textContent=m.sources.rosterAvailable?faInt(m.ativos)+' ativos trabalhando · '+faInt(m.quadro-m.ativos)+' afastados/férias':(m.sources.payrollAvailable?'Pessoas na folha do estabelecimento':'Carregue ATIVOS ou a folha');
+  fa$('kHeadDate').textContent=m.sources.rosterAvailable?'Base ATIVOS'+(m.sources.rosterDate?' de '+faBR(m.sources.rosterDate):'')+' · estab. '+m.estabs.join(', '):(m.sources.payrollAvailable?'Folha '+(m.payrollPeriod||''):'');
+  fa$('kPeople').textContent=faInt(T.people);fa$('kPeopleFoot').textContent=(q?faPct(T.people,q)+' do quadro ativo · ':'')+pointTag;fa$('kPeopleCmp').innerHTML=faCmp(T.people,pT?.people,true);
+  fa$('kAbs').textContent=faInt(T.faltaEvents);fa$('kAbsFoot').textContent=faInt(T.faltaPeople)+' pessoa(s)'+(q?' · '+faPct(T.faltaPeople,q,2)+' do quadro':'')+' · '+faClock(T.faltaMin);fa$('kAbsCmp').innerHTML=faCmp(T.faltaEvents,pT?.faltaEvents,true);
+  fa$('kLate').textContent=faInt(T.atrasoEvents);fa$('kLateFoot').textContent=faInt(T.atrasoPeople)+' pessoa(s)'+(q?' · '+faPct(T.atrasoPeople,q,2)+' do quadro':'')+' · '+faClock(T.minutes-T.faltaMin);fa$('kLateCmp').innerHTML=faCmp(T.atrasoEvents,pT?.atrasoEvents,true);
+  fa$('kRate').textContent=T.rate!=null?faDec(T.rate,2)+'%':'—';fa$('kRateFoot').textContent=T.rate!=null?faClock(T.minutes)+' perdidas de '+faInt(Math.round(T.expectedMin/60))+'h previstas':'Precisa do quadro (ATIVOS ou folha)';fa$('kRateCmp').innerHTML=faCmp(T.rate,pT?.rate,true,v=>faDec(v,2)+' p.p.');
+  fa$('kHours').textContent=faClock(T.minutes);fa$('kHoursFoot').textContent=faDec(T.minutes/60/Math.max(1,T.people),1)+'h por colaborador com ocorrência · '+pointTag;fa$('kHoursCmp').innerHTML=faCmp(T.minutes/60,pT?pT.minutes/60:null,true,v=>faDec(v,1)+'h');
+  if(m.sources.payrollAvailable){fa$('kDisc').textContent=faInt(T.discPeople);const c=m.checkCount;fa$('kDiscFoot').textContent=c.sem_desconto+' sem desconto · '+(c.desc_menor+c.desc_maior+c.tolerancia)+' horas erradas · '+(c.dsr_ausente+c.dsr_maior+c.dsr_menor+c.dsr_sem_falta)+' DSR · '+c.desc_sem_ponto+' sem ponto';fa$('kDiscCmp').innerHTML=faCmp(T.discPeople,pT?.discPeople,true);fa$('kDiscCard').className='fa-kpi '+(T.discPeople?'bad':'good')}
+  else{fa$('kDisc').textContent='—';fa$('kDiscFoot').textContent='Carregue a folha detalhada para conferir';fa$('kDiscCmp').textContent='';fa$('kDiscCard').className='fa-kpi'}
+  fa$('kAlerts').textContent=faInt(T.alertPeople);const c=m.checkCount;fa$('kAlertsFoot').textContent=(m.sources.rosterAvailable?c.afastado+' afastado(s) · ':'')+c.consecutivas+' faltas seguidas · '+c.reincidencia+' reincidente(s)';fa$('kAlertsCmp').innerHTML=faCmp(T.alertPeople,pT?.alertPeople,true);fa$('kAlertCard').className='fa-kpi '+(T.alertPeople?'warn':'good');
+  /* Cobertura e auditorias */
+  const totalIssues=T.discPeople+T.alertPeople;fa$('faCoverage').textContent=(m.sources.payrollAvailable?T.discPeople+' desconto · ':'sem folha · ')+T.alertPeople+' gestão';fa$('faCoverage').className='fa-badge '+(T.discPeople?'bad':T.alertPeople?'warn':'ok');
+  fa$('faChecks').innerHTML=FA_CHECKS.filter(ch=>ch.group!=='info').map(ch=>{const off=(ch.needs==='payroll'&&!m.sources.payrollAvailable)||(ch.needs==='roster'&&!m.sources.rosterAvailable);const n=m.checkCount[ch.id]||0;const cls=off?'off':n?ch.level:'ok';return '<div class="fa-check '+cls+'" onclick="'+(off?'faGo(\'files\')':'faFilter(\'check:'+ch.id+'\')')+'"><div class="fa-check-top"><span class="fa-check-name">'+faEsc(ch.name)+'</span><span class="fa-check-count">'+(off?(ch.needs==='payroll'?'requer folha':'requer ATIVOS'):n)+'</span></div><div class="fa-check-desc">'+faEsc(ch.desc)+(ch.law?' <i>('+faEsc(ch.law)+')</i>':'')+'</div></div>'}).join('');
+  /* Rubricas */
+  const lbl=g=>({falta:'Falta',dsr:'DSR',atraso:'Atraso'}[g])+' ('+(m.rub[g].codes.length?m.rub[g].codes.join(', '):FA_RUB_DEFAULT[g][0])+')';
+  ['falta','dsr','atraso'].forEach(g=>{const id={falta:'faRubFalta',dsr:'faRubDsr',atraso:'faRubAtraso'}[g];fa$(id+'Lbl').textContent=lbl(g);fa$(id).textContent=m.sources.payrollAvailable?faBRL(m.rub[g].value)+' · '+faH(m.rub[g].qty):'Folha não carregada'});
+  fa$('faRubSub').textContent=m.sources.payrollAvailable?'Folha '+(m.payrollPeriod||'')+' · estabelecimento '+m.estabs.join(', '):'Carregue a folha detalhada para ver as rubricas';
+  fa$('faRubMap').innerHTML=m.rubMap?.length?m.rubMap.map(x=>'<b>'+faEsc(x.code)+'</b> · '+faEsc(x.title||'sem título')+' → '+({falta:'falta',dsr:'DSR',atraso:'atraso'}[x.group])+' · '+faH(x.qty)+' · '+faBRL(x.value)+' · '+x.people+' pessoa(s)').join('<br>'):(m.sources.payrollAvailable?'Nenhuma verba de falta, atraso ou DSR encontrada para o estabelecimento.':'Carregue a folha para ver as rubricas mapeadas.');
+  faRenderTop();faRenderIndicators();faRender();faIssues();
+  ['fa-export','fa-export2','fa-print'].forEach(id=>fa$(id).disabled=false);
+}
+function faResult(r){
+  const fl=r.flags.filter(f=>f.group!=='info');
+  if(!fl.length){if(!faModel.sources.payrollAvailable)return '<span class="fa-badge ok">Sem alerta · folha não carregada</span>';return '<span class="fa-badge ok">'+(r.events.length?'Desconto compatível':'Sem pendência')+'</span>'}
+  return '<div class="fa-flags">'+fl.slice(0,2).map(f=>'<span class="fa-badge '+(f.level==='bad'?'bad':'warn')+'">'+faEsc(f.name)+'</span>').join('')+(fl.length>2?'<span class="fa-subline">+'+(fl.length-2)+' alerta(s)</span>':'')+'</div>';
+}
+function faOcc(r){if(!r.events.length)return '<span class="fa-subline">Sem ocorrência no ponto</span>';return (r.faltaDays?'<span class="fa-pill falta">'+r.faltaDays+' falta'+(r.faltaDays>1?'s':'')+'</span>':'')+(r.atrasoCount?'<span class="fa-pill atraso">'+r.atrasoCount+' atraso'+(r.atrasoCount>1?'s':'')+'</span>':'')}
+function faPay(r){if(!faModel.sources.payrollAvailable)return '<span class="fa-subline">Folha não carregada</span>';if(!r.hasPay)return '<span class="fa-subline">Não está na folha</span>';return faH(r.deductedH)+'<span class="fa-subline">'+faBRL(r.deductedV)+'</span>'}
+function faDsrCell(r){if(!faModel.sources.payrollAvailable)return '—';if(!r.dsrExpected&&!r.dsr.qty)return '—';return 'esp. '+faH(r.dsrExpected)+'<span class="fa-subline">folha '+faH(r.dsr.qty)+(r.dsr.value?' · '+faBRL(r.dsr.value):'')+'</span>'}
+function faRow(r){return `<tr><td><span class="fa-person">${faEsc(r.name)}</span><span class="fa-subline">Matrícula ${faEsc(r.code||'—')} · CPF ${faEsc(faMaskCpf(r.cpf))}${r.situ&&!/^ativo$/i.test(faNorm(r.situ))?' · <b style="color:#ffd184">'+faEsc(r.situ)+'</b>':''}</span></td><td>${faEsc(r.store)}<span class="fa-subline">${faEsc(r.role)}</span></td><td>${faOcc(r)}</td><td class="fa-num">${faClock(r.minutes)}</td><td class="fa-num">${faPay(r)}</td><td class="fa-num">${faDsrCell(r)}</td><td>${faResult(r)}</td><td><button class="fa-expand" data-key="${faEsc(r.key)}" onclick="faExpand(this)">＋</button></td></tr>`}
+function faDetail(r){
+  const ev=r.events.map(e=>'<span class="fa-event">'+faEsc(e.date?faBR(e.date):'sem data')+' '+(e.wd>=0?FA_WD[e.wd]:'')+' · <b>'+faEsc(faClock(e.minutes))+'</b> · '+(e.kind==='falta'?'falta':'atraso')+(e.holiday?' · feriado '+faEsc(e.holiday):'')+'</span>').join('');
+  const pay=faModel.sources.payrollAvailable?'<span class="fa-event">Falta · '+faH(r.falta.qty)+' · '+faBRL(r.falta.value)+'</span><span class="fa-event">Atraso · '+faH(r.atraso.qty)+' · '+faBRL(r.atraso.value)+'</span><span class="fa-event">DSR · '+faH(r.dsr.qty)+' · '+faBRL(r.dsr.value)+' (esperado '+faH(r.dsrExpected)+')</span>':'';
+  const fl=r.flags.length?'<div class="fa-flags" style="margin-top:8px">'+r.flags.map(f=>'<div class="fa-flag '+f.level+'"><b>'+faEsc(f.name)+':</b> '+faEsc(f.text)+'</div>').join('')+'</div>':'<div class="fa-note">Nenhum alerta para este colaborador.</div>';
+  return '<tr class="fa-detail"><td colspan="8"><div class="fa-detail-list">'+(ev||'<span class="fa-event">Nenhuma ocorrência neste cartão de ponto</span>')+pay+'</div>'+fl+(r.dsrWeeks.length?'<div class="fa-note">DSR esperado: '+faEsc(faDsrWhy(r))+'.</div>':'')+'</td></tr>';
+}
+function faPopulate(el,arr,cols,empty){el.innerHTML=arr.length?arr.map(faRow).join(''):'<tr><td colspan="'+cols+'" class="fa-empty">'+(empty||'Nenhum funcionário encontrado.')+'</td></tr>'}
+function faMatch(r,mode){
+  if(mode==='all')return true;
+  if(mode==='disc')return r.flags.some(f=>f.group==='desc');
+  if(mode==='alert')return r.flags.some(f=>f.group==='gest');
+  if(mode==='falta')return r.faltaDays>0;
+  if(mode==='atraso')return r.atrasoCount>0;
+  if(mode==='nopoint')return r.flags.some(f=>f.id==='desc_sem_ponto');
+  if(mode.startsWith('check:'))return r.flags.some(f=>f.id===mode.slice(6));
+  if(mode.startsWith('store:'))return faNorm(r.store)===mode.slice(6)&&r.events.length>0;
+  return true;
+}
+function faRender(){if(!faModel)return;const q=faNorm(fa$('faSearch')?.value||'');const arr=faModel.rows.filter(r=>faMatch(r,faFilterMode)&&(!q||faNorm(r.name+' '+r.code+' '+r.store+' '+r.role+' '+r.pointName).includes(q)));const lbl=faFilterMode.startsWith('check:')?FA_CHECKS.find(c=>c.id===faFilterMode.slice(6))?.name:faFilterMode.startsWith('store:')?'loja selecionada':'';faPopulate(fa$('faAllRows'),arr,8,lbl?'Nenhum colaborador em "'+faEsc(lbl)+'".':'')}
+function faRenderTop(){const arr=faModel.rows.filter(r=>r.events.length||r.flags.length).slice(0,8);faPopulate(fa$('faTopRows'),arr,8)}
+function faBarsHTML(items,max,hot){return items.map(x=>'<div class="fa-bar-row"><span title="'+faEsc(x.label)+'">'+faEsc(x.label.length>18?x.label.slice(0,17)+'…':x.label)+'</span><div class="fa-bar'+(hot&&hot(x)?' hot':'')+'"><i style="width:'+(max?Math.max(2,x.value/max*100):0)+'%"></i></div><span class="fa-bar-val">'+faEsc(x.text)+'</span></div>').join('')}
+function faRenderIndicators(){
+  const m=faModel;
+  fa$('faStoreRows').innerHTML=m.byStore.length?m.byStore.map(s=>'<tr style="cursor:pointer" onclick="faFilter(\'store:'+faNorm(s.store)+'\')"><td class="fa-person">'+faEsc(s.store)+'</td><td class="fa-num">'+(s.headcount??'—')+'</td><td class="fa-num">'+s.people+'</td><td class="fa-num">'+(s.pctPeople!=null?faDec(s.pctPeople,1)+'%':'—')+'</td><td class="fa-num">'+s.faltas+'</td><td class="fa-num">'+s.atrasos+'</td><td class="fa-num">'+faClock(s.minutes)+'</td><td class="fa-num">'+(s.rate!=null?'<b style="color:'+(s.rate>=3?'#ff899a':s.rate>=1.5?'#ffd184':'#71dfb5')+'">'+faDec(s.rate,2)+'%</b>':'—')+'</td></tr>').join('')+'<tr><td class="fa-person">Total</td><td class="fa-num">'+(m.sources.rosterAvailable?faInt(m.ativos):'—')+'</td><td class="fa-num">'+m.totals.people+'</td><td class="fa-num">'+(m.ativos?faPct(m.totals.people,m.ativos):'—')+'</td><td class="fa-num">'+m.totals.faltaEvents+'</td><td class="fa-num">'+m.totals.atrasoEvents+'</td><td class="fa-num">'+faClock(m.totals.minutes)+'</td><td class="fa-num"><b>'+(m.totals.rate!=null?faDec(m.totals.rate,2)+'%':'—')+'</b></td></tr>':'<tr><td colspan="8" class="fa-empty">Sem ocorrências.</td></tr>';
+  fa$('faStoreSub').textContent=(m.sources.rosterAvailable?'Quadro ativo por centro de custo da base ATIVOS':'Sem base ATIVOS: quadro e absenteísmo por loja indisponíveis')+' · horas previstas = quadro × '+m.period.workdays+' dias úteis (seg–sáb, sem feriados nacionais) × 7h20 · clique na loja para ver as pessoas';
+  const wd=[1,2,3,4,5,6,0].map(d=>m.byWeekday[d]),mx=Math.max(1,...wd.map(x=>x.faltas+x.atrasos));
+  fa$('faWeekBars').innerHTML=faBarsHTML(wd.map(x=>({label:FA_WD[x.wd],value:x.faltas+x.atrasos,text:x.faltas+' F · '+x.atrasos+' A',wd:x.wd})),mx,x=>(x.wd===1||x.wd===6)&&x.value===mx);
+  const rl=m.byRole.slice(0,10),mr=Math.max(1,...rl.map(x=>x.minutes));
+  fa$('faRoleBars').innerHTML=rl.length?faBarsHTML(rl.map(x=>({label:x.role,value:x.minutes,text:x.people+'p · '+faClock(x.minutes)})),mr):'<div class="fa-empty">Sem dados.</div>';
+  const rep=m.rows.filter(r=>r.events.length>=3).sort((a,b)=>b.events.length-a.events.length||b.minutes-a.minutes);
+  fa$('faRepeatRows').innerHTML=rep.length?rep.map(r=>'<tr><td class="fa-person">'+faEsc(r.name)+'<span class="fa-subline">Matrícula '+faEsc(r.code)+'</span></td><td>'+faEsc(r.store)+'<span class="fa-subline">'+faEsc(r.role)+'</span></td><td class="fa-num">'+r.faltaDays+'</td><td class="fa-num">'+r.atrasoCount+'</td><td class="fa-num">'+faClock(r.minutes)+'</td><td>'+r.events.map(e=>faBR(e.date)+' '+FA_WD[e.wd]).join(', ')+'</td></tr>').join(''):'<tr><td colspan="6" class="fa-empty">Nenhum colaborador com 3 ou mais ocorrências.</td></tr>';
+}
+function faIssues(){
+  const m=faModel;if(!m)return;
+  const btn=r=>'<button class="fa-review-btn '+(r.reviewed?'done':'')+'" data-key="'+faEsc(r.key)+'" onclick="faReview(this)">'+(r.reviewed?'✓ Revisado':'Marcar revisado')+'</button>';
+  const fl=(r,g)=>'<div class="fa-flags">'+r.flags.filter(f=>f.group===g).map(f=>'<div class="fa-flag '+f.level+'"><b>'+faEsc(f.name)+':</b> '+faEsc(f.text)+'</div>').join('')+'</div>';
+  const d=m.rows.filter(r=>r.flags.some(f=>f.group==='desc'));
+  fa$('faIssueCount').textContent=m.sources.payrollAvailable?d.length+' colaborador(es)':'Folha não carregada';
+  fa$('faIssueRows').innerHTML=!m.sources.payrollAvailable?'<tr><td colspan="5" class="fa-empty">Carregue a folha detalhada para conferir os descontos.</td></tr>':d.length?d.map(r=>'<tr><td class="fa-person">'+faEsc(r.name)+'<span class="fa-subline">Matrícula '+faEsc(r.code||'—')+' · '+faEsc(r.store)+'</span></td><td>'+(r.events.length?faClock(r.minutes)+'<span class="fa-subline">'+r.faltaDays+' falta(s) · '+r.atrasoCount+' atraso(s)</span>':'Sem ocorrência')+'</td><td>Falta '+faH(r.falta.qty)+' · Atraso '+faH(r.atraso.qty)+'<span class="fa-subline">DSR '+faH(r.dsr.qty)+' · total '+faBRL(r.deductedV+r.dsr.value)+'</span></td><td>'+fl(r,'desc')+'</td><td>'+btn(r)+'</td></tr>').join(''):'<tr><td colspan="5" class="fa-empty">Nenhuma divergência de desconto: todos os descontos batem com o ponto.</td></tr>';
+  const g=m.rows.filter(r=>r.flags.some(f=>f.group==='gest'));
+  fa$('faAlertCount').textContent=g.length+' colaborador(es)';
+  fa$('faAlertRows').innerHTML=g.length?g.map(r=>'<tr><td class="fa-person">'+faEsc(r.name)+'<span class="fa-subline">Matrícula '+faEsc(r.code)+(r.situ?' · '+faEsc(r.situ):'')+'</span></td><td>'+faEsc(r.store)+'<span class="fa-subline">'+faEsc(r.role)+'</span></td><td>'+faClock(r.minutes)+'<span class="fa-subline">'+r.events.length+' ocorrência(s)</span></td><td>'+fl(r,'gest')+'</td><td>'+btn(r)+'</td></tr>').join(''):'<tr><td colspan="5" class="fa-empty">Nenhum alerta de gestão de ponto.</td></tr>';
+}
+function faExpand(b){const tr=b.closest('tr'),next=tr.nextElementSibling;if(next?.classList.contains('fa-detail')){next.remove();b.textContent='＋';return}tr.closest('tbody').querySelectorAll('.fa-detail').forEach(x=>x.remove());tr.closest('tbody').querySelectorAll('.fa-expand').forEach(x=>x.textContent='＋');const r=faModel.rows.find(x=>x.key===b.dataset.key);if(!r)return;tr.insertAdjacentHTML('afterend',faDetail(r));b.textContent='−'}
+function faReview(b){const r=faModel.rows.find(x=>x.key===b.dataset.key);if(!r)return;r.reviewed=!r.reviewed;document.querySelectorAll('.fa-review-btn[data-key="'+CSS.escape(r.key)+'"]').forEach(x=>{x.classList.toggle('done',r.reviewed);x.textContent=r.reviewed?'✓ Revisado':'Marcar revisado'});faPersistReviewed()}
+function faFilter(mode){faFilterMode=mode;faPage('detail',document.querySelector('[data-page=detail]'));document.querySelectorAll('.fa-chip').forEach(x=>x.classList.toggle('active',x.dataset.filter===mode));faRender()}
 function faSetFilter(mode,b){faFilterMode=mode;document.querySelectorAll('.fa-chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');faRender()}
-function faPage(name,b){document.querySelectorAll('.fa-page').forEach(x=>x.classList.remove('active'));const id={overview:'faOverview',detail:'faDetail',issues:'faIssues',files:'faFiles'}[name];if(id)fa$(id).classList.add('active');document.querySelectorAll('.fa-tab').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');if(name==='detail')faRender();if(name==='issues')faIssues();window.scrollTo({top:0,behavior:'smooth'})}
-function faExport(){if(!faRows.length)return;const issues=faRows.filter(r=>r.level==='bad'),allEvents=faRows.flatMap(r=>r.events),typed=allEvents.some(e=>e.kind==='atraso'||e.kind==='falta'),delays=allEvents.filter(e=>typed?e.kind==='atraso':e.minutes<440),delayPeople=new Set(delays.map(e=>{const r=faRows.find(x=>x.events.includes(e));return r?.cpf||r?.code||e.code})).size,headcount=window.faPayrollHeadcount||0,withPoint=faRows.filter(r=>r.events.length).length,summary=[{'Indicador':'Funcionários na folha','Valor':headcount||'Não informado','Observação':'Total do estabelecimento identificado pela coluna Estab nos arquivos.'},{'Indicador':'Colaboradores com ocorrência no ponto','Valor':withPoint,'Observação':headcount?faDec(withPoint/headcount*100)+'% da folha':'Base total não disponível.'},{'Indicador':'Ocorrências no período','Valor':allEvents.length,'Observação':'Linhas de evento encontradas no cartão de ponto.'},{'Indicador':typed?'Colaboradores com atraso':'Colaboradores com atraso/parcial estimado','Valor':delayPeople,'Observação':headcount?faDec(delayPeople/headcount*100)+'% da folha':'Percentual sem base.'},{'Indicador':typed?'Eventos de atraso':'Eventos parciais abaixo de 7h20','Valor':delays.length,'Observação':typed?'Classificação informada no cartão de ponto.':'O cartão não informa o tipo; usar como estimativa, não como atraso confirmado.'},{'Indicador':'Horas apontadas no cartão','Valor':faClock(allEvents.reduce((s,e)=>s+e.minutes,0)),'Observação':'Soma das durações registradas.'},{'Indicador':'Divergências de desconto','Valor':issues.length,'Observação':issues.filter(r=>r.missing).length+' sem desconto; '+issues.filter(r=>r.qtyDiff&&r.diff<0).length+' abaixo; '+issues.filter(r=>r.qtyDiff&&r.diff>0).length+' acima; '+issues.filter(r=>r.discountWithoutPoint).length+' sem evento no ponto.'},{'Indicador':'Descontos sem apontamento correspondente','Valor':faBRL(issues.filter(r=>r.discountWithoutPoint).reduce((s,r)=>s+r.payrollValue,0)),'Observação':'Valor conforme folha, requer validação do período da ocorrência.'}],out=issues.map(r=>({'CPF':faMaskCpf(r.cpf),'Matrícula':r.codes.join(', '),'Funcionário':r.name,'Ocorrências no ponto':r.events.length,'Horas no ponto':Number((r.minutes/60).toFixed(2)),'Horas 1356':r.hours1356,'Valor 1356':r.value1356,'Horas 1354':r.hours1354,'Valor 1354':r.lateValue,'Horas descontadas':r.payrollHours,'Valor descontado':r.payrollValue,'Diferença de horas':Number(r.diff.toFixed(2)),'Status':r.status,'Revisado':r.reviewed?'Sim':'Não','Datas':r.events.map(e=>e.date+' '+e.time).join(' | ')})),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),'Indicadores');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(out.length?out:[{'Resultado':'Nenhuma divergência automática encontrada'}]),'Divergências');XLSX.writeFile(wb,'Auditoria_Faltas_Atrasos_Divergencias.xlsx')}
-function faPrint(){if(!faRows.length)return;const all=fa$('faPrintScope').value==='all',issues=faRows.filter(r=>r.level==='bad'),list=all?faRows:issues,pointMinutes=faRows.reduce((s,r)=>s+r.minutes,0),missing=issues.filter(r=>r.missing).length,under=issues.filter(r=>r.qtyDiff&&r.diff<0).length,over=issues.filter(r=>r.qtyDiff&&r.diff>0).length,withoutPoint=issues.filter(r=>r.discountWithoutPoint).length;const table=list.length?list.map(r=>'<tr><td>'+faEsc(faMaskCpf(r.cpf))+'</td><td>'+faEsc(r.name)+'</td><td>'+r.events.map(e=>faEsc(e.date)+' '+faEsc(e.time)).join('<br>')+'</td><td>'+faClock(r.minutes)+'</td><td>'+faDec(r.hours1356)+'h<br>'+faBRL(r.value1356)+'</td><td>'+faDec(r.hours1354)+'h<br>'+faBRL(r.lateValue)+'</td><td>'+(r.diff>0?'+':'')+faDec(r.diff)+'h</td><td>'+faEsc(r.status)+(r.reviewed?' · Revisado':'')+'</td></tr>').join(''):'<tr><td colspan="8">Nenhuma divergência de desconto encontrada para este período.</td></tr>';const now=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});fa$('faPrintReport').innerHTML='<div class="fa-print-header"><img src="../crediario/logo-esposende.jpg" alt="Esposende"><div><div class="fa-print-title">Auditoria de Faltas e Atrasos</div><div class="fa-print-sub">'+faEsc(fa$('faPeriod').textContent)+' · Gerado em '+faEsc(now)+'</div></div></div><div class="fa-print-stats"><div class="fa-print-stat"><small>Funcionários na folha</small><b>'+(window.faPayrollHeadcount??'—')+'</b></div><div class="fa-print-stat"><small>Com ocorrência no ponto</small><b>'+faRows.filter(r=>r.events.length).length+'</b></div><div class="fa-print-stat"><small>Ocorrências no ponto</small><b>'+faRows.reduce((n,r)=>n+r.events.length,0)+'</b></div><div class="fa-print-stat"><small>Horas no ponto</small><b>'+faClock(pointMinutes)+'</b></div><div class="fa-print-stat"><small>Atrasos/parciais*</small><b>'+((window.faDelayEvents||0)+' eventos · '+(window.faDelayEmployees||0)+' colaboradores · '+faDec(window.faPayrollHeadcount?(window.faDelayEmployees||0)/window.faPayrollHeadcount*100:0)+'%')+'</b></div><div class="fa-print-stat"><small>Divergências de desconto</small><b>'+issues.length+'</b></div></div>'+(issues.length?'<div class="fa-print-alert"><b>Descontos para conferir:</b> '+missing+' sem desconto, '+under+' abaixo das horas apontadas, '+over+' acima e '+withoutPoint+' sem ocorrência no ponto.</div>':'')+'<h2>'+(all?'Conferência completa do período':'Divergências de desconto')+' · '+list.length+' funcionário(s)</h2><table class="fa-print-table"><thead><tr><th>CPF</th><th>Funcionário</th><th>Data e duração no ponto</th><th>Horas ponto</th><th>1356 · horas / valor</th><th>1354 · horas / valor</th><th>Diferença de horas</th><th>Resultado</th></tr></thead><tbody>'+table+'</tbody></table><div class="fa-print-foot">Comparação: horas do ponto versus rubricas 1356 + 1354. Tolerância: 0,05 hora por funcionário. A rubrica 1357 (DSR) fica fora deste cálculo porque exige calendário semanal e escala. Valores exibidos conforme a folha. Quando o arquivo não discrimina o tipo do evento, atrasos são estimados por ocorrências menores que 7h20. Esposende · Central de Auditoria &amp; Controle.</div>';const old=document.title;document.title='Auditoria_Faltas_Atrasos';window.print();setTimeout(()=>document.title=old,1200)}
+function faGo(name){faPage(name,document.querySelector('[data-page='+name+']'))}
+function faPage(name,b){document.querySelectorAll('.fa-page').forEach(x=>x.classList.remove('active'));const id={overview:'faOverview',indicators:'faIndicators',detail:'faDetail',issues:'faIssues',files:'faFiles'}[name];if(id)fa$(id).classList.add('active');document.querySelectorAll('.fa-tab').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');if(name==='detail')faRender();if(name==='issues')faIssues()}
+function faRulesText(){fa$('faRulesText').innerHTML='<b>Classificação:</b> ocorrência de 7h20 ou mais no dia = falta de dia inteiro; menor que 7h20 = atraso ou saída antecipada (se o cartão tiver coluna de tipo, ela prevalece).<br><b>Absenteísmo:</b> horas perdidas ÷ (quadro ativo × dias úteis seg–sáb sem feriados nacionais × 7h20).<br><b>DSR esperado:</b> 7h20 por semana (dom–sáb) com falta de dia inteiro, mais 7h20 por feriado nacional de seg a sáb na mesma semana (Lei 605/49 art. 6º).<br><b>Tolerância:</b> 0,05 h na comparação; atrasos de até 10 min no dia não são descontáveis (CLT art. 58 §1º).<br><b>Vínculo:</b> ponto × folha × ATIVOS pela matrícula; CPF como segunda chave. CPF sempre mascarado na tela e nos relatórios.<br><br>'+FA_CHECKS.map(c=>'<b>'+faEsc(c.name)+'</b> ('+(c.group==='desc'?'desconto em folha':c.group==='gest'?'gestão de ponto':'informativo')+(c.needs==='payroll'?' · requer folha':c.needs==='roster'?' · requer ATIVOS':'')+'): '+faEsc(c.desc)+(c.law?' <i>'+faEsc(c.law)+'</i>':'')).join('<br>')}
+
+/* ===== Exportação ===== */
+function faExport(){
+  const m=faModel;if(!m)return;const T=m.totals,wb=XLSX.utils.book_new();
+  const ind=[['Período do ponto',faPeriodLabel(m)],['Dias úteis',m.period.workdays],['Competência da folha',m.payrollPeriod||'Folha não carregada'],['Quadro do estabelecimento',m.quadro||'—'],['Ativos trabalhando',m.ativos||'—'],['Colaboradores com ocorrência',T.people],['% do quadro com ocorrência',m.ativos?faPct(T.people,m.ativos,2):'—'],['Faltas de dia inteiro (dias)',T.faltaEvents],['Pessoas com falta',T.faltaPeople],['Atrasos / saídas',T.atrasoEvents],['Pessoas com atraso',T.atrasoPeople],['Horas perdidas',faClock(T.minutes)],['Taxa de absenteísmo',T.rate!=null?faDec(T.rate,2)+'%':'—'],['Divergências de desconto (pessoas)',m.sources.payrollAvailable?T.discPeople:'Folha não carregada'],['Alertas de gestão (pessoas)',T.alertPeople]].map(([a,b])=>({'Indicador':a,'Valor':b}));
+  FA_CHECKS.forEach(c=>ind.push({'Indicador':'Auditoria · '+c.name,'Valor':m.checkCount[c.id]||0}));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ind),'Indicadores');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(m.byStore.map(s=>({'Loja / centro de custo':s.store,'Quadro ativo':s.headcount??'','Com ocorrência':s.people,'% do quadro':s.pctPeople!=null?Number(s.pctPeople.toFixed(2)):'','Faltas (dias)':s.faltas,'Atrasos':s.atrasos,'Horas perdidas':Number((s.minutes/60).toFixed(2)),'Absenteísmo %':s.rate!=null?Number(s.rate.toFixed(3)):''}))),'Por loja');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(m.byRole.map(s=>({'Cargo':s.role,'Pessoas':s.people,'Ocorrências':s.events,'Horas perdidas':Number((s.minutes/60).toFixed(2))}))),'Por cargo');
+  const flat=(r,g)=>r.flags.filter(f=>!g||f.group===g).map(f=>f.name+': '+f.text).join(' | ');
+  const base=r=>({'CPF':faMaskCpf(r.cpf),'Matrícula':r.code,'Funcionário':r.name,'Loja':r.store,'Cargo':r.role,'Situação':r.situ||'','Faltas (dias)':r.faltaDays,'Atrasos':r.atrasoCount,'Horas ponto':Number((r.minutes/60).toFixed(2)),'Horas falta folha':Number(r.falta.qty.toFixed(2)),'Valor falta':Number(r.falta.value.toFixed(2)),'Horas atraso folha':Number(r.atraso.qty.toFixed(2)),'Valor atraso':Number(r.atraso.value.toFixed(2)),'DSR esperado (h)':Number(r.dsrExpected.toFixed(2)),'DSR folha (h)':Number(r.dsr.qty.toFixed(2)),'Valor DSR':Number(r.dsr.value.toFixed(2)),'Diferença horas':Number(r.diff.toFixed(2)),'Revisado':r.reviewed?'Sim':'Não'});
+  const d=m.rows.filter(r=>r.flags.some(f=>f.group==='desc')).map(r=>({...base(r),'Divergência':flat(r,'desc')}));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(d.length?d:[{'Resultado':m.sources.payrollAvailable?'Nenhuma divergência de desconto':'Folha não carregada'}]),'Pendências desconto');
+  const g=m.rows.filter(r=>r.flags.some(f=>f.group==='gest')).map(r=>({...base(r),'Alerta':flat(r,'gest')}));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(g.length?g:[{'Resultado':'Nenhum alerta de gestão'}]),'Alertas gestão');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(m.rows.map(r=>({...base(r),'Alertas':flat(r)}))),'Conferência');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(m.rows.flatMap(r=>r.events.map(e=>({'Matrícula':r.code,'Funcionário':r.name,'Loja':r.store,'Cargo':r.role,'Data':e.date?faBR(e.date):'','Dia':e.wd>=0?FA_WD[e.wd]:'','Duração':faClock(e.minutes),'Horas':Number((e.minutes/60).toFixed(2)),'Tipo':e.kind,'Feriado':e.holiday||''})))),'Ocorrências');
+  XLSX.writeFile(wb,'Auditoria_Faltas_Atrasos_'+(m.period.end||'periodo')+'.xlsx');
+}
+function faPrint(){
+  const m=faModel;if(!m)return;const T=m.totals,all=fa$('faPrintScope').value==='all';
+  const list=all?m.rows:m.rows.filter(r=>r.flags.some(f=>f.group!=='info'));
+  const now=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+  const stat=(a,b)=>'<div class="fa-print-stat"><small>'+a+'</small><b>'+b+'</b></div>';
+  const stores=m.byStore.slice(0,15).map(s=>'<tr><td>'+faEsc(s.store)+'</td><td>'+(s.headcount??'—')+'</td><td>'+s.people+'</td><td>'+s.faltas+'</td><td>'+s.atrasos+'</td><td>'+faClock(s.minutes)+'</td><td>'+(s.rate!=null?faDec(s.rate,2)+'%':'—')+'</td></tr>').join('');
+  const rows=list.length?list.map(r=>'<tr><td>'+faEsc(r.name)+'<br>'+faEsc(faMaskCpf(r.cpf))+' · '+faEsc(r.code)+'</td><td>'+faEsc(r.store)+'</td><td>'+r.events.map(e=>faBR(e.date)+' '+faClock(e.minutes)).join('<br>')+'</td><td>'+(m.sources.payrollAvailable?'Falta '+faH(r.falta.qty)+'<br>Atraso '+faH(r.atraso.qty)+'<br>DSR '+faH(r.dsr.qty)+' (esp. '+faH(r.dsrExpected)+')':'—')+'</td><td>'+(r.flags.filter(f=>f.group!=='info').map(f=>'<b>'+faEsc(f.name)+':</b> '+faEsc(f.text)).join('<br>')||'Sem pendência')+(r.reviewed?'<br><i>Revisado</i>':'')+'</td></tr>').join(''):'<tr><td colspan="5">Nenhuma pendência no período.</td></tr>';
+  fa$('faPrintReport').innerHTML='<div class="fa-print-header"><img src="../crediario/logo-esposende.jpg" alt="Esposende"><div><div class="fa-print-title">Auditoria de Faltas e Atrasos</div><div class="fa-print-sub">Ponto '+faEsc(faPeriodLabel(m))+(m.payrollPeriod?' · Folha '+faEsc(m.payrollPeriod):'')+' · Gerado em '+faEsc(now)+'</div></div></div>'
+   +'<div class="fa-print-stats">'+stat('Quadro ativo',m.ativos?faInt(m.ativos):'—')+stat('Com ocorrência',T.people+(m.ativos?' · '+faPct(T.people,m.ativos):''))+stat('Faltas (dias)',T.faltaEvents+' · '+T.faltaPeople+' pessoas')+stat('Atrasos',T.atrasoEvents+' · '+T.atrasoPeople+' pessoas')+stat('Absenteísmo',T.rate!=null?faDec(T.rate,2)+'%':'—')+stat('Divergências de desconto',m.sources.payrollAvailable?T.discPeople:'sem folha')+stat('Alertas de gestão',T.alertPeople)+'</div>'
+   +((m.warnings||[]).length?'<div class="fa-print-alert">'+m.warnings.map(faEsc).join('<br>')+'</div>':'')
+   +'<h2>Absenteísmo por loja</h2><table class="fa-print-table"><thead><tr><th>Loja</th><th>Quadro</th><th>Com ocorrência</th><th>Faltas</th><th>Atrasos</th><th>Horas</th><th>Absenteísmo</th></tr></thead><tbody>'+stores+'</tbody></table>'
+   +'<h2>'+(all?'Conferência completa':'Pendências de desconto e gestão')+' · '+list.length+' colaborador(es)</h2><table class="fa-print-table"><thead><tr><th style="width:20%">Colaborador</th><th style="width:15%">Loja</th><th style="width:13%">Ocorrências</th><th style="width:15%">Folha</th><th>Resultado</th></tr></thead><tbody>'+rows+'</tbody></table>'
+   +'<div class="fa-print-foot">Falta = ocorrência de 7h20 ou mais no dia; atraso = menor que 7h20. DSR esperado = 7h20 por semana com falta + 7h20 por feriado nacional na semana. Tolerância 0,05 h; atrasos de até 10 min/dia não descontáveis (CLT art. 58 §1º). Valores conforme a folha. Esposende · Central de Auditoria &amp; Controle.</div>';
+  const old=document.title;document.title='Auditoria_Faltas_Atrasos';window.print();setTimeout(()=>document.title=old,1200);
+}
+
+/* ===== Base privada (Supabase) ===== */
 async function faSha256(bytes){const digest=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('')}
-async function faHashFiles(){const files=[faPointFile,faPayrollFile,faRosterFile].filter(Boolean),enc=new TextEncoder(),parts=[];let length=0;for(const f of files){const name=enc.encode(f.name),data=new Uint8Array(await f.arrayBuffer());parts.push(name,data);length+=name.length+data.length}const bytes=new Uint8Array(length);let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.length}return faSha256(bytes)}
-function faSummary(){const base=window.faPayrollHeadcount||null,events=faRows.reduce((s,r)=>s+r.events.length,0),pointMinutes=faRows.reduce((s,r)=>s+r.minutes,0),issues=faRows.filter(r=>r.level==='bad');return {ruleVersion:'fa-v2-desconto-e-metricas',events,payrollHeadcount:base,employeesWithOccurrence:faRows.filter(r=>r.events.length).length,pointMinutes,missingDiscount:issues.filter(r=>r.missing).length,discountWithoutPoint:issues.filter(r=>r.discountWithoutPoint).length,qtyDiff:issues.filter(r=>r.qtyDiff).length,reviewCount:issues.length,delayEmployees:window.faDelayEmployees||0,delayEvents:window.faDelayEvents||0,delayRate:base?(window.faDelayEmployees||0)/base*100:0,payrollHours1356:faRows.reduce((s,r)=>s+(r.hours1356??0),0),payrollValue1356:faRows.reduce((s,r)=>s+(r.value1356??0),0),payrollHours1357:faRows.reduce((s,r)=>s+r.dsrHours,0),payrollValue1357:faRows.reduce((s,r)=>s+r.dsrValue,0),payrollHours1354:faRows.reduce((s,r)=>s+r.hours1354,0),payrollValue1354:faRows.reduce((s,r)=>s+r.lateValue,0),payrollHoursDeducted:faRows.reduce((s,r)=>s+r.payrollHours,0),payrollValueDeducted:faRows.reduce((s,r)=>s+r.payrollValue,0)}}
-function faApplySaved(row){faCurrentAuditId=row.id||null;const s=row.resumo||{};faRows=(Array.isArray(row.relatorio)?row.relatorio:[]).map(r=>{const hours1356=Number(r.hours1356??r.payrollHours??0),hours1354=Number(r.hours1354??r.lateHours??0),value1356=Number(r.value1356??r.payrollValue??0),lateValue=Number(r.lateValue??0),payrollHours=hours1356+hours1354,payrollValue=value1356+lateValue,diff=payrollHours-Number(r.minutes||0)/60,missing=Number(r.minutes||0)>0&&payrollHours<=.05,discountWithoutPoint=Number(r.minutes||0)===0&&(payrollHours>.05||payrollValue>.01),qtyDiff=!missing&&!discountWithoutPoint&&Math.abs(diff)>.05;return {...r,cpf:faMaskCpf(r.cpf),codes:r.codes||[r.code],events:r.events||[],hours1356,hours1354,value1356,lateValue,payrollHours,payrollValue,diff,missing,discountWithoutPoint,qtyDiff,dsrReview:false,classReview:false,cpfReview:false,level:(missing||discountWithoutPoint||qtyDiff)?'bad':'ok',status:missing?'Sem desconto':discountWithoutPoint?'Desconto sem ocorrência no ponto':qtyDiff?(diff<0?'Desconto menor que o ponto':'Desconto maior que o ponto'):'Desconto compatível'}});if(!faRows.length)return;const period=row.periodo_ponto||'Período salvo',payroll=row.competencia_id||'',issueRows=faRows.filter(r=>r.level==='bad'),noDiscount=issueRows.filter(r=>r.missing).length,qtyDiff=issueRows.filter(r=>r.qtyDiff).length,withoutPoint=issueRows.filter(r=>r.discountWithoutPoint).length,events=faRows.reduce((n,r)=>n+r.events.length,0),pointMinutes=Number(s.pointMinutes??faRows.reduce((n,r)=>n+r.minutes,0)),typedEvents=faRows.some(r=>r.events.some(e=>e.kind==='atraso'||e.kind==='falta')),delayEventList=faRows.flatMap(r=>r.events.filter(e=>typedEvents?e.kind==='atraso':(!e.kind&&e.minutes<440)||(e.kind==='nao_informado'&&e.minutes<440))),delayPeople=new Set(delayEventList.map(e=>{const r=faRows.find(x=>x.events.includes(e));return r?.cpf||r?.code||e.code})).size,delayRate=Number(s.payrollHeadcount)?delayPeople/Number(s.payrollHeadcount)*100:0;window.faPayrollHeadcount=Number(s.payrollHeadcount)||null;window.faDelayEmployees=delayPeople;window.faDelayEvents=delayEventList.length;fa$('faPeriod').textContent=period+(payroll?' · Folha '+payroll:'');fa$('faState').textContent='Relatório privado carregado · '+new Date(row.criado_em).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});fa$('faDot').className='fa-dot good';fa$('faKpiPayroll').textContent=window.faPayrollHeadcount??'—';fa$('faKpiPeople').textContent=s.employeesWithOccurrence??faRows.filter(r=>r.events.length).length;fa$('faKpiPeopleFoot').textContent=window.faPayrollHeadcount?faDec((Number(s.employeesWithOccurrence||0)/window.faPayrollHeadcount)*100)+'% da folha · colaboradores com registro':'Base total não registrada nesta auditoria salva';fa$('faKpiEvents').textContent=events;fa$('faKpiEventsFoot').textContent=faClock(pointMinutes)+' somadas no período';fa$('faKpiDelayTitle').innerHTML=(faRows.some(r=>r.events.some(e=>e.kind==='atraso'||e.kind==='falta'))?'Atrasos identificados ':'Atrasos / parciais* ')+'<span class="fa-kpi-icon">◴</span>';fa$('faKpiDelay').textContent=delayEventList.length;fa$('faKpiDelayFoot').textContent=delayPeople+' colaborador(es) · '+(window.faPayrollHeadcount?faDec(delayRate)+'% da folha · ':'')+(typedEvents?'tipo informado no ponto':'estimativa; tipo não confirmado no arquivo');fa$('faKpiPoint').textContent=faClock(pointMinutes);fa$('faKpiReview').textContent=issueRows.length;fa$('faKpiReview').closest('.fa-kpi').className='fa-kpi '+(issueRows.length?'bad':'good');fa$('faKpiReviewFoot').textContent=noDiscount+' sem desconto · '+qtyDiff+' quantidade divergente · '+withoutPoint+' desconto sem ponto';fa$('faRub1356').textContent=faDec(s.payrollValue1356||0)+' · '+faDec(s.payrollHours1356||0)+'h';fa$('faRub1357').textContent=faDec(s.payrollValue1357||0)+' · '+faDec(s.payrollHours1357||0)+'h';fa$('faRub1354').textContent=faDec(s.payrollValue1354||0)+' · '+faDec(s.payrollHours1354||0)+'h';fa$('faCoverage').textContent=issueRows.length?issueRows.length+' divergência(s) de desconto':'Nenhuma divergência de desconto';fa$('faCoverage').className='fa-badge '+(issueRows.length?'bad':'ok');fa$('faAlert').classList.toggle('show',issueRows.length>0);fa$('faAlertText').innerHTML=issueRows.length?'<b>'+noDiscount+' sem desconto, '+qtyDiff+' com quantidade diferente e '+withoutPoint+' desconto(s) sem ocorrência no ponto.</b>':'';fa$('fa-export').disabled=false;fa$('fa-export2').disabled=false;fa$('fa-print').disabled=false;faRender();faTop();faIssues()}
-async function faInitPrivate(){try{if(!window.supabase?.createClient)throw Error('Biblioteca de acesso privado não carregou.');faSb=window.supabase.createClient('https://rdztzurfesnobfkazgpm.supabase.co','sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h');const auth=await faSb.auth.getUser();if(auth.error||!auth.data?.user){fa$('faPrivateStatus').textContent='Abra este módulo pelo Portal após entrar com seu usuário.';return}faPrivateUser=auth.data.user;const {data,error}=await faSb.from('rh_auditoria_faltas').select('id,competencia_id,periodo_ponto,resumo,relatorio,criado_em').order('criado_em',{ascending:false}).limit(1);if(error){fa$('faPrivateStatus').textContent='Sessão sem acesso ao módulo de RH.';console.warn('[Faltas] RLS:',error.message);return}if(!data?.length){fa$('faPrivateStatus').textContent='Nenhuma auditoria privada salva ou perfil RH sem acesso.';return}if(data[0].resumo?.ruleVersion!=='fa-v2-desconto-e-metricas'){fa$('faPrivateStatus').textContent='A auditoria salva usa critérios anteriores. Recarregue ponto e folha para aplicar as regras atuais.';return}faApplySaved(data[0]);fa$('faPrivateStatus').textContent='Auditoria privada carregada · RH autorizado'}catch(e){fa$('faPrivateStatus').textContent='Não foi possível abrir a base privada.';console.warn('[Faltas] Base privada:',e.message)}}
-async function faPersistReviewed(){if(!faSb||!faCurrentAuditId)return;const safeRows=faRows.map(r=>({...r,cpf:faMaskCpf(r.cpf)}));const {error}=await faSb.from('rh_auditoria_faltas').update({relatorio:safeRows}).eq('id',faCurrentAuditId);if(error){faToast('Não consegui salvar a marcação de revisão.');console.warn('[Faltas] Falha ao salvar revisão:',error.message)}else fa$('faPrivateStatus').textContent='Revisões atualizadas na base privada'}
-async function faSavePrivate(period,payrollPeriod){if(faInitPromise)await faInitPromise;if(!faSb||!faPrivateUser){fa$('faPrivateStatus').textContent='Entre no Portal com um usuário autorizado de RH para salvar.';faToast('Auditoria feita no navegador, mas não salva: sessão RH não localizada.');return}try{fa$('faPrivateStatus').textContent='Salvando relatório na base privada…';const hash=await faHashFiles();const safeRows=faRows.map(r=>({...r,cpf:faMaskCpf(r.cpf)}));const periodText=period||fa$('faPeriod').textContent.split(' · Folha ')[0];const competence=payrollPeriod||fa$('faPeriod').textContent.split(' · Folha ')[1]||'';const payload={competencia_id:competence,periodo_ponto:periodText,arquivo_ponto:faPointFile?.name||'Cartão de ponto',arquivo_folha:faPayrollFile?.name||'Folha detalhada',arquivo_base:faRosterFile?.name||null,hash_arquivos:hash,resumo:faSummary(),relatorio:safeRows,criado_por:faPrivateUser.id,tenant_id:'esposende'};const {data:saved,error}=await faSb.from('rh_auditoria_faltas').upsert(payload,{onConflict:'hash_arquivos'}).select('id').single();if(error)throw error;faCurrentAuditId=saved.id;fa$('faPrivateStatus').textContent='Auditoria salva na base privada · RH autorizado';faToast('Auditoria salva na base privada do Portal.')}catch(e){fa$('faPrivateStatus').textContent='Falha ao salvar; confira acesso e conexão.';faToast('O cruzamento terminou, mas o relatório não foi salvo na base privada.');console.error('[Faltas] Falha ao salvar:',e.message)}}
-fa$('faBatch').addEventListener('change',e=>faBatchFiles(e.target.files));fa$('faPoint').addEventListener('change',e=>{faPointFile=e.target.files[0]||null;fa$('faPointName').textContent=faPointFile?.name||'Nenhum arquivo selecionado';faSyncProcessButtons()});fa$('faPayroll').addEventListener('change',e=>{faPayrollFile=e.target.files[0]||null;fa$('faPayrollName').textContent=faPayrollFile?.name||'Nenhum arquivo selecionado';faSyncProcessButtons()});fa$('faRoster').addEventListener('change',e=>{faRosterFile=e.target.files[0]||null;fa$('faRosterName').textContent=faRosterFile?.name||'Sem base adicional · nome será resolvido pelo CPF da folha'});faInitPromise=faInitPrivate();
+async function faHashFiles(){const files=[faSlots.point,faSlots.payroll,faSlots.roster].filter(Boolean).map(s=>s.file),enc=new TextEncoder(),parts=[];let len=0;for(const f of files){const n=enc.encode(f.name),d=new Uint8Array(await f.arrayBuffer());parts.push(n,d);len+=n.length+d.length}const b=new Uint8Array(len);let o=0;for(const p of parts){b.set(p,o);o+=p.length}return faSha256(b)}
+function faSafeRows(){return faModel.rows.map(r=>({...r,cpf:faMaskCpf(r.cpf)}))}
+async function faInitPrivate(){
+  try{
+    if(!window.supabase?.createClient)throw Error('Biblioteca de acesso privado não carregou.');
+    faSb=window.supabase.createClient('https://rdztzurfesnobfkazgpm.supabase.co','sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h');
+    const auth=await faSb.auth.getUser();
+    if(auth.error||!auth.data?.user){fa$('faPrivateStatus').textContent='Sem sessão do Portal: a análise funciona, mas não será salva.';return}
+    faPrivateUser=auth.data.user;
+    const {data,error}=await faSb.from('rh_auditoria_faltas').select('id,competencia_id,periodo_ponto,resumo,relatorio,criado_em').order('criado_em',{ascending:false}).limit(12);
+    if(error){fa$('faPrivateStatus').textContent='Sessão sem acesso ao histórico de RH.';console.warn('[Faltas] RLS:',error.message);return}
+    faHistory=data||[];
+    const last=faHistory.find(x=>x.resumo?.ruleVersion===FA_RULE);
+    if(!last){fa$('faPrivateStatus').textContent=faHistory.length?'Auditorias salvas usam critérios anteriores. Carregue os arquivos para gerar a nova análise.':'Nenhuma auditoria salva ainda.';return}
+    if(faModel)return;
+    faModel={...last.resumo,rows:Array.isArray(last.relatorio)?last.relatorio:[]};faCurrentAuditId=last.id;faRenderAll();
+    fa$('faState').textContent='Auditoria salva carregada · '+new Date(last.criado_em).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+    fa$('faPrivateStatus').textContent='Auditoria privada carregada · RH autorizado';
+  }catch(e){fa$('faPrivateStatus').textContent='Não foi possível abrir a base privada.';console.warn('[Faltas] Base privada:',e.message)}
+}
+async function faPersistReviewed(){if(!faSb||!faCurrentAuditId)return;const {error}=await faSb.from('rh_auditoria_faltas').update({relatorio:faSafeRows()}).eq('id',faCurrentAuditId);if(error){faToast('Não consegui salvar a marcação de revisão.');console.warn('[Faltas] revisão:',error.message)}else fa$('faPrivateStatus').textContent='Revisões salvas na base privada'}
+async function faSavePrivate(){
+  if(faInitPromise)await faInitPromise;
+  if(!faSb||!faPrivateUser){fa$('faPrivateStatus').textContent='Análise feita no navegador; entre no Portal com usuário de RH para salvar.';return}
+  try{
+    fa$('faPrivateStatus').textContent='Salvando relatório na base privada…';
+    const {rows,...resumo}=faModel;
+    const payload={competencia_id:faModel.payrollPeriod||(faModel.period.end||'').slice(0,7),periodo_ponto:faPeriodLabel(faModel),arquivo_ponto:faModel.sources.point,arquivo_folha:faModel.sources.payroll||'Folha não carregada',arquivo_base:faModel.sources.roster||null,hash_arquivos:await faHashFiles(),resumo,relatorio:faSafeRows(),criado_por:faPrivateUser.id,tenant_id:'esposende'};
+    const {data:saved,error}=await faSb.from('rh_auditoria_faltas').upsert(payload,{onConflict:'hash_arquivos'}).select('id').single();
+    if(error)throw error;faCurrentAuditId=saved.id;fa$('faPrivateStatus').textContent='Auditoria salva na base privada · RH autorizado';
+  }catch(e){fa$('faPrivateStatus').textContent='Análise concluída, mas não foi salva (acesso ou conexão).';console.error('[Faltas] Falha ao salvar:',e.message||e)}
+}
+
+/* ===== Eventos de carregamento ===== */
+fa$('faFileInput').addEventListener('change',e=>{const files=[...e.target.files];e.target.value='';faAddFiles(files)});
+(function(){let depth=0;const box=fa$('faLoad');
+  window.addEventListener('dragenter',e=>{if([...(e.dataTransfer?.types||[])].includes('Files')){e.preventDefault();depth++;box.classList.add('drag')}});
+  window.addEventListener('dragover',e=>{if([...(e.dataTransfer?.types||[])].includes('Files'))e.preventDefault()});
+  window.addEventListener('dragleave',()=>{depth=Math.max(0,depth-1);if(!depth)box.classList.remove('drag')});
+  window.addEventListener('drop',e=>{if(!e.dataTransfer?.files?.length)return;e.preventDefault();depth=0;box.classList.remove('drag');faAddFiles(e.dataTransfer.files)});
+})();
+window.addEventListener('error',e=>{if(String(e.message||'').includes('XLSX'))faToast('A biblioteca de planilhas não carregou. Recarregue a página.')});
+faRulesText();faRenderSlots();faInitPromise=faInitPrivate();
 </script>
 </body></html>
