@@ -13,7 +13,7 @@
 // Não altera o módulo Almoxarifado nem os dados dele.
 (function(){
   if(window.__almoxConsumoLoja)return;
-  window.__almoxConsumoLoja='2026-11-09.6';
+  window.__almoxConsumoLoja='2026-11-10.1';
 
   var SB_URL='https://rdztzurfesnobfkazgpm.supabase.co';
   var SB_KEY='sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h';
@@ -581,7 +581,7 @@
       ov=document.createElement('div');ov.id='acl-ov';
       ov.innerHTML='<div class="acl-hd">'+(logo()?'<img src="data:image/jpeg;base64,'+logo()+'" alt="Esposende">':'')
         +'<div class="acl-tt"><b>🏬 Consumo Loja · Almoxarifado</b><small>Consumo x venda por loja · lojas fora do padrão · previsão e sugestão de compra</small></div>'
-        +'<div class="acl-acoes"><button type="button" data-a="xls">⬇ Excel</button><button type="button" data-a="ger" class="acl-pri">🖨 Relatório Diretoria</button><button type="button" data-a="rec">↻ Atualizar</button><button type="button" data-a="fechar">← Voltar</button></div></div>'
+        +'<div class="acl-acoes"><button type="button" data-a="xls">⬇ Excel</button><button type="button" data-a="pdfAba" title="PDF da aba aberta">📄 PDF desta aba</button><button type="button" data-a="pdfTudo" title="Todas as abas num PDF só">📚 PDF completo</button><button type="button" data-a="ger" class="acl-pri">🖨 Relatório Diretoria</button><button type="button" data-a="rec">↻ Atualizar</button><button type="button" data-a="fechar">← Voltar</button></div></div>'
         +'<div class="acl-tabs">'+[['painel','📊 Painel'],['comp','⚖️ Comparativo entre lojas'],['mensal','📅 Relatório mensal'],['prev','🔮 Previsão & compra'],['base','📥 Base de vendas']]
           .map(function(t){return '<button type="button" data-t="'+t[0]+'">'+t[1]+'</button>';}).join('')+'</div>'
         +'<div class="acl-flt" id="acl-flt"></div><div class="acl-bd" id="acl-bd"></div>';
@@ -593,6 +593,8 @@
         if(a==='fechar'){ov.style.display='none';voltarAlmox();}
         else if(a==='rec'){S.carregado=false;carregar(true);}
         else if(a==='ger')relatorioGerencial();
+        else if(a==='pdfAba')relatorioAbas([S.aba]);
+        else if(a==='pdfTudo')relatorioAbas(['painel','comp','mensal','prev','base']);
         else if(a==='xls')exportarExcel(b);
         else if(a==='linha'){S.linha=b.dataset.l;S.aba='comp';render();}
         else if(a==='kpi'){S.kpi=S.kpi===b.dataset.k?null:b.dataset.k;render(true);}
@@ -980,6 +982,104 @@
     w.document.close();
   }
 
+  // ================== PDF de cada aba (e PDF completo) ==================
+  // Usa as mesmas telas do módulo, redesenhadas em fundo branco (A4 paisagem, logo oficial).
+  // Painel: inclui a composição de todos os cards. Comparativo e previsão por loja: todos os itens.
+  var ABA_NOME={painel:'Painel',comp:'Comparativo entre lojas',mensal:'Relatório mensal',prev:'Previsão & compra',base:'Base de vendas'};
+  function vBasePDF(){
+    var B=S.base,P=B.params||{};
+    function resumo(lista,campos){var ms={};lista.forEach(function(x){var m=ms[x.mes]=ms[x.mes]||{lojas:{},v:{}};m.lojas[x.loja]=1;campos.forEach(function(c){if(x[c]!=null)m.v[c]=(m.v[c]||0)+Number(x[c]);});});
+      var ks=Object.keys(ms).sort();if(!ks.length)return '<div class="acl-nota">Nada carregado.</div>';var T={};
+      return '<table><thead><tr><th>Mês</th><th>Lojas</th>'+campos.map(function(c){return '<th>'+({pares:'Pares (PA)',nfs:'NFS',valor:'Valor'}[c])+'</th>';}).join('')+'</tr></thead><tbody>'
+        +ks.map(function(k){var m=ms[k];campos.forEach(function(c){T[c]=(T[c]||0)+(m.v[c]||0);});return '<tr><td class="acl-l">'+mesLabel(k)+'</td><td>'+Object.keys(m.lojas).length+'</td>'+campos.map(function(c){return '<td>'+(m.v[c]!=null?(c==='valor'?brl0(m.v[c]):n0(m.v[c])):'—')+'</td>';}).join('')+'</tr>';}).join('')
+        +'<tr class="acl-tot"><td>TOTAL</td><td></td>'+campos.map(function(c){return '<td>'+(c==='valor'?brl0(T[c]):n0(T[c]))+'</td>';}).join('')+'</tr></tbody></table>';}
+    var par=[['PA por sacola (regra)',n1(P.paPorSacola)],['PA por NF (NFS = PA ÷)',n2(P.paPorNF||1.5)],['Filme stretch: segurança (meses)',n1(P.segStretch!=null?P.segStretch:3)],['Previsão de venda (+% sobre a média)',n0(P.crescimento)+'%'],
+      ['Dezembro (× mês comum)',n2(P.fatorDez)],['Sacola P / M / G (baliza)',n0(P.mixP)+'% / '+n0(P.mixM)+'% / '+n0(P.mixG)+'%'],['Tolerância do padrão',n0(P.tolerancia)+'%'],['Cobertura de estoque',n1(P.cobertura)+' meses'],
+      ['Horizonte da previsão',n0(P.horizonte)+' meses'],['Base da previsão',P.basePrev==='real'?'Índice real de cada loja':'Padrão da rede']];
+    return '<div class="acl-kpis2"><div class="acl-k" style="--c:#14a386"><span>Base de vendas</span><b>'+n0(B.vendas.length)+'</b><small>linhas loja × mês</small></div>'
+      +'<div class="acl-k" style="--c:#38bdf8"><span>Atualizada em</span><b style="font-size:16px">'+(B.atualizadoEm?new Date(B.atualizadoEm).toLocaleString('pt-BR'):'—')+'</b><small>'+esc(B.atualizadoPor||'')+'</small></div></div>'
+      +'<div class="pdf-2"><div><h3>Vendas carregadas por mês</h3>'+resumo(B.vendas,['pares','nfs','valor'])+'</div>'
+      +'<div><h3>Parâmetros em uso</h3><table><tbody>'+par.map(function(x){return '<tr><td class="acl-l">'+x[0]+'</td><td><b>'+esc(x[1])+'</b></td></tr>';}).join('')+'</tbody></table></div></div>'
+      +(B.arquivos&&B.arquivos.length?'<h3>Últimas cargas</h3><table><thead><tr><th>Quando</th><th>Arquivo</th><th>Tipo</th><th>Meses</th><th>Lojas</th></tr></thead><tbody>'
+        +B.arquivos.slice(-15).reverse().map(function(a){return '<tr><td class="acl-l">'+esc(new Date(a.em).toLocaleString('pt-BR'))+'</td><td class="acl-l">'+esc(a.nome)+'</td><td>'+esc(a.tipo)+'</td><td>'+esc(a.meses)+'</td><td>'+esc(a.lojas)+'</td></tr>';}).join('')+'</tbody></table>':'')
+      +'<div class="acl-nota">Estoque usado: almoxarifado (módulo Almoxarifado, atualizado em '+(S.alm&&S.alm.atualizado?new Date(S.alm.atualizado).toLocaleString('pt-BR'):'—')+'). Estoque das lojas é desconsiderado.</div>';
+  }
+  function htmlAba(aba,R){
+    var guarda={linha:S.linha,kpi:S.kpi},tema={txt:TEMA_ESCURO.txt,sub:TEMA_ESCURO.sub,grid:TEMA_ESCURO.grid},h='';
+    // Gráficos com as cores do papel (texto escuro, grade clara) enquanto monta o PDF.
+    TEMA_ESCURO.txt=TEMA_CLARO.txt;TEMA_ESCURO.sub=TEMA_CLARO.sub;TEMA_ESCURO.grid=TEMA_CLARO.grid;
+    try{
+      if(aba==='painel'){S.kpi=null;var I=indicadores(R);
+        h=vPainel(R)+'<h2 class="pdf-sec pdf-quebra">Composição dos indicadores</h2>'
+          +['vend','cons','est','prev','compra','lojas'].map(function(k){return detalheKpi(k,I,R);}).join('');}
+      else if(aba==='comp')h=R.linhas.map(function(x){return x.L;}).map(function(L,i){S.linha=L.id;return '<h2 class="pdf-sec'+(i?' pdf-quebra':'')+'">'+L.icone+' '+esc(L.nome)+'</h2>'+vComp(R);}).join('');
+      else if(aba==='mensal')h=vMensal(R);
+      else if(aba==='prev')h=avisoBase(R)+previsaoVenda(R)+'<h3>Sugestão de compra — todos os itens controlados</h3>'+tabelaCompra(R)
+        +R.linhas.map(function(x){return '<div class="pdf-quebra">'+vPrevLoja(R,x.L.id)+'</div>';}).join('');
+      else if(aba==='base')h=vBasePDF();
+    }finally{S.linha=guarda.linha;S.kpi=guarda.kpi;TEMA_ESCURO.txt=tema.txt;TEMA_ESCURO.sub=tema.sub;TEMA_ESCURO.grid=tema.grid;}
+    // Sem interação no papel: tira cliques e o seletor de item do gráfico (fica "Todos os itens").
+    return h.replace(/<select[\s\S]*?<\/select>/g,'').replace(/ data-a="[^"]*"/g,'').replace(/<a [^>]*>(fechar ✕|Carregar base|Recarregar)<\/a>/g,'');
+  }
+  function relatorioAbas(abas){
+    if(!S.ultimo){alert('Aguarde os dados carregarem.');return;}
+    var w=window.open('','_blank');if(!w){alert('Libere pop-ups para abrir o relatório.');return;}
+    var R=S.ultimo,M=R.M;
+    var de=M.meses.length?mesLabel(M.meses[0]):'',ate=M.meses.length?mesLabel(M.meses[M.meses.length-1]):'';
+    var onde=S.filtroLoja?S.filtroLoja:(S.filtroReg?'Regional '+S.filtroReg:'Rede (todas as lojas)');
+    var mx='';(S.alm&&S.alm.consumo||[]).forEach(function(r){var x=String(r['Data Solicitação']||'');if(x>mx)mx=x;});
+    var baseAte=mx?mx.slice(8,10)+'/'+mx.slice(5,7)+'/'+mx.slice(0,4):'—';
+    var tudo=abas.length>1,tit=tudo?'Consumo Loja — relatório completo':'Consumo Loja — '+ABA_NOME[abas[0]];
+    var indice=tudo?'<div class="pdf-ind"><b>Conteúdo</b>'+abas.map(function(a,i){return '<span>'+(i+1)+'. '+ABA_NOME[a]+'</span>';}).join('')+'</div>':'';
+    var corpo=abas.map(function(a,i){return '<section class="'+(i?'pdf-quebra':'')+'">'+(tudo?'<h1 class="pdf-aba">'+(i+1)+'. '+ABA_NOME[a]+'</h1>':'')+htmlAba(a,R)+'</section>';}).join('');
+    var css='@page{size:A4 landscape;margin:7mm}*{box-sizing:border-box}body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#1b2533;margin:0;background:#eef2f7}'
+      +'#doc{background:#fff;width:1100px;margin:14px auto;padding:16px 18px;border-radius:10px;box-shadow:0 4px 18px rgba(20,40,74,.12)}'
+      +'.cab{display:flex;align-items:center;gap:12px;padding-bottom:8px;border-bottom:3px solid #14284a;margin-bottom:10px}.cab img{height:40px;border-radius:5px}.cab .tt1{flex:1}.cab h1{margin:0;font-size:17px;color:#14284a}.cab p{margin:2px 0 0;color:#5b6b80;font-size:10.5px}'
+      +'.tag{background:#14284a;color:#fff;font-size:9px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.05em}'
+      +'.pdf-ind{display:flex;gap:14px;flex-wrap:wrap;font-size:10.5px;color:#5b6b80;margin:0 0 8px}.pdf-ind b{color:#14284a}'
+      +'h1.pdf-aba{font-size:15px;color:#fff;background:#14284a;padding:6px 10px;border-radius:6px;margin:0 0 10px}'
+      +'h2.pdf-sec{font-size:13px;color:#14284a;margin:12px 0 6px;padding-left:8px;border-left:4px solid #0e7c66}'
+      +'h3{font-size:12px;color:#14284a;margin:12px 0 5px}.pdf-quebra{page-break-before:always}.pdf-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}'
+      // cards
+      +'.acl-kpis2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:2px 0 10px}.acl-kpis6{grid-template-columns:repeat(6,1fr)}'
+      +'.acl-k{position:relative;background:#f7f9fc;border:1px solid #e1e7ef;border-top:4px solid var(--c);border-radius:8px;padding:7px 9px;page-break-inside:avoid}'
+      +'.acl-k span{display:block;font-size:8px;font-weight:700;color:#5b6b80;text-transform:uppercase;letter-spacing:.04em}.acl-k b{display:block;font-size:16px;margin:3px 0;color:#14284a}.acl-k b .acl-kv{font-size:9px;color:#5b6b80}'
+      +'.acl-k small{display:block;color:#8091a7;font-size:8px}.acl-k i{display:none}'
+      +'.acl-chip{display:inline-block;font-style:normal;font-size:8px;font-weight:700;padding:2px 7px;border-radius:12px;margin:1px 0 3px}.acl-chip-n{background:#e8eef6;color:#14284a}.acl-chip-ok{background:#d1fae5;color:#065f46}.acl-chip-mau{background:#ffe4e6;color:#9f1239}'
+      // gráficos e quadros
+      +'.acl-graf{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}.acl-graf1{grid-template-columns:1.2fr 1fr}'
+      +'.acl-box{border:1px solid #e1e7ef;border-radius:8px;padding:7px 9px;page-break-inside:avoid;min-width:0}.acl-box h5{margin:0 0 4px;font-size:10px;color:#14284a}.acl-box h5 small{color:#5b6b80;font-weight:400}'
+      +'.acl-box div[style*="font-size:11px"]{font-size:8.5px!important}.acl-leg{display:flex;gap:8px;flex-wrap:wrap;font-size:8px;color:#5b6b80;margin-top:3px}.acl-leg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:3px}'
+      +'.acl-lista div{border-bottom:1px solid #eef2f7;padding:3px 0;font-size:8.5px}.acl-lista b{display:block;color:#14284a}.acl-lista span{color:#be123c}'
+      +'.acl-det{border:1px solid #d9e1ec;border-radius:8px;padding:7px 9px;margin:0 0 10px;page-break-inside:auto}.acl-det-h{font-weight:800;color:#14284a;font-size:11px;margin-bottom:5px}'
+      +'.acl-faixa,.acl-aviso{background:#fff7ed;border:1px solid #fdba74;color:#9a3412;border-radius:6px;padding:6px 9px;font-size:9px;margin-bottom:8px}'
+      +'.acl-nota{color:#8091a7;font-size:8.5px;margin-top:5px;line-height:1.45}'
+      // tabelas
+      +'.acl-tw{max-height:none!important;overflow:visible!important;border:0!important}'
+      +'table{width:100%;border-collapse:separate;border-spacing:0;font-size:8.3px;border:1px solid #d9e1ec;border-radius:6px;overflow:hidden;margin-bottom:4px}'
+      +'th{background:#14284a;color:#fff;padding:4px 4px;text-align:right;font-size:7.4px;letter-spacing:.02em;text-transform:uppercase}th:first-child{text-align:left;padding-left:6px}'
+      +'td{padding:2.6px 4px;text-align:right;border-bottom:1px solid #eef2f7;white-space:nowrap;color:#1b2533}td:first-child,td.acl-l{text-align:left;padding-left:6px;white-space:normal}td small{display:block;color:#8091a7;font-size:7px}'
+      +'tbody tr:nth-child(even) td{background:#fafbfd}tr.acl-tot td{background:#dfe8f4!important;font-weight:800;color:#14284a;border-top:2px solid #14284a}tr.acl-sub td{background:#e8eef6!important;font-weight:700;color:#14284a}'
+      +'tr.acl-loja1 td{border-top:1px solid #c9d4e3}tr{page-break-inside:avoid}thead{display:table-header-group}'
+      +'.acl-up{color:#be123c!important}.acl-dn{color:#b45309!important}.acl-ok{color:#0e7c66!important}'
+      +'.acl-st{display:inline-block;padding:1px 6px;border-radius:10px;font-size:7.4px;font-weight:800}.acl-ACIMA{background:#ffe4e6;color:#9f1239}.acl-ABAIXO,.acl-SEM-PEDIDO{background:#fef3c7;color:#92400e}.acl-OK{background:#d1fae5;color:#065f46}.acl-x{background:#eef2f7;color:#5b6b80}'
+      +'.acl-mix{display:inline-flex;width:90px;height:7px;border-radius:4px;overflow:hidden;vertical-align:middle;background:#eef2f7}.acl-mix i{display:block;height:100%}'
+      +'.rod{display:flex;justify-content:space-between;color:#8091a7;font-size:8.5px;margin-top:10px;padding-top:6px;border-top:1px solid #e1e7ef}'
+      +'#barra{position:sticky;top:0;background:#0b1626;padding:8px 12px;display:flex;gap:8px;align-items:center;z-index:5}#barra button{background:#0e7c66;color:#fff;border:0;border-radius:8px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer}#barra button.s2{background:#15304d}#barra small{color:#8ca4bf;font-size:12px}'
+      +'@media print{#barra{display:none}body{background:#fff}#doc{box-shadow:none;margin:0;padding:0;width:auto;border-radius:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}';
+    var nome='Esposende_consumo_loja_'+(tudo?'completo':abas[0])+'_'+new Date().toISOString().slice(0,10)+'.pdf';
+    var js='function salvarPDF(){var b=document.getElementById("bpdf");b.textContent="Gerando PDF...";b.disabled=true;var d=document.getElementById("doc");'
+      +'function go(){d.style.cssText="margin:0;box-shadow:none;border-radius:0";html2pdf().set({margin:[6,6,6,6],filename:"'+nome+'",image:{type:"jpeg",quality:0.93},html2canvas:{scale:'+(tudo?1.5:2)+',backgroundColor:"#ffffff"},jsPDF:{unit:"mm",format:"a4",orientation:"landscape"},pagebreak:{mode:["css","legacy"],before:".pdf-quebra",avoid:["tr",".acl-k",".acl-box"]}}).from(d).save().then(function(){b.textContent="📄 Salvar PDF";b.disabled=false;d.style.cssText="";});}'
+      +'if(window.html2pdf)return go();var s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js";s.onload=go;s.onerror=function(){b.textContent="📄 Salvar PDF";b.disabled=false;window.print();};document.head.appendChild(s);}';
+    w.document.write('<html><head><meta charset="utf-8"><title>Esposende · '+esc(tit)+'</title><style>'+css+'</style></head><body>'
+      +'<div id="barra"><button onclick="window.print()">🖨 Imprimir / Salvar como PDF</button><button id="bpdf" class="s2" onclick="salvarPDF()">📄 Baixar PDF</button><button class="s2" onclick="window.close()">✕ Fechar</button>'+(tudo?'<small>Relatório longo: "Imprimir → Salvar como PDF" sai mais rápido e mais nítido.</small>':'')+'</div>'
+      +'<div id="doc"><div class="cab">'+(logo()?'<img src="data:image/jpeg;base64,'+logo()+'" alt="Esposende">':'')+'<div class="tt1"><h1>Almoxarifado — '+esc(tit)+'</h1><p>'+de+' a '+ate+' · '+esc(onde)+' · requisições até '+baseAte+' · estoque do almoxarifado AX</p></div><span class="tag">CONSUMO LOJA</span></div>'
+      +indice+corpo
+      +'<div class="rod"><span>Esposende · Central de Auditoria &amp; Controle</span><span>Gerado em '+new Date().toLocaleString('pt-BR')+'</span></div></div>'
+      +'<scr'+'ipt>'+js+'</scr'+'ipt></body></html>');
+    w.document.close();
+  }
+
   function vMensal(R){
     var M=R.M,meses=M.meses;
     var lojasOk={};Object.keys(M.lojas).forEach(function(c){if(bateLoja(M.lojas[c]))lojasOk[c]=1;});
@@ -1018,10 +1118,11 @@
     return h;
   }
 
-  function vPrev(R){
-    var M=R.M,x=R.linhas.find(function(l){return l.L.id===S.linha;}),L=x.L,C=x.C,F=x.F,P=M.P,fut=F.futuros;
-    var h=avisoBase(R)+previsaoVenda(R)+'<h3>Sugestão de compra — todos os itens controlados</h3>'+tabelaCompra(R)
-      +'<h3>'+L.icone+' '+esc(L.nome)+' — previsão de consumo por loja ('+fut.map(mesLabel).join(', ')+')</h3>'
+  function vPrev(R){return avisoBase(R)+previsaoVenda(R)+'<h3>Sugestão de compra — todos os itens controlados</h3>'+tabelaCompra(R)+vPrevLoja(R,S.linha);}
+  // Previsão de consumo por loja de um item (tela: item escolhido; PDF: todos os itens).
+  function vPrevLoja(R,linhaId){
+    var M=R.M,x=R.linhas.find(function(l){return l.L.id===linhaId;}),L=x.L,C=x.C,F=x.F,P=M.P,fut=F.futuros;
+    var h='<h3>'+L.icone+' '+esc(L.nome)+' — previsão de consumo por loja ('+fut.map(mesLabel).join(', ')+')</h3>'
       +'<div class="acl-nota" style="margin:0 0 8px">'+(C.dk?'Motor previsto = média mensal de '+DRV_NOME[C.dk]+' no ano':'Sem motor: média mensal de consumo')
       +(F.ehVenda?' · mês comum +'+n0(P.crescimento)+'% · dezembro ×'+n2(P.fatorDez):'')
       +(C.dk?'. Consumo previsto = motor previsto × '+(P.basePrev==='real'?'índice real de cada loja':'padrão da rede ('+fmtTaxa(L,C.padrao)+')')+'. Loja sem base usa a própria média de consumo.':'.')+'</div>';
