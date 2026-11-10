@@ -1,9 +1,9 @@
 /* Faltas e Atrasos · módulo do Portal Executivo Esposende */
 (function(){
   if(window.__faltasAtrasosPortal)return;window.__faltasAtrasosPortal=true;
-  var V='20261110-6';
+  var V='20261110-7';
   var BASE=(function(){try{return new URL('./',document.currentScript.src).href}catch(e){return location.origin+'/portal-esposende-login/'}})();
-  var URL_MOD=BASE+'faltas-atrasos/?v='+V;
+  var URL_MOD=BASE+'faltas-atrasos/index.html?v='+V;
   function abrir(d){
     var ov=d.getElementById('faltas-atrasos-portal');
     if(!ov){
