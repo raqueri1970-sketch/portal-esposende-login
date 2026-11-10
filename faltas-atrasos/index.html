@@ -127,7 +127,7 @@
 <script>
 'use strict';
 /* ===== Configuração ===== */
-const FA_RULE='fa-v5-conta-corrente';
+const FA_RULE='fa-v6-arquivos-salvos';
 const FA_DAY_MIN=440;              // jornada diária de referência: 7h20 (44h ÷ 6 dias)
 const FA_DSR_H=44/6;               // horas de um DSR na jornada de 44h semanais
 const FA_TOL_H=0.05;               // 3 minutos de tolerância na comparação de horas
@@ -193,7 +193,7 @@ function faToast(m){const t=fa$('faToast');t.textContent=m;t.style.display='bloc
 function faCode(v){return String(v??'').trim().replace(/\.0+$/,'').replace(/\s+/g,'').replace(/^0+(?=\d{5,})/,'')}
 function faDigits(v){return String(v??'').replace(/\D/g,'')}
 function faCpf(v){const d=faDigits(v);return d?d.padStart(11,'0').slice(-11):''}
-function faMaskCpf(v){const s=String(v??'');if(s.includes('•••'))return s;const d=faCpf(v);return d.length===11?'•••.•••.'+d.slice(6,9)+'-'+d.slice(9):'CPF não localizado'}
+function faMaskCpf(v){const s=String(v??'');if(s.includes('•••'))return s.split('#')[0];const d=faCpf(v);return d.length===11?'•••.•••.'+d.slice(6,9)+'-'+d.slice(9):'CPF não localizado'}
 function faNum(v){if(typeof v==='number')return Number.isFinite(v)?v:0;let s=String(v??'').trim().replace(/[R$\s]/g,'');if(!s)return 0;if(/^\d{1,3}:\d{2}$/.test(s))return faMinutes(s)/60;if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');else s=s.replace(',','.');const n=Number(s);return Number.isFinite(n)?n:0}
 function faMinutes(v){if(v instanceof Date)return Math.round(v.getHours()*60+v.getMinutes()+v.getSeconds()/60);if(typeof v==='number'){if(v>0&&v<1)return Math.round(v*1440);return Math.round(v*60)}const s=String(v??'').trim();let m=s.match(/^(\d{1,3}):(\d{1,2})(?::\d{1,2})?$/);if(m)return Number(m[1])*60+Number(m[2]);m=s.match(/^(\d+(?:[.,]\d+)?)\s*h?(?:oras?)?$/i);if(m)return Math.round(Number(m[1].replace(',','.'))*60);m=s.match(/^(\d+)h(\d{1,2})/i);if(m)return Number(m[1])*60+Number(m[2]);return 0}
 function faClock(min){min=Math.round(min||0);const h=Math.floor(min/60),m=min%60;return h+'h'+String(m).padStart(2,'0')}
@@ -263,9 +263,9 @@ function faSlotHTML(kind){
   if(kind==='point'){const m=s.meta;info=faInt(m.events)+' ocorrências · '+faInt(m.people)+' colaboradores'+(m.start?' · '+faBR(m.start)+' a '+faBR(m.end):'')}
   if(kind==='payroll'){const m=s.meta;info=faInt(m.people)+' colaboradores · '+faInt(m.lines)+' linhas de verba'+(m.periods.length?' · competência '+faEsc(m.periods.join(', ')):'')}
   if(kind==='roster'){const m=s.meta;info=faInt(m.people)+' cadastros'+(m.date?' · base de '+faBR(m.date):'')}
-  el.className='fa-slot ok';el.innerHTML='<div class="fa-slot-top">'+base[0]+' <span class="fa-slot-tag">✓ reconhecido</span></div><div class="fa-slot-file">'+faEsc(s.file.name)+(s.sheet?' · aba '+faEsc(s.sheet):'')+'</div><div class="fa-slot-info">'+info+'</div>';
+  el.className='fa-slot ok';el.innerHTML='<div class="fa-slot-top">'+base[0]+' <span class="fa-slot-tag">'+(s.savedAt?(faPrivateUser?'✓ salvo na base':'✓ salvo neste navegador'):'✓ novo · será salvo')+'</span></div><div class="fa-slot-file">'+faEsc(s.file.name)+(s.sheet?' · aba '+faEsc(s.sheet):'')+'</div><div class="fa-slot-info">'+info+(s.savedAt?'<br>Salvo em '+new Date(s.savedAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+' · selecione outro arquivo para trocar':'')+'</div>';
 }
-function faRenderSlots(){['point','payroll','roster'].forEach(faSlotHTML);const ready=!!faSlots.point;['faProcessTop'].forEach(id=>{const b=fa$(id);b.disabled=faBusy||!ready;b.textContent=faBusy?'Processando…':'↻ Atualizar análise'})}
+function faRenderSlots(){['point','payroll','roster'].forEach(faSlotHTML);const ready=!!faInputs.point;['faProcessTop'].forEach(id=>{const b=fa$(id);b.disabled=faBusy||!ready;b.textContent=faBusy?'Processando…':'↻ Atualizar análise'})}
 async function faAddFiles(list){
   list=[...(list||[])].filter(f=>/\.(xlsx|xls|xlsm|csv)$/i.test(f.name));
   if(!list.length){faToast('Selecione planilhas .xlsx, .xls ou .csv.');return}
@@ -278,16 +278,18 @@ async function faAddFiles(list){
       if(r.kind==='point')r.meta=faPointMeta(r);
       if(r.kind==='payroll'){const ic=faFind(r.h,'code'),icp=faFind(r.h,'cpf'),ip=faFind(r.h,'period'),ppl=new Set(),per=new Map();let lines=0;for(const row of r.rows.slice(r.index+1)){const k=faCode(row[ic])||faCpf(row[icp]);if(!k)continue;lines++;ppl.add(k);if(ip>=0){const p=String(row[ip]??'').trim();if(p)per.set(p,(per.get(p)||0)+1)}}r.meta={people:ppl.size,lines,periods:[...per.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]).slice(0,3)}}
       if(r.kind==='roster'){const ic=faFind(r.h,'code'),icp=faFind(r.h,'cpf');let n=0;for(const row of r.rows.slice(r.index+1))if(faCode(row[ic])||faCpf(row[icp]))n++;r.meta={people:n,date:faFileDate(f.name)}}
-      faSlots[r.kind]=r;
+      fa$('faProgress').textContent='Preparando '+f.name+'…';await faTick();
+      faInputs[r.kind]=r.kind==='point'?faExtractPoint(r):r.kind==='payroll'?faExtractPayroll(r):faExtractRoster(r);
+      faSlots[r.kind]={file:{name:f.name},sheet:r.sheet,meta:r.meta,savedAt:null};
     }catch(e){console.error('[Faltas] leitura',e);rejects.push('<b>'+faEsc(f.name)+'</b>: não consegui abrir ('+faEsc(e.message||e)+').')}
   }
   fa$('faRejects').innerHTML=rejects.join('<br>');
   fa$('faProgress').textContent='';
   faRenderSlots();
-  if(faSlots.point){await faProcess()}
+  if(faInputs.point){await faProcess()}
   else faToast(rejects.length?'Nenhum cartão de ponto reconhecido. Veja o motivo abaixo dos arquivos.':'Falta o cartão de ponto para iniciar.');
 }
-function faClearFiles(){faSlots={point:null,payroll:null,roster:null};fa$('faRejects').innerHTML='';fa$('faProgress').textContent='';faRenderSlots();faToast('Arquivos removidos. A última análise continua na tela até você processar outra.')}
+function faClearFiles(){faSlots={point:null,payroll:null,roster:null};faInputs={point:null,payroll:null,roster:null};fa$('faRejects').innerHTML='';fa$('faProgress').textContent='';faRenderSlots();faToast('Arquivos removidos. A última análise continua na tela e os arquivos continuam salvos na base até você enviar outros.')}
 
 /* ===== Montagem da análise ===== */
 function faRubGroup(code,title,type,map){
@@ -300,17 +302,46 @@ function faRubGroup(code,title,type,map){
   if(/falta/.test(t))return 'falta';
   return '';
 }
-function faBuild(){
-  const P=faSlots.point,F=faSlots.payroll,R=faSlots.roster,meta=P.meta;
-  /* --- Ponto --- */
+/* ===== Insumos salvos: o que fica na base (sem CPF aberto) ===== */
+let faInputs={point:null,payroll:null,roster:null};
+function faHash53(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
+function faCpfKey(v){const d=faCpf(v);return d.length===11?'•••.•••.'+d.slice(6,9)+'-'+d.slice(9)+'#'+faHash53('esp:'+d):''}
+function faExtractPoint(P){
   const h=P.h,iC=faFind(h,'code'),iN=faFind(h,'name'),iD=faFind(h,'date'),iDu=faFind(h,'dur'),iT=faFind(h,'type'),iE=faFind(h,'estab'),iL=faFind(h,'lot'),iCC=faFind(h,'cc'),iR=faFind(h,'role'),iCpf=faFind(h,'cpf');
   const events=[];
   for(const r of P.rows.slice(P.index+1)){
     const code=faCode(r[iC]),minutes=faMinutes(r[iDu]);if(!code||minutes<=0)continue;
-    const d=faToDate(r[iD]);
-    let kind=iT>=0?faEventKind(r[iT]):'';if(!kind)kind=minutes>=FA_DAY_MIN?'falta':'atraso';
-    events.push({code,name:String(r[iN]??'').trim(),cpf:iCpf>=0?faCpf(r[iCpf]):'',date:d?faISO(d):'',wd:d?d.getDay():-1,holiday:d?faHoliday(d):'',minutes,time:typeof r[iDu]==='string'?r[iDu].trim():faClock(minutes),kind,typed:iT>=0,estab:iE>=0?faEstabKey(r[iE]):'',store:iCC>=0?faStripCode(r[iCC]):(iL>=0?faStripCode(r[iL]):''),role:iR>=0?faStripCode(r[iR]):''});
+    const d=faToDate(r[iD]);let kind=iT>=0?faEventKind(r[iT]):'';
+    events.push({code,name:String(r[iN]??'').trim(),cpf:iCpf>=0?faCpfKey(r[iCpf]):'',date:d?faISO(d):'',minutes,time:typeof r[iDu]==='string'?r[iDu].trim():faClock(minutes),kind,estab:iE>=0?faEstabKey(r[iE]):'',store:iCC>=0?faStripCode(r[iCC]):(iL>=0?faStripCode(r[iL]):''),role:iR>=0?faStripCode(r[iR]):''});
   }
+  if(!events.length)throw Error('O cartão de ponto não trouxe ocorrências com duração maior que zero.');
+  return {file:P.file.name,sheet:P.sheet,meta:P.meta,events,savedAt:null};
+}
+function faExtractRoster(R){
+  const rh=R.h,c=faFind(rh,'code'),n=faFind(rh,'name'),cp=faFind(rh,'cpf'),s=faFind(rh,'situ'),cc=faFind(rh,'cc'),e=faFind(rh,'estab'),ro=faFind(rh,'role');
+  const people=[];
+  for(const r of R.rows.slice(R.index+1)){const p={code:faCode(r[c]),name:String(r[n]??'').trim(),cpf:cp>=0?faCpfKey(r[cp]):'',situ:s>=0?String(r[s]??'').trim():'Ativo',store:cc>=0?faStripCode(r[cc]):'',estab:e>=0?faEstabKey(r[e]):'',role:ro>=0?faStripCode(r[ro]):''};if(p.code||p.cpf)people.push(p)}
+  return {file:R.file.name,sheet:R.sheet,meta:R.meta,date:R.meta?.date||null,people,savedAt:null};
+}
+function faExtractPayroll(F){
+  const fh=F.h,c=faFind(fh,'code'),cp=faFind(fh,'cpf'),n=faFind(fh,'name'),e=faFind(fh,'estab'),rb=faFind(fh,'rub'),ti=faFind(fh,'rubTitle'),ty=faFind(fh,'rubType'),q=faFind(fh,'qty'),v=faFind(fh,'val'),pe=faFind(fh,'period');
+  const persons=new Map(),rubInfo={},periods={};
+  for(const r of F.rows.slice(F.index+1)){
+    const code=faCode(r[c]),cpf=cp>=0?faCpfKey(r[cp]):'',rub=faCode(r[rb]);if((!code&&!cpf)||!rub)continue;
+    const period=pe>=0?String(r[pe]??'').trim():'',estab=e>=0?faEstabKey(r[e]):'',key=code||('cpf:'+cpf),title=ti>=0?String(r[ti]??'').trim():'',type=ty>=0?String(r[ty]??'').trim():'',qty=faNum(r[q]),val=Math.abs(faNum(r[v]));
+    periods[period]=(periods[period]||0)+1;
+    const pk=period+'|'+key;let p=persons.get(pk);if(!p){p={period,key,code,cpf,name:n>=0?String(r[n]??'').trim():'',estab,rubs:{},sal:null};persons.set(pk,p)}
+    if(!p.cpf&&cpf)p.cpf=cpf;if(!p.name&&n>=0)p.name=String(r[n]??'').trim();if(!p.estab&&estab)p.estab=estab;
+    const g=faRubGroup(rub,title,type,FA_RUB_DEFAULT);
+    if(g){if(!rubInfo[rub])rubInfo[rub]={title,group:g};const x=p.rubs[rub]||(p.rubs[rub]=[0,0]);x[0]+=qty;x[1]+=val}
+    else{const t=faNorm(title);if(/^(salario|horasnormais|salariobase|salariomensal)/.test(t)&&!/familia|matern|educ|liquid|adiant|ferias|13o|abono|desc/.test(t)&&qty>0&&val>0){p.sal=p.sal||{qty:0,value:0};p.sal.qty+=qty;p.sal.value+=val}}
+  }
+  return {file:F.file.name,sheet:F.sheet,meta:F.meta,persons:[...persons.values()],rubInfo,periods,savedAt:null};
+}
+function faCompute(inp){
+  const P=inp.point,F=inp.payroll,R=inp.roster,meta=P.meta;
+  /* --- Ponto --- */
+  const events=P.events.map(e=>{const d=e.date?faFromISO(e.date):null;return {...e,wd:d?d.getDay():-1,holiday:d?faHoliday(d):'',kind:e.kind||(e.minutes>=FA_DAY_MIN?'falta':'atraso')}});
   if(!events.length)throw Error('O cartão de ponto não trouxe ocorrências com duração maior que zero.');
   const start=meta.start?faFromISO(meta.start):null,end=meta.end?faFromISO(meta.end):null;
   const workdays=start&&end?faWorkdays(start,end):0;
@@ -318,53 +349,38 @@ function faBuild(){
   const warnings=[];
 
   /* --- Base ATIVOS --- */
-  const roster={byCode:new Map(),byCpf:new Map(),scoped:[],date:R?.meta?.date||null,file:R?.file?.name||null};
-  if(R){
-    const rh=R.h,c=faFind(rh,'code'),n=faFind(rh,'name'),cp=faFind(rh,'cpf'),s=faFind(rh,'situ'),cc=faFind(rh,'cc'),e=faFind(rh,'estab'),ro=faFind(rh,'role');
-    for(const r of R.rows.slice(R.index+1)){
-      const p={code:faCode(r[c]),name:String(r[n]??'').trim(),cpf:cp>=0?faCpf(r[cp]):'',situ:s>=0?String(r[s]??'').trim():'Ativo',store:cc>=0?faStripCode(r[cc]):'',estab:e>=0?faEstabKey(r[e]):'',role:ro>=0?faStripCode(r[ro]):''};
-      if(!p.code&&!p.cpf)continue;
-      if(p.code&&!roster.byCode.has(p.code))roster.byCode.set(p.code,p);
-      if(p.cpf&&!roster.byCpf.has(p.cpf))roster.byCpf.set(p.cpf,p);
-      if(!estabs.size||!p.estab||estabs.has(p.estab))roster.scoped.push(p);
-    }
+  const roster={byCode:new Map(),byCpf:new Map(),scoped:[],date:R?.date||null,file:R?.file||null};
+  if(R)for(const p of R.people){
+    if(p.code&&!roster.byCode.has(p.code))roster.byCode.set(p.code,p);
+    if(p.cpf&&!roster.byCpf.has(p.cpf))roster.byCpf.set(p.cpf,p);
+    if(!estabs.size||!p.estab||estabs.has(p.estab))roster.scoped.push(p);
   }
   const isActive=p=>/^ativo$/i.test(faNorm(p.situ));
 
   /* --- Folha --- */
-  const pay={byCode:new Map(),byCpf:new Map(),rubMap:{},periods:new Map(),file:F?.file?.name||null,headcount:0};
+  const pay={byCode:new Map(),byCpf:new Map(),rubMap:{},file:F?.file||null,headcount:0,period:''};
   if(F){
-    const fh=F.h,c=faFind(fh,'code'),cp=faFind(fh,'cpf'),n=faFind(fh,'name'),e=faFind(fh,'estab'),rb=faFind(fh,'rub'),ti=faFind(fh,'rubTitle'),ty=faFind(fh,'rubType'),q=faFind(fh,'qty'),v=faFind(fh,'val'),pe=faFind(fh,'period');
-    const lines=[];
-    for(const r of F.rows.slice(F.index+1)){
-      const code=faCode(r[c]),cpf=cp>=0?faCpf(r[cp]):'',rub=faCode(r[rb]);if((!code&&!cpf)||!rub)continue;
-      const estab=e>=0?faEstabKey(r[e]):'';if(estabs.size&&e>=0&&estab&&!estabs.has(estab))continue;
-      const period=pe>=0?String(r[pe]??'').trim():'';if(period)pay.periods.set(period,(pay.periods.get(period)||0)+1);
-      lines.push({code,cpf,name:n>=0?String(r[n]??'').trim():'',rub,title:ti>=0?String(r[ti]??'').trim():'',type:ty>=0?String(r[ty]??'').trim():'',qty:faNum(r[q]),val:Math.abs(faNum(r[v])),period});
-    }
-    /* competência: se houver mais de uma, usa a do mês final do ponto */
-    let chosen='';
-    if(pay.periods.size>1){
+    const per=Object.entries(F.periods||{}).filter(([k])=>k);let chosen='';
+    if(per.length>1){
       const endMY=end?[end.getMonth()+1,end.getFullYear()]:null;
-      const match=[...pay.periods.keys()].find(p=>{const d=p.match(/(\d{1,2})\D+(\d{4})|(\d{4})\D+(\d{1,2})/);if(!d||!endMY)return false;const m=Number(d[1]||d[4]),y=Number(d[2]||d[3]);return m===endMY[0]&&y===endMY[1]});
-      chosen=match||[...pay.periods.entries()].sort((a,b)=>b[1]-a[1])[0][0];
-      warnings.push('A folha tem '+pay.periods.size+' competências ('+[...pay.periods.keys()].join(', ')+'). Usei '+chosen+'.');
-    }else if(pay.periods.size===1)chosen=[...pay.periods.keys()][0];
+      const match=per.map(x=>x[0]).find(p=>{const d=p.match(/(\d{1,2})\D+(\d{4})|(\d{4})\D+(\d{1,2})/);if(!d||!endMY)return false;const m=Number(d[1]||d[4]),y=Number(d[2]||d[3]);return m===endMY[0]&&y===endMY[1]});
+      chosen=match||per.sort((a,b)=>b[1]-a[1])[0][0];
+      warnings.push('A folha tem '+per.length+' competências ('+per.map(x=>x[0]).join(', ')+'). Usei '+chosen+'.');
+    }else if(per.length===1)chosen=per[0][0];
     pay.period=chosen;
-    const groupsCfg=FA_RUB_DEFAULT;
-    for(const l of lines){
-      if(chosen&&l.period&&l.period!==chosen)continue;
-      const key=l.code||('cpf:'+l.cpf);
-      let p=pay.byCode.get(key);if(!p){p={code:l.code,cpf:l.cpf,name:l.name,falta:{qty:0,value:0},dsr:{qty:0,value:0},atraso:{qty:0,value:0}};pay.byCode.set(key,p)}
-      if(!p.cpf&&l.cpf)p.cpf=l.cpf;if(!p.name&&l.name)p.name=l.name;
-      if(l.cpf&&!pay.byCpf.has(l.cpf))pay.byCpf.set(l.cpf,p);
-      const g=faRubGroup(l.rub,l.title,l.type,groupsCfg);
-      if(!g){const t=faNorm(l.title);if(/^(salario|horasnormais|salariobase|salariomensal)/.test(t)&&!/familia|matern|educ|liquid|adiant|ferias|13o|abono|desc/.test(t)&&l.qty>0&&l.val>0){p.sal=p.sal||{qty:0,value:0};p.sal.qty+=l.qty;p.sal.value+=l.val}}
-      if(g){p[g].qty+=l.qty;p[g].value+=l.val;const m=pay.rubMap[l.rub]||(pay.rubMap[l.rub]={code:l.rub,title:l.title,group:g,qty:0,value:0,people:new Set()});m.qty+=l.qty;m.value+=l.val;m.people.add(key)}
+    for(const x of F.persons){
+      if(chosen&&x.period&&x.period!==chosen)continue;
+      if(estabs.size&&x.estab&&!estabs.has(x.estab))continue;
+      let p=pay.byCode.get(x.key);if(!p){p={code:x.code,cpf:x.cpf,name:x.name,falta:{qty:0,value:0},dsr:{qty:0,value:0},atraso:{qty:0,value:0},sal:null};pay.byCode.set(x.key,p)}
+      if(x.cpf&&!pay.byCpf.has(x.cpf))pay.byCpf.set(x.cpf,p);
+      if(x.sal){p.sal=p.sal||{qty:0,value:0};p.sal.qty+=x.sal.qty;p.sal.value+=x.sal.value}
+      for(const [rub,[q,v]] of Object.entries(x.rubs||{})){const info=F.rubInfo[rub];if(!info)continue;const g=info.group;p[g].qty+=q;p[g].value+=v;const m=pay.rubMap[rub]||(pay.rubMap[rub]={code:rub,title:info.title,group:g,qty:0,value:0,people:new Set()});m.qty+=q;m.value+=v;m.people.add(x.key)}
     }
     pay.headcount=pay.byCode.size;
     if(end&&chosen){const d=chosen.match(/(\d{1,2})\D+(\d{4})|(\d{4})\D+(\d{1,2})/);if(d){const m=Number(d[1]||d[4]),y=Number(d[2]||d[3]);if(m!==end.getMonth()+1||y!==end.getFullYear())warnings.push('A competência da folha ('+chosen+') não é o mês de fechamento do ponto ('+String(end.getMonth()+1).padStart(2,'0')+'/'+end.getFullYear()+'). Confira se os arquivos são do mesmo fechamento.')}}
   }
+  const savedNote=['point','payroll','roster'].filter(k=>inp[k]?.savedAt).map(k=>({point:'cartão de ponto',payroll:'folha',roster:'base ATIVOS'}[k])+' salvo em '+new Date(inp[k].savedAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}));
+  if(savedNote.length)warnings.push('Usando da base: '+savedNote.join(' · ')+'. Para trocar, selecione o arquivo novo.');
 
   /* --- Agrupar por colaborador --- */
   const people=new Map();
@@ -434,7 +450,7 @@ function faBuild(){
   if(R){const out=pr.filter(r=>!r.inRoster).length;if(out)warnings.push(out+' colaborador(es) do ponto não estão na base ATIVOS'+(roster.date?' de '+faBR(roster.date):'')+'.')}
   if(!F)warnings.unshift('Folha não carregada: conferência de desconto desativada. Os indicadores de faltas e atrasos estão completos.');
   if(!R)warnings.push('Base ATIVOS não carregada: quadro '+(F?'estimado pela folha':'indisponível')+'; absenteísmo por loja e situação de afastamento não calculados.');
-  return {ruleVersion:FA_RULE,period:{start:meta.start,end:meta.end,workdays},payrollPeriod:pay.period||'',sources:{point:P.file.name,payroll:pay.file,roster:roster.file,rosterDate:roster.date,payrollAvailable:!!F,rosterAvailable:!!R},estabs:[...estabs],quadro,ativos,situCount,situAll,hcByStore,totals:T,checkCount,byStore,byRole,byWeekday,rub,rubMap,warnings,rows,createdAt:new Date().toISOString()};
+  return {ruleVersion:FA_RULE,period:{start:meta.start,end:meta.end,workdays},payrollPeriod:pay.period||'',sources:{point:P.file,payroll:pay.file,roster:roster.file,rosterDate:roster.date,payrollAvailable:!!F,rosterAvailable:!!R},estabs:[...estabs],quadro,ativos,situCount,situAll,hcByStore,totals:T,checkCount,byStore,byRole,byWeekday,rub,rubMap,warnings,rows,createdAt:new Date().toISOString()};
 }
 function faRate(p){if(!p)return [null,''];const q=p.falta.qty+p.atraso.qty+p.dsr.qty,v=p.falta.value+p.atraso.value+p.dsr.value;if(q>FA_TOL_H&&v>0)return [v/q,'rubricas de desconto'];const s=p.sal;if(s&&s.qty>0&&s.value>0){if(s.qty>=60)return [s.value/s.qty,'salário'];if(s.qty<=31)return [s.value/(s.qty*220/30),'salário']}return [null,'']}
 function faFlag(row,id,text){const c=FA_CHECKS.find(x=>x.id===id);row.flags.push({id,group:c.group,level:c.level,name:c.name,text})}
@@ -487,10 +503,10 @@ function faDsrWhy(r){return r.dsrWeeks.map(w=>'semana '+faBR(w.start).slice(0,5)
 
 /* ===== Processamento ===== */
 async function faProcess(){
-  if(!faSlots.point){faToast('Carregue o cartão de ponto.');return}
+  if(!faInputs.point){faToast('Carregue o cartão de ponto.');return}
   if(faBusy)return;faBusy=true;faRenderSlots();fa$('faProgress').textContent='Cruzando ponto'+(faSlots.payroll?', folha':'')+(faSlots.roster?' e base ATIVOS':'')+'…';await faTick();
   try{
-    const m=faBuild();
+    const m=faCompute(faInputs);
     faModel=m;faCurrentAuditId=null;
     faRenderAll();
     faToast('Análise concluída: '+m.totals.events+' ocorrências, '+m.totals.discPeople+' divergência(s) de desconto e '+m.totals.alertPeople+' alerta(s) de gestão.');
@@ -506,7 +522,7 @@ function faPeriodLabel(m){return m.period?.start?faBR(m.period.start)+' a '+faBR
 function faRememberLocal(m){try{const all=JSON.parse(localStorage.getItem('fa-hist-v3')||'{}');all[m.period.start+'_'+m.period.end]={period:m.period,quadro:m.quadro,ativos:m.ativos,totals:m.totals};localStorage.setItem('fa-hist-v3',JSON.stringify(all))}catch(e){}}
 function faPrevious(m){
   const cands=[];
-  faHistory.forEach(h=>{const r=h.resumo||{};if(r.ruleVersion===FA_RULE&&r.period?.end)cands.push({period:r.period,quadro:r.quadro,ativos:r.ativos,totals:r.totals})});
+  faHistory.forEach(h=>{const r=h.resumo||{};if(r.totals&&r.period?.end)cands.push({period:r.period,quadro:r.quadro,ativos:r.ativos,totals:r.totals})});
   try{Object.values(JSON.parse(localStorage.getItem('fa-hist-v3')||'{}')).forEach(x=>cands.push(x))}catch(e){}
   return cands.filter(x=>x.period?.end&&x.period.end<m.period.start).sort((a,b)=>a.period.end<b.period.end?1:-1)[0]||null;
 }
@@ -796,36 +812,49 @@ function faBoard(){
 
 /* ===== Base privada (Supabase) ===== */
 async function faSha256(bytes){const digest=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('')}
-async function faHashFiles(){const files=[faSlots.point,faSlots.payroll,faSlots.roster].filter(Boolean).map(s=>s.file),enc=new TextEncoder(),parts=[];let len=0;for(const f of files){const n=enc.encode(f.name),d=new Uint8Array(await f.arrayBuffer());parts.push(n,d);len+=n.length+d.length}const b=new Uint8Array(len);let o=0;for(const p of parts){b.set(p,o);o+=p.length}return faSha256(b)}
+async function faHashFiles(){const x=JSON.stringify(['point','payroll','roster'].map(k=>faInputs[k]?[faInputs[k].file,faInputs[k].meta]:null));return faSha256(new TextEncoder().encode(x+'|'+JSON.stringify(faInputs.point?.events||[]).length+'|'+(faInputs.payroll?.persons?.length||0)+'|'+(faInputs.roster?.people?.length||0)))}
 function faSafeRows(){return faModel.rows.map(r=>({...r,cpf:faMaskCpf(r.cpf)}))}
+function faUseInputs(inp,origin){
+  ['point','payroll','roster'].forEach(k=>{faInputs[k]=inp[k]||null;faSlots[k]=inp[k]?{file:{name:inp[k].file},sheet:inp[k].sheet,meta:inp[k].meta,savedAt:inp[k].savedAt}:null});
+  faRenderSlots();
+  faModel=faCompute(faInputs);faRenderAll();
+  fa$('faState').textContent='Recalculado com as regras atuais a partir dos arquivos '+origin;
+}
+function faLocalInputs(){try{const x=JSON.parse(localStorage.getItem('fa-insumos-v1')||'null');return x&&x.point?x:null}catch(e){return null}}
 async function faInitPrivate(){
   try{
     if(!window.supabase?.createClient)throw Error('Biblioteca de acesso privado não carregou.');
     faSb=window.supabase.createClient('https://rdztzurfesnobfkazgpm.supabase.co','sb_publishable_4LHSO4TrP7F4m4tpJyH44g_BGmfC92h');
     const auth=await faSb.auth.getUser();
-    if(auth.error||!auth.data?.user){fa$('faPrivateStatus').textContent='Sem sessão do Portal: a análise funciona, mas não será salva.';return}
+    if(auth.error||!auth.data?.user){const loc=faLocalInputs();if(loc&&!faModel){faUseInputs(loc,'guardados neste navegador');fa$('faPrivateStatus').textContent='Sem sessão do Portal: usando os arquivos guardados neste navegador.'}else fa$('faPrivateStatus').textContent='Sem sessão do Portal: a análise funciona, mas não será salva.';return}
     faPrivateUser=auth.data.user;
-    const {data,error}=await faSb.from('rh_auditoria_faltas').select('id,competencia_id,periodo_ponto,resumo,relatorio,criado_em').order('criado_em',{ascending:false}).limit(12);
-    if(error){fa$('faPrivateStatus').textContent='Sessão sem acesso ao histórico de RH.';console.warn('[Faltas] RLS:',error.message);return}
-    faHistory=data||[];
-    const last=faHistory.find(x=>x.resumo?.ruleVersion===FA_RULE);
-    if(!last){fa$('faPrivateStatus').textContent=faHistory.length?'Auditorias salvas usam critérios anteriores. Carregue os arquivos para gerar a nova análise.':'Nenhuma auditoria salva ainda.';return}
+    const hist=await faSb.from('rh_auditoria_faltas').select('id,criado_em,rv:resumo->>ruleVersion,period:resumo->period,totals:resumo->totals,quadro:resumo->quadro,ativos:resumo->ativos').order('criado_em',{ascending:false}).limit(24);
+    if(hist.error){fa$('faPrivateStatus').textContent='Sessão sem acesso ao histórico de RH.';console.warn('[Faltas] RLS:',hist.error.message);return}
+    faHistory=(hist.data||[]).map(h=>({id:h.id,criado_em:h.criado_em,resumo:{ruleVersion:h.rv,period:h.period,totals:h.totals,quadro:h.quadro,ativos:h.ativos}}));
     if(faModel)return;
-    faModel={...last.resumo,rows:Array.isArray(last.relatorio)?last.relatorio:[]};faCurrentAuditId=last.id;faRenderAll();
-    fa$('faState').textContent='Auditoria salva carregada · '+new Date(last.criado_em).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
-    fa$('faPrivateStatus').textContent='Auditoria privada carregada · RH autorizado';
+    fa$('faPrivateStatus').textContent='Abrindo os últimos arquivos salvos…';
+    const last=await faSb.from('rh_auditoria_faltas').select('id,criado_em,insumos:resumo->insumos,relatorio').order('criado_em',{ascending:false}).limit(5);
+    if(last.error)console.warn('[Faltas] insumos:',last.error.message);
+    const row=(last.data||[]).find(x=>x.insumos&&x.insumos.point);
+    if(!row||!row.insumos?.point){const loc=faLocalInputs();if(loc){faUseInputs(loc,'guardados neste navegador');fa$('faPrivateStatus').textContent='Usando os arquivos guardados neste navegador';return}fa$('faPrivateStatus').textContent=faHistory.length?'Auditorias antigas não guardaram os arquivos. Carregue uma vez e eles ficam salvos.':'Nenhum arquivo salvo ainda. Carregue uma vez e eles ficam salvos.';return}
+    if(faModel)return;
+    faUseInputs(row.insumos,'salvos na base');faCurrentAuditId=row.id;
+    const rev=new Set((Array.isArray(row.relatorio)?row.relatorio:[]).filter(r=>r.reviewed).map(r=>r.key));faModel.rows.forEach(r=>{if(rev.has(r.key))r.reviewed=true});faIssues();
+    fa$('faPrivateStatus').textContent='Arquivos salvos carregados · '+new Date(row.criado_em).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
   }catch(e){fa$('faPrivateStatus').textContent='Não foi possível abrir a base privada.';console.warn('[Faltas] Base privada:',e.message)}
 }
 async function faPersistReviewed(){if(!faSb||!faCurrentAuditId)return;const {error}=await faSb.from('rh_auditoria_faltas').update({relatorio:faSafeRows()}).eq('id',faCurrentAuditId);if(error){faToast('Não consegui salvar a marcação de revisão.');console.warn('[Faltas] revisão:',error.message)}else fa$('faPrivateStatus').textContent='Revisões salvas na base privada'}
 async function faSavePrivate(){
   if(faInitPromise)await faInitPromise;
+  try{const now=new Date().toISOString(),loc=JSON.parse(JSON.stringify(faInputs));['point','payroll','roster'].forEach(k=>{if(loc[k]&&!loc[k].savedAt)loc[k].savedAt=now});localStorage.setItem('fa-insumos-v1',JSON.stringify(loc))}catch(e){console.warn('[Faltas] cache local:',e.message)}
   if(!faSb||!faPrivateUser){fa$('faPrivateStatus').textContent='Análise feita no navegador; entre no Portal com usuário de RH para salvar.';return}
   try{
-    fa$('faPrivateStatus').textContent='Salvando relatório na base privada…';
-    const {rows,...resumo}=faModel;
+    fa$('faPrivateStatus').textContent='Salvando arquivos e relatório na base privada…';
+    const now=new Date().toISOString();['point','payroll','roster'].forEach(k=>{if(faInputs[k]&&!faInputs[k].savedAt)faInputs[k].savedAt=now});
+    const {rows,...rest}=faModel,resumo={...rest,insumos:faInputs};
     const payload={competencia_id:faModel.payrollPeriod||(faModel.period.end||'').slice(0,7),periodo_ponto:faPeriodLabel(faModel),arquivo_ponto:faModel.sources.point,arquivo_folha:faModel.sources.payroll||'Folha não carregada',arquivo_base:faModel.sources.roster||null,hash_arquivos:await faHashFiles(),resumo,relatorio:faSafeRows(),criado_por:faPrivateUser.id,tenant_id:'esposende'};
     const {data:saved,error}=await faSb.from('rh_auditoria_faltas').upsert(payload,{onConflict:'hash_arquivos'}).select('id').single();
-    if(error)throw error;faCurrentAuditId=saved.id;fa$('faPrivateStatus').textContent='Auditoria salva na base privada · RH autorizado';
+    if(error)throw error;faCurrentAuditId=saved.id;fa$('faPrivateStatus').textContent='Arquivos e auditoria salvos na base · na próxima vez abre direto';['point','payroll','roster'].forEach(k=>{if(faSlots[k])faSlots[k].savedAt=faInputs[k]?.savedAt});faRenderSlots();
   }catch(e){fa$('faPrivateStatus').textContent='Análise concluída, mas não foi salva (acesso ou conexão).';console.error('[Faltas] Falha ao salvar:',e.message||e)}
 }
 
