@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#080f1c">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--fa-bg:#070b13;--fa-panel:#0b1422;--fa-panel2:#101b2b;--fa-border:#1d2b40;--fa-text:#edf4fc;--fa-muted:#91a4ba;--fa-blue:#3b82f6;--fa-blue-soft:rgba(59,130,246,.14);--fa-green:#18b982;--fa-green-soft:rgba(24,185,130,.12);--fa-amber:#f3ad38;--fa-amber-soft:rgba(243,173,56,.12);--fa-red:#ff526b;--fa-red-soft:rgba(255,82,107,.12)}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--fa-bg);color:var(--fa-text);font:14px/1.45 Inter,Arial,sans-serif}body{padding:0 0 30px}.fa-top{position:sticky;top:0;z-index:4;display:flex;align-items:center;gap:12px;padding:12px 18px;background:rgba(8,15,28,.96);border-bottom:1px solid var(--fa-border);backdrop-filter:blur(12px)}.fa-logo{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:linear-gradient(145deg,#2466c6,#122845);font-weight:900}.fa-brand{font-weight:800;letter-spacing:.7px;font-size:12px}.fa-brand small{display:block;color:var(--fa-muted);font-size:9px;font-weight:500;letter-spacing:1.1px}.fa-top-title{margin-left:18px;color:#d7e3f2;font-size:12px;font-weight:700}.fa-top-right{margin-left:auto;color:var(--fa-muted);font-size:10px}.fa-wrap{max-width:1500px;margin:0 auto;padding:22px 22px}.fa-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:15px}.fa-kicker{color:#7eaeef;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px}.fa-title{font-size:24px;line-height:1.15;margin:4px 0 5px;letter-spacing:-.45px}.fa-subtitle{font-size:11px;color:var(--fa-muted)}.fa-actions{display:flex;gap:8px;flex-wrap:wrap}.fa-btn{border:1px solid #2a3c55;background:#101a2a;color:#e5eef9;border-radius:8px;padding:8px 11px;font-size:10px;font-weight:750;cursor:pointer}.fa-btn:hover{background:#16253a}.fa-btn.primary{background:#235aa7;border-color:#3476ca;color:white}.fa-btn.primary:hover{background:#2b6dc5}.fa-btn:disabled{opacity:.45;cursor:not-allowed}.fa-period{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--fa-border);border-radius:9px;background:#09111e;margin-bottom:12px}.fa-period-label{color:#7890ac;font-size:9px;font-weight:800;letter-spacing:.9px;text-transform:uppercase}.fa-period-value{font-size:11px;font-weight:750}.fa-period-state{margin-left:auto;font-size:10px;color:var(--fa-muted)}.fa-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#6c7f95;margin-right:6px}.fa-dot.good{background:var(--fa-green);box-shadow:0 0 8px rgba(24,185,130,.45)}.fa-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0}.fa-kpi{border:1px solid var(--fa-border);border-radius:10px;padding:12px 13px;background:linear-gradient(145deg,#0c1726,#09111d);min-height:91px;cursor:pointer}.fa-kpi:hover{border-color:#4a76a8;box-shadow:0 0 0 1px #4a76a855}.fa-kpi:after{content:"Clique: de onde vem ›";display:block;color:#5d86b8;font-size:8px;margin-top:5px;font-weight:700}.fa-kpi-top{display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#a5b5c9;font-weight:700}.fa-kpi-icon{display:grid;place-items:center;width:23px;height:23px;border-radius:7px;background:var(--fa-blue-soft);color:#9bc4ff}.fa-kpi-num{font-size:22px;font-weight:800;margin-top:5px;font-variant-numeric:tabular-nums}.fa-kpi-foot{color:#71869f;font-size:9px;margin-top:1px}.fa-kpi.good .fa-kpi-icon{background:var(--fa-green-soft);color:#72e4ba}.fa-kpi.warn .fa-kpi-icon{background:var(--fa-amber-soft);color:#ffd182}.fa-kpi.bad .fa-kpi-icon{background:var(--fa-red-soft);color:#ff8a9b}.fa-alert{display:none;gap:9px;padding:10px 12px;border-radius:8px;margin:12px 0;border:1px solid rgba(243,173,56,.3);background:linear-gradient(100deg,rgba(243,173,56,.09),rgba(243,173,56,.03));color:#e0c797;font-size:10px}.fa-alert.show{display:flex}.fa-alert b{color:#ffd182}.fa-tabs{display:flex;gap:5px;overflow-x:auto;border-bottom:1px solid var(--fa-border);margin:17px 0 12px}.fa-tab{white-space:nowrap;border:0;background:transparent;color:#8196af;padding:9px 11px;font-size:10px;font-weight:750;border-bottom:2px solid transparent;cursor:pointer}.fa-tab.active{color:#fff;border-color:var(--fa-blue)}.fa-page{display:none}.fa-page.active{display:block}.fa-panel{background:var(--fa-panel);border:1px solid var(--fa-border);border-radius:10px;overflow:hidden}.fa-panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 13px;border-bottom:1px solid var(--fa-border)}.fa-panel-title{font-size:11px;font-weight:800}.fa-panel-sub{font-size:9px;color:#788da6;margin-top:2px}.fa-panel-tools{display:flex;gap:6px;align-items:center}.fa-input{background:#070e18;border:1px solid #27384e;color:#e7eff9;border-radius:7px;padding:8px 9px;font-size:10px;outline:none}.fa-input:focus{border-color:#4984d1}.fa-toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:9px 12px;border-bottom:1px solid var(--fa-border)}.fa-search{flex:1;min-width:170px;max-width:300px}.fa-chip{border:1px solid var(--fa-border);background:#0b1421;color:#9db0c7;border-radius:20px;padding:6px 9px;font-size:9px;font-weight:700;cursor:pointer}.fa-chip.active{border-color:#315a91;background:var(--fa-blue-soft);color:#b7d6ff}.fa-table-wrap{overflow:auto}table{width:100%;min-width:900px;border-collapse:collapse}th{text-align:left;padding:9px 10px;background:#09111d;color:#788da6;border-bottom:1px solid var(--fa-border);font-size:8px;text-transform:uppercase;letter-spacing:.65px}td{padding:9px 10px;border-bottom:1px solid rgba(148,163,184,.07);font-size:10px;color:#d1ddec;vertical-align:middle}tbody tr:hover{background:rgba(255,255,255,.02)}.fa-person{font-weight:750;color:#f0f5fb}.fa-subline{display:block;color:#7389a3;font-size:8px;margin-top:2px}.fa-num{font-variant-numeric:tabular-nums;white-space:nowrap}.fa-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border-radius:20px;font-size:8px;font-weight:800;white-space:nowrap}.fa-badge:before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}.fa-badge.ok{color:#71dfb5;background:var(--fa-green-soft)}.fa-badge.warn{color:#ffd184;background:var(--fa-amber-soft)}.fa-badge.bad{color:#ff899a;background:var(--fa-red-soft)}.fa-expand{border:0;background:transparent;color:#8cbaff;font-size:14px;cursor:pointer}.fa-detail td{background:#07101b;padding:11px 14px}.fa-detail-list{display:flex;gap:6px;flex-wrap:wrap}.fa-event{border:1px solid #24354b;border-radius:6px;padding:5px 7px;font-size:9px;color:#aebed0}.fa-event b{color:#f2f6fc}.fa-note{color:#7d93ac;font-size:9px;margin-top:7px}.fa-empty{padding:35px;text-align:center;color:#7a8fa7;font-size:11px}.fa-import-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px}.fa-bulk{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:13px 14px;margin-bottom:10px;border:1px solid #2b4f7b;border-radius:9px;background:linear-gradient(105deg,rgba(35,90,167,.2),rgba(9,17,29,.95))}.fa-bulk-title{font-size:11px;font-weight:800}.fa-bulk-copy{font-size:9px;color:#92a9c3;margin-top:3px}.fa-bulk-status{font-size:9px;color:#9cb7d4;margin-top:5px;min-height:13px}.fa-import-card{padding:14px;border:1px dashed #30445e;border-radius:9px;background:#09111d}.fa-import-card h3{font-size:11px;margin:0 0 4px}.fa-import-card p{font-size:9px;color:#8398b0;margin:0 0 10px}.fa-file{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a4b74;background:#12243a;border-radius:7px;padding:7px 9px;color:#bad5f5;font-size:9px;font-weight:750;cursor:pointer}.fa-file input{display:none}.fa-file-name{font-size:9px;color:#94abc5;margin-top:7px;min-height:13px}.fa-instructions{padding:12px 14px;color:#9fb1c6;font-size:9px;line-height:1.6}.fa-instructions b{color:#e2ebf7}.fa-disclaimer{font-size:8px;color:#687f99;padding:9px 12px;border-top:1px solid var(--fa-border)}.fa-compare{font-weight:750}.fa-compare.up{color:#ff899a}.fa-compare.down{color:#71dfb5}.fa-compare.neutral{color:#ffd184}.fa-print-report{display:none}.fa-meter{height:5px;background:#172338;border-radius:8px;overflow:hidden;margin:8px 0 3px}.fa-meter i{display:block;width:0;height:100%;background:linear-gradient(90deg,#3b82f6,#16b981);border-radius:8px;transition:width .3s}.fa-toast{position:fixed;right:16px;bottom:16px;z-index:10;display:none;max-width:min(420px,90vw);padding:10px 13px;border:1px solid #29405e;border-radius:9px;background:#111d2d;box-shadow:0 12px 38px #0008;color:#deebfa;font-size:10px}.fa-summary-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:11px 13px}.fa-mini{border:1px solid var(--fa-border);border-radius:8px;padding:10px;background:#09111e}.fa-mini span{display:block;color:#8499b1;font-size:8px}.fa-mini b{display:block;font-size:13px;margin-top:4px}.fa-review-btn{border:1px solid #304b6b;border-radius:6px;background:#101d2e;color:#bed8f8;padding:5px 7px;font-size:8px;font-weight:750;cursor:pointer}.fa-review-btn.done{color:#78e0b6;border-color:#205e4b;background:var(--fa-green-soft)}@page{size:A4 landscape;margin:10mm}@media print{html,body{background:#fff!important;color:#111!important;height:auto!important}body{padding:0!important}.fa-top,.fa-wrap,.fa-toast{display:none!important}.fa-print-report{display:block!important;padding:0;color:#111;font:9pt Arial,sans-serif}.fa-print-header{display:flex;align-items:center;gap:14px;border-bottom:2px solid #12345b;padding:0 0 10px;margin-bottom:12px}.fa-print-header img{width:125px;height:auto;object-fit:contain}.fa-print-title{font-size:18pt;font-weight:700;color:#102c4e}.fa-print-sub{font-size:9pt;color:#46576a;margin-top:3px}.fa-print-stats{display:flex;gap:10px;margin:10px 0}.fa-print-stat{border:1px solid #bac5d1;border-radius:5px;padding:7px 9px;flex:1}.fa-print-stat small{display:block;color:#40556c;font-size:7pt;text-transform:uppercase}.fa-print-stat b{font-size:12pt}.fa-print-alert{padding:8px;background:#fff4d9;border:1px solid #e2b750;margin:8px 0;font-size:8pt}.fa-print-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.5pt}.fa-print-table th{background:#12345b!important;color:#fff!important;padding:6px;text-transform:none;letter-spacing:0;font-size:7.5pt}.fa-print-table td{color:#111!important;border:1px solid #b8c3cf;padding:5px;vertical-align:top;white-space:normal;word-break:break-word}.fa-print-foot{font-size:7pt;color:#485a6f;margin-top:9px;border-top:1px solid #bac5d1;padding-top:6px}.fa-print-table tr{break-inside:avoid}.fa-print-report h2{font-size:11pt;margin:10px 0 5px}}@media(max-width:760px){.fa-wrap{padding:16px 12px}.fa-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-summary-row{grid-template-columns:1fr}.fa-period-state{margin-left:0;width:100%}.fa-import-grid{grid-template-columns:1fr}.fa-head{flex-direction:column}.fa-actions{width:100%}.fa-actions .fa-btn{flex:1}.fa-top-title{display:none}}
@@ -62,48 +63,145 @@
 .fa-pill.falta{background:var(--fa-red-soft);color:#ff899a}.fa-pill.atraso{background:var(--fa-amber-soft);color:#ffd184}
 @media(max-width:1100px){.fa-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-check-list,.fa-grid2{grid-template-columns:1fr}}
 @media(max-width:760px){.fa-slots{grid-template-columns:1fr}.fa-bar-row{grid-template-columns:90px 1fr 60px}}
+/* ===== Tema executivo (sobrepõe o anterior) ===== */
+:root{--fa-bg:#0c1118;--fa-panel:#121923;--fa-panel2:#161f2b;--fa-border:#222c39;--fa-line:#1b2430;--fa-text:#e7ecf2;--fa-muted:#8a96a6;--fa-faint:#5f6b7b;--fa-blue:#3987e5;--fa-s1:#3987e5;--fa-s2:#d95926;--fa-good:#2fa36b;--fa-warn:#c98500;--fa-bad:#e05656;--fa-neutral:#6b7686}
+html,body{background:var(--fa-bg);color:var(--fa-text);font:13px/1.5 Inter,"Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.fa-top{background:#0e141c;border-bottom:1px solid var(--fa-border);backdrop-filter:none;padding:10px 24px;gap:14px}
+.fa-logo-img{height:30px;border-radius:4px}
+.fa-brand{font-size:12px;font-weight:600;letter-spacing:0;color:var(--fa-text);border-left:1px solid var(--fa-border);padding-left:14px}
+.fa-brand small{font-size:10px;letter-spacing:.4px;color:var(--fa-muted);font-weight:500;text-transform:uppercase}
+.fa-top-right{font-size:11px;color:var(--fa-muted)}
+.fa-wrap{max-width:1360px;padding:26px 28px 40px}
+.fa-head{align-items:flex-end;margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--fa-border)}
+.fa-kicker{color:var(--fa-muted);font-size:11px;font-weight:600;letter-spacing:.6px}
+.fa-title{font-size:26px;font-weight:650;letter-spacing:-.4px;margin:4px 0 8px}
+.fa-period{background:none;border:0;padding:0;margin:0;gap:10px}
+.fa-period-label{font-size:11px;color:var(--fa-faint);letter-spacing:.4px}
+.fa-period-value{font-size:13px;font-weight:600;color:var(--fa-text)}
+.fa-period-state{margin-left:14px;font-size:11.5px;color:var(--fa-muted)}
+.fa-dot.good{box-shadow:none;background:var(--fa-good)}
+.fa-btn{background:transparent;border:1px solid #2c3746;color:#d5dde7;border-radius:6px;padding:8px 13px;font-size:12px;font-weight:600}
+.fa-btn:hover{background:#18212d;border-color:#3a4758}
+.fa-btn.primary{background:#2c6fc4;border-color:#2c6fc4;color:#fff}
+.fa-btn.primary:hover{background:#3479cf}
+.fa-input{background:#0f151d;border:1px solid #2c3746;border-radius:6px;font-size:12px;padding:8px 10px;color:var(--fa-text)}
+.fa-alert{border-radius:6px;border:1px solid #4a3a1a;background:#1a160d;color:#e3cf9e;font-size:12px;padding:10px 14px;margin:0 0 16px;align-items:flex-start}
+.fa-alert b{color:#f0d48a;font-weight:600}
+.fa-alert-ico{display:grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;background:#c98500;color:#111;font-weight:800;font-size:11px}
+.fa-kpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 22px}
+.fa-kpi{background:var(--fa-panel);border:1px solid var(--fa-border);border-radius:8px;padding:16px 18px 14px;min-height:0;position:relative;transition:border-color .15s}
+.fa-kpi:hover{border-color:#3a4a5e;box-shadow:none}
+.fa-kpi:after{content:"Ver composição →";position:absolute;right:16px;top:16px;margin:0;font-size:10.5px;font-weight:600;color:#6aa4ec;opacity:0;transition:opacity .15s}
+.fa-kpi:hover:after{opacity:1}
+.fa-kpi:before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:transparent}
+.fa-kpi.bad:before{background:var(--fa-bad)}.fa-kpi.warn:before{background:var(--fa-warn)}
+.fa-kpi-top{font-size:11.5px;color:var(--fa-muted);font-weight:500}
+.fa-kpi-icon{display:none}
+.fa-kpi-num{font-size:28px;font-weight:650;letter-spacing:-.6px;margin:6px 0 4px;color:var(--fa-text)}
+.fa-kpi-foot{font-size:11.5px;color:#a7b2c0;line-height:1.45}
+.fa-kpi-date{font-size:11px;color:var(--fa-faint);margin-top:6px}
+.fa-compare{font-weight:600}.fa-compare.up{color:#f07c7c}.fa-compare.down{color:#4cc38a}.fa-compare.neutral{color:var(--fa-muted)}
+.fa-tabs{border-bottom:1px solid var(--fa-border);margin:0 0 18px;gap:2px}
+.fa-tab{font-size:12.5px;font-weight:600;color:var(--fa-muted);padding:10px 14px;border-bottom:2px solid transparent}
+.fa-tab:hover{color:var(--fa-text)}.fa-tab.active{color:var(--fa-text);border-color:var(--fa-blue)}
+.fa-panel{background:var(--fa-panel);border:1px solid var(--fa-border);border-radius:8px}
+.fa-panel-head{padding:14px 18px;border-bottom:1px solid var(--fa-line)}
+.fa-panel-title{font-size:13.5px;font-weight:650}
+.fa-panel-sub{font-size:11.5px;color:var(--fa-muted);margin-top:2px}
+.fa-mt{margin-top:14px}
+.fa-grid-a{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px}
+.fa-grid-b{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-top:14px}
+.fa-legend{display:flex;gap:14px;font-size:11.5px;color:var(--fa-muted);white-space:nowrap}
+.fa-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.fa-chart{padding:14px 18px 16px;min-height:120px;position:relative}
+.fa-chart svg{display:block;width:100%;overflow:visible}
+.fa-chart text{font:11px Inter,"Segoe UI",Arial,sans-serif;fill:var(--fa-muted)}
+.fa-chart .fa-ax{stroke:var(--fa-line)}
+.fa-chart .fa-hit{fill:transparent;cursor:pointer}
+.fa-chart .fa-hit:hover+g rect,.fa-chart g.hov rect{opacity:.85}
+.fa-tip{position:fixed;z-index:30;pointer-events:none;background:#1c2633;border:1px solid #33414f;border-radius:6px;padding:8px 10px;font-size:11.5px;color:var(--fa-text);box-shadow:0 8px 24px #0008;display:none;max-width:260px;line-height:1.5}
+.fa-tip b{font-weight:650}.fa-tip .k{color:var(--fa-muted)}
+.fa-status-bar{display:flex;height:14px;border-radius:4px;overflow:hidden;gap:2px;margin:6px 0 16px}
+.fa-status-bar span{display:block;height:100%}
+.fa-status-list{display:flex;flex-direction:column;gap:9px}
+.fa-status-row{display:grid;grid-template-columns:12px 1fr auto;gap:10px;align-items:baseline;font-size:12px;cursor:pointer;padding:4px 6px;margin:0 -6px;border-radius:5px}
+.fa-status-row:hover{background:#18212d}
+.fa-status-row i{width:10px;height:10px;border-radius:2px;display:block;align-self:center}
+.fa-status-row b{font-weight:650;font-variant-numeric:tabular-nums}
+.fa-status-row small{display:block;color:var(--fa-muted);font-size:11px}
+.fa-status-total{font-size:30px;font-weight:650;letter-spacing:-.6px}
+.fa-check-list{gap:10px;padding:16px 18px}
+.fa-check{background:#0f151d;border:1px solid var(--fa-line);border-radius:6px;padding:11px 13px}
+.fa-check-name{font-size:12.5px;font-weight:600}
+.fa-check-desc{font-size:11.5px;color:var(--fa-muted)}
+.fa-check-count{font-size:18px;font-weight:650}
+.fa-check.bad{border-left:3px solid var(--fa-bad)}.fa-check.warn{border-left:3px solid var(--fa-warn)}
+.fa-check.bad .fa-check-count{color:#f07c7c}.fa-check.warn .fa-check-count{color:#e0aa3e}.fa-check.ok .fa-check-count{color:var(--fa-faint)}
+th{background:#0f151d;color:var(--fa-faint);font-size:10.5px;letter-spacing:.4px;padding:10px 12px;font-weight:600}
+td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--fa-line)}
+.fa-person{font-weight:600}
+.fa-subline{font-size:11px;color:var(--fa-faint)}
+.fa-badge{font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:4px}
+.fa-badge:before{display:none}
+.fa-badge.ok{color:#5fcf98;background:rgba(47,163,107,.12)}.fa-badge.warn{color:#e5b04a;background:rgba(201,133,0,.14)}.fa-badge.bad{color:#f07c7c;background:rgba(224,86,86,.13)}
+.fa-chip{font-size:11.5px;padding:6px 11px;border-radius:5px;background:transparent;border-color:#2c3746;color:var(--fa-muted)}
+.fa-chip.active{background:#18263a;border-color:#3a6aa8;color:#cfe1fa}
+.fa-mini{background:#0f151d;border-color:var(--fa-line);border-radius:6px;padding:11px 13px}
+.fa-mini span{font-size:11px;color:var(--fa-muted)}.fa-mini b{font-size:15px;font-weight:650}
+.fa-pill{border-radius:4px;font-size:10.5px;font-weight:600;padding:2px 7px}
+.fa-flag{font-size:11.5px;border-radius:4px}
+.fa-load{margin-top:26px;background:var(--fa-panel);border:1px solid var(--fa-border);border-radius:8px;padding:16px 18px}
+.fa-load-title{font-size:13.5px;font-weight:650}.fa-load-copy{font-size:11.5px;color:var(--fa-muted)}
+.fa-slot{background:#0f151d;border:1px dashed #2c3746;border-radius:6px;padding:11px 13px}
+.fa-slot.ok{border:1px solid #1e4a37;background:#0f171a}
+.fa-slot-top{font-size:12px;font-weight:600;color:var(--fa-text)}
+.fa-slot-tag{border-radius:4px;font-size:10px;padding:2px 7px}
+.fa-slot-file{font-size:11.5px}.fa-slot-info{font-size:11px;color:var(--fa-muted)}
+.fa-load-info{font-size:11.5px;color:var(--fa-muted);margin:0 0 12px;padding:0 0 12px;border-bottom:1px solid var(--fa-line);line-height:1.6}
+.fa-load-info:empty{display:none;margin:0;padding:0;border:0}
+.fa-load-info b{color:#c6d2df;font-weight:600}
+.fa-footer{text-align:center;color:var(--fa-faint);font-size:11px;margin-top:22px}
+.fa-recon{font-size:11.5px}
+.fa-comp-box{border-radius:10px;background:var(--fa-panel)}.fa-comp-formula{font-size:12px;border-radius:6px}
+@media(max-width:1100px){.fa-grid-a,.fa-grid-b{grid-template-columns:1fr}.fa-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.fa-top-right,.fa-brand small{display:none}.fa-wrap{padding:18px 16px}.fa-kpis{grid-template-columns:1fr}.fa-head{flex-direction:column;align-items:flex-start}.fa-period-state{margin-left:0}}
 </style>
 </head>
 <body>
-<header class="fa-top"><img class="fa-logo-img" src="logo-esposende.jpg" alt="Esposende"><div class="fa-brand">RECURSOS HUMANOS<small>AUDITORIA &amp; CONTROLE</small></div><div class="fa-top-title">Faltas e Atrasos · Auditoria ponto × folha × cadastro</div><div class="fa-top-right" id="faPrivateStatus">Verificando acesso RH…</div></header>
+<header class="fa-top"><img class="fa-logo-img" src="logo-esposende.jpg" alt="Esposende"><div class="fa-brand">Recursos Humanos<small>Auditoria &amp; Controle</small></div><div class="fa-top-right" id="faPrivateStatus">Verificando acesso RH…</div></header>
 <main class="fa-wrap">
-  <div class="fa-head"><div><div class="fa-kicker">Auditoria de RH / Folha</div><h1 class="fa-title">Faltas e Atrasos</h1><div class="fa-subtitle">Absenteísmo por loja, cargo e dia da semana; conferência do desconto em folha (falta, atraso e DSR) e alertas de gestão de ponto.</div></div><div class="fa-actions"><select class="fa-input" id="faPrintScope" aria-label="Conteúdo do relatório"><option value="issues">PDF: só divergentes</option><option value="all">PDF: conta corrente completa</option></select><button class="fa-btn" id="fa-board" disabled onclick="faBoard()">▤ Relatório da Diretoria</button><button class="fa-btn" id="fa-print" disabled onclick="faPrint()">▣ PDF conta corrente</button><button class="fa-btn" id="fa-export" disabled onclick="faExport()">⇩ Excel</button><button class="fa-btn primary" id="faProcessTop" onclick="faProcess()" disabled>↻ Atualizar análise</button></div></div>
-
-  <section class="fa-load" id="faLoad">
-    <div class="fa-load-head"><div><div class="fa-load-title">Arquivos do período</div><div class="fa-load-copy">Selecione ou arraste os arquivos juntos, com qualquer nome. O módulo reconhece cada um pelas colunas. Só o cartão de ponto é obrigatório; a folha libera a conferência do desconto, e a base ATIVOS libera quadro, afastados e absenteísmo por loja.</div></div>
-      <div class="fa-load-actions"><label class="fa-btn primary" style="display:inline-block">＋ Selecionar arquivos<input type="file" id="faFileInput" accept=".xlsx,.xls,.xlsm,.csv" multiple style="display:none"></label><button class="fa-btn" type="button" onclick="faReloadBase()">↻ Buscar última atualização</button><button class="fa-btn" type="button" onclick="faClearFiles()">Limpar</button></div></div>
-    <div class="fa-slots">
-      <div class="fa-slot" id="faSlotPoint"><div class="fa-slot-top">1 · Cartão de ponto <span class="fa-slot-tag">obrigatório</span></div><div class="fa-slot-file">Nenhum arquivo</div><div class="fa-slot-info">Código, Nome, Data e Falta/atraso</div></div>
-      <div class="fa-slot" id="faSlotPayroll"><div class="fa-slot-top">2 · Folha detalhada <span class="fa-slot-tag">confere desconto</span></div><div class="fa-slot-file">Nenhum arquivo</div><div class="fa-slot-info">Matrícula, Verba_Código, Verba_Quant e Verba_Valor</div></div>
-      <div class="fa-slot" id="faSlotRoster"><div class="fa-slot-top">3 · Base ATIVOS <span class="fa-slot-tag">quadro e situação</span></div><div class="fa-slot-file">Nenhum arquivo</div><div class="fa-slot-info">Matrícula, Nome, CPF, Situação e Centro de custo</div></div>
-    </div>
-    <div class="fa-rejects" id="faRejects"></div>
-    <div class="fa-progress" id="faProgress" aria-live="polite"></div>
-  </section>
-
-  <div class="fa-period"><span class="fa-period-label">Período analisado</span><span class="fa-period-value" id="faPeriod">Aguardando arquivos</span><span class="fa-period-state"><i class="fa-dot" id="faDot"></i><span id="faState">Carregue ao menos o cartão de ponto.</span></span></div>
-  <div class="fa-alert" id="faAlert"><span>⚠</span><div id="faAlertText"></div></div>
+  <div class="fa-head"><div><div class="fa-kicker">Auditoria de RH · Folha de pagamento</div><h1 class="fa-title">Faltas e Atrasos</h1>
+    <div class="fa-period"><span class="fa-period-label">Período</span><span class="fa-period-value" id="faPeriod">Aguardando arquivos</span><span class="fa-period-state"><i class="fa-dot" id="faDot"></i><span id="faState">Buscando os últimos arquivos salvos… (quadro "Arquivos do período" no final da página)</span></span></div></div>
+    <div class="fa-actions"><select class="fa-input" id="faPrintScope" aria-label="Conteúdo do relatório"><option value="issues">PDF: só divergentes</option><option value="all">PDF: conta corrente completa</option></select><button class="fa-btn" onclick="fa$('faLoad').scrollIntoView({behavior:'smooth'})">Arquivos</button><button class="fa-btn" id="fa-board" disabled onclick="faBoard()">Relatório da Diretoria</button><button class="fa-btn" id="fa-print" disabled onclick="faPrint()">PDF conta corrente</button><button class="fa-btn" id="fa-export" disabled onclick="faExport()">Excel</button><button class="fa-btn primary" id="faProcessTop" onclick="faProcess()" disabled>Atualizar análise</button></div></div>
+  <div class="fa-alert" id="faAlert"><span class="fa-alert-ico">!</span><div id="faAlertText"></div></div>
 
   <section class="fa-kpis">
-    <div class="fa-kpi" onclick="faShow('head')"><div class="fa-kpi-top">Quadro de funcionários <span class="fa-kpi-icon">♙</span></div><div class="fa-kpi-num" id="kHead">—</div><div class="fa-kpi-foot" id="kHeadFoot">Base ATIVOS ou folha</div><div class="fa-kpi-date" id="kHeadDate"></div></div>
-    <div class="fa-kpi" onclick="faShow('people')"><div class="fa-kpi-top">Colaboradores com ocorrência <span class="fa-kpi-icon">◷</span></div><div class="fa-kpi-num" id="kPeople">—</div><div class="fa-kpi-foot" id="kPeopleFoot">Percentual do quadro</div><div class="fa-kpi-date" id="kPeopleCmp"></div></div>
-    <div class="fa-kpi" onclick="faShow('abs')"><div class="fa-kpi-top">Faltas de dia inteiro <span class="fa-kpi-icon">✕</span></div><div class="fa-kpi-num" id="kAbs">—</div><div class="fa-kpi-foot" id="kAbsFoot">Dias de falta · pessoas · % do quadro</div><div class="fa-kpi-date" id="kAbsCmp"></div></div>
-    <div class="fa-kpi warn" onclick="faShow('late')"><div class="fa-kpi-top">Atrasos e saídas antecipadas <span class="fa-kpi-icon">◴</span></div><div class="fa-kpi-num" id="kLate">—</div><div class="fa-kpi-foot" id="kLateFoot">Eventos · pessoas · % do quadro</div><div class="fa-kpi-date" id="kLateCmp"></div></div>
-    <div class="fa-kpi" onclick="faShow('rate')"><div class="fa-kpi-top">Taxa de absenteísmo <span class="fa-kpi-icon">%</span></div><div class="fa-kpi-num" id="kRate">—</div><div class="fa-kpi-foot" id="kRateFoot">Horas perdidas ÷ horas previstas</div><div class="fa-kpi-date" id="kRateCmp"></div></div>
-    <div class="fa-kpi" onclick="faShow('hours')"><div class="fa-kpi-top">Horas perdidas no ponto <span class="fa-kpi-icon">◷</span></div><div class="fa-kpi-num" id="kHours">—</div><div class="fa-kpi-foot" id="kHoursFoot">Faltas + atrasos registrados</div><div class="fa-kpi-date" id="kHoursCmp"></div></div>
-    <div class="fa-kpi good" id="kDiscCard" onclick="faShow('disc')"><div class="fa-kpi-top">Divergências de desconto <span class="fa-kpi-icon">!</span></div><div class="fa-kpi-num" id="kDisc">—</div><div class="fa-kpi-foot" id="kDiscFoot">Sem desconto, desconto errado ou DSR errado</div><div class="fa-kpi-date" id="kDiscCmp"></div></div>
-    <div class="fa-kpi good" id="kAlertCard" onclick="faShow('alerts')"><div class="fa-kpi-top">Alertas de gestão de ponto <span class="fa-kpi-icon">⚑</span></div><div class="fa-kpi-num" id="kAlerts">—</div><div class="fa-kpi-foot" id="kAlertsFoot">Afastados, faltas seguidas, reincidência</div><div class="fa-kpi-date" id="kAlertsCmp"></div></div>
+    <div class="fa-kpi" onclick="faShow('head')"><div class="fa-kpi-top">Quadro de funcionários</div><div class="fa-kpi-num" id="kHead">—</div><div class="fa-kpi-foot" id="kHeadFoot">Base ATIVOS ou folha</div><div class="fa-kpi-date" id="kHeadDate"></div></div>
+    <div class="fa-kpi" onclick="faShow('people')"><div class="fa-kpi-top">Colaboradores com ocorrência</div><div class="fa-kpi-num" id="kPeople">—</div><div class="fa-kpi-foot" id="kPeopleFoot">Percentual do quadro</div><div class="fa-kpi-date" id="kPeopleCmp"></div></div>
+    <div class="fa-kpi" onclick="faShow('abs')"><div class="fa-kpi-top">Faltas de dia inteiro</div><div class="fa-kpi-num" id="kAbs">—</div><div class="fa-kpi-foot" id="kAbsFoot">Dias de falta · pessoas · % do quadro</div><div class="fa-kpi-date" id="kAbsCmp"></div></div>
+    <div class="fa-kpi" onclick="faShow('late')"><div class="fa-kpi-top">Atrasos e saídas antecipadas</div><div class="fa-kpi-num" id="kLate">—</div><div class="fa-kpi-foot" id="kLateFoot">Eventos · pessoas · % do quadro</div><div class="fa-kpi-date" id="kLateCmp"></div></div>
+    <div class="fa-kpi" onclick="faShow('rate')"><div class="fa-kpi-top">Taxa de absenteísmo</div><div class="fa-kpi-num" id="kRate">—</div><div class="fa-kpi-foot" id="kRateFoot">Horas perdidas ÷ horas previstas</div><div class="fa-kpi-date" id="kRateCmp"></div></div>
+    <div class="fa-kpi" onclick="faShow('hours')"><div class="fa-kpi-top">Horas perdidas no ponto</div><div class="fa-kpi-num" id="kHours">—</div><div class="fa-kpi-foot" id="kHoursFoot">Faltas + atrasos registrados</div><div class="fa-kpi-date" id="kHoursCmp"></div></div>
+    <div class="fa-kpi good" id="kDiscCard" onclick="faShow('disc')"><div class="fa-kpi-top">Divergências de desconto</div><div class="fa-kpi-num" id="kDisc">—</div><div class="fa-kpi-foot" id="kDiscFoot">Sem desconto, desconto errado ou DSR errado</div><div class="fa-kpi-date" id="kDiscCmp"></div></div>
+    <div class="fa-kpi good" id="kAlertCard" onclick="faShow('alerts')"><div class="fa-kpi-top">Alertas de gestão de ponto</div><div class="fa-kpi-num" id="kAlerts">—</div><div class="fa-kpi-foot" id="kAlertsFoot">Afastados, faltas seguidas, reincidência</div><div class="fa-kpi-date" id="kAlertsCmp"></div></div>
   </section>
 
   <div class="fa-tabs"><button class="fa-tab active" data-page="overview" onclick="faPage('overview',this)">Resumo</button><button class="fa-tab" data-page="indicators" onclick="faPage('indicators',this)">Indicadores</button><button class="fa-tab" data-page="detail" onclick="faPage('detail',this)">Conferência por funcionário</button><button class="fa-tab" data-page="issues" onclick="faPage('issues',this)">Conta corrente</button><button class="fa-tab" data-page="files" onclick="faPage('files',this)">Auditorias e regras</button></div>
 
   <section class="fa-page active" id="faOverview">
-    <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Auditorias executadas</div><div class="fa-panel-sub">Cada verificação mostra quantos colaboradores caíram nela. Clique para ver a lista.</div></div><span class="fa-badge ok" id="faCoverage">Aguardando arquivos</span></div><div class="fa-check-list" id="faChecks"><div class="fa-empty" style="grid-column:1/-1">Carregue os arquivos para executar as auditorias.</div></div></div>
-    <div class="fa-panel" style="margin-top:10px"><div class="fa-panel-head"><div><div class="fa-panel-title">Rubricas de desconto encontradas na folha</div><div class="fa-panel-sub" id="faRubSub">Somente colaboradores do estabelecimento do cartão de ponto</div></div></div><div class="fa-summary-row"><div class="fa-mini"><span id="faRubFaltaLbl">Falta (1356)</span><b id="faRubFalta">—</b></div><div class="fa-mini"><span id="faRubDsrLbl">DSR (1357)</span><b id="faRubDsr">—</b></div><div class="fa-mini"><span id="faRubAtrasoLbl">Atraso (1354)</span><b id="faRubAtraso">—</b></div></div><div class="fa-disclaimer">As planilhas são lidas no navegador. O relatório, com CPF mascarado, fica salvo na base privada do Portal e só é consultado por usuário autenticado com acesso de RH.</div></div>
-    <div class="fa-panel" style="margin-top:10px"><div class="fa-panel-head"><div><div class="fa-panel-title">Maiores ocorrências do período</div><div class="fa-panel-sub">Ordenado por pendência e horas perdidas · clique em + para ver datas e rubricas</div></div><button class="fa-btn" onclick="faGo('detail')">Ver conferência completa</button></div><div class="fa-table-wrap"><table><thead><tr><th>Funcionário</th><th>Loja / cargo</th><th>Ocorrências</th><th>Horas no ponto</th><th>Desconto em folha</th><th>DSR</th><th>Resultado</th><th></th></tr></thead><tbody id="faTopRows"><tr><td colspan="8" class="fa-empty">Carregue os arquivos para iniciar o cruzamento.</td></tr></tbody></table></div></div>
+    <div class="fa-grid-a">
+      <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Ocorrências por dia</div><div class="fa-panel-sub" id="faChDailySub">Faltas de dia inteiro e atrasos registrados no cartão de ponto</div></div><div class="fa-legend"><span><i style="background:var(--fa-s1)"></i>Faltas</span><span><i style="background:var(--fa-s2)"></i>Atrasos</span></div></div><div class="fa-chart" id="faChDaily"></div></div>
+      <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Situação da conferência</div><div class="fa-panel-sub">Colaboradores com ocorrência no ponto ou desconto na folha</div></div></div><div class="fa-chart" id="faChStatus"></div></div>
+    </div>
+    <div class="fa-grid-b">
+      <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Absenteísmo por loja</div><div class="fa-panel-sub">Maiores taxas · horas perdidas ÷ horas previstas · clique na barra para ver as pessoas</div></div></div><div class="fa-chart" id="faChStores"></div></div>
+      <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Ocorrências por dia da semana</div><div class="fa-panel-sub">Concentração em segunda e sábado indica emenda de fim de semana</div></div><div class="fa-legend"><span><i style="background:var(--fa-s1)"></i>Faltas</span><span><i style="background:var(--fa-s2)"></i>Atrasos</span></div></div><div class="fa-chart" id="faChWeek"></div></div>
+    </div>
+    <div class="fa-panel fa-mt"><div class="fa-panel-head"><div><div class="fa-panel-title">Auditorias executadas</div><div class="fa-panel-sub">Quantos colaboradores caíram em cada verificação · clique para ver a lista</div></div><span class="fa-badge ok" id="faCoverage">Aguardando arquivos</span></div><div class="fa-check-list" id="faChecks"><div class="fa-empty" style="grid-column:1/-1">Carregue os arquivos para executar as auditorias.</div></div></div>
+    <div class="fa-panel fa-mt"><div class="fa-panel-head"><div><div class="fa-panel-title">Maiores ocorrências do período</div><div class="fa-panel-sub">Ordenado por pendência e horas perdidas · clique em + para ver datas e rubricas</div></div><button class="fa-btn" onclick="faGo('detail')">Ver conferência completa</button></div><div class="fa-table-wrap"><table><thead><tr><th>Funcionário</th><th>Loja / cargo</th><th>Ocorrências</th><th>Horas no ponto</th><th>Desconto em folha</th><th>DSR</th><th>Resultado</th><th></th></tr></thead><tbody id="faTopRows"><tr><td colspan="8" class="fa-empty">Carregue os arquivos para iniciar o cruzamento.</td></tr></tbody></table></div></div>
   </section>
 
-  <section class="fa-page" id="faIndicators">
+<section class="fa-page" id="faIndicators">
     <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Absenteísmo por loja / centro de custo</div><div class="fa-panel-sub" id="faStoreSub">Quadro da base ATIVOS; horas previstas = quadro ativo × dias úteis (seg–sáb, sem feriados nacionais) × 7h20</div></div></div><div class="fa-table-wrap"><table><thead><tr><th>Loja / centro de custo</th><th>Quadro</th><th>Com ocorrência</th><th>% do quadro</th><th>Faltas (dias)</th><th>Atrasos</th><th>Horas perdidas</th><th>Absenteísmo</th></tr></thead><tbody id="faStoreRows"><tr><td colspan="8" class="fa-empty">Sem dados.</td></tr></tbody></table></div></div>
     <div class="fa-grid2">
       <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Ocorrências por dia da semana</div><div class="fa-panel-sub">Concentração na segunda e no sábado indica emenda de fim de semana</div></div></div><div class="fa-bars" id="faWeekBars"></div></div>
@@ -121,8 +219,21 @@
 
   <section class="fa-page" id="faFiles"><div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Catálogo de auditorias de faltas e atrasos</div><div class="fa-panel-sub">O que o módulo verifica, o arquivo que cada verificação exige e a base legal</div></div></div><div class="fa-instructions" id="faRulesText"></div><div class="fa-disclaimer">A tela não determina se uma ausência foi justificada (atestado, licença, banco de horas, acordo). Essas evidências devem ser conferidas antes do fechamento.</div></div>
     <div class="fa-panel" style="margin-top:10px"><div class="fa-panel-head"><div><div class="fa-panel-title">Rubricas reconhecidas na folha</div><div class="fa-panel-sub">Códigos padrão 1356 (falta), 1357 (DSR) e 1354 (atraso), mais verbas de desconto cujo título indique falta, DSR ou atraso</div></div></div><div class="fa-instructions" id="faRubMap">Carregue a folha para ver as rubricas mapeadas.</div></div>
+  
+    <div class="fa-panel fa-mt"><div class="fa-panel-head"><div><div class="fa-panel-title">Rubricas de desconto encontradas na folha</div><div class="fa-panel-sub" id="faRubSub">Somente colaboradores do estabelecimento do cartão de ponto</div></div></div><div class="fa-summary-row"><div class="fa-mini"><span id="faRubFaltaLbl">Falta (1356)</span><b id="faRubFalta">—</b></div><div class="fa-mini"><span id="faRubDsrLbl">DSR (1357)</span><b id="faRubDsr">—</b></div><div class="fa-mini"><span id="faRubAtrasoLbl">Atraso (1354)</span><b id="faRubAtraso">—</b></div></div><div class="fa-disclaimer">As planilhas são lidas no navegador. O relatório, com CPF mascarado, fica salvo na base privada do Portal e só é consultado por usuário autenticado com acesso de RH.</div></div>
   </section>
-  <div style="text-align:center;color:#596f89;font-size:8px;margin-top:14px">Esposende · Central de Auditoria &amp; Controle</div>
+  <section class="fa-load" id="faLoad"><div class="fa-load-info" id="faBaseInfo"></div>
+    <div class="fa-load-head"><div><div class="fa-load-title">Arquivos do período</div><div class="fa-load-copy">Selecione ou arraste os arquivos juntos, com qualquer nome. O módulo reconhece cada um pelas colunas. Só o cartão de ponto é obrigatório; a folha libera a conferência do desconto, e a base ATIVOS libera quadro, afastados e absenteísmo por loja.</div></div>
+      <div class="fa-load-actions"><label class="fa-btn primary" style="display:inline-block">＋ Selecionar arquivos<input type="file" id="faFileInput" accept=".xlsx,.xls,.xlsm,.csv" multiple style="display:none"></label><button class="fa-btn" type="button" onclick="faReloadBase()">↻ Buscar última atualização</button><button class="fa-btn" type="button" onclick="faClearFiles()">Limpar</button></div></div>
+    <div class="fa-slots">
+      <div class="fa-slot" id="faSlotPoint"><div class="fa-slot-top">1 · Cartão de ponto <span class="fa-slot-tag">obrigatório</span></div><div class="fa-slot-file">Nenhum arquivo</div><div class="fa-slot-info">Código, Nome, Data e Falta/atraso</div></div>
+      <div class="fa-slot" id="faSlotPayroll"><div class="fa-slot-top">2 · Folha detalhada <span class="fa-slot-tag">confere desconto</span></div><div class="fa-slot-file">Nenhum arquivo</div><div class="fa-slot-info">Matrícula, Verba_Código, Verba_Quant e Verba_Valor</div></div>
+      <div class="fa-slot" id="faSlotRoster"><div class="fa-slot-top">3 · Base ATIVOS <span class="fa-slot-tag">quadro e situação</span></div><div class="fa-slot-file">Nenhum arquivo</div><div class="fa-slot-info">Matrícula, Nome, CPF, Situação e Centro de custo</div></div>
+    </div>
+    <div class="fa-rejects" id="faRejects"></div>
+    <div class="fa-progress" id="faProgress" aria-live="polite"></div>
+  </section>
+  <div class="fa-footer">Esposende · Central de Auditoria &amp; Controle</div>
 </main><section class="fa-print-report" id="faPrintReport"></section><div class="fa-toast" id="faToast"></div><div class="fa-comp" id="faComp" onclick="if(event.target===this)faCompClose()"></div>
 <script>
 'use strict';
@@ -266,7 +377,7 @@ function faSlotHTML(kind){
   if(kind==='roster'){const m=s.meta;info=faInt(m.people)+' cadastros'+(m.date?' · base de '+faBR(m.date):'')}
   el.className='fa-slot ok';el.innerHTML='<div class="fa-slot-top">'+base[0]+' <span class="fa-slot-tag">'+(s.savedAt?(faPrivateUser?'✓ salvo na base':'✓ salvo neste navegador'):'✓ novo · será salvo')+'</span></div><div class="fa-slot-file">'+faEsc(s.file.name)+(s.sheet?' · aba '+faEsc(s.sheet):'')+'</div><div class="fa-slot-info">'+info+(s.savedAt?'<br>Salvo em '+new Date(s.savedAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+' · selecione outro arquivo para trocar':'')+'</div>';
 }
-function faRenderSlots(){['point','payroll','roster'].forEach(faSlotHTML);const ready=!!faInputs.point;['faProcessTop'].forEach(id=>{const b=fa$(id);b.disabled=faBusy||!ready;b.textContent=faBusy?'Processando…':'↻ Atualizar análise'})}
+function faRenderSlots(){['point','payroll','roster'].forEach(faSlotHTML);const ready=!!faInputs.point;['faProcessTop'].forEach(id=>{const b=fa$(id);b.disabled=faBusy||!ready;b.textContent=faBusy?'Processando…':'Atualizar análise'})}
 async function faAddFiles(list){
   list=[...(list||[])].filter(f=>/\.(xlsx|xls|xlsm|csv)$/i.test(f.name));
   if(!list.length){faToast('Selecione planilhas .xlsx, .xls ou .csv.');return}
@@ -543,7 +654,7 @@ function faRenderAll(){
   const per=faPeriodLabel(m),pointTag='Ponto '+per;
   fa$('faPeriod').textContent=per+(m.payrollPeriod?' · Folha '+m.payrollPeriod:'')+' · '+m.period.workdays+' dias úteis';
   fa$('faState').textContent='Análise de '+new Date(m.createdAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+' · '+m.rows.length+' colaboradores';fa$('faDot').className='fa-dot good';
-  const warn=m.warnings||[];fa$('faAlert').classList.toggle('show',warn.length>0);fa$('faAlertText').innerHTML=warn.map((w,i)=>i===0?'<b>'+faEsc(w)+'</b>':faEsc(w)).join('<br>');
+  const allW=m.warnings||[],isInfo=w=>/^Rescisões do Crediário cruzadas|^Usando da base/.test(w),warn=allW.filter(w=>!isInfo(w));fa$('faAlert').classList.toggle('show',warn.length>0);fa$('faAlertText').innerHTML=warn.map((w,i)=>i===0?'<b>'+faEsc(w)+'</b>':faEsc(w)).join('<br>');fa$('faBaseInfo').innerHTML=allW.filter(isInfo).map(w=>faEsc(w).replace(/^(Rescisões do Crediário cruzadas|Usando da base)/,'<b>$1</b>')).join('<br>');
   /* KPIs */
   fa$('kHead').textContent=m.quadro?faInt(m.quadro):'—';
   fa$('kHeadFoot').textContent=m.sources.rosterAvailable?faInt(m.ativos)+' ativos trabalhando · '+faInt(m.quadro-m.ativos)+' afastados/férias':(m.sources.payrollAvailable?'Pessoas na folha do estabelecimento':'Carregue ATIVOS ou a folha');
@@ -564,7 +675,7 @@ function faRenderAll(){
   ['falta','dsr','atraso'].forEach(g=>{const id={falta:'faRubFalta',dsr:'faRubDsr',atraso:'faRubAtraso'}[g];fa$(id+'Lbl').textContent=lbl(g);fa$(id).textContent=m.sources.payrollAvailable?faBRL(m.rub[g].value)+' · '+faH(m.rub[g].qty):'Folha não carregada'});
   fa$('faRubSub').textContent=m.sources.payrollAvailable?'Folha '+(m.payrollPeriod||'')+' · estabelecimento '+m.estabs.join(', '):'Carregue a folha detalhada para ver as rubricas';
   fa$('faRubMap').innerHTML=m.rubMap?.length?m.rubMap.map(x=>'<b>'+faEsc(x.code)+'</b> · '+faEsc(x.title||'sem título')+' → '+({falta:'falta',dsr:'DSR',atraso:'atraso'}[x.group])+' · '+faH(x.qty)+' · '+faBRL(x.value)+' · '+x.people+' pessoa(s)').join('<br>'):(m.sources.payrollAvailable?'Nenhuma verba de falta, atraso ou DSR encontrada para o estabelecimento.':'Carregue a folha para ver as rubricas mapeadas.');
-  faRenderTop();faRenderIndicators();faRender();faIssues();
+  faRenderTop();faRenderIndicators();faRender();faIssues();faCharts(m);
   ['fa-export','fa-export2','fa-print','fa-board'].forEach(id=>fa$(id).disabled=false);
 }
 function faResult(r){
@@ -696,8 +807,82 @@ function faReview(b){const r=faModel.rows.find(x=>x.key===b.dataset.key);if(!r)r
 function faFilter(mode){faFilterMode=mode;faPage('detail',document.querySelector('[data-page=detail]'));document.querySelectorAll('.fa-chip').forEach(x=>x.classList.toggle('active',x.dataset.filter===mode));faRender()}
 function faSetFilter(mode,b){faFilterMode=mode;document.querySelectorAll('.fa-chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');faRender()}
 function faGo(name){faPage(name,document.querySelector('[data-page='+name+']'))}
-function faPage(name,b){document.querySelectorAll('.fa-page').forEach(x=>x.classList.remove('active'));const id={overview:'faOverview',indicators:'faIndicators',detail:'faDetail',issues:'faIssues',files:'faFiles'}[name];if(id)fa$(id).classList.add('active');document.querySelectorAll('.fa-tab').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');if(name==='detail')faRender();if(name==='issues')faIssues()}
+function faPage(name,b){document.querySelectorAll('.fa-page').forEach(x=>x.classList.remove('active'));const id={overview:'faOverview',indicators:'faIndicators',detail:'faDetail',issues:'faIssues',files:'faFiles'}[name];if(id)fa$(id).classList.add('active');document.querySelectorAll('.fa-tab').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');if(name==='detail')faRender();if(name==='issues')faIssues();if(name==='overview'&&faModel)setTimeout(()=>faCharts(faModel),0)}
 function faRulesText(){fa$('faRulesText').innerHTML='<b>Classificação:</b> ocorrência de 7h20 ou mais no dia = falta de dia inteiro; menor que 7h20 = atraso ou saída antecipada (se o cartão tiver coluna de tipo, ela prevalece).<br><b>Absenteísmo:</b> horas perdidas ÷ (quadro ativo × dias úteis seg–sáb sem feriados nacionais × 7h20).<br><b>DSR esperado:</b> um dia da jornada (mínimo 7h20; ex.: 9h para jornada de 9h) por semana de segunda a domingo com falta de dia inteiro, mais um dia por feriado nacional de seg a sáb da mesma semana (Lei 605/49 art. 6º).<br><b>Conta corrente:</b> a descontar = horas do ponto (menos atrasos de até 10 min/dia) + DSR esperado; em R$ pelo valor-hora das rubricas de desconto da pessoa (ou do salário, se não houver desconto). Saldo = a descontar − descontado.<br><b>Tolerância:</b> 0,05 h na comparação; atrasos de até 10 min no dia não são descontáveis (CLT art. 58 §1º).<br><b>Vínculo:</b> ponto × folha × ATIVOS pela matrícula; CPF como segunda chave. CPF sempre mascarado na tela e nos relatórios.<br><br>'+FA_CHECKS.map(c=>'<b>'+faEsc(c.name)+'</b> ('+(c.group==='desc'?'desconto em folha':c.group==='gest'?'gestão de ponto':'informativo')+(c.needs==='payroll'?' · requer folha':c.needs==='roster'?' · requer ATIVOS':'')+'): '+faEsc(c.desc)+(c.law?' <i>'+faEsc(c.law)+'</i>':'')).join('<br>')}
+
+/* ===== Gráficos (SVG, sem biblioteca) ===== */
+function faTip(e,html){let t=fa$('faTip');if(!t){t=document.createElement('div');t.id='faTip';t.className='fa-tip';document.body.appendChild(t)}t.innerHTML=html;t.style.display='block';const x=Math.min(e.clientX+14,innerWidth-t.offsetWidth-8),y=Math.min(e.clientY+14,innerHeight-t.offsetHeight-8);t.style.left=Math.max(8,x)+'px';t.style.top=Math.max(8,y)+'px'}
+function faTipOff(){const t=fa$('faTip');if(t)t.style.display='none'}
+function faNice(v){if(v<=4)return 4;const p=Math.pow(10,Math.floor(Math.log10(v))),n=v/p;return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p}
+function faW(el,def){return Math.max(260,(el.clientWidth||def)-36)}
+const FA_CH={};
+function faBind(el,key,items){el.querySelectorAll('[data-i]').forEach(n=>{const it=items[+n.dataset.i];n.onmousemove=e=>faTip(e,it.tip);n.onmouseleave=faTipOff;if(it.click)n.onclick=()=>{faTipOff();it.click()}})}
+function faChDaily(m){
+  const el=fa$('faChDaily');if(!el)return;if(!m.period.start){el.innerHTML='<div class="fa-empty">Sem período.</div>';return}
+  const days=[];for(let d=faFromISO(m.period.start);d<=faFromISO(m.period.end);d=faAddDays(d,1))days.push(d);
+  const by={};days.forEach(d=>by[faISO(d)]={f:0,a:0,min:0,who:[]});
+  m.rows.forEach(r=>r.events.forEach(ev=>{const x=by[ev.date];if(!x)return;if(ev.kind==='falta')x.f++;else x.a++;x.min+=ev.minutes;x.who.push(r.name)}));
+  const W=faW(el,800),H=230,pl=30,pb=24,pt=10,iw=W-pl,ih=H-pb-pt,n=days.length,bw=iw/n,mx=faNice(Math.max(1,...Object.values(by).map(x=>x.f+x.a))),y=v=>pt+ih-v/mx*ih,b=Math.max(3,Math.min(16,bw*.62));
+  let svg='',items=[];
+  [0,mx/2,mx].forEach(v=>{svg+='<line class="fa-ax" x1="'+pl+'" x2="'+W+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text x="'+(pl-8)+'" y="'+(y(v)+4)+'" text-anchor="end">'+faInt(v)+'</text>'});
+  days.forEach((d,i)=>{const k=faISO(d),x=by[k],cx=pl+i*bw+bw/2,hol=faHoliday(d);
+    if(d.getDay()===0||hol)svg+='<rect x="'+(pl+i*bw)+'" y="'+pt+'" width="'+bw+'" height="'+ih+'" fill="#ffffff" opacity=".025"/>';
+    if(x.f){svg+='<rect x="'+(cx-b/2)+'" y="'+y(x.f)+'" width="'+b+'" height="'+(y(0)-y(x.f))+'" rx="2" fill="var(--fa-s1)"/>'}
+    if(x.a){const y0=x.f?y(x.f)-2:y(0);svg+='<rect x="'+(cx-b/2)+'" y="'+(y0-(y(0)-y(x.a)))+'" width="'+b+'" height="'+(y(0)-y(x.a))+'" rx="2" fill="var(--fa-s2)"/>'}
+    if(i===0||d.getDay()===1)svg+='<text x="'+cx+'" y="'+(H-6)+'" text-anchor="middle">'+faBR(d).slice(0,5)+'</text>';
+    items.push({tip:'<b>'+faBR(d)+' · '+FA_WD[d.getDay()]+'</b>'+(hol?' · '+faEsc(hol):'')+'<br><span class="k">Faltas</span> '+x.f+' · <span class="k">Atrasos</span> '+x.a+'<br><span class="k">Horas</span> '+faClock(x.min)+(x.who.length?'<br><span class="k">'+faEsc([...new Set(x.who)].slice(0,4).map(n=>n.split(' ')[0]+' '+n.split(' ').slice(-1)[0]).join(', '))+([...new Set(x.who)].length>4?'…':'')+'</span>':'')});
+    svg+='<rect class="fa-hit" data-i="'+i+'" x="'+(pl+i*bw)+'" y="'+pt+'" width="'+bw+'" height="'+(ih+pb)+'"/>';
+  });
+  svg+='<line x1="'+pl+'" x2="'+W+'" y1="'+y(0)+'" y2="'+y(0)+'" stroke="#2c3746"/>';
+  el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" height="'+H+'" role="img" aria-label="Ocorrências por dia">'+svg+'</svg>';faBind(el,'d',items);
+  const peak=days.map(d=>[d,by[faISO(d)]]).sort((a,b)=>(b[1].f+b[1].a)-(a[1].f+a[1].a))[0];
+  fa$('faChDailySub').textContent='Faltas de dia inteiro e atrasos do cartão de ponto · pico em '+faBR(peak[0])+' ('+FA_WD[peak[0].getDay()]+', '+(peak[1].f+peak[1].a)+' ocorrências) · domingos e feriados sombreados';
+}
+function faChWeek(m){
+  const el=fa$('faChWeek');if(!el)return;const order=[1,2,3,4,5,6,0],d=order.map(w=>m.byWeekday[w]);
+  const W=faW(el,500),H=200,pl=30,pb=24,pt=18,iw=W-pl,ih=H-pb-pt,bw=iw/7,mx=faNice(Math.max(1,...d.map(x=>x.faltas+x.atrasos))),y=v=>pt+ih-v/mx*ih,b=Math.min(44,bw*.5);
+  let svg='',items=[];
+  [0,mx/2,mx].forEach(v=>{svg+='<line class="fa-ax" x1="'+pl+'" x2="'+W+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text x="'+(pl-8)+'" y="'+(y(v)+4)+'" text-anchor="end">'+faInt(v)+'</text>'});
+  d.forEach((x,i)=>{const cx=pl+i*bw+bw/2,t=x.faltas+x.atrasos;
+    if(x.faltas)svg+='<rect x="'+(cx-b/2)+'" y="'+y(x.faltas)+'" width="'+b+'" height="'+(y(0)-y(x.faltas))+'" rx="3" fill="var(--fa-s1)"/>';
+    if(x.atrasos){const y0=x.faltas?y(x.faltas)-2:y(0);svg+='<rect x="'+(cx-b/2)+'" y="'+(y0-(y(0)-y(x.atrasos)))+'" width="'+b+'" height="'+(y(0)-y(x.atrasos))+'" rx="3" fill="var(--fa-s2)"/>'}
+    if(t)svg+='<text x="'+cx+'" y="'+(y(t)-(x.faltas&&x.atrasos?8:6))+'" text-anchor="middle" style="fill:var(--fa-text);font-weight:600">'+t+'</text>';
+    svg+='<text x="'+cx+'" y="'+(H-6)+'" text-anchor="middle">'+FA_WD[x.wd]+'</text>';
+    items.push({tip:'<b>'+FA_WD[x.wd]+'</b><br><span class="k">Faltas</span> '+x.faltas+' · <span class="k">Atrasos</span> '+x.atrasos});
+    svg+='<rect class="fa-hit" data-i="'+i+'" x="'+(pl+i*bw)+'" y="'+pt+'" width="'+bw+'" height="'+(ih+pb)+'"/>';
+  });
+  svg+='<line x1="'+pl+'" x2="'+W+'" y1="'+y(0)+'" y2="'+y(0)+'" stroke="#2c3746"/>';
+  el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" height="'+H+'" role="img" aria-label="Ocorrências por dia da semana">'+svg+'</svg>';faBind(el,'w',items);
+}
+function faChStores(m){
+  const el=fa$('faChStores');if(!el)return;const byRate=m.byStore.some(s=>s.rate!=null);
+  const list=m.byStore.slice().sort((a,b)=>byRate?(b.rate??-1)-(a.rate??-1):b.minutes-a.minutes).slice(0,8);
+  if(!list.length){el.innerHTML='<div class="fa-empty">Sem ocorrências.</div>';return}
+  const W=faW(el,500),lw=Math.min(190,W*.42),vw=54,rh=24,H=list.length*rh+22,iw=W-lw-vw,val=s=>byRate?(s.rate??0):s.minutes/60,mx=Math.max(...list.map(val),byRate&&m.totals.rate?m.totals.rate:0)||1,x=v=>lw+v/mx*iw;
+  let svg='',items=[];
+  list.forEach((s,i)=>{const yy=i*rh+4,v=val(s),nm=s.store.length>26?s.store.slice(0,25)+'…':s.store;
+    svg+='<text x="'+(lw-10)+'" y="'+(yy+13)+'" text-anchor="end" style="fill:#c9d3de">'+faEsc(nm)+'</text>';
+    svg+='<rect x="'+lw+'" y="'+(yy+3)+'" width="'+Math.max(2,x(v)-lw)+'" height="14" rx="3" fill="var(--fa-s1)"/>';
+    svg+='<text x="'+(x(v)+8)+'" y="'+(yy+14)+'" style="fill:var(--fa-text);font-weight:600">'+(byRate?faDec(v,2)+'%':faClock(s.minutes))+'</text>';
+    items.push({tip:'<b>'+faEsc(s.store)+'</b><br><span class="k">Quadro ativo</span> '+(s.headcount??'—')+' · <span class="k">Com ocorrência</span> '+s.people+'<br><span class="k">Faltas</span> '+s.faltas+' · <span class="k">Atrasos</span> '+s.atrasos+' · <span class="k">Horas</span> '+faClock(s.minutes)+(s.rate!=null?'<br><span class="k">Absenteísmo</span> <b>'+faDec(s.rate,2)+'%</b>':'')+'<br><span class="k">Clique para ver as pessoas</span>',click:()=>faFilter('store:'+faNorm(s.store))});
+    svg+='<rect class="fa-hit" data-i="'+i+'" x="0" y="'+yy+'" width="'+W+'" height="'+rh+'"/>';
+  });
+  if(byRate&&m.totals.rate){const ax=x(m.totals.rate);svg+='<line x1="'+ax+'" x2="'+ax+'" y1="0" y2="'+(H-18)+'" stroke="#8a96a6" stroke-dasharray="3 3"/><text x="'+ax+'" y="'+(H-4)+'" text-anchor="middle">média da rede '+faDec(m.totals.rate,2)+'%</text>'}
+  el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" height="'+H+'" role="img" aria-label="Absenteísmo por loja">'+svg+'</svg>';faBind(el,'s',items);
+}
+function faChStatus(m){
+  const el=fa$('faChStatus');if(!el)return;
+  if(!m.sources.payrollAvailable){el.innerHTML='<div class="fa-empty">Carregue a folha detalhada para conferir os descontos.</div>';return}
+  const base=m.rows.filter(r=>r.acao&&(r.events.length||r.descH>FA_TOL_H||r.descV>0.01));
+  const cats=[['Desconto correto',r=>r.acao==='ok','var(--fa-good)',()=>faFilter('all')],['Faltou descontar',r=>r.acao==='descontar','var(--fa-bad)',()=>faShow('cc_f')],['Estornar',r=>r.acao==='estornar','#e07a3a',()=>faShow('cc_e')],['Conferir',r=>r.acao==='conferir','var(--fa-warn)',()=>faShow('disc')],['Demitido (rescisão)',r=>r.acao==='demitido','var(--fa-neutral)',()=>faShow('cc_m')]].map(c=>{const a=base.filter(c[1]);return {name:c[0],n:a.length,v:a.reduce((s,r)=>s+r.descV,0),color:c[2],click:c[3]}}).filter(c=>c.n);
+  const tot=base.length,div=cats.filter(c=>/Faltou|Estornar|Conferir/.test(c.name)).reduce((s,c)=>s+c.n,0);
+  window.faStatusClicks=cats.map(c=>c.click);
+  el.innerHTML='<div style="display:flex;align-items:baseline;gap:8px"><span class="fa-status-total">'+div+'</span><span style="color:var(--fa-muted);font-size:12px">de '+tot+' colaboradores precisam de ação</span></div>'
+   +'<div class="fa-status-bar">'+cats.map(c=>'<span style="flex:'+c.n+';background:'+c.color+'" title="'+faEsc(c.name)+': '+c.n+'"></span>').join('')+'</div>'
+   +'<div class="fa-status-list">'+cats.map((c,i)=>'<div class="fa-status-row" onclick="faStatusClicks['+i+']()"><i style="background:'+c.color+'"></i><span>'+faEsc(c.name)+'<small>'+faBRL0(c.v)+' descontados na folha</small></span><b>'+c.n+'</b></div>').join('')+'</div>';
+}
+function faCharts(m){try{faChDaily(m);faChStatus(m);faChStores(m);faChWeek(m)}catch(e){console.warn('[Faltas] gráficos:',e)}}
+window.addEventListener('resize',()=>{clearTimeout(window.faRz);window.faRz=setTimeout(()=>{if(faModel&&fa$('faOverview').classList.contains('active'))faCharts(faModel)},150)});
 
 /* ===== Composição dos cards: de onde vem cada número ===== */
 function faCompData(k,m){
