@@ -704,7 +704,7 @@ function faFlags(r,has){
   if(best.length>=3)faFlag(r,'consecutivas',best.length+' faltas seguidas de '+faBR(best[0])+' a '+faBR(best[best.length-1])+'. Exigir atestado ou justificativa.');
   if(r.events.length>=3)faFlag(r,'reincidencia',r.events.length+' ocorrências no período ('+r.faltaDays+' falta(s), '+r.atrasoCount+' atraso(s)).');
   const em=r.events.filter(e=>e.kind==='falta'&&(e.wd===1||e.wd===6));if(em.length>=2)faFlag(r,'emenda',em.length+' faltas em segunda/sábado: '+em.map(e=>faBR(e.date)+' ('+FA_WD[e.wd]+')').join(', ')+'.');
-  const sh=r.events.filter(e=>e.holiday);if(sh.length)faFlag(r,'domingo_feriado',sh.map(e=>faBR(e.date)+' '+e.holiday).join(', ')+'.');
+  const sh=r.events.filter(e=>e.holiday&&!/CCT/.test(e.holiday));if(sh.length)faFlag(r,'domingo_feriado',sh.map(e=>faBR(e.date)+' '+e.holiday).join(', ')+'.');
   const lg=r.events.filter(e=>e.minutes>FA_DAY_MIN);if(lg.length)faFlag(r,'jornada','Falta(s) de '+[...new Set(lg.map(e=>faClock(e.minutes)))].join(', ')+': confirmar jornada contratual.');
 }
 function faDsrWhy(r){return r.dsrWeeks.map(w=>'semana '+faBR(w.start).slice(0,5)+' a '+faBR(w.sunday||faISO(faAddDays(faFromISO(w.start),6))).slice(0,5)+(w.pending?' (domingo após o fechamento: pode ir para a próxima folha)':'')+(w.holidays.length?' + feriado '+w.holidays.join(', '):'')).join('; ')}
@@ -974,12 +974,12 @@ function faChStatus(m){
   const el=fa$('faChStatus');if(!el)return;
   if(!m.sources.payrollAvailable){el.innerHTML='<div class="fa-empty">Carregue a folha detalhada para conferir os descontos.</div>';return}
   const base=m.rows.filter(r=>r.acao&&(r.events.length||r.descH>FA_TOL_H||r.descV>0.01));
-  const cats=[['Desconto correto',r=>r.acao==='ok','var(--fa-good)',()=>faFilter('all')],['Faltou descontar',r=>r.acao==='descontar','var(--fa-bad)',()=>faShow('cc_f')],['Estornar',r=>r.acao==='estornar','#e07a3a',()=>faShow('cc_e')],['Conferir',r=>r.acao==='conferir','var(--fa-warn)',()=>faShow('disc')],['Demitido (rescisão)',r=>r.acao==='demitido','var(--fa-neutral)',()=>faShow('cc_m')]].map(c=>{const a=base.filter(c[1]);return {name:c[0],n:a.length,v:a.reduce((s,r)=>s+r.descV,0),color:c[2],click:c[3]}}).filter(c=>c.n);
+  const cats=[['Desconto correto',r=>r.acao==='ok','var(--fa-good)',()=>faFilter('all'),'descontados na folha'],['Faltou descontar',r=>r.acao==='descontar','var(--fa-bad)',()=>faShow('cc_f'),'a descontar'],['Estornar',r=>r.acao==='estornar','#e07a3a',()=>faShow('cc_e'),'a estornar'],['Conferir',r=>r.acao==='conferir','var(--fa-warn)',()=>faShow('disc'),'a conferir'],['Demitido (rescisão)',r=>r.acao==='demitido','var(--fa-neutral)',()=>faShow('cc_m'),'acertados na rescisão']].map(c=>{const a=base.filter(c[1]);const div=!/correto|Demitido/.test(c[0]);return {name:c[0],n:a.length,v:div?a.reduce((s,r)=>s+Math.abs(r.saldoV||0),0):a.reduce((s,r)=>s+r.descV,0),color:c[2],click:c[3],lb:c[4]}}).filter(c=>c.n);
   const tot=base.length,div=cats.filter(c=>/Faltou|Estornar|Conferir/.test(c.name)).reduce((s,c)=>s+c.n,0);
   window.faStatusClicks=cats.map(c=>c.click);
   el.innerHTML='<div style="display:flex;align-items:baseline;gap:8px"><span class="fa-status-total">'+div+'</span><span style="color:var(--fa-muted);font-size:12px">de '+tot+' colaboradores precisam de ação</span></div>'
    +'<div class="fa-status-bar">'+cats.map(c=>'<span style="flex:'+c.n+';background:'+c.color+'" title="'+faEsc(c.name)+': '+c.n+'"></span>').join('')+'</div>'
-   +'<div class="fa-status-list">'+cats.map((c,i)=>'<div class="fa-status-row" onclick="faStatusClicks['+i+']()"><i style="background:'+c.color+'"></i><span>'+faEsc(c.name)+'<small>'+faBRL0(c.v)+' descontados na folha</small></span><b>'+c.n+'</b></div>').join('')+'</div>';
+   +'<div class="fa-status-list">'+cats.map((c,i)=>'<div class="fa-status-row" onclick="faStatusClicks['+i+']()"><i style="background:'+c.color+'"></i><span>'+faEsc(c.name)+'<small>'+faBRL0(c.v)+' '+c.lb+'</small></span><b>'+c.n+'</b></div>').join('')+'</div>';
 }
 function faRegSvg(m,W,print){
   const list=(m.byRegional||[]).slice();if(!list.length)return '';
@@ -1104,6 +1104,7 @@ const FA_P={ink:'#14202e',muted:'#5b6776',line:'#d9dee5',navy:'#14284a',s1:'#2a7
 function faMotivo(r){
   if(r.acao==='demitido')return 'Demitido em '+faBR(r.demitido.saida)+': acerto na rescisão';
   if(r.afastadoCC)return 'Afastado ('+r.situ+') com falta lançada: confirmar início do afastamento'+(r.descH>FA_TOL_H?'; se anterior, estornar '+faH(r.descH):'');
+  if(r.dsrSemFalta)return 'Folha descontou DSR ('+faH(r.descDsrH)+') sem descontar a falta, que não veio no relatório de ponto: descontar '+faH(r.difFAH)+' (conferir FALT ADV no cartão)';
   if(r.semPonto)return 'Desconto de '+faH(r.descH)+' sem ocorrência no ponto: pedir evidência';
   if(!r.hasPay&&r.events.length)return 'Não está na folha: nada descontado';
   const p=[];
@@ -1136,9 +1137,9 @@ function faRStores(m,W){
 }
 function faRStatus(m){
   const base=m.rows.filter(r=>r.acao&&(r.events.length||r.descH>FA_TOL_H||r.descV>0.01));
-  const c=[['Desconto correto','ok',FA_P.good],['Faltou descontar','descontar',FA_P.bad],['Estornar','estornar','#d4692b'],['Conferir','conferir',FA_P.warn],['Demitido (rescisão)','demitido',FA_P.neutral]].map(([n,a,col])=>{const l=base.filter(r=>r.acao===a);return {n,col,q:l.length,v:l.reduce((s,r)=>s+r.descV,0)}}).filter(x=>x.q);
+  const c=[['Desconto correto','ok',FA_P.good,'descontados'],['Faltou descontar','descontar',FA_P.bad,'a descontar'],['Estornar','estornar','#d4692b','a estornar'],['Conferir','conferir',FA_P.warn,'a conferir'],['Demitido (rescisão)','demitido',FA_P.neutral,'na rescisão']].map(([n,a,col,lb])=>{const l=base.filter(r=>r.acao===a);const v=['ok','demitido'].includes(a)?l.reduce((s,r)=>s+r.descV,0):l.reduce((s,r)=>s+Math.abs(r.saldoV||0),0);return {n,col,q:l.length,v,lb}}).filter(x=>x.q);
   const tot=base.length||1;
-  return '<div class="fa-r-bar">'+c.map(x=>'<span style="flex:'+x.q+';background:'+x.col+'"></span>').join('')+'</div><table class="fa-r-leg">'+c.map(x=>'<tr><td><i style="background:'+x.col+'"></i>'+x.n+'</td><td class="n">'+x.q+'</td><td class="n">'+faDec(x.q/tot*100,0)+'%</td><td class="n">'+faBRL0(x.v)+'</td></tr>').join('')+'</table>';
+  return '<div class="fa-r-bar">'+c.map(x=>'<span style="flex:'+x.q+';background:'+x.col+'"></span>').join('')+'</div><table class="fa-r-leg">'+c.map(x=>'<tr><td><i style="background:'+x.col+'"></i>'+x.n+'</td><td class="n">'+x.q+'</td><td class="n">'+faDec(x.q/tot*100,0)+'%</td><td class="n">'+faBRL0(x.v)+' <small style="color:#5b6776">'+x.lb+'</small></td></tr>').join('')+'</table>';
 }
 function faRCase(list,full){
   if(!list.length)return '<p class="fa-r-empty">Nenhuma divergência de desconto no período.</p>';
