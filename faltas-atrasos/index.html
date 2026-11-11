@@ -127,7 +127,7 @@
 <script>
 'use strict';
 /* ===== Configuração ===== */
-const FA_RULE='fa-v7-rescisoes';
+const FA_RULE='fa-v8-rubricas-dsr';
 const FA_DAY_MIN=440;              // jornada diária de referência: 7h20 (44h ÷ 6 dias)
 const FA_DSR_H=44/6;               // horas de um DSR na jornada de 44h semanais
 const FA_TOL_H=0.05;               // 3 minutos de tolerância na comparação de horas
@@ -297,6 +297,8 @@ function faRubGroup(code,title,type,map){
   for(const g of ['falta','dsr','atraso'])if(map[g].includes(code))return g;
   const t=faNorm(title),tp=faNorm(type);
   if(!t||/abono|justif|adiant|reembol|devol|estorno|ferias|13o|decimo|indeniz|aviso/.test(t))return '';
+  /* "Falta no caixa", quebra, mercadoria, vale: não é ausência ao trabalho */
+  if(/caixa|quebra|mercador|estoque|produto|avaria|vale|emprest|uniforme|convenio|farmacia|crediario|compra/.test(t))return '';
   if(tp&&/^(p|provento|proventos|v|vencimento|vencimentos)$/.test(tp))return '';
   if(/dsr|repouso|rsr/.test(t)&&/desc|falta|perda|atras/.test(t))return 'dsr';
   if(/atras/.test(t))return 'atraso';
@@ -375,7 +377,7 @@ function faCompute(inp){
       let p=pay.byCode.get(x.key);if(!p){p={code:x.code,cpf:x.cpf,name:x.name,falta:{qty:0,value:0},dsr:{qty:0,value:0},atraso:{qty:0,value:0},sal:null};pay.byCode.set(x.key,p)}
       if(x.cpf&&!pay.byCpf.has(x.cpf))pay.byCpf.set(x.cpf,p);
       if(x.sal){p.sal=p.sal||{qty:0,value:0};p.sal.qty+=x.sal.qty;p.sal.value+=x.sal.value}
-      for(const [rub,[q,v]] of Object.entries(x.rubs||{})){const info=F.rubInfo[rub];if(!info)continue;const g=info.group;p[g].qty+=q;p[g].value+=v;const m=pay.rubMap[rub]||(pay.rubMap[rub]={code:rub,title:info.title,group:g,qty:0,value:0,people:new Set()});m.qty+=q;m.value+=v;m.people.add(x.key)}
+      for(const [rub,[q,v]] of Object.entries(x.rubs||{})){const info=F.rubInfo[rub];if(!info)continue;const g=faRubGroup(rub,info.title,'',FA_RUB_DEFAULT);if(!g)continue;p[g].qty+=q;p[g].value+=v;const m=pay.rubMap[rub]||(pay.rubMap[rub]={code:rub,title:info.title,group:g,qty:0,value:0,people:new Set()});m.qty+=q;m.value+=v;m.people.add(x.key)}
     }
     pay.headcount=pay.byCode.size;
     if(end&&chosen){const d=chosen.match(/(\d{1,2})\D+(\d{4})|(\d{4})\D+(\d{1,2})/);if(d){const m=Number(d[1]||d[4]),y=Number(d[2]||d[3]);if(m!==end.getMonth()+1||y!==end.getFullYear())warnings.push('A competência da folha ('+chosen+') não é o mês de fechamento do ponto ('+String(end.getMonth()+1).padStart(2,'0')+'/'+end.getFullYear()+'). Confira se os arquivos são do mesmo fechamento.')}}
@@ -408,7 +410,9 @@ function faCompute(inp){
     /* DSR esperado: 7h20 por semana com falta de dia inteiro + 7h20 por feriado nacional seg–sáb na mesma semana */
     const weeks=new Map();
     faltas.forEach(e=>{if(!e.date)return;const ws=faWeekStart(faFromISO(e.date));const k=faISO(ws);if(!weeks.has(k)){let hol=[];for(let i=0;i<=5;i++){const d=faAddDays(ws,i);const n=faHoliday(d);if(n)hol.push(faBR(d)+' '+n)}weeks.set(k,{start:k,holidays:hol,sunday:faISO(faAddDays(ws,6)),pending:!!(end&&faAddDays(ws,6)>end)})}});
-    const dsrUnit=Math.min(10,Math.max(FA_DSR_H,faltas.reduce((m,e)=>Math.max(m,e.minutes),0)/60));const dsrExpected=[...weeks.values()].reduce((s,w)=>s+(1+w.holidays.length)*dsrUnit,0),dsrMin=[...weeks.values()].filter(w=>!w.pending).reduce((s,w)=>s+(1+w.holidays.length)*dsrUnit,0),dsrMax=dsrExpected;
+    const dsrUnit=Math.min(10,Math.max(FA_DSR_H,faltas.reduce((m,e)=>Math.max(m,e.minutes),0)/60));const wk=[...weeks.values()],days=w=>1+w.holidays.length;
+    /* faixa do DSR: mínimo = semanas encerradas × 7h20 (44h÷6); máximo = todas as semanas × jornada do dia de falta (ex.: 9h) */
+    const dsrExpected=wk.reduce((s,w)=>s+days(w)*dsrUnit,0),dsrMin=wk.filter(w=>!w.pending).reduce((s,w)=>s+days(w)*FA_DSR_H,0),dsrMax=dsrExpected;
     const row={key:x.key,code:x.code,cpf,name,pointName:x.pointName,store:ro?.store||x.store||(R?'Fora da base ATIVOS':'Sem lotação'),role:ro?.role||x.role||'—',situ:ro?ro.situ:(R?'Não encontrado':''),inRoster:!!ro,
       events:ev.map(e=>({date:e.date,wd:e.wd,holiday:e.holiday,minutes:e.minutes,time:e.time,kind:e.kind})),
       minutes,faltaDays:faltas.length,faltaMin:faltas.reduce((s,e)=>s+e.minutes,0),atrasoCount:atrasos.length,atrasoMin:atrasos.reduce((s,e)=>s+e.minutes,0),tolMin,
@@ -843,7 +847,7 @@ async function faLoadDeslig(){
 }
 async function faLoadLatest(force){
   fa$('faPrivateStatus').textContent='Buscando a última atualização na base…';
-  const last=await faSb.from('rh_auditoria_faltas').select('id,criado_em,insumos:resumo->insumos,relatorio').order('criado_em',{ascending:false}).limit(5);
+  const last=await faSb.from('rh_auditoria_faltas').select('id,criado_em,rv:resumo->>ruleVersion,insumos:resumo->insumos,relatorio').order('criado_em',{ascending:false}).limit(5);
   if(last.error){fa$('faPrivateStatus').textContent='Não consegui ler a base: '+last.error.message;return false}
   const row=(last.data||[]).find(x=>x.insumos&&x.insumos.point);
   if(!row){const loc=faLocalInputs();if(loc){faUseInputs(loc,'guardados neste navegador');fa$('faPrivateStatus').textContent='Usando os arquivos guardados neste navegador';return true}fa$('faPrivateStatus').textContent='Nenhum arquivo salvo ainda. Carregue uma vez e eles ficam salvos.';return false}
@@ -851,7 +855,13 @@ async function faLoadLatest(force){
   faUseInputs(row.insumos,'salvos na base');faCurrentAuditId=row.id;
   const rev=new Set((Array.isArray(row.relatorio)?row.relatorio:[]).filter(r=>r.reviewed).map(r=>r.key));faModel.rows.forEach(r=>{if(rev.has(r.key))r.reviewed=true});faIssues();
   fa$('faPrivateStatus').textContent='Última atualização da base: '+new Date(row.criado_em).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+(faDeslig?' · rescisões cruzadas':'');
+  if(row.rv!==FA_RULE||force)faResaveCurrent(row.id);
   return true;
+}
+/* Regravar o registro aberto com as regras e cruzamentos atuais (mesmos arquivos, mesmo registro) */
+async function faResaveCurrent(id){
+  try{const {rows,...rest}=faModel,resumo={...rest,insumos:faInputs};const {error}=await faSb.from('rh_auditoria_faltas').update({resumo,relatorio:faSafeRows()}).eq('id',id);if(error)throw error;fa$('faPrivateStatus').textContent+=' · base atualizada com as regras atuais'}
+  catch(e){console.warn('[Faltas] regravar:',e.message||e)}
 }
 async function faReloadBase(){
   if(faInitPromise)await faInitPromise;
