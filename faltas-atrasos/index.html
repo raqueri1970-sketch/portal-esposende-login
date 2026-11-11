@@ -293,7 +293,7 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
 <script>
 'use strict';
 /* ===== Configuração ===== */
-const FA_RULE='fa-v9-regionais';
+const FA_RULE='fa-v10-afastamento-data';
 const FA_DAY_MIN=440;              // jornada diária de referência: 7h20 (44h ÷ 6 dias)
 const FA_DSR_H=44/6;               // horas de um DSR na jornada de 44h semanais
 const FA_TOL_H=0.05;               // 3 minutos de tolerância na comparação de horas
@@ -340,6 +340,8 @@ const FA_CHECKS=[
   {id:'reincidencia',group:'gest',level:'warn',needs:null,name:'Reincidência (3+ ocorrências)',desc:'Três ou mais faltas/atrasos no período: avaliar medida disciplinar gradual.',law:'CLT art. 482 "e"'},
   {id:'emenda',group:'gest',level:'warn',needs:null,name:'Padrão de emenda',desc:'Duas ou mais faltas na segunda-feira ou no sábado.'},
   {id:'domingo_feriado',group:'gest',level:'warn',needs:null,name:'Ocorrência em feriado nacional',desc:'Falta registrada em feriado nacional: conferir a escala e se o feriado era dia de trabalho.'},
+  {id:'afastado_pos',group:'info',level:'info',needs:'roster',name:'Afastado depois do período',desc:'Situação de afastamento na base ATIVOS com data posterior ao fechamento do ponto: não anula a falta do período.'},
+  {id:'demitido_depois',group:'info',level:'info',needs:null,name:'Saída depois da folha',desc:'Desligado depois do mês da folha: continua na conferência normal.'},
   {id:'demitido',group:'info',level:'info',needs:null,name:'Demitido (rescisão)',desc:'Está na base de rescisões do módulo Crediário: sai dos apontamentos, porque falta e desconto são acertados na rescisão.'},
   {id:'jornada',group:'info',level:'info',needs:null,name:'Duração acima de 7h20',desc:'Falta maior que 7h20 no dia: confirmar a jornada contratual (ex.: 8h48 ou 9h).'}
 ];
@@ -472,7 +474,7 @@ function faRubGroup(code,title,type,map){
   return '';
 }
 /* ===== Insumos salvos: o que fica na base (sem CPF aberto) ===== */
-let faInputs={point:null,payroll:null,roster:null},faDeslig=null,faRegMap=null;
+let faInputs={point:null,payroll:null,roster:null},faDeslig=null,faRegMap=null,faModelPeriodStart=null;
 /* Regional oficial da loja (Base Mãe: portal_lojas × portal_regionais) */
 function faRegionalOf(store){
   if(!faRegMap)return null;const st=String(store||'');
@@ -602,13 +604,15 @@ function faCompute(inp){
       dsrWeeks:[...weeks.values()],dsrExpected,dsrMin,dsrMax,dsrUnit,
       hasPay:!!p,falta:p?{...p.falta}:{qty:0,value:0},atraso:p?{...p.atraso}:{qty:0,value:0},dsr:p?{...p.dsr}:{qty:0,value:0},
       flags:[],reviewed:false};
-    {const dl=faDeslig?(faDeslig.byCode.get(x.code)||(cpf&&faDeslig.byCpf.get(cpf))||null):null;if(dl){row.demitido={saida:dl.saida,natureza:dl.natureza||''};if(!ro||row.store==='Fora da base ATIVOS')row.store='Demitido em '+faBR(dl.saida)}}
+    row.afastPeriodo=!!(ro&&ro.situ&&!/^ativo$/i.test(faNorm(ro.situ))&&roster.date&&end&&faFromISO(roster.date)<=end);row.rosterDate=roster.date||null;
+    {const dl=faDeslig?(faDeslig.byCode.get(x.code)||(cpf&&faDeslig.byCpf.get(cpf))||null):null;const compEnd=end?faISO(new Date(end.getFullYear(),end.getMonth()+1,0)):null;if(dl&&(!compEnd||dl.saida<=compEnd)){row.demitido={saida:dl.saida,natureza:dl.natureza||''};if(!ro||row.store==='Fora da base ATIVOS')row.store='Demitido em '+faBR(dl.saida)}else if(dl){row.saidaDepois=dl}}
     row.deductedH=row.falta.qty+row.atraso.qty;row.deductedV=row.falta.value+row.atraso.value;
     row.expectedH=(minutes-tolMin)/60;row.diff=row.deductedH-row.expectedH;
     [row.rate,row.rateSrc]=faRate(p);
     faFlags(row,{payroll:!!F,roster:!!R});
     rows.push(row);
   }
+  faModelPeriodStart=meta.start?faBR(meta.start):null;
   {const rs=rows.map(r=>r.rate).filter(x=>x!=null).sort((a,b)=>a-b),med=rs.length?rs[Math.floor(rs.length/2)]:null;rows.forEach(r=>faCC(r,!!F,med))}
   const lvl={bad:3,warn:2,info:1};
   rows.sort((a,b)=>(Math.max(0,...b.flags.filter(f=>f.group!=='info').map(f=>lvl[f.level]))-Math.max(0,...a.flags.filter(f=>f.group!=='info').map(f=>lvl[f.level])))||b.minutes-a.minutes);
@@ -652,9 +656,10 @@ function faCompute(inp){
 function faRate(p){if(!p)return [null,''];const q=p.falta.qty+p.atraso.qty+p.dsr.qty,v=p.falta.value+p.atraso.value+p.dsr.value;if(q>FA_TOL_H&&v>0)return [v/q,'rubricas de desconto'];const s=p.sal;if(s&&s.qty>0&&s.value>0){if(s.qty>=60)return [s.value/s.qty,'salário'];if(s.qty<=31)return [s.value/(s.qty*220/30),'salário']}return [null,'']}
 function faFlag(row,id,text){const c=FA_CHECKS.find(x=>x.id===id);row.flags.push({id,group:c.group,level:c.level,name:c.name,text})}
 function faFlags(r,has){
+  if(r.saidaDepois)faFlag(r,'demitido_depois','Saída em '+faBR(r.saidaDepois.saida)+', depois do mês desta folha: a falta do período deve estar descontada nesta folha.');
   if(r.demitido){faFlag(r,'demitido','Desligado em '+faBR(r.demitido.saida)+(r.demitido.natureza?' ('+r.demitido.natureza+')':'')+': ocorrências e descontos tratados na rescisão (base de rescisões do Crediário).');return}
   const hasPoint=r.events.length>0;
-  const afast=has.roster&&r.inRoster&&!!r.situ&&!/^ativo$/i.test(faNorm(r.situ))&&r.events.length>0;
+  const afast=!!r.afastPeriodo&&r.events.length>0;
   if(has.payroll&&!afast){
     const dsrH=r.dsr.qty;
     if(hasPoint&&!r.hasPay){
@@ -680,7 +685,7 @@ function faFlags(r,has){
   if(has.roster&&hasPoint){
     if(!r.inRoster)faFlag(r,'fora_base','Matrícula '+r.code+' não está na base ATIVOS.');
     else{
-      if(!/^ativo$/i.test(faNorm(r.situ)))faFlag(r,'afastado','Situação na base: '+r.situ+'. Ocorrência no ponto deve ser abonada/ajustada, não descontada.');
+      if(!/^ativo$/i.test(faNorm(r.situ))){if(r.afastPeriodo)faFlag(r,'afastado','Situação na base: '+r.situ+'. Ocorrência no ponto deve ser abonada/ajustada, não descontada.');else faFlag(r,'afastado_pos','Situação "'+r.situ+'" na base ATIVOS de '+(r.rosterDate?faBR(r.rosterDate):'data posterior')+', depois do período do ponto. A falta do cartão vale; o afastamento não retroage.')}
       if(r.pointName&&faFirstName(r.pointName)!==faFirstName(r.name))faFlag(r,'nome_diverge','Ponto: '+r.pointName+' · Cadastro: '+r.name+'.');
     }
   }
@@ -812,7 +817,7 @@ function faCC(r,payroll,medRate){
   r.descH=r.descFAH+r.descDsrH;r.descV=r.descFAV+r.descDsrV;
   if(r.rate==null&&medRate&&hasPoint){r.rate=medRate;r.rateSrc='média do estabelecimento (estimado)'}
   const rFA=r.descFAH>tol&&r.descFAV>0?r.descFAV/r.descFAH:r.rate,rD=r.descDsrH>tol&&r.descDsrV>0?r.descDsrV/r.descDsrH:r.rate;
-  r.afastadoCC=hasPoint&&r.inRoster&&!!r.situ&&!/^ativo$/i.test(faNorm(r.situ));
+  r.afastadoCC=hasPoint&&!!r.afastPeriodo;
   const mn=hasPoint&&!r.afastadoCC?(r.dsrMin||0):0,mx=hasPoint&&!r.afastadoCC?(r.dsrMax||0):0;
   r.devFAPonto=hasPoint&&!r.afastadoCC?Math.max(0,r.expectedH):0;
   r.difFAH=r.devFAPonto-r.descFAH;if(Math.abs(r.difFAH)<=tol)r.difFAH=0;
@@ -828,7 +833,7 @@ function faCC(r,payroll,medRate){
   if(r.demitido){r.difFAH=r.difDsrH=r.difFAV=r.difDsrV=0;r.aDescFAH=r.descFAH;r.aDescDsrH=r.descDsrH;r.aDescH=r.descH;r.aDescFAV=r.descFAV;r.aDescDsrV=r.descDsrV;r.aDescV=r.descV;r.saldoH=0;r.saldoV=0;r.acao='demitido';r.apont='Demitido em '+faBR(r.demitido.saida)+(r.demitido.natureza?' ('+r.demitido.natureza+')':'')+': '+(r.descH>tol||r.descV>0.01?'o desconto de '+faH(r.descH)+' ('+faBRL(r.descV)+') é da rescisão':'ocorrências acertadas na rescisão')+'. Fora dos apontamentos.';return}
   if(!hasPoint){
     r.aDescFAH=r.aDescDsrH=r.aDescH=0;r.aDescFAV=r.aDescDsrV=r.aDescV=0;r.difFAH=-r.descFAH;r.difDsrH=-r.descDsrH;r.difFAV=-r.descFAV;r.difDsrV=-r.descDsrV;r.saldoH=-r.descH;r.saldoV=-r.descV;
-    if(r.descH>tol||r.descV>0.01){r.acao='conferir';r.semPonto=true;r.apont='Folha descontou '+faH(r.descH)+' ('+faBRL(r.descV)+') e a pessoa não aparece no cartão de ponto do período'+(r.store==='Fora da base ATIVOS'?' nem na base ATIVOS (provável desligado: conferir rescisão)':r.situ&&!/^ativo$/i.test(faNorm(r.situ))?' · situação '+r.situ:'')+'. Pedir a evidência.'}
+    if(r.descH>tol||r.descV>0.01){r.acao='conferir';r.semPonto=true;r.apont='Folha descontou '+faH(r.descH)+' ('+faBRL(r.descV)+')'+(r.descFAH<=tol&&r.descDsrH>tol?' só de DSR, sem falta no ponto nem na folha (pode ser falta de antes de '+(faModelPeriodStart||'início do período')+' ou falta não lançada no cartão)':' e a pessoa não aparece no cartão de ponto do período'+(r.store==='Fora da base ATIVOS'?' nem na base ATIVOS (provável desligado: conferir rescisão)':r.situ&&!/^ativo$/i.test(faNorm(r.situ))?' · situação '+r.situ:''))+'. Pedir a evidência.'}
     else{r.acao='ok';r.apont='—'}
     return;
   }
