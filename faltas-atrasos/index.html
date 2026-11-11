@@ -245,6 +245,7 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
       <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Ocorrências por dia</div><div class="fa-panel-sub" id="faChDailySub">Faltas de dia inteiro e atrasos registrados no cartão de ponto</div></div><div class="fa-legend"><span><i style="background:var(--fa-s1)"></i>Faltas</span><span><i style="background:var(--fa-s2)"></i>Atrasos</span></div></div><div class="fa-chart" id="faChDaily"></div></div>
       <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Situação da conferência</div><div class="fa-panel-sub">Colaboradores com ocorrência no ponto ou desconto na folha</div></div></div><div class="fa-chart" id="faChStatus"></div></div>
     </div>
+    <div class="fa-panel fa-mt"><div class="fa-panel-head"><div><div class="fa-panel-title">Absenteísmo por regional</div><div class="fa-panel-sub">Regional oficial da loja (Base Mãe) · horas perdidas ÷ horas previstas do quadro ativo · CD e escritório separados · clique para ver as pessoas</div></div></div><div class="fa-chart" id="faChReg"></div></div>
     <div class="fa-grid-b">
       <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Absenteísmo por loja</div><div class="fa-panel-sub">Maiores taxas · horas perdidas ÷ horas previstas · clique na barra para ver as pessoas</div></div></div><div class="fa-chart" id="faChStores"></div></div>
       <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Ocorrências por dia da semana</div><div class="fa-panel-sub">Concentração em segunda e sábado indica emenda de fim de semana</div></div><div class="fa-legend"><span><i style="background:var(--fa-s1)"></i>Faltas</span><span><i style="background:var(--fa-s2)"></i>Atrasos</span></div></div><div class="fa-chart" id="faChWeek"></div></div>
@@ -253,7 +254,9 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
     <div class="fa-panel fa-mt"><div class="fa-panel-head"><div><div class="fa-panel-title">Maiores ocorrências do período</div><div class="fa-panel-sub">Ordenado por pendência e horas perdidas · clique em + para ver datas e rubricas</div></div><button class="fa-btn" onclick="faGo('detail')">Ver conferência completa</button></div><div class="fa-table-wrap"><table><thead><tr><th>Funcionário</th><th>Loja / cargo</th><th>Ocorrências</th><th>Horas no ponto</th><th>Desconto em folha</th><th>DSR</th><th>Resultado</th><th></th></tr></thead><tbody id="faTopRows"><tr><td colspan="8" class="fa-empty">Carregue os arquivos para iniciar o cruzamento.</td></tr></tbody></table></div></div>
   </section>
 
-<section class="fa-page" id="faIndicators">
+  <section class="fa-page" id="faIndicators">
+    <div class="fa-panel" style="margin-bottom:14px"><div class="fa-panel-head"><div><div class="fa-panel-title">Absenteísmo por regional</div><div class="fa-panel-sub">Regional oficial de cada loja na Base Mãe · clique na linha para ver as pessoas</div></div></div><div class="fa-table-wrap"><table><thead><tr><th>Regional</th><th>Lojas</th><th>Quadro</th><th>Com ocorrência</th><th>% do quadro</th><th>Faltas (dias)</th><th>Atrasos</th><th>Horas perdidas</th><th>Absenteísmo</th></tr></thead><tbody id="faRegRows"><tr><td colspan="9" class="fa-empty">Sem dados.</td></tr></tbody></table></div></div>
+
     <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Absenteísmo por loja / centro de custo</div><div class="fa-panel-sub" id="faStoreSub">Quadro da base ATIVOS; horas previstas = quadro ativo × dias úteis (seg–sáb, sem feriados nacionais) × 7h20</div></div></div><div class="fa-table-wrap"><table><thead><tr><th>Loja / centro de custo</th><th>Quadro</th><th>Com ocorrência</th><th>% do quadro</th><th>Faltas (dias)</th><th>Atrasos</th><th>Horas perdidas</th><th>Absenteísmo</th></tr></thead><tbody id="faStoreRows"><tr><td colspan="8" class="fa-empty">Sem dados.</td></tr></tbody></table></div></div>
     <div class="fa-grid2">
       <div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Ocorrências por dia da semana</div><div class="fa-panel-sub">Concentração na segunda e no sábado indica emenda de fim de semana</div></div></div><div class="fa-bars" id="faWeekBars"></div></div>
@@ -290,7 +293,7 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
 <script>
 'use strict';
 /* ===== Configuração ===== */
-const FA_RULE='fa-v8-rubricas-dsr';
+const FA_RULE='fa-v9-regionais';
 const FA_DAY_MIN=440;              // jornada diária de referência: 7h20 (44h ÷ 6 dias)
 const FA_DSR_H=44/6;               // horas de um DSR na jornada de 44h semanais
 const FA_TOL_H=0.05;               // 3 minutos de tolerância na comparação de horas
@@ -469,7 +472,24 @@ function faRubGroup(code,title,type,map){
   return '';
 }
 /* ===== Insumos salvos: o que fica na base (sem CPF aberto) ===== */
-let faInputs={point:null,payroll:null,roster:null},faDeslig=null;
+let faInputs={point:null,payroll:null,roster:null},faDeslig=null,faRegMap=null;
+/* Regional oficial da loja (Base Mãe: portal_lojas × portal_regionais) */
+function faRegionalOf(store){
+  if(!faRegMap)return null;const st=String(store||'');
+  if(/logist|expedi|transporte|\bcd\b|escrit|administr|diretoria/i.test(st))return 'CD / Escritório';
+  if(!/loja/i.test(st)&&!/\d{3}/.test(st))return 'CD / Escritório';
+  const m=st.match(/(\d{2,4})/);if(!m)return 'Sem regional';const c=Number(m[1]);
+  return faRegMap.get(c)||faRegMap.get(c+900)||faRegMap.get(c-900)||'Sem regional';
+}
+async function faLoadRegionais(){
+  if(!faSb||!faPrivateUser)return;
+  try{const [l,r]=await Promise.all([faSb.from('portal_lojas').select('codigo,regional_id'),faSb.from('portal_regionais').select('id,nome,gestor')]);
+    if(l.error)throw l.error;if(r.error)throw r.error;
+    const nome=new Map((r.data||[]).map(x=>[x.id,x.nome||x.gestor||('Regional '+x.id)]));
+    faRegMap=new Map();(l.data||[]).forEach(x=>{if(x.codigo!=null&&nome.has(x.regional_id))faRegMap.set(Number(x.codigo),nome.get(x.regional_id))});
+    if(!faRegMap.size)faRegMap=null;
+  }catch(e){faRegMap=null;console.warn('[Faltas] regionais:',e.message||e)}
+}
 function faHash53(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
 function faCpfKey(v){const d=faCpf(v);return d.length===11?'•••.•••.'+d.slice(6,9)+'-'+d.slice(9)+'#'+faHash53('esp:'+d):''}
 function faExtractPoint(P){
@@ -609,6 +629,13 @@ function faCompute(inp){
   const stores=new Map();
   pr.forEach(r=>{const k=faNorm(r.store);let s=stores.get(k);if(!s){s={store:r.store,people:0,faltas:0,atrasos:0,minutes:0};stores.set(k,s)}s.people++;s.faltas+=r.faltaDays;s.atrasos+=r.atrasoCount;s.minutes+=r.minutes});
   const byStore=[...stores.entries()].map(([k,s])=>{const hc=R?(storeHC.get(k)||null):null;return {...s,headcount:hc,pctPeople:hc?s.people/hc*100:null,rate:hc&&workdays?s.minutes/(hc*workdays*FA_DAY_MIN)*100:null}}).sort((a,b)=>b.minutes-a.minutes);
+  /* por regional */
+  rows.forEach(r=>{r.regional=faRegionalOf(r.store)});
+  let byRegional=[];
+  if(faRegMap){const rg=new Map(),get=k=>{let x=rg.get(k);if(!x){x={regional:k,headcount:0,lojas:new Set(),people:0,faltas:0,atrasos:0,minutes:0};rg.set(k,x)}return x};
+    if(R)roster.scoped.filter(isActive).forEach(p=>{const x=get(faRegionalOf(p.store));x.headcount++;x.lojas.add(faNorm(p.store))});
+    pr.forEach(r=>{const x=get(r.regional);x.people++;x.faltas+=r.faltaDays;x.atrasos+=r.atrasoCount;x.minutes+=r.minutes});
+    byRegional=[...rg.values()].map(x=>({regional:x.regional,headcount:R?x.headcount:null,lojas:x.lojas.size,people:x.people,faltas:x.faltas,atrasos:x.atrasos,minutes:x.minutes,pctPeople:R&&x.headcount?x.people/x.headcount*100:null,rate:R&&x.headcount&&workdays?x.minutes/(x.headcount*workdays*FA_DAY_MIN)*100:null})).sort((a,b)=>(b.rate??-1)-(a.rate??-1)||b.minutes-a.minutes)}
   const roles=new Map();pr.forEach(r=>{const k=r.role||'—';let s=roles.get(k);if(!s){s={role:k,people:0,events:0,minutes:0};roles.set(k,s)}s.people++;s.events+=r.events.length;s.minutes+=r.minutes});
   const byRole=[...roles.values()].sort((a,b)=>b.minutes-a.minutes);
   const byWeekday=[0,1,2,3,4,5,6].map(d=>({wd:d,faltas:events.filter(e=>e.wd===d&&e.kind==='falta').length,atrasos:events.filter(e=>e.wd===d&&e.kind==='atraso').length}));
@@ -620,7 +647,7 @@ function faCompute(inp){
   if(R){const out=pr.filter(r=>!r.inRoster).length;if(out)warnings.push(out+' colaborador(es) do ponto não estão na base ATIVOS'+(roster.date?' de '+faBR(roster.date):'')+'.')}
   if(!F)warnings.unshift('Folha não carregada: conferência de desconto desativada. Os indicadores de faltas e atrasos estão completos.');
   if(!R)warnings.push('Base ATIVOS não carregada: quadro '+(F?'estimado pela folha':'indisponível')+'; absenteísmo por loja e situação de afastamento não calculados.');
-  return {ruleVersion:FA_RULE,deslig:faDeslig?{n:faDeslig.n,at:faDeslig.at}:null,period:{start:meta.start,end:meta.end,workdays},payrollPeriod:pay.period||'',sources:{point:P.file,payroll:pay.file,roster:roster.file,rosterDate:roster.date,payrollAvailable:!!F,rosterAvailable:!!R},estabs:[...estabs],quadro,ativos,situCount,situAll,hcByStore,totals:T,checkCount,byStore,byRole,byWeekday,rub,rubMap,warnings,rows,createdAt:new Date().toISOString()};
+  return {ruleVersion:FA_RULE,deslig:faDeslig?{n:faDeslig.n,at:faDeslig.at}:null,period:{start:meta.start,end:meta.end,workdays},payrollPeriod:pay.period||'',sources:{point:P.file,payroll:pay.file,roster:roster.file,rosterDate:roster.date,payrollAvailable:!!F,rosterAvailable:!!R},estabs:[...estabs],quadro,ativos,situCount,situAll,hcByStore,byRegional,totals:T,checkCount,byStore,byRole,byWeekday,rub,rubMap,warnings,rows,createdAt:new Date().toISOString()};
 }
 function faRate(p){if(!p)return [null,''];const q=p.falta.qty+p.atraso.qty+p.dsr.qty,v=p.falta.value+p.atraso.value+p.dsr.value;if(q>FA_TOL_H&&v>0)return [v/q,'rubricas de desconto'];const s=p.sal;if(s&&s.qty>0&&s.value>0){if(s.qty>=60)return [s.value/s.qty,'salário'];if(s.qty<=31)return [s.value/(s.qty*220/30),'salário']}return [null,'']}
 function faFlag(row,id,text){const c=FA_CHECKS.find(x=>x.id===id);row.flags.push({id,group:c.group,level:c.level,name:c.name,text})}
@@ -754,6 +781,7 @@ function faMatch(r,mode){
   if(mode==='atraso')return r.atrasoCount>0;
   if(mode==='nopoint')return r.flags.some(f=>f.id==='desc_sem_ponto');
   if(mode.startsWith('check:'))return r.flags.some(f=>f.id===mode.slice(6));
+  if(mode.startsWith('reg:'))return r.regional===mode.slice(4)&&r.events.length>0;
   if(mode.startsWith('store:'))return faNorm(r.store)===mode.slice(6)&&r.events.length>0;
   return true;
 }
@@ -762,6 +790,7 @@ function faRenderTop(){const arr=faModel.rows.filter(r=>r.events.length||r.flags
 function faBarsHTML(items,max,hot){return items.map(x=>'<div class="fa-bar-row"><span title="'+faEsc(x.label)+'">'+faEsc(x.label.length>18?x.label.slice(0,17)+'…':x.label)+'</span><div class="fa-bar'+(hot&&hot(x)?' hot':'')+'"><i style="width:'+(max?Math.max(2,x.value/max*100):0)+'%"></i></div><span class="fa-bar-val">'+faEsc(x.text)+'</span></div>').join('')}
 function faRenderIndicators(){
   const m=faModel;
+  {const R=m.byRegional||[];fa$('faRegRows').innerHTML=R.length?R.map(g=>'<tr style="cursor:pointer" onclick="faFilter(\'reg:'+faEsc(g.regional)+'\')"><td class="fa-person">'+faEsc(g.regional)+'</td><td class="fa-num">'+g.lojas+'</td><td class="fa-num">'+(g.headcount??'—')+'</td><td class="fa-num">'+g.people+'</td><td class="fa-num">'+(g.pctPeople!=null?faDec(g.pctPeople,1)+'%':'—')+'</td><td class="fa-num">'+g.faltas+'</td><td class="fa-num">'+g.atrasos+'</td><td class="fa-num">'+faClock(g.minutes)+'</td><td class="fa-num"><b>'+(g.rate!=null?faDec(g.rate,2)+'%':'—')+'</b></td></tr>').join(''):'<tr><td colspan="9" class="fa-empty">'+(faRegMap?'Sem dados por regional.':'Mapa de regionais da Base Mãe indisponível.')+'</td></tr>'}
   fa$('faStoreRows').innerHTML=m.byStore.length?m.byStore.map(s=>'<tr style="cursor:pointer" onclick="faFilter(\'store:'+faNorm(s.store)+'\')"><td class="fa-person">'+faEsc(s.store)+'</td><td class="fa-num">'+(s.headcount??'—')+'</td><td class="fa-num">'+s.people+'</td><td class="fa-num">'+(s.pctPeople!=null?faDec(s.pctPeople,1)+'%':'—')+'</td><td class="fa-num">'+s.faltas+'</td><td class="fa-num">'+s.atrasos+'</td><td class="fa-num">'+faClock(s.minutes)+'</td><td class="fa-num">'+(s.rate!=null?'<b style="color:'+(s.rate>=3?'#ff899a':s.rate>=1.5?'#ffd184':'#71dfb5')+'">'+faDec(s.rate,2)+'%</b>':'—')+'</td></tr>').join('')+'<tr><td class="fa-person">Total</td><td class="fa-num">'+(m.sources.rosterAvailable?faInt(m.ativos):'—')+'</td><td class="fa-num">'+m.totals.people+'</td><td class="fa-num">'+(m.ativos?faPct(m.totals.people,m.ativos):'—')+'</td><td class="fa-num">'+m.totals.faltaEvents+'</td><td class="fa-num">'+m.totals.atrasoEvents+'</td><td class="fa-num">'+faClock(m.totals.minutes)+'</td><td class="fa-num"><b>'+(m.totals.rate!=null?faDec(m.totals.rate,2)+'%':'—')+'</b></td></tr>':'<tr><td colspan="8" class="fa-empty">Sem ocorrências.</td></tr>';
   fa$('faStoreSub').textContent=(m.sources.rosterAvailable?'Quadro ativo por centro de custo da base ATIVOS':'Sem base ATIVOS: quadro e absenteísmo por loja indisponíveis')+' · horas previstas = quadro × '+m.period.workdays+' dias úteis (seg–sáb, sem feriados nacionais) × 7h20 · clique na loja para ver as pessoas';
   const wd=[1,2,3,4,5,6,0].map(d=>m.byWeekday[d]),mx=Math.max(1,...wd.map(x=>x.faltas+x.atrasos));
@@ -860,7 +889,7 @@ function faFilter(mode){faFilterMode=mode;faPage('detail',document.querySelector
 function faSetFilter(mode,b){faFilterMode=mode;document.querySelectorAll('.fa-chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');faRender()}
 function faGo(name){faPage(name,document.querySelector('[data-page='+name+']'))}
 function faPage(name,b){document.querySelectorAll('.fa-page').forEach(x=>x.classList.remove('active'));const id={overview:'faOverview',indicators:'faIndicators',detail:'faDetail',issues:'faIssues',files:'faFiles'}[name];if(id)fa$(id).classList.add('active');document.querySelectorAll('.fa-tab').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');if(name==='detail')faRender();if(name==='issues')faIssues();if(name==='overview'&&faModel)setTimeout(()=>faCharts(faModel),0)}
-function faRulesText(){fa$('faRulesText').innerHTML='<b>Classificação:</b> ocorrência de 7h20 ou mais no dia = falta de dia inteiro; menor que 7h20 = atraso ou saída antecipada (se o cartão tiver coluna de tipo, ela prevalece).<br><b>Absenteísmo:</b> horas perdidas ÷ (quadro ativo × dias úteis seg–sáb sem feriados nacionais × 7h20).<br><b>DSR esperado:</b> um dia da jornada (mínimo 7h20; ex.: 9h para jornada de 9h) por semana de segunda a domingo com falta de dia inteiro, mais um dia por feriado nacional de seg a sáb da mesma semana (Lei 605/49 art. 6º).<br><b>Conta corrente:</b> a descontar = horas do ponto (menos atrasos de até 10 min/dia) + DSR esperado; em R$ pelo valor-hora das rubricas de desconto da pessoa (ou do salário, se não houver desconto). Saldo = a descontar − descontado.<br><b>Tolerância:</b> 0,05 h na comparação; atrasos de até 10 min no dia não são descontáveis (CLT art. 58 §1º).<br><b>Vínculo:</b> ponto × folha × ATIVOS pela matrícula; CPF como segunda chave. CPF sempre mascarado na tela e nos relatórios.<br><br>'+FA_CHECKS.map(c=>'<b>'+faEsc(c.name)+'</b> ('+(c.group==='desc'?'desconto em folha':c.group==='gest'?'gestão de ponto':'informativo')+(c.needs==='payroll'?' · requer folha':c.needs==='roster'?' · requer ATIVOS':'')+'): '+faEsc(c.desc)+(c.law?' <i>'+faEsc(c.law)+'</i>':'')).join('<br>')}
+function faRulesText(){fa$('faRulesText').innerHTML='<b>Classificação:</b> ocorrência de 7h20 ou mais no dia = falta de dia inteiro; menor que 7h20 = atraso ou saída antecipada (se o cartão tiver coluna de tipo, ela prevalece).<br><b>Absenteísmo:</b> horas perdidas ÷ (quadro ativo × dias úteis seg–sáb sem feriados nacionais × 7h20).<br><b>DSR esperado:</b> um dia da jornada (mínimo 7h20; ex.: 9h para jornada de 9h) por semana de segunda a domingo com falta de dia inteiro, mais um dia por feriado nacional de seg a sáb da mesma semana (Lei 605/49 art. 6º).<br><b>Conta corrente:</b> a descontar = horas do ponto (menos atrasos de até 10 min/dia) + DSR esperado; em R$ pelo valor-hora das rubricas de desconto da pessoa (ou do salário, se não houver desconto). Saldo = a descontar − descontado.<br><b>Tolerância:</b> 0,05 h na comparação; atrasos de até 10 min no dia não são descontáveis (CLT art. 58 §1º).<br><b>Regional:</b> regional oficial de cada loja na Base Mãe do Portal (cadastro de lojas e regionais); CD, logística e escritório ficam separados.<br><b>Vínculo:</b> ponto × folha × ATIVOS pela matrícula; CPF como segunda chave. CPF sempre mascarado na tela e nos relatórios.<br><br>'+FA_CHECKS.map(c=>'<b>'+faEsc(c.name)+'</b> ('+(c.group==='desc'?'desconto em folha':c.group==='gest'?'gestão de ponto':'informativo')+(c.needs==='payroll'?' · requer folha':c.needs==='roster'?' · requer ATIVOS':'')+'): '+faEsc(c.desc)+(c.law?' <i>'+faEsc(c.law)+'</i>':'')).join('<br>')}
 
 /* ===== Gráficos (SVG, sem biblioteca) ===== */
 function faTip(e,html){let t=fa$('faTip');if(!t){t=document.createElement('div');t.id='faTip';t.className='fa-tip';document.body.appendChild(t)}t.innerHTML=html;t.style.display='block';const x=Math.min(e.clientX+14,innerWidth-t.offsetWidth-8),y=Math.min(e.clientY+14,innerHeight-t.offsetHeight-8);t.style.left=Math.max(8,x)+'px';t.style.top=Math.max(8,y)+'px'}
@@ -933,7 +962,33 @@ function faChStatus(m){
    +'<div class="fa-status-bar">'+cats.map(c=>'<span style="flex:'+c.n+';background:'+c.color+'" title="'+faEsc(c.name)+': '+c.n+'"></span>').join('')+'</div>'
    +'<div class="fa-status-list">'+cats.map((c,i)=>'<div class="fa-status-row" onclick="faStatusClicks['+i+']()"><i style="background:'+c.color+'"></i><span>'+faEsc(c.name)+'<small>'+faBRL0(c.v)+' descontados na folha</small></span><b>'+c.n+'</b></div>').join('')+'</div>';
 }
-function faCharts(m){try{faChDaily(m);faChStatus(m);faChStores(m);faChWeek(m)}catch(e){console.warn('[Faltas] gráficos:',e)}}
+function faRegSvg(m,W,print){
+  const list=(m.byRegional||[]).slice();if(!list.length)return '';
+  const main=list.filter(x=>!/^(CD \/ Escritório|Sem regional)$/.test(x.regional)),other=list.filter(x=>/^(CD \/ Escritório|Sem regional)$/.test(x.regional)),rows=main.concat(other);
+  const byRate=rows.some(x=>x.rate!=null),val=x=>byRate?(x.rate??0):x.minutes/60;
+  const C=print?{ink:'#14202e',mut:'#5b6776',bar:'#2a78d6',oth:'#a7b0bc',grid:'#d9dee5'}:{ink:'#e7ecf2',mut:'#8a96a6',bar:'var(--fa-s1)',oth:'#56606d',grid:'#2c3746'};
+  const lw=print?92:120,rw=print?250:230,vw=56,rh=print?20:30,H=rows.length*rh+20,iw=Math.max(80,W-lw-vw-rw),mx=Math.max(...rows.map(val),byRate&&m.totals.rate?m.totals.rate:0)||1,x=v=>lw+v/mx*iw;
+  let s='',items=[];
+  rows.forEach((g,i)=>{const yy=i*rh,v=val(g),oth=other.includes(g),bh=print?10:14,by=yy+(rh-bh)/2-2;
+    if(oth&&i===main.length)s+='<line x1="0" x2="'+W+'" y1="'+(yy-2)+'" y2="'+(yy-2)+'" stroke="'+C.grid+'" stroke-dasharray="2 3"/>';
+    s+='<text x="'+(lw-10)+'" y="'+(by+bh-2)+'" text-anchor="end" style="fill:'+(oth?C.mut:C.ink)+';font-weight:'+(oth?400:600)+'">'+faEsc(g.regional)+'</text>';
+    s+='<rect x="'+lw+'" y="'+by+'" width="'+Math.max(2,x(v)-lw)+'" height="'+bh+'" rx="'+(print?2:3)+'" fill="'+(oth?C.oth:C.bar)+'"/>';
+    s+='<text x="'+(x(v)+6)+'" y="'+(by+bh-2)+'" style="fill:'+C.ink+';font-weight:600">'+(byRate?(g.rate!=null?faPctTxt(g.rate):'—'):faClock(g.minutes))+'</text>';
+    s+='<text x="'+(W-rw+8)+'" y="'+(by+bh-2)+'" style="fill:'+C.mut+'">'+g.people+' pessoa'+(g.people===1?'':'s')+' · '+g.faltas+' F · '+g.atrasos+' A'+(g.headcount?' · quadro '+faInt(g.headcount):'')+'</text>';
+    items.push({tip:'<b>Regional '+faEsc(g.regional)+'</b><br><span class="k">Quadro ativo</span> '+(g.headcount??'—')+' · <span class="k">Lojas</span> '+g.lojas+'<br><span class="k">Com ocorrência</span> '+g.people+(g.pctPeople!=null?' ('+faDec(g.pctPeople,1)+'%)':'')+'<br><span class="k">Faltas</span> '+g.faltas+' · <span class="k">Atrasos</span> '+g.atrasos+' · <span class="k">Horas</span> '+faClock(g.minutes)+(g.rate!=null?'<br><span class="k">Absenteísmo</span> <b>'+faDec(g.rate,2)+'%</b>':'')+'<br><span class="k">Clique para ver as pessoas</span>',click:()=>faFilter('reg:'+g.regional)});
+    if(!print)s+='<rect class="fa-hit" data-i="'+i+'" x="0" y="'+yy+'" width="'+W+'" height="'+rh+'"/>';
+  });
+  if(byRate&&m.totals.rate){const ax=x(m.totals.rate);s+='<line x1="'+ax+'" x2="'+ax+'" y1="0" y2="'+(H-16)+'" stroke="'+C.mut+'" stroke-dasharray="3 3"/><text x="'+ax+'" y="'+(H-3)+'" text-anchor="middle" style="fill:'+C.mut+'">média da rede '+faDec(m.totals.rate,2)+'%</text>'}
+  return {svg:'<svg '+(print?'class="fa-r-svg" ':'')+'viewBox="0 0 '+W+' '+H+'" '+(print?'width="100%"':'height="'+H+'"')+' role="img" aria-label="Absenteísmo por regional">'+s+'</svg>',items};
+}
+function faPctTxt(v){return v>0&&v<0.01?'<0,01%':faDec(v,2)+'%'}
+function faChRegional(m){
+  const el=fa$('faChReg');if(!el)return;
+  if(!faRegMap&&!(m.byRegional||[]).length){el.innerHTML='<div class="fa-empty">Mapa de regionais da Base Mãe indisponível'+(faPrivateUser?'':' (entre no Portal)')+'.</div>';return}
+  if(!(m.byRegional||[]).length){el.innerHTML='<div class="fa-empty">Sem dados por regional.</div>';return}
+  const r=faRegSvg(m,faW(el,900),false);el.innerHTML=r.svg;faBind(el,'r',r.items);
+}
+function faCharts(m){try{faChDaily(m);faChStatus(m);faChRegional(m);faChStores(m);faChWeek(m)}catch(e){console.warn('[Faltas] gráficos:',e)}}
 window.addEventListener('resize',()=>{clearTimeout(window.faRz);window.faRz=setTimeout(()=>{if(faModel&&fa$('faOverview').classList.contains('active'))faCharts(faModel)},150)});
 
 /* ===== Composição dos cards: de onde vem cada número ===== */
@@ -997,6 +1052,7 @@ function faSheets(){
     {name:'Conta corrente',title:'Conta corrente do desconto · todos',rows:ccRows.map(faCCRow),money:['Valor-hora','Devido pelo ponto (R$)','Descontado (R$)','Diferença (R$)'],total:true},
     {name:'Divergências',title:'Divergências de desconto',rows:ccRows.filter(r=>r.acao&&r.acao!=='ok'&&r.acao!=='semfolha'&&r.acao!=='demitido').map(faCCRow),money:['Valor-hora','Devido pelo ponto (R$)','Descontado (R$)','Diferença (R$)'],total:true},
     {name:'Demitidos (rescisão)',title:'Demitidos fora dos apontamentos · rescisões do Crediário',rows:m.rows.filter(r=>r.demitido).map(r=>({'Matrícula':r.code,'Funcionário':r.name,'Saída':faBR(r.demitido.saida),'Motivo':r.demitido.natureza||'','Horas no ponto':+(r.minutes/60).toFixed(2),'Descontado (h)':+(r.descH||0).toFixed(2),'Descontado (R$)':+(r.descV||0).toFixed(2)})),money:['Descontado (R$)'],total:true},
+    {name:'Por regional',title:'Absenteísmo por regional (Base Mãe)',rows:(m.byRegional||[]).map(g=>({'Regional':g.regional,'Lojas':g.lojas,'Quadro ativo':g.headcount??'','Com ocorrência':g.people,'% do quadro':g.pctPeople!=null?+g.pctPeople.toFixed(2):'','Faltas (dias)':g.faltas,'Atrasos':g.atrasos,'Horas perdidas':+(g.minutes/60).toFixed(2),'Absenteísmo %':g.rate!=null?+g.rate.toFixed(3):''})),total:true},
     {name:'Por loja',title:'Absenteísmo por loja',rows:m.byStore.map(s=>({'Loja / centro de custo':s.store,'Quadro ativo':s.headcount??'','Com ocorrência':s.people,'% do quadro':s.pctPeople!=null?+s.pctPeople.toFixed(2):'','Faltas (dias)':s.faltas,'Atrasos':s.atrasos,'Horas perdidas':+(s.minutes/60).toFixed(2),'Absenteísmo %':s.rate!=null?+s.rate.toFixed(3):''})),total:true},
     {name:'Alertas gestão',title:'Alertas de gestão de ponto',rows:m.rows.filter(r=>r.flags.some(f=>f.group==='gest')).map(r=>({'Matrícula':r.code,'Funcionário':r.name,'Loja':r.store,'Cargo':r.role,'Situação':r.situ||'','Ocorrências':r.events.length,'Horas no ponto':+(r.minutes/60).toFixed(2),'Alerta':flat(r,'gest')}))},
     {name:'Ocorrências',title:'Ocorrências do cartão de ponto',rows:m.rows.flatMap(r=>r.events.map(e=>({'Matrícula':r.code,'Funcionário':r.name,'Loja':r.store,'Data':e.date?faBR(e.date):'','Dia':e.wd>=0?FA_WD[e.wd]:'','Duração':faClock(e.minutes),'Horas':+(e.minutes/60).toFixed(2),'Tipo':e.kind,'Feriado':e.holiday||''})))}
@@ -1087,7 +1143,7 @@ function faBoard(){
    +'<section class="fa-r-read"><h2>Leitura executiva</h2><ul>'+read.map(x=>'<li>'+x+'</li>').join('')+'</ul></section>'
    +'<section class="fa-r-grid"><div class="fa-r-box"><h2>Ocorrências por dia <span class="fa-r-lg"><i style="background:'+FA_P.s1+'"></i>Faltas <i style="background:'+FA_P.s2+'"></i>Atrasos</span></h2>'+faRDaily(m,560,150)+'</div><div class="fa-r-box"><h2>Absenteísmo por loja <span class="fa-r-note">8 maiores taxas</span></h2>'+faRStores(m,440)+'</div></section>'
    +'<section class="fa-r-grid"><div class="fa-r-box"><h2>Situação da conferência</h2>'+(hasF?faRStatus(m):'<p class="fa-r-empty">Folha não carregada.</p>')+'</div><div class="fa-r-box"><h2>Conta corrente do desconto</h2>'+(hasF?'<table class="fa-r-cc"><thead><tr><th></th><th class="n">Devido pelo ponto</th><th class="n">Descontado</th><th class="n">Diferença</th></tr></thead><tbody><tr><td>Falta e atraso</td><td class="n">'+faBRL0(cc.aFAV)+'<small>'+faH(cc.aFAH)+'</small></td><td class="n">'+faBRL0(cc.dFAV)+'<small>'+faH(cc.dFAH)+'</small></td><td class="n"><b>'+faBRL0(cc.aFAV-cc.dFAV)+'</b></td></tr><tr><td>DSR</td><td class="n">'+faBRL0(cc.aDsrV)+'<small>'+faH(cc.aDsrH)+'</small></td><td class="n">'+faBRL0(cc.dDsrV)+'<small>'+faH(cc.dDsrH)+'</small></td><td class="n"><b>'+faBRL0(cc.aDsrV-cc.dDsrV)+'</b></td></tr><tr class="tot"><td>Total</td><td class="n">'+faBRL0(cc.aDescV)+'</td><td class="n">'+faBRL0(cc.descV)+'</td><td class="n">'+faBRL0(cc.aDescV-cc.descV)+'</td></tr></tbody></table><p class="fa-r-fine">Inclui demitidos (diferença zero) e descontos sem ocorrência no ponto. Diferença negativa = descontado acima do que o ponto justifica.</p>':'<p class="fa-r-empty">Folha não carregada.</p>')+'</div></section>'
-   +'<section class="fa-r-page2"><h2>Casos que exigem ação · '+acts.length+'</h2>'+(hasF?faRCase(acts,false):'<p class="fa-r-empty">Folha não carregada.</p>')
+   +'<section class="fa-r-page2">'+((m.byRegional||[]).length?'<div class="fa-r-box" style="margin-bottom:10px"><h2>Absenteísmo por regional <span class="fa-r-note">regional oficial da loja · Base Mãe</span></h2>'+faRegSvg(m,1000,true).svg+'</div>':'')+'<h2>Casos que exigem ação · '+acts.length+'</h2>'+(hasF?faRCase(acts,false):'<p class="fa-r-empty">Folha não carregada.</p>')
    +'<h2>Gestão de ponto · alertas para a operação</h2>'+faRGest(m)+'</section>'
    +faRFoot()+'</div>';
   faDoPrint(html,'Relatorio_Diretoria_Faltas_Atrasos');
@@ -1147,7 +1203,7 @@ async function faResaveCurrent(id){
 async function faReloadBase(){
   if(faInitPromise)await faInitPromise;
   if(!faSb||!faPrivateUser){const loc=faLocalInputs();if(loc){faUseInputs(loc,'guardados neste navegador');faToast('Sem sessão do Portal: usei os arquivos guardados neste navegador.')}else faToast('Entre no Portal com usuário de RH para buscar na base.');return}
-  await faLoadDeslig();
+  await Promise.all([faLoadDeslig(),faLoadRegionais()]);
   if(await faLoadLatest(true))faToast('Análise atualizada com os últimos arquivos da base e as rescisões do Crediário.');
 }
 async function faInitPrivate(){
@@ -1157,7 +1213,7 @@ async function faInitPrivate(){
     const auth=await faSb.auth.getUser();
     if(auth.error||!auth.data?.user){const loc=faLocalInputs();if(loc&&!faModel){faUseInputs(loc,'guardados neste navegador');fa$('faPrivateStatus').textContent='Sem sessão do Portal: usando os arquivos guardados neste navegador.'}else fa$('faPrivateStatus').textContent='Sem sessão do Portal: a análise funciona, mas não será salva.';return}
     faPrivateUser=auth.data.user;
-    await faLoadDeslig();
+    await Promise.all([faLoadDeslig(),faLoadRegionais()]);
     const hist=await faSb.from('rh_auditoria_faltas').select('id,criado_em,rv:resumo->>ruleVersion,period:resumo->period,totals:resumo->totals,quadro:resumo->quadro,ativos:resumo->ativos').order('criado_em',{ascending:false}).limit(24);
     if(hist.error){fa$('faPrivateStatus').textContent='Sessão sem acesso ao histórico de RH: '+hist.error.message;console.warn('[Faltas] RLS:',hist.error.message);return}
     faHistory=(hist.data||[]).map(h=>({id:h.id,criado_em:h.criado_em,resumo:{ruleVersion:h.rv,period:h.period,totals:h.totals,quadro:h.quadro,ativos:h.ativos}}));
