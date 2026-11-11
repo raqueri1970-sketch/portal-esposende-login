@@ -165,6 +165,58 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
 .fa-comp-box{border-radius:10px;background:var(--fa-panel)}.fa-comp-formula{font-size:12px;border-radius:6px}
 @media(max-width:1100px){.fa-grid-a,.fa-grid-b{grid-template-columns:1fr}.fa-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.fa-top-right,.fa-brand small{display:none}.fa-wrap{padding:18px 16px}.fa-kpis{grid-template-columns:1fr}.fa-head{flex-direction:column;align-items:flex-start}.fa-period-state{margin-left:0}}
+/* ===== Impressão executiva ===== */
+@media print{
+  @page{size:A4 landscape;margin:0}
+  :root{color-scheme:light!important}html,body{background:#fff!important}
+  body.fa-printing>*:not(#faPrintReport){display:none!important}
+  .fa-print-report{display:block!important;padding:0!important}
+  .fa-r{font:8.6pt/1.42 Inter,"Segoe UI",Arial,sans-serif;color:#14202e;padding:11mm 13mm 9mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .fa-r h2{font-size:9.6pt;font-weight:650;color:#14284a;margin:0 0 6px;padding:0;border:0;display:flex;justify-content:space-between;align-items:baseline}
+  .fa-r-head{display:flex;align-items:center;gap:14px;padding-bottom:9px;border-bottom:2px solid #14284a;margin-bottom:11px}
+  .fa-r-head img{width:118px;height:auto;border-radius:3px}
+  .fa-r-ttl{flex:1}.fa-r-kick{font-size:7pt;letter-spacing:.6px;text-transform:uppercase;color:#5b6776;font-weight:600}
+  .fa-r-head h1{font-size:15.5pt;font-weight:650;margin:1px 0 2px;color:#14202e;letter-spacing:-.2px}
+  .fa-r-sub{font-size:8pt;color:#5b6776}.fa-r-meta{text-align:right;font-size:7.4pt;color:#5b6776;line-height:1.35}.fa-r-meta b{color:#14202e;font-weight:600}
+  .fa-r-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin-bottom:10px}
+  .fa-r-kpi{border:1px solid #d9dee5;border-radius:5px;padding:7px 9px;border-top:2.5px solid #14284a}
+  .fa-r-kpi.bad{border-top-color:#c43d3d}.fa-r-kpi.warn{border-top-color:#b97a00}
+  .fa-r-kpi span{display:block;font-size:6.8pt;color:#5b6776;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+  .fa-r-kpi b{display:block;font-size:14pt;font-weight:650;margin:2px 0 1px;font-variant-numeric:tabular-nums}
+  .fa-r-kpi.bad b{color:#c43d3d}.fa-r-kpi.warn b{color:#9a6500}
+  .fa-r-kpi small{font-size:7pt;color:#5b6776}
+  .fa-r-read{background:#f4f6f9;border-left:3px solid #14284a;border-radius:0 5px 5px 0;padding:7px 11px;margin-bottom:10px}
+  .fa-r-read ul{margin:0;padding-left:14px}.fa-r-read li{margin:1.5px 0}.fa-r-read b{font-weight:650}
+  .fa-r-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:12px;margin-bottom:10px;break-inside:avoid}
+  .fa-r-box{border:1px solid #d9dee5;border-radius:5px;padding:8px 10px}
+  .fa-r-svg{display:block}.fa-r-svg text{font:7pt Inter,Arial,sans-serif;fill:#5b6776}
+  .fa-r-lg,.fa-r-note{font-size:7pt;font-weight:500;color:#5b6776}.fa-r-lg i{display:inline-block;width:7px;height:7px;border-radius:1.5px;margin:0 3px 0 8px;vertical-align:0}
+  .fa-r-bar{display:flex;height:10px;border-radius:3px;overflow:hidden;gap:1.5px;margin:4px 0 8px}
+  .fa-r-leg{width:100%;border-collapse:collapse}.fa-r-leg td{padding:3px 2px;border-bottom:1px solid #eef1f4;font-size:8pt}
+  .fa-r-leg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:-.5px}
+  .fa-r .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .fa-r-cc{width:100%;border-collapse:collapse}.fa-r-cc th{font-size:6.8pt;color:#5b6776;text-transform:uppercase;letter-spacing:.3px;font-weight:600;padding:3px 4px;border-bottom:1px solid #14284a;background:none;text-align:left}
+  .fa-r-cc td{padding:4px;border-bottom:1px solid #eef1f4;font-size:8.2pt}.fa-r-cc small{display:block;font-size:6.8pt;color:#5b6776}.fa-r-cc tr.tot td{font-weight:650;border-top:1px solid #14284a;border-bottom:0}
+  .fa-r-fine{font-size:6.8pt;color:#5b6776;margin:5px 0 0}
+  .fa-r-page2{break-before:page;padding-top:2mm}
+  .fa-r-page2 h2{margin-top:10px}
+  .fa-r-tab{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:6px}
+  .fa-r-tab th{background:#14284a!important;color:#fff!important;font-size:7pt;font-weight:600;text-transform:none;letter-spacing:.2px;padding:5px 6px;text-align:left}
+  .fa-r-tab th.n{text-align:right}
+  .fa-r-tab td{padding:5px 6px;border-bottom:1px solid #e3e7ec;vertical-align:top;font-size:8pt;color:#14202e;background:#fff}
+  .fa-r-tab tr:nth-child(even) td{background:#f7f9fb!important}
+  .fa-r-tab tr{break-inside:avoid}.fa-r-tab small{display:block;font-size:6.8pt;color:#5b6776}
+  .fa-r-tab b.r{color:#c43d3d}.fa-r-tab b.a{color:#9a6500}
+  .fa-r-tag{display:inline-block;font-size:6.8pt;font-weight:650;padding:1.5px 5px;border-radius:3px;background:#eef1f4;color:#14202e}
+  .fa-r-tag.descontar{background:#fbe6e6;color:#a32a2a}.fa-r-tag.estornar,.fa-r-tag.conferir{background:#fbf0d9;color:#8a5a00}.fa-r-tag.ok{background:#e3f3ea;color:#196b44}.fa-r-tag.demitido{background:#eceef1;color:#4a5562}
+  .fa-r-chip{display:inline-block;font-size:7pt;padding:1px 5px;border:1px solid #d9dee5;border-radius:3px;margin:0 2px 2px 0}
+  .fa-r-h{margin-top:10px!important}
+  .fa-r-recon{font-size:7.6pt;color:#3d4957;background:#f4f6f9;border-radius:4px;padding:5px 9px;margin:0 0 8px}
+  .fa-r-empty{color:#5b6776;font-style:italic;margin:4px 0}
+  .fa-r td,.fa-r th{border-left:0;border-right:0}.fa-r td{color:#14202e}.fa-r-leg td,.fa-r-cc td{color:#14202e!important;background:none!important}
+  .fa-r-tab col.c1{width:21%}.fa-r-tab col.c2{width:13%}.fa-r-tab col.cn{width:9%}.fa-r-tab col.ca{width:7%}
+  .fa-r-foot{display:flex;justify-content:space-between;gap:20px;margin-top:10px;padding-top:6px;border-top:1px solid #d9dee5;font-size:6.6pt;color:#7a8592}
+}
 </style>
 </head>
 <body>
@@ -972,41 +1024,85 @@ async function faExport(){
 }
 
 /* ===== Relatórios impressos (com logo) ===== */
-function faPrintHead(title,m){const now=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});return '<div class="fa-print-header"><img src="logo-esposende.jpg" alt="Esposende"><div><div class="fa-print-title">'+title+'</div><div class="fa-print-sub">Ponto '+faEsc(faPeriodLabel(m))+(m.payrollPeriod?' · Folha '+faEsc(m.payrollPeriod):'')+' · '+m.period.workdays+' dias úteis · Gerado em '+faEsc(now)+'</div></div><div class="fa-print-seal">Auditoria &amp; Controle</div></div>'}
-const faPrintFoot='<div class="fa-print-foot">Devido pelo ponto = falta/atraso do cartão (menos atrasos de até 10 min/dia, CLT art. 58 §1º) + DSR devido (1 dia da jornada por semana seg–dom com falta + feriado nacional da semana, Lei 605/49; semanas que terminam após o fechamento podem ir para a próxima folha). Diferença = devido − descontado: positiva = faltou descontar; negativa em falta/atraso = estornar ou comprovar; negativa em DSR = conferir folga/escala. R$ pelo valor-hora que a folha usou para a pessoa. Esposende · Central de Auditoria &amp; Controle.</div>';
-async function faDoPrint(html,title){fa$('faPrintReport').innerHTML=html;const imgs=[...fa$('faPrintReport').querySelectorAll('img')];await Promise.all(imgs.map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r})));const old=document.title;document.title=title;window.print();setTimeout(()=>document.title=old,1200)}
-function faCCTable(list){return '<table class="fa-print-table"><thead><tr><th style="width:19%">Colaborador</th><th style="width:12%">Loja</th><th>Devido pelo ponto</th><th>Descontado</th><th>Diferença</th><th style="width:8%">Ação</th><th style="width:31%">Apontamento</th></tr></thead><tbody>'+(list.length?list.map(r=>'<tr><td><b>'+faEsc(r.name)+'</b><br>'+faEsc(r.code||'')+'</td><td>'+faEsc(r.store)+'</td><td class="n">'+faH(r.aDescH)+'<br>'+(r.aDescV!=null?faBRL(r.aDescV):'—')+'</td><td class="n">'+faH(r.descH)+'<br>'+faBRL(r.descV)+'</td><td class="n"><b>'+(r.saldoH>0?'+':'')+faH(r.saldoH)+'<br>'+(r.saldoV!=null?(r.saldoV>0?'+':'')+faBRL(r.saldoV):'—')+'</b></td><td>'+(FA_ACAO[r.acao]||FA_ACAO.ok)[1]+'</td><td>'+faEsc(r.apont)+'</td></tr>').join(''):'<tr><td colspan="7">Nenhuma divergência de desconto no período.</td></tr>')+'</tbody></table>'}
-function faPrint(){
-  const m=faModel;if(!m)return;const T=m.totals,all=fa$('faPrintScope').value==='all',cc=faCCTotals(m.rows);
-  const base=m.rows.filter(r=>r.events.length||r.descH>FA_TOL_H||r.descV>0.01),list=(all?base:base.filter(r=>r.acao&&r.acao!=='ok'&&r.acao!=='semfolha'&&r.acao!=='demitido')).sort((a,b)=>Math.abs(b.saldoV||0)-Math.abs(a.saldoV||0));
-  const gest=m.rows.filter(r=>r.flags.some(f=>f.group==='gest'));
-  const stat=(a,b,c)=>'<div class="fa-print-stat '+(c||'')+'"><small>'+a+'</small><b>'+b+'</b></div>';
-  faDoPrint(faPrintHead('Conta corrente do desconto · Faltas e Atrasos',m)
-   +'<div class="fa-print-stats">'+stat('Devido pelo ponto',faBRL0(cc.aDescV)+'<br><span>'+faH(cc.aDescH)+'</span>')+stat('Descontado na folha',faBRL0(cc.descV)+'<br><span>'+faH(cc.descH)+'</span>')+stat('Faltou descontar',faBRL0(cc.faltouV)+'<br><span>'+faH(cc.faltouH)+'</span>','red')+stat('Falta/atraso a mais',faBRL0(cc.excessoV)+'<br><span>'+faH(cc.excessoH)+'</span>','amber')+stat('DSR a conferir',faBRL0(cc.dsrConfV)+'<br><span>'+faH(cc.dsrConfH)+'</span>','amber')+stat('Sem ocorrência no ponto',faBRL0(cc.semPontoV)+'<br><span>'+faH(cc.semPontoH)+'</span>','amber')+stat('Divergentes',cc.div+' colab.')+'</div>'
-   +'<h2>'+(all?'Conta corrente completa':'Divergências de desconto')+' · '+list.length+' colaborador(es)</h2>'+faCCTable(list)
-   +(gest.length?'<h2>Alertas de gestão de ponto · '+gest.length+'</h2><table class="fa-print-table"><thead><tr><th style="width:22%">Colaborador</th><th style="width:16%">Loja</th><th>Alerta</th></tr></thead><tbody>'+gest.map(r=>'<tr><td><b>'+faEsc(r.name)+'</b><br>'+faEsc(r.code)+'</td><td>'+faEsc(r.store)+'</td><td>'+r.flags.filter(f=>f.group==='gest').map(f=>'<b>'+faEsc(f.name)+':</b> '+faEsc(f.text)).join('<br>')+'</td></tr>').join('')+'</tbody></table>':'')
-   +faPrintFoot,'Conta_Corrente_Faltas_Atrasos');
+/* ===== Relatórios impressos (Diretoria e Conta corrente) ===== */
+const FA_P={ink:'#14202e',muted:'#5b6776',line:'#d9dee5',navy:'#14284a',s1:'#2a78d6',s2:'#eb6834',good:'#1f8a57',warn:'#b97a00',bad:'#c43d3d',neutral:'#8a94a3'};
+function faMotivo(r){
+  if(r.acao==='demitido')return 'Demitido em '+faBR(r.demitido.saida)+': acerto na rescisão';
+  if(r.afastadoCC)return 'Afastado ('+r.situ+') com falta lançada: confirmar início do afastamento'+(r.descH>FA_TOL_H?'; se anterior, estornar '+faH(r.descH):'');
+  if(r.semPonto)return 'Desconto de '+faH(r.descH)+' sem ocorrência no ponto: pedir evidência';
+  if(!r.hasPay&&r.events.length)return 'Não está na folha: nada descontado';
+  const p=[];
+  if(r.difFAH>0)p.push('faltou descontar '+faH(r.difFAH)+' de falta/atraso');else if(r.difFAH<0)p.push('descontou '+faH(-r.difFAH)+' a mais de falta/atraso');
+  if(r.difDsrH>0)p.push('faltou '+faH(r.difDsrH)+' de DSR');else if(r.difDsrH<0)p.push('DSR '+faH(r.descDsrH)+' acima do máximo de '+faH(r.dsrMax)+': conferir folga/escala');
+  const t=p.join('; ');return t?t.charAt(0).toUpperCase()+t.slice(1):'Desconto correto';
 }
+function faRHead(title,m){const now=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  return '<header class="fa-r-head"><img src="logo-esposende.jpg" alt="Esposende"><div class="fa-r-ttl"><div class="fa-r-kick">Auditoria de RH · Folha de pagamento</div><h1>'+title+'</h1><div class="fa-r-sub">Ponto '+faEsc(faPeriodLabel(m))+(m.payrollPeriod?' · Folha '+faEsc(m.payrollPeriod):'')+' · '+m.period.workdays+' dias úteis</div></div><div class="fa-r-meta">Gerado em<br><b>'+now+'</b></div></header>'}
+function faRFoot(){return '<footer class="fa-r-foot"><span>Esposende · Central de Auditoria &amp; Controle</span><span>Devido = horas do cartão (sem atrasos de até 10 min/dia, CLT art. 58 §1º) + DSR (Lei 605/49) · R$ pelo valor-hora usado pela folha · confidencial</span></footer>'}
+function faRKpi(label,value,sub,tone){return '<div class="fa-r-kpi'+(tone?' '+tone:'')+'"><span>'+label+'</span><b>'+value+'</b><small>'+(sub||'&nbsp;')+'</small></div>'}
+function faRDaily(m,W,H){
+  const days=[];for(let d=faFromISO(m.period.start);d<=faFromISO(m.period.end);d=faAddDays(d,1))days.push(d);
+  const by={};days.forEach(d=>by[faISO(d)]={f:0,a:0});m.rows.forEach(r=>r.events.forEach(e=>{const x=by[e.date];if(x){if(e.kind==='falta')x.f++;else x.a++}}));
+  const pl=22,pb=18,pt=6,iw=W-pl,ih=H-pb-pt,bw=iw/days.length,mx=faNice(Math.max(1,...Object.values(by).map(x=>x.f+x.a))),y=v=>pt+ih-v/mx*ih,b=Math.max(2.5,Math.min(11,bw*.62));
+  let s='';[0,mx/2,mx].forEach(v=>s+='<line x1="'+pl+'" x2="'+W+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="'+FA_P.line+'" stroke-width=".6"/><text x="'+(pl-5)+'" y="'+(y(v)+3)+'" text-anchor="end">'+faInt(v)+'</text>');
+  days.forEach((d,i)=>{const x=by[faISO(d)],cx=pl+i*bw+bw/2;if(d.getDay()===0||faHoliday(d))s+='<rect x="'+(pl+i*bw)+'" y="'+pt+'" width="'+bw+'" height="'+ih+'" fill="#f1f3f6"/>';
+    if(x.f)s+='<rect x="'+(cx-b/2)+'" y="'+y(x.f)+'" width="'+b+'" height="'+(y(0)-y(x.f))+'" rx="1.5" fill="'+FA_P.s1+'"/>';
+    if(x.a){const y0=x.f?y(x.f)-1.5:y(0);s+='<rect x="'+(cx-b/2)+'" y="'+(y0-(y(0)-y(x.a)))+'" width="'+b+'" height="'+(y(0)-y(x.a))+'" rx="1.5" fill="'+FA_P.s2+'"/>'}
+    if(i===0||d.getDay()===1)s+='<text x="'+cx+'" y="'+(H-4)+'" text-anchor="middle">'+faBR(d).slice(0,5)+'</text>'});
+  return '<svg class="fa-r-svg" viewBox="0 0 '+W+' '+H+'" width="100%">'+s+'<line x1="'+pl+'" x2="'+W+'" y1="'+y(0)+'" y2="'+y(0)+'" stroke="#9aa4b1" stroke-width=".8"/></svg>';
+}
+function faRStores(m,W){
+  const byRate=m.byStore.some(s=>s.rate!=null),list=m.byStore.slice().sort((a,b)=>byRate?(b.rate??-1)-(a.rate??-1):b.minutes-a.minutes).slice(0,8);
+  if(!list.length)return '<p class="fa-r-empty">Sem ocorrências.</p>';
+  const lw=W*.42,vw=44,rh=19,H=list.length*rh+18,iw=W-lw-vw,val=s=>byRate?(s.rate??0):s.minutes/60,mx=Math.max(...list.map(val),m.totals.rate||0)||1,x=v=>lw+v/mx*iw;let s='';
+  list.forEach((st,i)=>{const yy=i*rh,v=val(st),nm=st.store.replace(/^Loja\s+/i,'Loja ').slice(0,30);s+='<text x="'+(lw-6)+'" y="'+(yy+12)+'" text-anchor="end" style="fill:'+FA_P.ink+'">'+faEsc(nm)+'</text><rect x="'+lw+'" y="'+(yy+4)+'" width="'+Math.max(1.5,x(v)-lw)+'" height="10" rx="2" fill="'+FA_P.s1+'"/><text x="'+(x(v)+5)+'" y="'+(yy+12.5)+'" style="fill:'+FA_P.ink+';font-weight:600">'+(byRate?faDec(v,2)+'%':faClock(st.minutes))+'</text>'});
+  if(byRate&&m.totals.rate){const ax=x(m.totals.rate);s+='<line x1="'+ax+'" x2="'+ax+'" y1="0" y2="'+(H-14)+'" stroke="'+FA_P.muted+'" stroke-dasharray="2 2" stroke-width=".8"/><text x="'+ax+'" y="'+(H-3)+'" text-anchor="middle">média da rede '+faDec(m.totals.rate,2)+'%</text>'}
+  return '<svg class="fa-r-svg" viewBox="0 0 '+W+' '+H+'" width="100%">'+s+'</svg>';
+}
+function faRStatus(m){
+  const base=m.rows.filter(r=>r.acao&&(r.events.length||r.descH>FA_TOL_H||r.descV>0.01));
+  const c=[['Desconto correto','ok',FA_P.good],['Faltou descontar','descontar',FA_P.bad],['Estornar','estornar','#d4692b'],['Conferir','conferir',FA_P.warn],['Demitido (rescisão)','demitido',FA_P.neutral]].map(([n,a,col])=>{const l=base.filter(r=>r.acao===a);return {n,col,q:l.length,v:l.reduce((s,r)=>s+r.descV,0)}}).filter(x=>x.q);
+  const tot=base.length||1;
+  return '<div class="fa-r-bar">'+c.map(x=>'<span style="flex:'+x.q+';background:'+x.col+'"></span>').join('')+'</div><table class="fa-r-leg">'+c.map(x=>'<tr><td><i style="background:'+x.col+'"></i>'+x.n+'</td><td class="n">'+x.q+'</td><td class="n">'+faDec(x.q/tot*100,0)+'%</td><td class="n">'+faBRL0(x.v)+'</td></tr>').join('')+'</table>';
+}
+function faRCase(list,full){
+  if(!list.length)return '<p class="fa-r-empty">Nenhuma divergência de desconto no período.</p>';
+  return '<table class="fa-r-tab"><colgroup><col class="c1"><col class="c2"><col class="cn"><col class="cn"><col class="cn"><col class="ca"><col></colgroup><thead><tr><th>Colaborador</th><th>Loja</th><th class="n">Devido</th><th class="n">Descontado</th><th class="n">Diferença</th><th>Ação</th><th>'+(full?'Apontamento':'Motivo')+'</th></tr></thead><tbody>'+list.map(r=>{const a=(FA_ACAO[r.acao]||FA_ACAO.ok)[1];return '<tr><td><b>'+faEsc(r.name)+'</b><small>Matr. '+faEsc(r.code||'—')+'</small></td><td>'+faEsc(r.store.replace(/^Loja\s+/i,''))+'</td><td class="n">'+faH(r.aDescH)+'<small>'+(r.aDescV!=null?faBRL(r.aDescV):'—')+'</small></td><td class="n">'+faH(r.descH)+'<small>'+faBRL(r.descV)+'</small></td><td class="n"><b class="'+(r.saldoH>0?'r':'a')+'">'+(r.saldoH>0?'+':'')+faH(r.saldoH)+'</b><small>'+(r.saldoV!=null?(r.saldoV>0?'+':'')+faBRL(r.saldoV):'—')+'</small></td><td><span class="fa-r-tag '+r.acao+'">'+a+'</span></td><td>'+faEsc(full?r.apont:faMotivo(r))+'</td></tr>'}).join('')+'</tbody></table>';
+}
+function faRGest(m){const g=m.rows.filter(r=>r.flags.some(f=>f.group==='gest'));if(!g.length)return '<p class="fa-r-empty">Nenhum alerta de gestão de ponto.</p>';
+  return '<table class="fa-r-tab"><thead><tr><th style="width:24%">Colaborador</th><th style="width:18%">Loja</th><th class="n" style="width:8%">Ocorr.</th><th>Alertas</th></tr></thead><tbody>'+g.map(r=>'<tr><td><b>'+faEsc(r.name)+'</b><small>Matr. '+faEsc(r.code)+'</small></td><td>'+faEsc(r.store.replace(/^Loja\s+/i,''))+'</td><td class="n">'+r.events.length+'</td><td>'+r.flags.filter(f=>f.group==='gest').map(f=>'<span class="fa-r-chip">'+faEsc(f.name)+'</span>').join(' ')+'</td></tr>').join('')+'</tbody></table>'}
+async function faDoPrint(html,title){document.body.classList.add('fa-printing');fa$('faPrintReport').innerHTML=html;const imgs=[...fa$('faPrintReport').querySelectorAll('img')];await Promise.all(imgs.map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r})));const old=document.title;document.title=title;window.print();setTimeout(()=>{document.title=old;document.body.classList.remove('fa-printing')},1200)}
 function faBoard(){
   const m=faModel;if(!m)return;const T=m.totals,cc=faCCTotals(m.rows),c=m.checkCount,hasF=m.sources.payrollAvailable;
-  const top=m.rows.filter(r=>r.acao&&r.acao!=='ok'&&r.acao!=='semfolha'&&r.acao!=='demitido').sort((a,b)=>Math.abs(b.saldoV??0)-Math.abs(a.saldoV??0)).slice(0,12);
-  const stores=m.byStore.filter(s=>s.rate!=null).sort((a,b)=>b.rate-a.rate).slice(0,8);
-  const card=(t,v,s,cls)=>'<div class="fa-b-card '+(cls||'')+'"><small>'+t+'</small><b>'+v+'</b><span>'+s+'</span></div>';
-  const ccTab='<table class="fa-print-table"><thead><tr><th></th><th>Devido pelo ponto</th><th>Descontado</th><th>Diferença</th></tr></thead><tbody><tr><td>Faltas e atrasos</td><td class="n">'+faH(cc.aFAH)+'<br>'+faBRL0(cc.aFAV)+'</td><td class="n">'+faH(cc.dFAH)+'<br>'+faBRL0(cc.dFAV)+'</td><td class="n"><b>'+faH(cc.aFAH-cc.dFAH)+'<br>'+faBRL0(cc.aFAV-cc.dFAV)+'</b></td></tr><tr><td>DSR</td><td class="n">'+faH(cc.aDsrH)+'<br>'+faBRL0(cc.aDsrV)+'</td><td class="n">'+faH(cc.dDsrH)+'<br>'+faBRL0(cc.dDsrV)+'</td><td class="n"><b>'+faH(cc.aDsrH-cc.dDsrH)+'<br>'+faBRL0(cc.aDsrV-cc.dDsrV)+'</b></td></tr><tr class="tot"><td>Total</td><td class="n">'+faH(cc.aDescH)+'<br>'+faBRL0(cc.aDescV)+'</td><td class="n">'+faH(cc.descH)+'<br>'+faBRL0(cc.descV)+'</td><td class="n">'+faH(cc.aDescH-cc.descH)+'<br>'+faBRL0(cc.aDescV-cc.descV)+'</td></tr></tbody></table><div class="fa-b-split"><div><small>Faltou descontar</small><b class="r">'+faBRL0(cc.faltouV)+'</b></div><div><small>Falta/atraso a mais</small><b class="a">'+faBRL0(cc.excessoV)+'</b></div><div><small>DSR a conferir</small><b class="a">'+faBRL0(cc.dsrConfV)+'</b></div><div><small>Desconto sem ponto</small><b class="a">'+faBRL0(cc.semPontoV)+'</b></div></div>'+(cc.semValor?'<p style="font-size:7.5pt;color:#9a6400;margin:4px 0">'+cc.semValor+' colaborador(es) com ocorrência não estão na folha: horas a descontar sem valor em R$ (não entram nos totais em R$).</p>':'');
-  const storeTab='<table class="fa-print-table"><thead><tr><th>Loja</th><th>Quadro</th><th>Pessoas</th><th>Horas</th><th>Absent.</th></tr></thead><tbody>'+(stores.length?stores.map(s=>'<tr><td>'+faEsc(s.store)+'</td><td class="n">'+s.headcount+'</td><td class="n">'+s.people+'</td><td class="n">'+faClock(s.minutes)+'</td><td class="n"><b>'+faDec(s.rate,2)+'%</b></td></tr>').join(''):'<tr><td colspan="5">Carregue a base ATIVOS para o absenteísmo por loja.</td></tr>')+'</tbody></table>';
-  const alerts=[['Ocorrência de afastado',c.afastado],['3+ faltas seguidas',c.consecutivas],['Reincidência (3+)',c.reincidencia],['Padrão de emenda',c.emenda],['Ocorrência duplicada',c.duplicado],['Fora da base ATIVOS',c.fora_base]].filter(x=>x[1]);
-  const concl=[];
-  if(hasF){if(cc.faltouV>0.5)concl.push('Lançar na próxima folha <b>'+faBRL0(cc.faltouV)+'</b> que deixaram de ser descontados ('+faH(cc.faltouH)+').');if(cc.excessoV>0.5)concl.push('Estornar (ou comprovar) <b>'+faBRL0(cc.excessoV)+'</b> de falta/atraso descontados a mais ('+faH(cc.excessoH)+'), risco trabalhista (CLT art. 462).');if(cc.dsrConfV>0.5)concl.push('Conferir <b>'+faBRL0(cc.dsrConfV)+'</b> de DSR acima do que as faltas do cartão justificam ('+faH(cc.dsrConfH)+'): validar folga/escala antes de estornar.');if(cc.semPontoV>0.5)concl.push('Comprovar a origem de <b>'+faBRL0(cc.semPontoV)+'</b> descontados sem ocorrência no cartão do período.');if(!concl.length)concl.push('Descontos em folha conferem com o ponto do período.')}else concl.push('Folha não carregada: conta corrente do desconto não apurada.');
-  if(cc.demN)concl.push(cc.demN+' demitido(s) retirado(s) dos apontamentos (cruzamento com as rescisões do Crediário; '+faBRL0(cc.demV)+' descontados na rescisão).');
-  if(c.afastado)concl.push(c.afastado+' colaborador(es) afastado(s) com falta lançada: abonar no ponto.');
-  if(c.consecutivas)concl.push(c.consecutivas+' caso(s) de 3+ faltas seguidas: exigir atestado/justificativa.');
-  if(stores[0])concl.push('Maior absenteísmo: '+faEsc(stores[0].store)+' ('+faDec(stores[0].rate,2)+'%), acima da média de '+faDec(T.rate,2)+'%.');
-  faDoPrint(faPrintHead('Relatório da Diretoria · Faltas, Atrasos e Desconto em Folha',m)
-   +'<div class="fa-b-cards">'+card('Quadro ativo',m.ativos?faInt(m.ativos):'—',m.sources.rosterDate?'base '+faBR(m.sources.rosterDate):'')+card('Com ocorrência',faInt(T.people),m.ativos?faPct(T.people,m.ativos)+' do quadro':'')+card('Faltas (dias)',faInt(T.faltaEvents),T.faltaPeople+' pessoas')+card('Atrasos',faInt(T.atrasoEvents),T.atrasoPeople+' pessoas')+card('Absenteísmo',T.rate!=null?faDec(T.rate,2)+'%':'—',faClock(T.minutes)+' perdidas')+card('Faltou descontar',hasF?faBRL0(cc.faltouV):'—',hasF?cc.div+' divergentes':'sem folha',hasF&&Math.abs(cc.aDescV-cc.descV)>1?'red':'')+'</div>'
-   +'<div class="fa-b-grid"><div><h2>Conta corrente do desconto</h2>'+(hasF?ccTab:'<p>Folha não carregada.</p>')+'</div><div><h2>Absenteísmo · lojas com maior taxa</h2>'+storeTab+'</div></div>'
-   +'<h2>Principais divergências de desconto</h2>'+(hasF?faCCTable(top):'<p>Folha não carregada.</p>')
-   +'<div class="fa-b-grid"><div><h2>Alertas de gestão de ponto</h2><table class="fa-print-table"><tbody>'+(alerts.length?alerts.map(a=>'<tr><td>'+a[0]+'</td><td class="n"><b>'+a[1]+'</b></td></tr>').join(''):'<tr><td>Nenhum alerta</td></tr>')+'</tbody></table></div><div><h2>Conclusões e encaminhamentos</h2><ul class="fa-b-list">'+concl.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></div>'
-   +faPrintFoot,'Relatorio_Diretoria_Faltas_Atrasos');
+  const acts=m.rows.filter(r=>r.acao&&!['ok','semfolha','demitido'].includes(r.acao)).sort((a,b)=>Math.abs(b.saldoV??0)-Math.abs(a.saldoV??0));
+  const stores=m.byStore.filter(s=>s.rate!=null).sort((a,b)=>b.rate-a.rate);
+  const read=[];
+  read.push('<b>'+faInt(T.people)+'</b> colaboradores tiveram ocorrência no ponto ('+(m.ativos?faPct(T.people,m.ativos,1)+' do quadro ativo':'')+'): <b>'+T.faltaEvents+'</b> faltas de dia inteiro e <b>'+T.atrasoEvents+'</b> atrasos, '+faClock(T.minutes)+' perdidas.');
+  if(T.rate!=null)read.push('Absenteísmo da rede de <b>'+faDec(T.rate,2)+'%</b>'+(stores[0]?'; maior taxa na <b>'+faEsc(stores[0].store)+'</b> ('+faDec(stores[0].rate,2)+'%).':'.'));
+  if(hasF)read.push(acts.length?'<b>'+acts.length+'</b> caso(s) de desconto exigem ação: faltou descontar <b>'+faBRL0(cc.faltouV)+'</b>, a mais <b>'+faBRL0(cc.excessoV)+'</b>, DSR a conferir <b>'+faBRL0(cc.dsrConfV)+'</b>, sem ocorrência no ponto <b>'+faBRL0(cc.semPontoV)+'</b>.':'Todos os descontos em folha conferem com o cartão de ponto.');
+  if(cc.demN)read.push('<b>'+cc.demN+'</b> demitido(s) retirados dos apontamentos (cruzamento com as rescisões do Crediário; '+faBRL0(cc.demV)+' acertados na rescisão).');
+  if(c.consecutivas||c.afastado)read.push((c.consecutivas?c.consecutivas+' caso(s) de 3+ faltas seguidas (exigir atestado)':'')+(c.consecutivas&&c.afastado?' e ':'')+(c.afastado?c.afastado+' afastado(s) com falta lançada':'')+'.');
+  const html='<div class="fa-r">'+faRHead('Faltas, Atrasos e Desconto em Folha',m)
+   +'<section class="fa-r-kpis">'+faRKpi('Quadro ativo',m.ativos?faInt(m.ativos):'—',m.sources.rosterDate?'base de '+faBR(m.sources.rosterDate):'')+faRKpi('Absenteísmo',T.rate!=null?faDec(T.rate,2)+'%':'—',faClock(T.minutes)+' perdidas')+faRKpi('Faltas de dia inteiro',faInt(T.faltaEvents),T.faltaPeople+' pessoas')+faRKpi('Atrasos',faInt(T.atrasoEvents),T.atrasoPeople+' pessoas')+faRKpi('Divergências de desconto',hasF?faInt(acts.length):'—',hasF?faBRL0(cc.faltouV+cc.excessoV+cc.dsrConfV+cc.semPontoV)+' em diferença':'folha não carregada',acts.length?'bad':'')+faRKpi('Demitidos fora',faInt(cc.demN),faBRL0(cc.demV)+' na rescisão')+'</section>'
+   +'<section class="fa-r-read"><h2>Leitura executiva</h2><ul>'+read.map(x=>'<li>'+x+'</li>').join('')+'</ul></section>'
+   +'<section class="fa-r-grid"><div class="fa-r-box"><h2>Ocorrências por dia <span class="fa-r-lg"><i style="background:'+FA_P.s1+'"></i>Faltas <i style="background:'+FA_P.s2+'"></i>Atrasos</span></h2>'+faRDaily(m,560,150)+'</div><div class="fa-r-box"><h2>Absenteísmo por loja <span class="fa-r-note">8 maiores taxas</span></h2>'+faRStores(m,440)+'</div></section>'
+   +'<section class="fa-r-grid"><div class="fa-r-box"><h2>Situação da conferência</h2>'+(hasF?faRStatus(m):'<p class="fa-r-empty">Folha não carregada.</p>')+'</div><div class="fa-r-box"><h2>Conta corrente do desconto</h2>'+(hasF?'<table class="fa-r-cc"><thead><tr><th></th><th class="n">Devido pelo ponto</th><th class="n">Descontado</th><th class="n">Diferença</th></tr></thead><tbody><tr><td>Falta e atraso</td><td class="n">'+faBRL0(cc.aFAV)+'<small>'+faH(cc.aFAH)+'</small></td><td class="n">'+faBRL0(cc.dFAV)+'<small>'+faH(cc.dFAH)+'</small></td><td class="n"><b>'+faBRL0(cc.aFAV-cc.dFAV)+'</b></td></tr><tr><td>DSR</td><td class="n">'+faBRL0(cc.aDsrV)+'<small>'+faH(cc.aDsrH)+'</small></td><td class="n">'+faBRL0(cc.dDsrV)+'<small>'+faH(cc.dDsrH)+'</small></td><td class="n"><b>'+faBRL0(cc.aDsrV-cc.dDsrV)+'</b></td></tr><tr class="tot"><td>Total</td><td class="n">'+faBRL0(cc.aDescV)+'</td><td class="n">'+faBRL0(cc.descV)+'</td><td class="n">'+faBRL0(cc.aDescV-cc.descV)+'</td></tr></tbody></table><p class="fa-r-fine">Inclui demitidos (diferença zero) e descontos sem ocorrência no ponto. Diferença negativa = descontado acima do que o ponto justifica.</p>':'<p class="fa-r-empty">Folha não carregada.</p>')+'</div></section>'
+   +'<section class="fa-r-page2"><h2>Casos que exigem ação · '+acts.length+'</h2>'+(hasF?faRCase(acts,false):'<p class="fa-r-empty">Folha não carregada.</p>')
+   +'<h2>Gestão de ponto · alertas para a operação</h2>'+faRGest(m)+'</section>'
+   +faRFoot()+'</div>';
+  faDoPrint(html,'Relatorio_Diretoria_Faltas_Atrasos');
+}
+function faPrint(){
+  const m=faModel;if(!m)return;const all=fa$('faPrintScope').value==='all',cc=faCCTotals(m.rows);
+  const base=m.rows.filter(r=>r.acao&&r.acao!=='semfolha'&&(r.events.length||r.descH>FA_TOL_H||r.descV>0.01));
+  const list=(all?base:base.filter(r=>!['ok','demitido'].includes(r.acao))).sort((a,b)=>Math.abs(b.saldoV||0)-Math.abs(a.saldoV||0));
+  const html='<div class="fa-r">'+faRHead('Conta corrente do desconto em folha',m)
+   +'<section class="fa-r-kpis">'+faRKpi('Devido pelo ponto',faBRL0(cc.aDescV),faH(cc.aDescH))+faRKpi('Descontado na folha',faBRL0(cc.descV),faH(cc.descH))+faRKpi('Faltou descontar',faBRL0(cc.faltouV),faH(cc.faltouH),cc.faltouV>0.5?'bad':'')+faRKpi('Descontado a mais',faBRL0(cc.excessoV),faH(cc.excessoH),cc.excessoV>0.5?'warn':'')+faRKpi('DSR a conferir',faBRL0(cc.dsrConfV),faH(cc.dsrConfH),cc.dsrConfV>0.5?'warn':'')+faRKpi('Sem ocorrência no ponto',faBRL0(cc.semPontoV),faH(cc.semPontoH),cc.semPontoV>0.5?'warn':'')+'</section>'
+   +'<p class="fa-r-recon">Conferência: devido '+faBRL(cc.aDescV)+' − descontado '+faBRL(cc.descV)+' = <b>'+faBRL(cc.aDescV-cc.descV)+'</b> = faltou '+faBRL(cc.faltouV)+' − a mais '+faBRL(cc.excessoV)+' − DSR a conferir '+faBRL(cc.dsrConfV)+' − sem ponto '+faBRL(cc.semPontoV)+(cc.demN?' · '+cc.demN+' demitido(s) fora dos apontamentos ('+faBRL0(cc.demV)+')':'')+'</p>'
+   +'<h2 class="fa-r-h">'+(all?'Conta corrente completa':'Divergências de desconto')+' · '+list.length+'</h2>'+faRCase(list,true)
+   +'<h2 class="fa-r-h">Gestão de ponto · alertas</h2>'+faRGest(m)
+   +faRFoot()+'</div>';
+  faDoPrint(html,'Conta_Corrente_Faltas_Atrasos');
 }
 
 /* ===== Base privada (Supabase) ===== */
