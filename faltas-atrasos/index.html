@@ -304,7 +304,7 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
 <script>
 'use strict';
 /* ===== Configuração ===== */
-const FA_RULE='fa-v20-espelho-anexo';
+const FA_RULE='fa-v21-banco-anexo';
 const FA_DAY_MIN=440;              // jornada diária de referência: 7h20 (44h ÷ 6 dias)
 const FA_DSR_H=44/6;               // horas de um DSR na jornada de 44h semanais
 const FA_TOL_H=0.05;               // 3 minutos de tolerância na comparação de horas
@@ -1439,7 +1439,7 @@ function faRGest(m){const g=m.rows.filter(r=>r.flags.some(f=>f.group==='gest'));
 async function faDoPrint(html,title){document.body.classList.add('fa-printing');fa$('faPrintReport').innerHTML=html;const imgs=[...fa$('faPrintReport').querySelectorAll('img')];await Promise.all(imgs.map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r})));const old=document.title;document.title=title;window.print();setTimeout(()=>{document.title=old;document.body.classList.remove('fa-printing')},1200)}
 function faRBankKpis(B){const T=B.totals;return '<section class="fa-r-kpis" style="grid-template-columns:repeat(5,minmax(0,1fr))">'+faRKpi('Funcionários devem (débito)',faBRL0(T.debV),faH(T.debH)+' · '+T.debN+' pessoas','bad')+faRKpi('Empresa deve (crédito)',faBRL0(T.credV),faH(T.credH)+' · hora normal','warn')+faRKpi('Saldo líquido do banco',(T.netV<0?'−':'')+faBRL0(Math.abs(T.netV)),(T.netH>=0?'a favor dos funcionários':'a favor da empresa'))+faRKpi('Devedores acima de 3 dias',faBRL0(T.altoV),faH(T.altoH)+' · '+T.altoN+' pessoas','bad')+faRKpi('Ponto × banco devedor',String(T.cruz),'falta/atraso no período')+'</section>'}
 function faRBankTab(list){return '<table class="fa-r-tab"><colgroup><col class="c1"><col class="c2"><col class="cn"><col class="cn"><col class="cn"><col></colgroup><thead><tr><th>Colaborador</th><th>Loja / regional</th><th class="n">Saldo banco</th><th class="n">Valor-hora</th><th class="n">Saldo R$</th><th>Apontamento</th></tr></thead><tbody>'+list.map(b=>'<tr><td><b>'+faEsc(b.name)+'</b><small>Matr. '+faEsc(b.code)+' · '+faEsc(b.role)+'</small></td><td>'+faEsc(b.store.replace(/^Loja\s+/i,''))+'<small>'+faEsc(b.regional||'')+'</small></td><td class="n"><b class="'+(b.saldoH<0?'r':'a')+'">'+(b.saldoH<0?'−':'+')+faH(Math.abs(b.saldoH))+'</b></td><td class="n">'+faBRL(b.rate)+'<small>'+(/estimado/.test(b.rateSrc)?'estimado':'folha')+'</small></td><td class="n"><b>'+(b.saldoV<0?'−':'+')+faBRL(Math.abs(b.saldoV))+'</b></td><td>'+faEsc(b.nota)+'</td></tr>').join('')+'</tbody></table>'}
-function faPrintBank(){
+async function faPrintBank(){
   const m=faModel;if(!m||!m.bank){faToast('Carregue o banco de horas no quadro de arquivos.');return}
   const B=m.bank,T=B.totals,deb=B.rows.filter(b=>b.saldoH<-0.01).sort((a,b)=>a.saldoV-b.saldoV),cruz=B.rows.filter(b=>b.events).sort((a,b)=>a.saldoH-b.saldoH),cred=B.rows.filter(b=>b.saldoH>0.01).sort((a,b)=>b.saldoV-a.saldoV);
   const reg='<table class="fa-r-cc"><thead><tr><th>Regional</th><th class="n">Pessoas</th><th class="n">Débito (funcionários devem)</th><th class="n">Crédito (empresa deve)</th><th class="n">Saldo líquido</th></tr></thead><tbody>'+B.byRegional.map(g=>'<tr><td>'+faEsc(g.regional)+'</td><td class="n">'+g.n+'</td><td class="n">'+faBRL0(g.debV)+'<small>'+faH(g.debH)+'</small></td><td class="n">'+faBRL0(g.credV)+'<small>'+faH(g.credH)+'</small></td><td class="n"><b>'+faBRL0(g.credV-g.debV)+'</b></td></tr>').join('')+'<tr class="tot"><td>Total</td><td class="n">'+T.n+'</td><td class="n">'+faBRL0(T.debV)+'</td><td class="n">'+faBRL0(T.credV)+'</td><td class="n">'+faBRL0(T.netV)+'</td></tr></tbody></table>';
@@ -1450,7 +1450,11 @@ function faPrintBank(){
    +'<h2 class="fa-r-h">Banco por regional</h2>'+reg
    +'<section class="fa-r-page2"><h2>Deixamos de descontar · '+B.rows.filter(b=>b.situacao==='nao_descontado').length+' colaboradores · '+faBRL0(T.ndV)+'</h2>'+faRBankTab(B.rows.filter(b=>b.situacao==='nao_descontado').sort((a,b)=>a.saldoV-b.saldoV))+'<h2 class="fa-r-h">Desconto insuficiente · '+T.paN+'</h2>'+faRBankTab(B.rows.filter(b=>b.situacao==='parcial').sort((a,b)=>a.saldoV-b.saldoV))+((T.reN+T.sfN)?'<h2 class="fa-r-h">Sem folha no mês (afastados, transferidos ou desligados) · '+(T.reN+T.sfN)+'</h2>'+faRBankTab(B.rows.filter(b=>b.situacao==='rescisao'||b.situacao==='sem_folha').sort((a,b)=>a.saldoV-b.saldoV)):'')+'<h2 class="fa-r-h">Cruzamento ponto × banco · '+cruz.length+'</h2>'+faRBankTab(cruz)+'<h2 class="fa-r-h">Maiores devedores · '+Math.min(40,deb.length)+' de '+deb.length+'</h2>'+faRBankTab(deb.slice(0,40))+'<h2 class="fa-r-h">Maiores credores · '+Math.min(20,cred.length)+' de '+cred.length+'</h2>'+faRBankTab(cred.slice(0,20))+'</section>'
    +faRFoot()+'</div>';
-  faDoPrint(html,'Banco_de_Horas_Conta_Corrente');
+  const negs=B.rows.filter(b=>b.saldoH<-0.01).sort((a,b)=>(a.saldoV||0)-(b.saldoV||0)),mm=m.mirror?new Map(m.mirror.rows.map(r=>[r.code,r])):new Map(),lst=negs.map(b=>mm.get(b.code)).filter(Boolean),falta=negs.length-lst.length;
+  let annex=m.mirror?await faMirrorAnnex(lst,'Anexo · espelho original dos colaboradores com banco negativo'):'<section class="fa-r-annex"><p class="fa-r-empty">Carregue o PDF do espelho de ponto para anexar as páginas originais.</p></section>';
+  if(m.mirror&&falta)annex+='<p class="fa-r-fine">'+falta+' colaborador(es) com banco negativo não estão no espelho do período (sem página para anexar).</p>';
+  const cut=html.lastIndexOf('<footer class="fa-r-foot"');
+  faDoPrint(cut>0?html.slice(0,cut)+annex+html.slice(cut):html+annex,'Banco_de_Horas_Conta_Corrente');
 }
 
 
