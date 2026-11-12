@@ -36,7 +36,7 @@ O custo gravado na base é o do Seta (antigo). Para os códigos abaixo, o custo 
 - Rodapé: "Esposende · Central de Auditoria & Controle" + data/hora de geração. A4 horizontal.
 - Excel: logo e cards no topo de cada aba, sem linhas de grade, números em formato pt-BR.
 
-## Consumo Loja (menu Almoxarifado → 🏬 Consumo Loja; botão também dentro do módulo)
+## Consumo Loja (só dentro do módulo Almoxarifado: botão 🏬 Consumo Loja ao lado de "Consumo por Item"; sem item no menu lateral desde 12/11/2026)
 Patch `almox-consumo-loja-patch.js`. Cruza o consumo (Qtd Atendida) dos itens controlados com o que gera esse consumo, aponta loja fora do padrão, prevê consumo e sugere compra.
 
 | Linha | Códigos | Motor | Padrão |

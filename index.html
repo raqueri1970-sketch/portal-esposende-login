@@ -940,8 +940,8 @@ async function openPortal(){
   _fimBody+=ALMOX_MINIMO_PATCH;
   // Almoxarifado: botão "Consumo por Item" (busca item + loja/todas → consumo mês a mês e média mensal).
   _fimBody+='<scr'+'ipt src="'+new URL('almox-consumo-item-patch.js?v=20261112-desempenho',location.href).href+'"></scr'+'ipt>';
-  // Almoxarifado: menu "Consumo Loja" (consumo x venda/remanejo por loja, lojas fora do padrão, previsão e sugestão de compra).
-  _fimBody+='<scr'+'ipt src="'+new URL('almox-consumo-loja-patch.js?v=20261112-desempenho',location.href).href+'"></scr'+'ipt>';
+  // Almoxarifado: botão "Consumo Loja" dentro do módulo (consumo x venda/remanejo por loja, lojas fora do padrão, previsão e sugestão de compra).
+  _fimBody+='<scr'+'ipt src="'+new URL('almox-consumo-loja-patch.js?v=20261112-2',location.href).href+'"></scr'+'ipt>';
   // Almoxarifado: painel novo da Visão Geral (estoque em R$, consumo do último mês x média, cobertura, repor) + regionais CD/FECHADA.
   _fimBody+='<scr'+'ipt src="'+new URL('almox-painel-patch.js?v=20261112-desempenho',location.href).href+'"></scr'+'ipt>';
   // Capa oficial do card Treinamentos e Cursos.
@@ -978,6 +978,8 @@ async function openPortal(){
   _fimBody+='<scr'+'ipt src="'+new URL('faltas-atrasos-patch.js?v=20261112-desempenho',location.href).href+'"></scr'+'ipt>';
   // Auditoria de Despesas e OS: card na visão geral (ao lado de Obras & Reformas) e item no menu Auditoria (tela auditoria-despesas/).
   _fimBody+='<scr'+'ipt src="'+new URL('auditoria-despesas-patch.js?v=20261112-desempenho',location.href).href+'"></scr'+'ipt>';
+  // Visão Geral: cards de Faltas e Atrasos e de Auditoria Financeira (abrem as mesmas telas do menu lateral).
+  _fimBody+='<scr'+'ipt src="'+new URL('cards-visao-geral-patch.js?v=20261112-1',location.href).href+'"></scr'+'ipt>';
   if(_cabeca)html=html.replace(/<\/head>/i,function(){return _cabeca+'</head>';});
   html=inserirAntesDoFimDoBody(html,_fimBody);
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
