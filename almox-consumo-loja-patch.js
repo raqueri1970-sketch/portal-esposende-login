@@ -590,7 +590,7 @@
         var b=e.target.closest('[data-a],[data-t]');if(!b||!ov.contains(b)||b.tagName==='LABEL')return;
         if(b.dataset.t){S.aba=b.dataset.t;render();return;}
         var a=b.dataset.a;
-        if(a==='fechar'){ov.style.display='none';voltarAlmox();}
+        if(a==='fechar'){ov.style.setProperty('display','none','important');voltarAlmox();}
         else if(a==='rec'){S.carregado=false;carregar(true);}
         else if(a==='ger')relatorioGerencial();
         else if(a==='pdfAba')relatorioAbas([S.aba]);
@@ -602,9 +602,10 @@
         else if(a==='salvarP')salvarParametros(b);
         else if(a==='limpar')limparBase(b.dataset.m);
       });
-      document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ov.style.display!=='none')ov.style.display='none';});
+      document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ov.style.display!=='none')ov.style.setProperty('display','none','important');});
     }
-    ov.style.display='flex';
+    // 'important': o CSS da tela trava #acl-ov com display:flex!important; sem isso o Voltar/Esc não fechavam.
+    ov.style.setProperty('display','flex','important');
     if(!S.carregado||S.aviso)carregar(true);else render();
   }
 
