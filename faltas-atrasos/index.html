@@ -301,7 +301,7 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
 <script>
 'use strict';
 /* ===== Configuração ===== */
-const FA_RULE='fa-v15-deixamos';
+const FA_RULE='fa-v16-banco-ranking';
 const FA_DAY_MIN=440;              // jornada diária de referência: 7h20 (44h ÷ 6 dias)
 const FA_DSR_H=44/6;               // horas de um DSR na jornada de 44h semanais
 const FA_TOL_H=0.05;               // 3 minutos de tolerância na comparação de horas
@@ -588,6 +588,35 @@ function faBankCompute(inp,ctx){
   const reg=new Map();base.forEach(b=>{const k=b.regional||'—';let x=reg.get(k);if(!x){x={regional:k,n:0,credH:0,credV:0,debH:0,debV:0,ndN:0,ndV:0,ndH:0};reg.set(k,x)}x.n++;if(b.situacao==='nao_descontado'){x.ndN++;x.ndV+=-(b.saldoV||0);x.ndH+=-b.saldoH}if(b.saldoH>0){x.credH+=b.saldoH;x.credV+=b.saldoV||0}else{x.debH+=-b.saldoH;x.debV+=-(b.saldoV||0)}});
   return {file:Bk.file,date:Bk.meta?.date||null,savedAt:Bk.savedAt||null,rows:base,totals:T,byRegional:[...reg.values()].sort((a,b)=>b.debV-a.debV)};
 }
+
+function faBankAgg(B,key){const mp=new Map();B.rows.forEach(b=>{const k=key(b)||'—';let x=mp.get(k);if(!x){x={k,regional:b.regional||'—',n:0,negN:0,negH:0,negV:0,posN:0,posH:0,posV:0};mp.set(k,x)}x.n++;const v=Math.abs(b.saldoV||0);if(b.saldoH<-0.01){x.negN++;x.negH+=-b.saldoH;x.negV+=v}else if(b.saldoH>0.01){x.posN++;x.posH+=b.saldoH;x.posV+=v}});return [...mp.values()]}
+function faBankPos(B){const neg=B.rows.filter(b=>b.saldoH<-0.01),pos=B.rows.filter(b=>b.saldoH>0.01),zer=B.rows.length-neg.length-pos.length,sv=l=>l.reduce((s,b)=>s+Math.abs(b.saldoV||0),0),sh=l=>l.reduce((s,b)=>s+Math.abs(b.saldoH),0);
+  return {neg,pos,zer,negV:sv(neg),negH:sh(neg),posV:sv(pos),posH:sh(pos),n:B.rows.length,dt:B.date?faBR(B.date):B.savedAt?faBR(new Date(B.savedAt)):''}}
+function faBankCards(B){const P=faBankPos(B),pc=x=>faDec(x/P.n*100,1)+'% do quadro do arquivo',dt='Posição '+(P.dt?'de '+P.dt:'do arquivo')+' · sem posição anterior salva para comparar';
+  const c=(k,cls,t,v,l1)=>'<div class="fa-kpi '+cls+'" onclick="faShow(\''+k+'\')" style="cursor:pointer"><div class="fa-kpi-top">'+t+'</div><div class="fa-kpi-num">'+v+'</div><div class="fa-kpi-foot">'+l1+'</div><div class="fa-kpi-foot" style="opacity:.7">'+dt+'</div></div>';
+  return '<section class="fa-kpis fa-bk-cards" style="margin-bottom:14px">'
+   +c('bk:neg','bad','Funcionários com banco negativo',faInt(P.neg.length),'<b style="color:#ff899a">'+faBRL0(P.negV)+'</b> · '+faH(P.negH)+' devidas à empresa · '+pc(P.neg.length)+' · média '+faH(P.neg.length?P.negH/P.neg.length:0)+'/pessoa')
+   +c('bk:pos','warn','Funcionários com banco positivo',faInt(P.pos.length),'<b style="color:#ffd184">'+faBRL0(P.posV)+'</b> · '+faH(P.posH)+' devidas pela empresa · '+pc(P.pos.length)+' · média '+faH(P.pos.length?P.posH/P.pos.length:0)+'/pessoa')
+   +c('bk:zer','','Funcionários com banco zerado',faInt(P.zer),pc(P.zer))
+   +c('bk:all','','Saldo líquido do banco',(P.posV-P.negV<0?'−':'')+faBRL0(Math.abs(P.posV-P.negV)),faH(Math.abs(P.posH-P.negH))+(P.posH>=P.negH?' a favor dos funcionários':' a favor da empresa')+' · '+faInt(P.n)+' colaboradores')
+   +'</section>'}
+function faBankRank(B){
+  const reg=faBankAgg(B,b=>b.regional),loj=faBankAgg(B,b=>b.store),mxR=Math.max(1,...reg.map(x=>Math.max(x.negV,x.posV)));
+  const bar=(v,mx,c)=>'<div class="fa-deix-bar'+(c?' '+c:'')+'"><i style="width:'+(v/mx*100).toFixed(1)+'%"></i><em>'+faBRL0(v)+'</em></div>';
+  const regH='<div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">Ranking por regional</div><div class="fa-panel-sub">Ordenado pelo saldo negativo · clique para ver as pessoas</div></div><div class="fa-legend"><span><i style="background:#ff6b7f"></i>Negativo (funcionário deve)</span><span><i style="background:#f3ad38"></i>Positivo (empresa deve)</span></div></div><div class="fa-deix-list">'
+   +reg.sort((a,b)=>b.negV-a.negV).map((x,i)=>'<div class="fa-deix-row" style="cursor:pointer;grid-template-columns:150px 1fr" onclick="faShow(\'bk:reg:'+encodeURIComponent(x.k)+'\')"><span>'+(i+1)+'º '+faEsc(x.k)+'<span class="fa-subline" style="font-weight:400">'+x.negN+' neg. · '+x.posN+' pos. · '+x.n+' no arquivo</span></span><div>'+bar(x.negV,mxR)+bar(x.posV,mxR,'amb')+'</div></div>').join('')+'</div></div>';
+  const lt=(t,l,f,c)=>{const mx=Math.max(1,...l.map(f));return '<div class="fa-panel"><div class="fa-panel-head"><div><div class="fa-panel-title">'+t+'</div><div class="fa-panel-sub">15 maiores · clique na loja para ver as pessoas</div></div></div><div class="fa-deix-list">'+l.map((x,i)=>'<div class="fa-deix-row" style="cursor:pointer;grid-template-columns:200px 1fr" onclick="faShow(\'bk:loja:'+encodeURIComponent(x.k)+'\')"><span>'+(i+1)+'º '+faEsc(x.k)+'<span class="fa-subline" style="font-weight:400">'+faEsc(x.regional)+' · '+(c?x.posN:x.negN)+' pessoas · '+faH(c?x.posH:x.negH)+'</span></span><div>'+bar(f(x),mx,c)+'</div></div>').join('')+'</div></div>'};
+  const neg=loj.filter(x=>x.negV>0.5).sort((a,b)=>b.negV-a.negV).slice(0,15),pos=loj.filter(x=>x.posV>0.5).sort((a,b)=>b.posV-a.posV).slice(0,15);
+  return regH+'<div class="fa-grid2" style="margin:14px 0">'+lt('Lojas com mais saldo negativo',neg,x=>x.negV,'')+lt('Lojas com mais saldo positivo',pos,x=>x.posV,'amb')+'</div>'}
+function faBankComp(k,m){const B=m.bank;if(!B)return null;const P=faBankPos(B);let l,title;
+  if(k==='bk:neg'){l=P.neg;title='Funcionários com banco negativo'}else if(k==='bk:pos'){l=P.pos;title='Funcionários com banco positivo'}else if(k==='bk:zer'){l=B.rows.filter(b=>Math.abs(b.saldoH)<=0.01);title='Funcionários com banco zerado'}else if(k==='bk:all'){l=B.rows.slice();title='Saldo líquido do banco'}
+  else if(k.startsWith('bk:reg:')){const r=decodeURIComponent(k.slice(7));l=B.rows.filter(b=>(b.regional||'—')===r);title='Banco de horas · regional '+r}
+  else if(k.startsWith('bk:loja:')){const r=decodeURIComponent(k.slice(8));l=B.rows.filter(b=>(b.store||'—')===r);title='Banco de horas · '+r}
+  l=l.filter(b=>Math.abs(b.saldoH)>0.01||k==='bk:zer').sort((a,b)=>(a.saldoV||0)-(b.saldoV||0));
+  const sg=v=>(v<0?'−':'+')+faBRL(Math.abs(v)),sH=v=>(v<0?'−':'+')+faH(Math.abs(v));
+  const totH=l.reduce((s,b)=>s+b.saldoH,0),totV=l.reduce((s,b)=>s+(b.saldoV||0),0),nN=l.filter(b=>b.saldoH<-0.01).length,nP=l.filter(b=>b.saldoH>0.01).length;
+  return {title,base:'Posição do banco de horas '+(P.dt?'de '+P.dt:'')+' ('+B.file+')',formula:l.length+' colaboradores · '+nN+' negativos · '+nP+' positivos · saldo '+sH(totH)+' = <b>'+sg(totV)+'</b> (negativo = funcionário deve à empresa)',
+   sections:[{title:'',cols:['Colaborador','Loja / cargo','Regional','Saldo banco','Valor-hora','Saldo R$','Situação na folha'],rows:l.map(b=>['<b>'+faEsc(b.name)+'</b><span class="fa-subline">Matr. '+faEsc(b.code)+'</span>',faEsc(b.store)+'<span class="fa-subline">'+faEsc(b.role)+'</span>',faEsc(b.regional||'—'),'<b style="color:'+(b.saldoH<0?'#f07c7c':'#e5b04a')+'">'+sH(b.saldoH)+'</b>',b.rate!=null?faBRL(b.rate):'—',sg(b.saldoV||0),faEsc(({sem_folha:'Sem folha no mês',nao_descontado:'Deixamos de descontar',parcial:'Desconto insuficiente',rescisao:'Desligado (conferir TRCT)',ok:'—'})[b.situacao]||'—')]),total:['Total','','',sH(totH),'',sg(totV),'']}],note:'Valor-hora pela folha da pessoa; sem folha, mediana do cargo (estimado).'}}
 function faBankRender(){
   const el=fa$('faBankBody');if(!el)return;const m=faModel,B=m&&m.bank;
   if(!B){el.innerHTML='<div class="fa-empty">Carregue a posição do banco de horas (Matrícula, Nome, Cargo, Saldo Atual) no quadro de arquivos no final da página.</div>';return}
@@ -600,7 +629,7 @@ function faBankRender(){
   const sf=B.rows.filter(b=>b.situacao==='sem_folha'||b.situacao==='rescisao').sort((a,b)=>a.saldoV-b.saldoV),nd=B.rows.filter(b=>b.situacao==='nao_descontado').sort((a,b)=>a.saldoV-b.saldoV),pa=B.rows.filter(b=>b.situacao==='parcial').sort((a,b)=>a.saldoV-b.saldoV),re=B.rows.filter(b=>b.situacao==='rescisao').sort((a,b)=>a.saldoV-b.saldoV);
   const lead='<div class="fa-nd"><div class="fa-nd-big"><span>Deixamos de descontar</span><b>'+faBRL0(T.ndV)+'</b><small>'+faH(T.ndH)+' · '+T.ndN+' colaboradores com banco negativo e <u>nenhum</u> desconto de falta/atraso/DSR na folha do mês</small></div><div class="fa-nd-side"><div><span>Desconto insuficiente</span><b>'+faBRL0(T.paV)+'</b><small>'+faH(T.paH)+' · '+T.paN+' descontaram algo, mas o banco segue negativo</small></div><div><span>Sem folha no mês (afastado/desligado)</span><b>'+faBRL0(T.sfV+T.reV)+'</b><small>'+faH(T.sfH+T.reH)+' · '+(T.sfN+T.reN)+' · cobrar no retorno ou TRCT</small></div><div><span>Total em risco</span><b>'+faBRL0(T.ndV+T.paV+T.reV+T.sfV)+'</b><small>'+faH(T.ndH+T.paH+T.reH+T.sfH)+' de horas pagas e não trabalhadas</small></div></div></div>';
   const regND='<div class="fa-table-wrap"><table><thead><tr><th>Regional</th><th>Não descontados</th><th>Horas</th><th>Valor</th></tr></thead><tbody>'+B.byRegional.filter(g=>g.ndN).sort((a,b)=>b.ndV-a.ndV).map(g=>'<tr><td class="fa-person">'+faEsc(g.regional)+'</td><td class="fa-num">'+g.ndN+'</td><td class="fa-num">'+faH(g.ndH)+'</td><td class="fa-num"><b style="color:#f07c7c">'+faBRL0(g.ndV)+'</b></td></tr>').join('')+'</tbody></table></div>';
-  el.innerHTML=lead+tab('Deixamos de descontar: banco negativo e nada descontado na folha',nd)+'<div class="fa-group-title">Não descontados por regional</div>'+regND+tab('Desconto insuficiente: folha descontou, mas o banco segue negativo',pa)+tab('Sem folha no mês: afastados, transferidos ou desligados com banco negativo',sf)+sum+rec+'<div class="fa-group-title">Banco por regional</div>'+regT+tab('Cruzamento ponto × banco: quem teve falta/atraso no período',cruz)+tab('Maiores devedores (funcionário deve horas)',deb.slice(0,40))+tab('Maiores credores (empresa deve horas)',cred.slice(0,25));
+  el.innerHTML=faBankCards(B)+faBankRank(B)+lead+tab('Deixamos de descontar: banco negativo e nada descontado na folha',nd)+'<div class="fa-group-title">Não descontados por regional</div>'+regND+tab('Desconto insuficiente: folha descontou, mas o banco segue negativo',pa)+tab('Sem folha no mês: afastados, transferidos ou desligados com banco negativo',sf)+sum+rec+'<div class="fa-group-title">Banco por regional</div>'+regT+tab('Cruzamento ponto × banco: quem teve falta/atraso no período',cruz)+tab('Maiores devedores (funcionário deve horas)',deb.slice(0,40))+tab('Maiores credores (empresa deve horas)',cred.slice(0,25));
 }
 
 /* ===== Espelho de ponto (PDF do AbsisRH): leitura dia a dia ===== */
@@ -1197,6 +1226,7 @@ window.addEventListener('resize',()=>{clearTimeout(window.faRz);window.faRz=setT
 
 /* ===== Composição dos cards: de onde vem cada número ===== */
 function faCompData(k,m){
+  if(String(k).startsWith('bk:'))return faBankComp(k,m);
   const T=m.totals,per='Ponto '+faPeriodLabel(m),pr=m.rows.filter(r=>r.events.length),hasF=m.sources.payrollAvailable;
   const ccBase=m.rows.filter(r=>r.acao&&(r.events.length||r.descH>FA_TOL_H||r.descV>0.01)),cc=faCCTotals(m.rows);
   const who=r=>'<b>'+faEsc(r.name)+'</b><span class="fa-subline">'+faEsc(r.code||'—')+' · '+faEsc(r.store)+'</span>';
