@@ -112,6 +112,7 @@ html,body{background:var(--fa-bg);color:var(--fa-text);font:13px/1.5 Inter,"Sego
 .fa-panel-sub{font-size:11.5px;color:var(--fa-muted);margin-top:2px}
 .fa-mt{margin-top:14px}
 .fa-deix-top{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px 4px}.fa-deix-k{border:1px solid #5a2531;background:rgba(255,82,107,.07);border-radius:8px;padding:10px 12px;cursor:pointer}.fa-deix-k.amb{border-color:#5d4517;background:rgba(243,173,56,.07)}.fa-deix-k span{display:block;font-size:10px;color:#a9bcd2}.fa-deix-k b{display:block;font-size:24px;color:#ff7d8f;margin:4px 0 2px;font-variant-numeric:tabular-nums}.fa-deix-k.amb b{color:#ffc35c}.fa-deix-k small{font-size:10px;color:#8ea4bd}.fa-deix-list{padding:6px 14px}.fa-deix-row{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid #15233a;font-size:11px}.fa-deix-row>span{color:#d3e0ef;font-weight:700}.fa-deix-bar{display:flex;align-items:center;gap:6px;height:12px;margin:2px 0}.fa-deix-bar i{display:block;height:9px;min-width:2px;border-radius:3px;background:#ff6b7f}.fa-deix-bar.amb i{background:#f3ad38}.fa-deix-bar em{font-style:normal;font-size:10px;color:#a9bcd2;white-space:nowrap;font-variant-numeric:tabular-nums}.fa-deix-note{font-size:10px;color:#7f94ad;padding:6px 14px 12px;line-height:1.5}
+.fa-sd{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;margin:0 0 12px;cursor:pointer}.fa-sd>div{border:1px solid #5a2531;background:rgba(255,82,107,.09);border-radius:10px;padding:12px 14px}.fa-sd>div:first-child{border-color:#ff526b;box-shadow:inset 4px 0 0 #ff526b}.fa-sd span{display:block;font-size:11px;color:#c9d8ea;font-weight:700}.fa-sd b{display:block;font-size:28px;color:#ff7d8f;margin:4px 0;font-variant-numeric:tabular-nums}.fa-sd>div:last-child b{color:#ffc35c}.fa-sd small{font-size:10.5px;color:#a3b5ca;line-height:1.45}
 .fa-grid-a{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px}
 .fa-grid-b{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-top:14px}
 .fa-legend{display:flex;gap:14px;font-size:11.5px;color:var(--fa-muted);white-space:nowrap}
@@ -301,7 +302,7 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
 <script>
 'use strict';
 /* ===== Configuração ===== */
-const FA_RULE='fa-v17-banco-diretoria';
+const FA_RULE='fa-v18-espelho-pessoa-ativos';
 const FA_DAY_MIN=440;              // jornada diária de referência: 7h20 (44h ÷ 6 dias)
 const FA_DSR_H=44/6;               // horas de um DSR na jornada de 44h semanais
 const FA_TOL_H=0.05;               // 3 minutos de tolerância na comparação de horas
@@ -459,7 +460,7 @@ async function faAddFiles(list){
       if(/\.pdf$/i.test(f.name)){
         const txt=await faPdfText(f,async(p,n)=>{fa$('faProgress').textContent='Lendo espelho de ponto: página '+p+' de '+n+'…';await faTick()});
         const emps=faMirrorParse(txt);if(!emps.length){rejects.push('<b>'+faEsc(f.name)+'</b>: o PDF não parece um Espelho de Ponto do AbsisRH (não encontrei "Funcionario.:").');continue}
-        faInputs.mirror=faMirrorSummarize(emps,f.name);faSlots.mirror={file:{name:f.name},meta:faInputs.mirror.meta,savedAt:null};continue;
+        faInputs.mirror=await faMirrorPack(faMirrorSummarize(emps,f.name));faSlots.mirror={file:{name:f.name},meta:faInputs.mirror.meta,savedAt:null};continue;
       }
       const r=await faReadFile(f);
       if(!r.kind){rejects.push(faRejectReason(r));continue}
@@ -612,7 +613,7 @@ function faBankComp(k,m){const B=m.bank;if(!B)return null;const P=faBankPos(B);l
   if(k==='bk:neg'){l=P.neg;title='Funcionários com banco negativo'}else if(k==='bk:pos'){l=P.pos;title='Funcionários com banco positivo'}else if(k==='bk:zer'){l=B.rows.filter(b=>Math.abs(b.saldoH)<=0.01);title='Funcionários com banco zerado'}else if(k==='bk:all'){l=B.rows.slice();title='Saldo líquido do banco'}
   else if(k.startsWith('bk:reg:')){const r=decodeURIComponent(k.slice(7));l=B.rows.filter(b=>(b.regional||'—')===r);title='Banco de horas · regional '+r}
   else if(k.startsWith('bk:loja:')){const r=decodeURIComponent(k.slice(8));l=B.rows.filter(b=>(b.store||'—')===r);title='Banco de horas · '+r}
-  l=l.filter(b=>Math.abs(b.saldoH)>0.01||k==='bk:zer').sort((a,b)=>(a.saldoV||0)-(b.saldoV||0));
+  l=l.filter(b=>Math.abs(b.saldoH)>0.01||k==='bk:zer').sort((a,b)=>{const x=a.saldoV||0,y=b.saldoV||0;if((x<0)!==(y<0))return x<0?-1:1;return x<0?x-y:y-x});
   const sg=v=>(v<0?'−':'+')+faBRL(Math.abs(v)),sH=v=>(v<0?'−':'+')+faH(Math.abs(v));
   const totH=l.reduce((s,b)=>s+b.saldoH,0),totV=l.reduce((s,b)=>s+(b.saldoV||0),0),nN=l.filter(b=>b.saldoH<-0.01).length,nP=l.filter(b=>b.saldoH>0.01).length;
   return {title,base:'Posição do banco de horas '+(P.dt?'de '+P.dt:'')+' ('+B.file+')',formula:l.length+' colaboradores · '+nN+' negativos · '+nP+' positivos · saldo '+sH(totH)+' = <b>'+sg(totV)+'</b> (negativo = funcionário deve à empresa)',
@@ -669,6 +670,12 @@ function faMirrorParse(txt){
   }
   return emps;
 }
+
+let faMirrorDays=null;
+async function faGz(str){const cs=new CompressionStream('gzip'),b=await new Response(new Blob([str]).stream().pipeThrough(cs)).arrayBuffer(),u=new Uint8Array(b);let bin='';for(let i=0;i<u.length;i+=32768)bin+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(bin)}
+async function faGunz(b64){const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text()}
+async function faMirrorPack(M){const o={};M.people.forEach(p=>{if(p.dd){o[p.code]=p.dd;delete p.dd}});faMirrorDays=new Map(Object.entries(o));try{M.ddz=await faGz(JSON.stringify(o))}catch(e){console.warn('[Faltas] compactar espelho:',e.message)}return M}
+async function faMirrorUnpack(M){if(!M||!M.ddz)return;try{faMirrorDays=new Map(Object.entries(JSON.parse(await faGunz(M.ddz))))}catch(e){console.warn('[Faltas] espelho dia a dia:',e.message)}}
 function faMirrorSummarize(emps,file){
   const TOL=FA_CLT_TOL_MIN;let start=null,end=null;
   const people=emps.map(e=>{
@@ -681,29 +688,37 @@ function faMirrorSummarize(emps,file){
       if(deb+falt>Math.max(s,0)+TOL){const ex=deb+falt-Math.max(s,0);exDeb+=ex;exDays.push({d:d.d+' '+d.wd,t:d.t.join(' '),prev,trab,deb:deb+falt,ex});return}
       if(s<=TOL)return;const nt=s-deb-falt;if(nt>TOL){untreated+=nt;ntDays.push({d:d.d+' '+d.wd,t:d.t.join(' '),prev,trab,nt})}});
     const debDia=e.days.reduce((s,d)=>s+(d.v.DEBT||0),0)/60,t=e.tot;
-    return {code:e.code,name:e.name,lot:e.lot,cargo:e.cargo,SANT:t.SANT??null,CRED:t.CRED||0,DEBT:t.DEBT||0,SDBH:t.SDBH??null,FALT:t.FALT||0,debDia,naoAplic:t.SDBH==null&&debDia>0?debDia:Math.max(0,debDia-(t.DEBT||0)),compBco:compBco/60,exDebH:exDeb/60,exDays,untreatedH:untreated/60,ntDays,dias:e.days.length};
+    return {code:e.code,name:e.name,lot:e.lot,cargo:e.cargo,SANT:t.SANT??null,CRED:t.CRED||0,DEBT:t.DEBT||0,SDBH:t.SDBH??null,FALT:t.FALT||0,debDia,naoAplic:t.SDBH==null&&debDia>0?debDia:Math.max(0,debDia-(t.DEBT||0)),compBco:compBco/60,exDebH:exDeb/60,exDays,untreatedH:untreated/60,ntDays,dias:e.days.length,dd:e.days.map(d=>[d.d+' '+d.wd,d.t.join(' '),d.obs,Object.entries(d.v).map(([k,x])=>k+'='+x).join(',')])};
   });
   const pm=(emps.length?(emps[0].days[0]||{}).d:null);
   return {file,meta:{people:people.length,withBank:people.filter(p=>p.SDBH!=null).length},people,savedAt:null};
 }
+
+function faMirrorSitu(code,ros,hasRos,pStart){const ro=ros.get(faCode(code)),dl=faDeslig&&faDeslig.byCode?faDeslig.byCode.get(faCode(code)):null,dOk=dl&&(!pStart||dl.saida>=pStart);
+  const situ=!hasRos?'':ro?String(ro.situ||''):'Não consta nos ATIVOS';const naoAtivo=!!(hasRos&&(!ro||!/^ativo$/i.test(situ.trim())))||!!dOk;
+  return {situ,naoAtivo,desligSaida:dOk?dl.saida:'',desligNat:dOk?(dl.natureza||''):''}}
+function faSituTxt(r){return r.desligSaida?'Desligado em '+faBR(r.desligSaida)+(r.desligNat?' · '+r.desligNat:''):r.situ}
 function faMirrorCompute(inp,ctx){
   const M=inp.mirror;if(!M)return null;const {pay}=ctx;
   /* folha de todos os estabelecimentos (o espelho traz todos) */
   const all=new Map();(inp.payroll?.persons||[]).forEach(x=>{if(pay.period&&x.period&&x.period!==pay.period)return;let o=all.get(x.key);if(!o){o={code:x.code,falta:{qty:0,value:0},atraso:{qty:0,value:0},dsr:{qty:0,value:0},sal:null};all.set(x.key,o)}
     if(x.sal){o.sal=o.sal||{qty:0,value:0};o.sal.qty+=x.sal.qty;o.sal.value+=x.sal.value}
     for(const [rub,[q,v]] of Object.entries(x.rubs||{})){const info=inp.payroll.rubInfo[rub];if(!info)continue;const g=faRubGroup(rub,info.title,'',FA_RUB_DEFAULT);if(g){o[g].qty+=q;o[g].value+=v}}});
+  const ros=new Map(((inp.roster&&inp.roster.people)||[]).map(x=>[faCode(x.code),x])),hasRos=ros.size>0,pStart=ctx.start||null;
   const rows=M.people.map(p=>{const pp=pay.byCode.get(p.code)||all.get(p.code);const [rate,src]=faRate(pp);const fa=pp?pp.falta.qty+pp.atraso.qty:0;
     const lotNum=(p.lot.match(/^\s*(\d{3})\b/)||[])[1];const store=lotNum?'Loja '+lotNum:p.lot;
-    return {...p,store,regional:lotNum?faRegionalOf('Loja '+lotNum):'CD / Escritório',rate,rateSrc:rate!=null?src:'',folhaFA:fa,naFolha:!!pp}});
+    return {...p,store,regional:lotNum?faRegionalOf('Loja '+lotNum):'CD / Escritório',rate,rateSrc:rate!=null?src:'',folhaFA:fa,naFolha:!!pp,folhaDescH:pp?pp.falta.qty+pp.atraso.qty+pp.dsr.qty:0,folhaDescV:pp?pp.falta.value+pp.atraso.value+pp.dsr.value:0,...faMirrorSitu(p.code,ros,hasRos,pStart)}});
   const byRole=new Map();rows.forEach(r=>{if(r.rate!=null){const k=faNorm(r.cargo);(byRole.get(k)||byRole.set(k,[]).get(k)).push(r.rate)}});
   const med=a=>{const s=a.slice().sort((x,y)=>x-y);return s.length?s[Math.floor(s.length/2)]:null},gm=med(rows.filter(r=>r.rate!=null).map(r=>r.rate));
-  const T={n:rows.length,deixN:0,deixH:0,deixV:0,negN:0,negH:0,negV:0,negPerH:0,negPerV:0,negAntH:0,negAntV:0,cred:0,deb:0,comp:0,falt:0,exN:0,exH:0,exV:0,exDias:0,naN:0,naH:0,naV:0,ntH:0,estim:0,fsfH:0,fsfV:0};
+  const T={n:rows.length,deixN:0,deixH:0,deixV:0,negN:0,negH:0,negV:0,negPerH:0,negPerV:0,negAntH:0,negAntV:0,cred:0,deb:0,comp:0,falt:0,exN:0,exH:0,exV:0,exDias:0,naN:0,naH:0,naV:0,ntH:0,estim:0,fsfH:0,fsfV:0,sdN:0,sdH:0,sdV:0,sdPerH:0,sdPerV:0,sfN:0,sfH:0,sfV:0,naN2:0,naH2:0,naV2:0,naSitu:{}};
   rows.forEach(r=>{if(r.rate==null){const m=med(byRole.get(faNorm(r.cargo))||[]);r.rate=m!=null?m:gm;r.rateSrc=m!=null?'mediana do cargo (estimado)':'mediana geral (estimado)';T.estim++}
     const neg=r.SDBH!=null&&r.SDBH<0?-r.SDBH:0,ger=Math.max(0,r.DEBT-r.CRED);r.negFinal=neg;r.negPer=Math.min(neg,ger);r.negAnt=neg-r.negPer;
     {const x=r.naFolha?Math.max(0,r.FALT-r.folhaFA):0;r.faltaSemFolha=x>FA_TOL_H?x:0}r.deixou=r.negPer+r.naoAplic+r.faltaSemFolha+r.untreatedH;r.deixouV=r.deixou*r.rate;r.negV=neg*r.rate;r.exV=r.exDebH*r.rate;
     T.cred+=r.CRED;T.deb+=r.DEBT;T.comp+=r.compBco;T.falt+=r.FALT;T.ntH+=r.untreatedH;
     if(r.deixou>0.01){T.deixN++;T.deixH+=r.deixou;T.deixV+=r.deixouV}
     if(neg>0.01){T.negN++;T.negH+=neg;T.negV+=r.negV;T.negPerH+=r.negPer;T.negPerV+=r.negPer*r.rate;T.negAntH+=r.negAnt;T.negAntV+=r.negAnt*r.rate}
+    r.semDesc=neg>0.01&&r.naFolha&&r.folhaDescH<=0.01&&r.folhaDescV<=0.01;r.semFolhaNeg=neg>0.01&&!r.naFolha;
+    if(r.semDesc){T.sdN++;T.sdH+=neg;T.sdV+=r.negV;T.sdPerH+=r.negPer;T.sdPerV+=r.negPer*r.rate}if(r.semFolhaNeg){T.sfN++;T.sfH+=neg;T.sfV+=r.negV}if(neg>0.01&&r.naoAtivo){T.naN2++;T.naH2+=neg;T.naV2+=r.negV;const k=r.desligSaida?'Desligado':r.situ||'—';T.naSitu[k]=(T.naSitu[k]||0)+1}
     if(r.exDebH>0.01){T.exN++;T.exH+=r.exDebH;T.exV+=r.exV;T.exDias+=r.exDays.length}
     if(r.naoAplic>0.01){T.naN++;T.naH+=r.naoAplic;T.naV+=r.naoAplic*r.rate}
     if(r.faltaSemFolha>0.01){T.fsfH+=r.faltaSemFolha;T.fsfV+=r.faltaSemFolha*r.rate}});
@@ -711,6 +726,23 @@ function faMirrorCompute(inp,ctx){
   const lot=new Map();rows.forEach(r=>{let x=lot.get(r.lot);if(!x){x={lot:r.lot,regional:r.regional,n:0,p:0,h:0,v:0,comp:0};lot.set(r.lot,x)}x.n++;if(r.deixou>0.01){x.p++;x.h+=r.deixou;x.v+=r.deixouV}x.comp+=r.compBco});
   return {file:M.file,savedAt:M.savedAt||null,rows,totals:T,byRegional:[...reg.values()].sort((a,b)=>b.v-a.v),byLot:[...lot.values()].sort((a,b)=>b.v-a.v)};
 }
+
+const faSgnC=v=>v<-0.005?'#ff6b7f':v>0.005?'#3fcf8e':'inherit';
+function faSgnH(v){return '<b style="color:'+faSgnC(v)+'">'+(v<-0.005?'−':v>0.005?'+':'')+faH(Math.abs(v||0))+'</b>'}
+function faMirrorPerson(code){const M=faModel&&faModel.mirror;if(!M)return;const r=M.rows.find(x=>x.code===code);if(!r)return;
+  const mm=v=>v==null?'':faClock(Math.abs(v)),pv=s=>{const o={};String(s||'').split(',').forEach(x=>{const [k,v]=x.split('=');if(k)o[k]=Number(v)});return o};
+  const dd=r.dd||(faMirrorDays&&faMirrorDays.get(r.code));let days='';if(!dd)days='<div class="fa-empty">Este espelho foi salvo antes da versão com o dia a dia. Carregue de novo o PDF do espelho no quadro de arquivos para ver as batidas de cada dia.</div>';
+  else{let tP=0,tT=0,tC=0,tD=0,tF=0;const body=dd.map(([d,t,obs,vs])=>{const v=pv(vs),prev=v.HRPV,trab=v.HRTR||0,dif=prev!=null?trab-prev:null,cr=v.CRED||0,db=v.DEBT||0,fl=v.FALT||0;tP+=prev||0;tT+=trab;tC+=cr;tD+=db;tF+=fl;
+     const outros=Object.entries(v).filter(([k])=>!['HRPV','HRTR','CRED','DEBT','FALT','SANT','SDBH'].includes(k)).map(([k,x])=>k+' '+faClock(Math.abs(x))).join(' · ');
+     const fim=/DOM/.test(d),hot=fl>0||db>0;
+     return '<tr'+(hot?' style="background:rgba(255,82,107,.06)"':fim?' style="opacity:.6"':'')+'><td class="fa-person">'+faEsc(d)+'</td><td style="font-variant-numeric:tabular-nums;white-space:nowrap">'+faEsc(t||'—')+'</td><td class="fa-num">'+mm(prev)+'</td><td class="fa-num">'+mm(trab)+'</td><td class="fa-num">'+(dif==null||Math.abs(dif)<1?'':'<b style="color:'+(FA_MJUST.test(obs)&&!db&&!fl?'#7f94ad':dif<0?'#ff6b7f':'#3fcf8e')+'">'+(dif<0?'−':'+')+faClock(Math.abs(dif))+'</b>')+'</td><td class="fa-num">'+(cr?'<b style="color:#3fcf8e">+'+faClock(cr)+'</b>':'')+'</td><td class="fa-num">'+(db?'<b style="color:#ff6b7f">−'+faClock(db)+'</b>':'')+'</td><td class="fa-num">'+(fl?'<b style="color:#ff6b7f">'+faClock(fl)+'</b>':'')+'</td><td style="font-size:11px;color:#a9bcd2">'+faEsc([obs,outros].filter(Boolean).join(' · '))+'</td></tr>'}).join('');
+    days='<div class="fa-table-wrap"><table><thead><tr><th>Dia</th><th>Batidas (entrada / saída)</th><th>Previsto</th><th>Trabalhado</th><th>Diferença</th><th>Crédito banco</th><th>Débito banco</th><th>Falta</th><th>Ocorrência / outras verbas</th></tr></thead><tbody>'+body+'<tr class="fa-total"><td>Total</td><td></td><td class="fa-num">'+faClock(tP)+'</td><td class="fa-num">'+faClock(tT)+'</td><td class="fa-num">'+'<b style="color:'+faSgnC(tT-tP)+'">'+(tT<tP?'−':'+')+faClock(Math.abs(tT-tP))+'</b>'+'</td><td class="fa-num"><b style="color:#3fcf8e">+'+faClock(tC)+'</b></td><td class="fa-num"><b style="color:#ff6b7f">−'+faClock(tD)+'</b></td><td class="fa-num">'+faClock(tF)+'</td><td></td></tr></tbody></table></div>'}
+  const k=(l,v,s)=>'<div class="fa-mini"><span>'+l+'</span><b>'+v+'</b><small style="display:block;color:var(--fa-muted);font-size:11px;margin-top:2px">'+(s||'')+'</small></div>';
+  const st=(r.naoAtivo?'<div class="fa-flag warn" style="margin:8px 0;font-size:12px">Não consta mais como ativo: <b>'+faEsc(faSituTxt(r))+'</b> (base ATIVOS'+(faModel.sources.rosterDate?' de '+faBR(faModel.sources.rosterDate):'')+').</div>':'')+(r.semDesc?'<div class="fa-flag bad" style="margin:8px 0;font-size:12px">Saldo negativo e <b>nenhum desconto</b> de falta, atraso ou DSR na folha do mês.</div>':r.semFolhaNeg?'<div class="fa-flag warn" style="margin:8px 0;font-size:12px">Saldo negativo e não está na folha do mês (afastado, transferido ou desligado).</div>':'');
+  fa$('faComp').innerHTML='<div class="fa-comp-box" role="dialog" aria-modal="true" style="max-width:1200px"><div class="fa-comp-head"><div><div class="fa-kicker">Espelho do ponto · '+faEsc(M.file)+'</div><div class="fa-comp-title">'+faEsc(r.name)+'</div><div class="fa-panel-sub">Matr. '+faEsc(r.code)+' · '+faEsc(r.cargo)+' · '+faEsc(r.lot)+' · '+faEsc(r.regional)+'</div></div><div><button class="fa-btn" onclick="faCompClose()">✕ Fechar</button></div></div>'+st
+   +'<div class="fa-summary-row fa-cc-sum">'+k('Saldo anterior',faSgnH(r.SANT||0),'banco antes de 21/09')+k('Crédito no período',faSgnH(r.CRED),'horas a mais')+k('Débito no período',faSgnH(-r.DEBT),'folga COMP BCO '+faH(r.compBco))+k('Saldo final',faSgnH(r.SDBH||0),(r.SDBH||0)<0?'≈ '+faBRL(-(r.SDBH)*r.rate)+' devidos':'')+k('Descontado na folha',r.naFolha?faBRL(r.folhaDescV):'—',r.naFolha?faH(r.folhaDescH)+' de falta/atraso/DSR':'não está na folha do mês')+k('Deixou de descontar no período','<b style="color:'+(r.deixou>0.01?'#ff6b7f':'inherit')+'">'+faBRL(r.deixouV)+'</b>',faH(r.deixou)+' · valor-hora '+faBRL(r.rate))+'</div>'
+   +days+'<div class="fa-disclaimer">Diferença = trabalhado − previsto (vermelho = trabalhou menos). Crédito em verde, débito em vermelho. Tolerância de '+FA_CLT_TOL_MIN+' min/dia. Saldo anterior + crédito − débito = saldo final.</div></div>';
+  fa$('faComp').classList.add('show');document.body.style.overflow='hidden'}
 function faMirrorRender(){
   const el=fa$('faMirrorBody');if(!el)return;const M=faModel&&faModel.mirror;
   if(!M){el.innerHTML='<div class="fa-empty">Carregue o PDF do Espelho de Ponto do AbsisRH (todos os colaboradores do período) no quadro de arquivos no final da página.</div>';return}
@@ -719,10 +751,12 @@ function faMirrorRender(){
   const rec='<div class="fa-recon">'+faEsc(M.file)+' · '+T.n+' colaboradores lidos dia a dia · horas previstas × trabalhadas (batidas reais) · tolerância '+FA_CLT_TOL_MIN+' min/dia · banco: saldo anterior + crédito − débito = saldo final · '+(T.ntH>0.01?faH(T.ntH)+' de horas a menos sem lançamento':'nenhum dia com horas a menos ficou sem lançamento')+' · valor-hora pela folha ('+T.estim+' estimados pelo cargo)</div>';
   const regT='<div class="fa-table-wrap"><table><thead><tr><th>Regional</th><th>Colaboradores</th><th>Deixou de descontar</th><th>Valor</th><th>Banco negativo no fim</th><th>Folgas COMP BCO</th></tr></thead><tbody>'+M.byRegional.map(g=>'<tr><td class="fa-person">'+faEsc(g.regional)+'</td><td class="fa-num">'+g.n+'</td><td class="fa-num">'+g.p+' · '+faH(g.h)+'</td><td class="fa-num"><b style="color:#f07c7c">'+faBRL0(g.v)+'</b></td><td class="fa-num">'+faH(g.negH)+'<span class="fa-subline">'+faBRL0(g.negV)+'</span></td><td class="fa-num">'+faH(g.comp)+'</td></tr>').join('')+'</tbody></table></div>';
   const lt=M.byLot.filter(x=>x.v>0.5).slice(0,15),lotT='<div class="fa-table-wrap"><table><thead><tr><th>Loja / lotação</th><th>Regional</th><th>Deixou de descontar</th><th>Valor</th><th>Folgas COMP BCO</th></tr></thead><tbody>'+lt.map(g=>'<tr><td class="fa-person">'+faEsc(g.lot)+'</td><td>'+faEsc(g.regional)+'</td><td class="fa-num">'+g.p+' · '+faH(g.h)+'</td><td class="fa-num"><b style="color:#f07c7c">'+faBRL0(g.v)+'</b></td><td class="fa-num">'+faH(g.comp)+'</td></tr>').join('')+'</tbody></table></div>';
-  const tab=list=>'<div class="fa-table-wrap"><table><thead><tr><th>Colaborador</th><th>Lotação / regional</th><th>Saldo anterior</th><th>Crédito</th><th>Débito<br>folga COMP</th><th>Saldo final</th><th>Deixou de descontar</th><th>Valor-hora</th><th>Valor</th></tr></thead><tbody>'+list.map(r=>'<tr><td class="fa-person">'+faEsc(r.name)+'<span class="fa-subline">Matr. '+faEsc(r.code)+' · '+faEsc(r.cargo)+'</span></td><td>'+faEsc(r.lot)+'<span class="fa-subline">'+faEsc(r.regional)+'</span></td><td class="fa-num">'+faH(r.SANT||0)+'</td><td class="fa-num">'+faH(r.CRED)+'</td><td class="fa-num">'+faH(r.DEBT)+'<span class="fa-subline">'+faH(r.compBco)+'</span></td><td class="fa-num"><b style="color:'+((r.SDBH||0)<0?'#f07c7c':'inherit')+'">'+faH(r.SDBH||0)+'</b></td><td class="fa-num"><b style="color:#f07c7c">'+faH(r.deixou)+'</b>'+(r.naoAplic>0.01?'<span class="fa-subline">fora do saldo '+faH(r.naoAplic)+'</span>':'')+(r.faltaSemFolha>0.01?'<span class="fa-subline">FALT sem folha '+faH(r.faltaSemFolha)+'</span>':'')+'</td><td class="fa-num">'+faBRL(r.rate)+'<span class="fa-subline">'+(/estimado/.test(r.rateSrc)?'estimado':'folha')+'</span></td><td class="fa-num"><b style="color:#f07c7c">'+faBRL(r.deixouV)+'</b></td></tr>').join('')+'</tbody></table></div>';
-  const exT='<div class="fa-table-wrap"><table><thead><tr><th>Colaborador</th><th>Lotação</th><th>Dias (trabalhou × debitado)</th><th>Excesso</th></tr></thead><tbody>'+ex.map(r=>'<tr><td class="fa-person">'+faEsc(r.name)+'</td><td>'+faEsc(r.lot)+'</td><td>'+r.exDays.map(d=>faEsc(d.d)+' '+faClock(d.trab)+' × '+faClock(d.deb)).join('; ')+'</td><td class="fa-num"><b>'+faH(r.exDebH)+'</b></td></tr>').join('')+'</tbody></table></div>';
+  const tab=(list,extra)=>'<div class="fa-table-wrap"><table><thead><tr><th>Colaborador</th><th>Lotação / regional</th><th>Saldo anterior</th><th>Crédito</th><th>Débito<br>folga COMP</th><th>Saldo final</th><th>Deixou de descontar</th><th>Valor-hora</th><th>'+(extra?'Saldo negativo R$':'Valor')+'</th>'+(extra?'<th>Descontado na folha</th>':'')+'</tr></thead><tbody>'+list.map(r=>'<tr style="cursor:pointer'+(r.semDesc?';box-shadow:inset 3px 0 0 #ff526b':'')+'" title="Ver espelho do ponto" onclick="faMirrorPerson(\''+r.code+'\')"><td class="fa-person">'+faEsc(r.name)+(r.semDesc?' <span class="fa-pill falta">sem desconto</span>':'')+(r.naoAtivo?' <span class="fa-pill atraso">'+faEsc(faSituTxt(r))+'</span>':'')+'<span class="fa-subline">Matr. '+faEsc(r.code)+' · '+faEsc(r.cargo)+' · ver espelho ›</span></td><td>'+faEsc(r.lot)+'<span class="fa-subline">'+faEsc(r.regional)+'</span></td><td class="fa-num">'+faSgnH(r.SANT||0)+'</td><td class="fa-num">'+faSgnH(r.CRED)+'</td><td class="fa-num">'+faSgnH(-r.DEBT)+'<span class="fa-subline">folga '+faH(r.compBco)+'</span></td><td class="fa-num">'+faSgnH(r.SDBH||0)+'</td><td class="fa-num"><b style="color:#f07c7c">'+faH(r.deixou)+'</b>'+(r.naoAplic>0.01?'<span class="fa-subline">fora do saldo '+faH(r.naoAplic)+'</span>':'')+(r.faltaSemFolha>0.01?'<span class="fa-subline">FALT sem folha '+faH(r.faltaSemFolha)+'</span>':'')+'</td><td class="fa-num">'+faBRL(r.rate)+'<span class="fa-subline">'+(/estimado/.test(r.rateSrc)?'estimado':'folha')+'</span></td>'+(extra?'<td class="fa-num"><b style="color:#f07c7c">'+faBRL(r.negV)+'</b><span class="fa-subline">saldo negativo em R$</span></td>':'<td class="fa-num"><b style="color:#f07c7c">'+faBRL(r.deixouV)+'</b></td>')+(extra?'<td class="fa-num">'+(r.folhaDescV>0.01||r.folhaDescH>0.01?'<b>'+faBRL(r.folhaDescV)+'</b><span class="fa-subline">'+faH(r.folhaDescH)+' de falta/atraso/DSR</span>':r.naFolha?'<b style="color:#ff6b7f">R$ 0</b><span class="fa-subline">nada de falta/atraso/DSR</span>':'—<span class="fa-subline">não está na folha</span>')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>';
+  const exT='<div class="fa-table-wrap"><table><thead><tr><th>Colaborador</th><th>Lotação</th><th>Dias (trabalhou × debitado)</th><th>Excesso</th></tr></thead><tbody>'+ex.map(r=>'<tr style="cursor:pointer" onclick="faMirrorPerson(\''+r.code+'\')"><td class="fa-person">'+faEsc(r.name)+'</td><td>'+faEsc(r.lot)+'</td><td>'+r.exDays.map(d=>faEsc(d.d)+' '+faClock(d.trab)+' × '+faClock(d.deb)).join('; ')+'</td><td class="fa-num"><b>'+faH(r.exDebH)+'</b></td></tr>').join('')+'</tbody></table></div>';
   const naT='<div class="fa-table-wrap"><table><thead><tr><th>Colaborador</th><th>Lotação</th><th>Débitos diários</th><th>Débito no total</th><th>Fora do saldo</th></tr></thead><tbody>'+na.map(r=>'<tr><td class="fa-person">'+faEsc(r.name)+'</td><td>'+faEsc(r.lot)+'</td><td class="fa-num">'+faH(r.debDia)+'</td><td class="fa-num">'+faH(r.DEBT)+'</td><td class="fa-num"><b style="color:#f07c7c">'+faH(r.naoAplic)+'</b></td></tr>').join('')+'</tbody></table></div>';
-  el.innerHTML=lead+rec+'<div class="fa-group-title">Por regional</div>'+regT+'<div class="fa-group-title">Lojas com maior valor não descontado</div>'+lotT+'<div class="fa-group-title">Deixou de descontar no período · '+dx.length+' · '+faBRL(T.deixV)+'</div>'+tab(dx)+'<div class="fa-group-title">Débito maior que as horas faltantes (contra o funcionário) · '+T.exDias+' dias</div>'+exT+(na.length?'<div class="fa-group-title">Débitos diários que não entraram no saldo do banco (AbsisRH) · '+na.length+'</div>'+naT:'');
+  const sd=M.rows.filter(r=>r.semDesc).sort((a,b)=>b.negV-a.negV),na2=M.rows.filter(r=>r.naoAtivo&&r.negFinal>0.01).sort((a,b)=>b.negV-a.negV);
+  const sdCard='<div class="fa-sd" onclick="document.getElementById(\'faSdList\').scrollIntoView({behavior:\'smooth\'})"><div><span>Funcionários com saldo negativo e sem desconto na folha</span><b>'+faInt(T.sdN)+'</b><small>banco negativo em '+(faModel.period.end?faBR(faModel.period.end):'20/10')+' e <u>nenhum</u> desconto de falta, atraso ou DSR na folha '+faEsc(faModel.payrollPeriod||'')+' · '+faPct(T.sdN,T.n,1)+' dos '+faInt(T.n)+' do espelho</small></div><div><span>Saldo negativo dessas pessoas</span><b class="r">'+faBRL0(T.sdV)+'</b><small>'+faH(T.sdH)+' · dos quais '+faBRL0(T.sdPerV)+' ('+faH(T.sdPerH)+') gerados no período</small></div><div onclick="event.stopPropagation();document.getElementById(\'faNaList\').scrollIntoView({behavior:\'smooth\'})"><span>Saldo negativo e não constam mais como ativos</span><b>'+faInt(T.naN2)+'</b><small>'+faBRL0(T.naV2)+' · '+faH(T.naH2)+' · '+(Object.entries(T.naSitu).sort((a,b)=>b[1]-a[1]).map(([k,v])=>faEsc(k)+' '+v).join(' · ')||'base ATIVOS não carregada')+' · situação na base ATIVOS '+(faModel.sources.rosterDate?'de '+faBR(faModel.sources.rosterDate):'')+(T.sfN?' · '+T.sfN+' fora da folha do mês':'')+'</small></div></div>';
+  el.innerHTML=sdCard+lead+rec+'<div class="fa-group-title" id="faSdList" style="color:#ff9aa8">Saldo negativo e sem desconto na folha · '+sd.length+' · '+faBRL(T.sdV)+' · clique no nome para ver o espelho</div>'+tab(sd,true)+(na2.length?'<div class="fa-group-title" id="faNaList" style="color:#ffd184">Saldo negativo e não constam mais como ativos · '+na2.length+' · '+faBRL(T.naV2)+' · afastados não descontam enquanto afastados; desligados: cobrar na rescisão</div>'+tab(na2,true):'<div id="faNaList"></div>')+'<div class="fa-group-title">Por regional</div>'+regT+'<div class="fa-group-title">Lojas com maior valor não descontado</div>'+lotT+'<div class="fa-group-title">Deixou de descontar no período · '+dx.length+' · '+faBRL(T.deixV)+'</div>'+tab(dx)+'<div class="fa-group-title">Débito maior que as horas faltantes (contra o funcionário) · '+T.exDias+' dias</div>'+exT+(na.length?'<div class="fa-group-title">Débitos diários que não entraram no saldo do banco (AbsisRH) · '+na.length+'</div>'+naT:'');
 }
 function faPrintMirror(){
   const m=faModel;if(!m||!m.mirror){faToast('Carregue o PDF do espelho de ponto no quadro de arquivos.');return}
@@ -837,7 +871,7 @@ function faCompute(inp){
   const ativos=R?roster.scoped.filter(isActive).length:quadro;
   const situAll={};if(R)roster.scoped.forEach(p=>{const k=isActive(p)?'Ativo':(p.situ||'Sem situação');situAll[k]=(situAll[k]||0)+1});const situCount={};if(R)roster.scoped.forEach(p=>{if(!isActive(p)){const k=p.situ||'Sem situação';situCount[k]=(situCount[k]||0)+1}});
   const bank=faBankCompute(inp,{pay,roster,R,rows});
-  const mirror=faMirrorCompute(inp,{pay});
+  const mirror=faMirrorCompute(inp,{pay,start:meta.start});
   const pr=rows.filter(r=>r.events.length);
   const T={events:events.length,people:pr.length,faltaEvents:events.filter(e=>e.kind==='falta').length,faltaPeople:pr.filter(r=>r.faltaDays).length,atrasoEvents:events.filter(e=>e.kind==='atraso').length,atrasoPeople:pr.filter(r=>r.atrasoCount).length,minutes:events.reduce((s,e)=>s+e.minutes,0),faltaMin:events.filter(e=>e.kind==='falta').reduce((s,e)=>s+e.minutes,0)};
   T.expectedMin=ativos*workdays*FA_DAY_MIN;T.rate=T.expectedMin?T.minutes/T.expectedMin*100:null;
@@ -1452,6 +1486,7 @@ async function faSha256(bytes){const digest=await crypto.subtle.digest('SHA-256'
 async function faHashFiles(){const x=JSON.stringify(['point','payroll','roster','bank','mirror'].map(k=>faInputs[k]?[faInputs[k].file,faInputs[k].meta]:null));return faSha256(new TextEncoder().encode(x+'|'+JSON.stringify(faInputs.point?.events||[]).length+'|'+(faInputs.payroll?.persons?.length||0)+'|'+(faInputs.roster?.people?.length||0)))}
 function faSafeRows(){return faModel.rows.map(r=>({...r,cpf:faMaskCpf(r.cpf)}))}
 function faUseInputs(inp,origin){
+  if(!(inp.mirror&&faInputs.mirror===inp.mirror&&faMirrorDays)){faMirrorDays=null;if(inp.mirror&&inp.mirror.ddz)faMirrorUnpack(inp.mirror)}
   ['point','payroll','roster','bank','mirror'].forEach(k=>{faInputs[k]=inp[k]||null;faSlots[k]=inp[k]?{file:{name:inp[k].file},sheet:inp[k].sheet,meta:inp[k].meta,savedAt:inp[k].savedAt}:null});
   faRenderSlots();
   faModel=faCompute(faInputs);faRenderAll();
