@@ -288,7 +288,7 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
   </section>
   <section class="fa-load" id="faLoad"><div class="fa-load-info" id="faBaseInfo"></div>
     <div class="fa-load-head"><div><div class="fa-load-title">Arquivos do período</div><div class="fa-load-copy">Selecione ou arraste os arquivos juntos, com qualquer nome. O módulo reconhece cada um pelas colunas. Só o cartão de ponto é obrigatório; a folha libera a conferência do desconto, e a base ATIVOS libera quadro, afastados e absenteísmo por loja.</div></div>
-      <div class="fa-load-actions"><label class="fa-btn primary" style="display:inline-block">＋ Selecionar arquivos<input type="file" id="faFileInput" accept=".xlsx,.xls,.xlsm,.csv,.pdf" multiple style="display:none"></label><button class="fa-btn" type="button" onclick="faReloadBase()">↻ Buscar última atualização</button><button class="fa-btn" type="button" onclick="faClearFiles()">Limpar</button></div></div>
+      <div class="fa-load-actions"><label class="fa-btn primary" style="display:inline-block">＋ Selecionar arquivos<input type="file" id="faFileInput" accept=".xlsx,.xls,.xlsm,.csv,.pdf,.rar,.zip" multiple style="display:none"></label><button class="fa-btn" type="button" onclick="faReloadBase()">↻ Buscar última atualização</button><button class="fa-btn" type="button" onclick="faClearFiles()">Limpar</button></div></div>
     <div class="fa-slots">
       <div class="fa-slot" id="faSlotPoint"><div class="fa-slot-top">1 · Cartão de ponto <span class="fa-slot-tag">obrigatório</span></div><div class="fa-slot-file">Nenhum arquivo</div><div class="fa-slot-info">Código, Nome, Data e Falta/atraso</div></div>
       <div class="fa-slot" id="faSlotPayroll"><div class="fa-slot-top">2 · Folha detalhada <span class="fa-slot-tag">confere desconto</span></div><div class="fa-slot-file">Nenhum arquivo</div><div class="fa-slot-info">Matrícula, Verba_Código, Verba_Quant e Verba_Valor</div></div>
@@ -304,7 +304,7 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
 <script>
 'use strict';
 /* ===== Configuração ===== */
-const FA_RULE='fa-v21-banco-anexo';
+const FA_RULE='fa-v22-cc-anexo-rar';
 const FA_DAY_MIN=440;              // jornada diária de referência: 7h20 (44h ÷ 6 dias)
 const FA_DSR_H=44/6;               // horas de um DSR na jornada de 44h semanais
 const FA_TOL_H=0.05;               // 3 minutos de tolerância na comparação de horas
@@ -446,16 +446,29 @@ function faSlotHTML(kind){
   let info='';
   if(kind==='point'){const m=s.meta;info=faInt(m.events)+' ocorrências · '+faInt(m.people)+' colaboradores'+(m.start?' · '+faBR(m.start)+' a '+faBR(m.end):'')}
   if(kind==='payroll'){const m=s.meta;info=faInt(m.people)+' colaboradores · '+faInt(m.lines)+' linhas de verba'+(m.periods.length?' · competência '+faEsc(m.periods.join(', ')):'')}
-  if(kind==='mirror'){const m=s.meta;info=faInt(m.people)+' colaboradores lidos dia a dia · '+faInt(m.withBank)+' com banco de horas'}
+  if(kind==='mirror'){const m=s.meta,M=faInputs.mirror||{},hasDd=!!(M.ddz||(M.people&&M.people[0]&&M.people[0].dd)),hasPg=!!(M.people&&M.people[0]&&M.people[0].pg);info=faInt(m.people)+' colaboradores lidos dia a dia · '+faInt(m.withBank)+' com banco de horas<br>'+(hasDd&&hasPg?'✓ dia a dia e página de cada colaborador':'<b style="color:#ffb3bf">⚠ versão antiga: carregue o PDF (ou o .rar) de novo</b>')+' · '+(M.pdfPath?'✓ PDF original guardado na base':faMirrorFile?'PDF original só neste navegador (entre logado para guardar na base)':'<b style="color:#ffb3bf">⚠ PDF original não guardado</b>')}
   if(kind==='bank'){const m=s.meta;info=faInt(m.people)+' saldos'+(m.date?' · posição de '+faBR(m.date):'')}
   if(kind==='roster'){const m=s.meta;info=faInt(m.people)+' cadastros'+(m.date?' · base de '+faBR(m.date):'')}
   el.className='fa-slot ok';el.innerHTML='<div class="fa-slot-top">'+base[0]+' <span class="fa-slot-tag">'+(s.savedAt?(faPrivateUser?'✓ salvo na base':'✓ salvo neste navegador'):'✓ novo · será salvo')+'</span></div><div class="fa-slot-file">'+faEsc(s.file.name)+(s.sheet?' · aba '+faEsc(s.sheet):'')+'</div><div class="fa-slot-info">'+info+(s.savedAt?'<br>Salvo em '+new Date(s.savedAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+' · selecione outro arquivo para trocar':'')+'</div>';
 }
 function faRenderSlots(){['point','payroll','roster','bank','mirror'].forEach(faSlotHTML);const ready=!!faInputs.point;['faProcessTop'].forEach(id=>{const b=fa$(id);b.disabled=faBusy||!ready;b.textContent=faBusy?'Processando…':'Atualizar análise'})}
+
+async function faUnpackArchive(f){const buf=await f.arrayBuffer(),ok=n=>/\.(xlsx|xls|xlsm|csv|pdf)$/i.test(n)&&!/(^|\/)(__MACOSX|\.)/.test(n),out=[];
+  const mime=n=>/\.pdf$/i.test(n)?'application/pdf':'application/octet-stream',base=n=>n.split(/[\\/]/).pop();
+  if(/\.rar$/i.test(f.name)){const mod=await import('https://cdn.jsdelivr.net/npm/node-unrar-js@2.0.2/esm/index.esm.js/+esm');const wasm=await (await fetch('https://cdn.jsdelivr.net/npm/node-unrar-js@2.0.2/esm/js/unrar.wasm')).arrayBuffer();
+    const ex=await mod.createExtractorFromData({wasmBinary:wasm,data:buf});const r=ex.extract({files:h=>!h.flags.directory&&ok(h.name)});
+    for(const x of r.files)if(x.extraction)out.push(new File([x.extraction],base(x.fileHeader.name),{type:mime(x.fileHeader.name)}))}
+  else{if(!window.JSZip)await faLoadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');const z=await JSZip.loadAsync(buf);
+    for(const e of Object.values(z.files))if(!e.dir&&ok(e.name))out.push(new File([await e.async('uint8array')],base(e.name),{type:mime(e.name)}))}
+  return out}
 async function faAddFiles(list){
-  list=[...(list||[])].filter(f=>/\.(xlsx|xls|xlsm|csv|pdf)$/i.test(f.name));
-  if(!list.length){faToast('Selecione planilhas .xlsx, .xls, .csv ou o PDF do espelho de ponto.');return}
-  const rejects=[];
+  const rejects=[],raw=[...(list||[])];list=[];
+  for(const f of raw){
+    if(/\.(rar|zip)$/i.test(f.name)){fa$('faProgress').textContent='Descompactando '+f.name+'…';await faTick();
+      try{const got=await faUnpackArchive(f);if(!got.length)rejects.push('<b>'+faEsc(f.name)+'</b>: o arquivo compactado não tem PDF nem planilha.');list.push(...got)}catch(e){console.error('[Faltas] descompactar',e);rejects.push('<b>'+faEsc(f.name)+'</b>: não consegui descompactar ('+faEsc(e.message||e)+'). Extraia o PDF e carregue o .pdf.')}}
+    else if(/\.(xlsx|xls|xlsm|csv|pdf)$/i.test(f.name))list.push(f);
+    else rejects.push('<b>'+faEsc(f.name)+'</b>: tipo de arquivo não lido (use .xlsx, .xls, .csv, .pdf, .rar ou .zip).')}
+  if(!list.length){fa$('faRejects').innerHTML=rejects.join('<br>');fa$('faProgress').textContent='';faToast('Selecione planilhas .xlsx, .xls, .csv, o PDF do espelho de ponto ou o .rar/.zip com eles.');return}
   for(const f of list){
     fa$('faProgress').textContent='Lendo '+f.name+'…';await faTick();
     try{
@@ -1510,7 +1523,7 @@ async function faBoard(){
   const top=m.mirror?m.mirror.rows.filter(r=>r.deixou>0.01).sort((a,b)=>b.deixouV-a.deixouV).slice(0,15):[];
   faDoPrint(html.replace('@@ANNEX@@',top.length?await faMirrorAnnex(top,'Anexo · espelho original dos 15 maiores casos'):''),'Relatorio_Diretoria_Faltas_Atrasos');
 }
-function faPrint(){
+async function faPrint(){
   const m=faModel;if(!m)return;const all=fa$('faPrintScope').value==='all',cc=faCCTotals(m.rows);
   const base=m.rows.filter(r=>r.acao&&r.acao!=='semfolha'&&(r.events.length||r.descH>FA_TOL_H||r.descV>0.01));
   const list=(all?base:base.filter(r=>!['ok','demitido'].includes(r.acao))).sort((a,b)=>Math.abs(b.saldoV||0)-Math.abs(a.saldoV||0));
@@ -1520,7 +1533,11 @@ function faPrint(){
    +'<h2 class="fa-r-h">'+(all?'Conta corrente completa':'Divergências de desconto')+' · '+list.length+'</h2>'+faRCase(list,true)
    +'<h2 class="fa-r-h">Gestão de ponto · alertas</h2>'+faRGest(m)
    +faRFoot()+'</div>';
-  faDoPrint(html,'Conta_Corrente_Faltas_Atrasos');
+  const mm=m.mirror?new Map(m.mirror.rows.map(r=>[r.code,r])):new Map(),lst=list.map(r=>mm.get(faCode(r.code))).filter(Boolean),falta=list.length-lst.length;
+  let annex=m.mirror?await faMirrorAnnex(lst,'Anexo · espelho original dos colaboradores da conta corrente'):'<section class="fa-r-annex"><p class="fa-r-empty">Carregue o PDF do espelho de ponto para anexar as páginas originais.</p></section>';
+  if(m.mirror&&falta)annex+='<p class="fa-r-fine">'+falta+' colaborador(es) da lista não estão no espelho do período (sem página para anexar).</p>';
+  const cut=html.lastIndexOf('<footer class="fa-r-foot"');
+  faDoPrint(cut>0?html.slice(0,cut)+annex+html.slice(cut):html+annex,'Conta_Corrente_Faltas_Atrasos');
 }
 
 /* ===== Base privada (Supabase) ===== */
