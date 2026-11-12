@@ -118,6 +118,6 @@
       d.body.appendChild(s);
     }catch(e){}
   }
-  function varrer(){document.querySelectorAll('iframe[id^="ifr-"]').forEach(aplicarNoIframe);}
+  function varrer(){if(document.hidden)return;document.querySelectorAll('iframe[id^="ifr-"]').forEach(aplicarNoIframe);}
   setInterval(varrer,5000);
 })();

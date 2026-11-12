@@ -48,6 +48,7 @@
     window.__COMPRAS_DIRETORIA_INJETADO=(window.__COMPRAS_DIRETORIA_INJETADO||0)+1;
   }
   function varrer(){
+    if(document.hidden)return;
     var fs=document.querySelectorAll('iframe');
     for(var i=0;i<fs.length;i++){
       var d=null; try{ d=fs[i].contentDocument; }catch(e){}

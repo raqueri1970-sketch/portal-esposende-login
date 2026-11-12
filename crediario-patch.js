@@ -126,6 +126,9 @@
     original.parentNode.insertBefore(card,original.nextSibling);
   }
 
-  function varrer(){docs(window,[],0).forEach(function(d){try{menu(d);cardPrincipal(d);resumo(d)}catch(e){console.warn('[Portal] Crediário:',e)}})}
+  // Desempenho (12/11/2026): o card fica na Visão Geral do Portal (este documento). Antes era procurado
+  // também dentro de cada módulo aberto, onde nunca existe — varria o texto de todos os elementos de
+  // todos os módulos a cada 1,2 s. Os menus continuam em todos os documentos que tiverem a barra lateral.
+  function varrer(){if(document.hidden)return;docs(window,[],0).forEach(function(d){try{menu(d);if(d===document){cardPrincipal(d);resumo(d)}}catch(e){console.warn('[Portal] Crediário:',e)}})}
   varrer();setInterval(varrer,1200);
 })();

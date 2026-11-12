@@ -1,5 +1,5 @@
 // Almoxarifado · Consumo Loja (auditoria de consumo, previsão e sugestão de compra)
-// Menu próprio no Portal ("Almoxarifado → Consumo Loja") e botão dentro do módulo Almoxarifado.
+// Botão dentro do módulo Almoxarifado (sem item próprio no menu lateral desde 12/11/2026).
 // Cruza o consumo dos itens controlados com o que gera esse consumo:
 //   Sacolas e embalagens de presente ........ pares vendidos (PA)   · regra: 1 sacola a cada 1,5 PA
 //   Agrado (café, pirulito, balão) ............ vendas (NFS)         · padrão = mediana das lojas
@@ -590,7 +590,7 @@
         var b=e.target.closest('[data-a],[data-t]');if(!b||!ov.contains(b)||b.tagName==='LABEL')return;
         if(b.dataset.t){S.aba=b.dataset.t;render();return;}
         var a=b.dataset.a;
-        if(a==='fechar'){ov.style.display='none';voltarAlmox();}
+        if(a==='fechar'){ov.style.setProperty('display','none','important');voltarAlmox();}
         else if(a==='rec'){S.carregado=false;carregar(true);}
         else if(a==='ger')relatorioGerencial();
         else if(a==='pdfAba')relatorioAbas([S.aba]);
@@ -602,9 +602,10 @@
         else if(a==='salvarP')salvarParametros(b);
         else if(a==='limpar')limparBase(b.dataset.m);
       });
-      document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ov.style.display!=='none')ov.style.display='none';});
+      document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ov.style.display!=='none')ov.style.setProperty('display','none','important');});
     }
-    ov.style.display='flex';
+    // 'important': o CSS da tela trava #acl-ov com display:flex!important; sem isso o Voltar/Esc não fechavam.
+    ov.style.setProperty('display','flex','important');
     if(!S.carregado||S.aviso)carregar(true);else render();
   }
 
@@ -1306,13 +1307,6 @@
   }
 
   // ---------- menu do Portal e botão no módulo ----------
-  function docs(w,a,p){if(p>4)return a;try{if(w.document)a.push(w.document);}catch(e){return a;}for(var i=0;i<w.frames.length;i++)try{docs(w.frames[i],a,p+1);}catch(e){}return a;}
-  function menu(d){
-    var sb=d.getElementById('sb');if(!sb||sb.querySelector('[data-acl-menu]'))return;
-    var g=d.createElement('div');g.className='sg';g.setAttribute('data-acl-group','1');
-    g.innerHTML='<div class="sgl">Almoxarifado</div><button class="ni" data-acl-menu="1" type="button" title="Consumo por loja, lojas fora do padrão, previsão e sugestão de compra"><span class="nii">🏬</span><span class="nil">Consumo Loja</span></button>';
-    sb.appendChild(g);g.querySelector('[data-acl-menu]').onclick=function(e){e.preventDefault();abrir();};
-  }
   function botaoModulo(){
     var ifr=document.getElementById('ifr-alm'),w=ifr&&ifr.contentWindow,doc;try{doc=w&&w.document;}catch(e){return;}
     if(!doc||!doc.body||doc.getElementById('acl-btn'))return;
@@ -1323,7 +1317,9 @@
     b.onclick=function(e){e.preventDefault();abrir();};
     ref.parentElement.insertBefore(b,ref.nextSibling);
   }
-  function varrer(){docs(window,[],0).forEach(function(d){try{menu(d);}catch(e){}});try{botaoModulo();}catch(e){}}
+  // 12/11/2026: o Consumo Loja fica só dentro do módulo Almoxarifado (botão ao lado de "Consumo por Item").
+  // O grupo "Almoxarifado → Consumo Loja" do menu lateral foi retirado.
+  function varrer(){if(document.hidden)return;try{botaoModulo();}catch(e){}}
   varrer();setInterval(varrer,1500);
   window.abrirConsumoLoja=abrir;
   window.__consumoLoja={modelo:function(){return S.carregado?tudo():null;},interpretar:interpretar,mesDe:mesDe,codLoja:codLoja,num:num};

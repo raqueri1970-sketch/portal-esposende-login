@@ -33,5 +33,5 @@
     }
   }
   window.__GASTOS_GERAIS_VERSAO='20261106-7';
-  setInterval(function(){ try{ varrer(document,0); }catch(e){} },1200);
+  setInterval(function(){ if(document.hidden)return; try{ varrer(document,0); }catch(e){} },1200);
 })();

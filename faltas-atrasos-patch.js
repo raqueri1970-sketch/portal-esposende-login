@@ -20,6 +20,9 @@
     sb.appendChild(g);g.querySelector('[data-fa-menu]').onclick=function(){abrir(d)};
   }
   function docs(w,a,p){if(p>5)return a;try{if(w.document)a.push(w.document)}catch(e){return a}var fs=[];try{fs=w.document.querySelectorAll('iframe')}catch(e){}for(var i=0;i<fs.length;i++){try{if(fs[i].contentWindow&&fs[i].contentDocument)docs(fs[i].contentWindow,a,p+1)}catch(e){}}return a}
-  function varrer(){docs(window,[],0).forEach(function(d){try{menu(d)}catch(e){console.warn('[Portal] Faltas e Atrasos:',e)}})}
-  varrer();var obs=new MutationObserver(function(){varrer()});try{obs.observe(document.documentElement,{childList:true,subtree:true})}catch(e){}setInterval(varrer,1800);
+  function varrer(){agendado=null;if(document.hidden)return;docs(window,[],0).forEach(function(d){try{menu(d)}catch(e){console.warn('[Portal] Faltas e Atrasos:',e)}})}
+  // Desempenho: mudanças no Portal agrupadas (no máx. 1 varredura a cada 400 ms) em vez de 1 por mudança.
+  var agendado=null;function agendar(){if(!agendado)agendado=setTimeout(varrer,400)}
+  varrer();var obs=new MutationObserver(agendar);try{obs.observe(document.documentElement,{childList:true,subtree:true})}catch(e){}setInterval(agendar,1800);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)agendar()});
 })();

@@ -133,7 +133,7 @@
   }
 
   // Mantém os selos ao trocar de tela (algumas telas são redesenhadas).
-  setInterval(function(){Object.keys(estado).forEach(function(pid){
+  setInterval(function(){if(document.hidden)return;Object.keys(estado).forEach(function(pid){
     if(!document.getElementById('atz-'+pid))pintarModulo(pid);
     var os=document.getElementById('os-'+pid);if(os&&!(os.closest('.oc')||os.parentNode).querySelector('.atz-card'))pintarCard(pid);
   });},4000);

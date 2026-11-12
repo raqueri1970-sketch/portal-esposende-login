@@ -458,6 +458,8 @@
       if(r&&r.__custoUnitSeta!=null){var c=Object.assign({},r);c['Custo Unitário']=c.__custoUnitSeta;delete c.__custoUnitSeta;return c;}return r;});
     return p;
   }
+  // Desempenho: o módulo só está na tela com o iframe visível e a aba do navegador ativa.
+  function almNaTela(m){try{return !document.hidden&&m.ifr.getClientRects().length>0;}catch(e){return false;}}
   function instalarCustoReal(){
     var m=moduloAlm();if(!m)return;var w=m.w;
     if(typeof w.calcularEAtualizarPainel!=='function'||typeof w.montarPayloadAtual!=='function')return;
@@ -471,6 +473,9 @@
       });
     }
     // Dados novos (upload ou nuvem) chegam com o custo do Seta: ajusta e redesenha.
+    // Percorre todas as linhas de consumo/estoque: só com o módulo na tela (as funções de desenho
+    // já chamam ajustarCustos antes de desenhar, então nada fica com o custo errado).
+    if(!almNaTela(m))return;
     if(ajustarCustos(w)){try{w.aplicarFiltros();}catch(e){try{w.calcularEAtualizarPainel();}catch(e2){}}}
   }
   setInterval(instalarCustoReal,1500);
@@ -539,7 +544,9 @@
   window.__limparBytesCSV=limparBytesCSV;
 
   setInterval(instalarBotao,1500);
-  new MutationObserver(function(){instalarBotao();}).observe(document.documentElement,{childList:true,subtree:true});
+  // Desempenho: agrupa as mudanças do Portal (antes rodava a cada mudança, sem intervalo).
+  var botaoAgendado=null;
+  new MutationObserver(function(){if(!botaoAgendado)botaoAgendado=setTimeout(function(){botaoAgendado=null;instalarBotao();},400);}).observe(document.documentElement,{childList:true,subtree:true});
   window.abrirConsumoPorItem=abrir;
   window.__ESPOSENDE_LOGO_B64=LOGO_B64; // usado pelo Consumo Loja (almox-consumo-loja-patch.js)
 })();
