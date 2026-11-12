@@ -1323,7 +1323,7 @@
     b.onclick=function(e){e.preventDefault();abrir();};
     ref.parentElement.insertBefore(b,ref.nextSibling);
   }
-  function varrer(){docs(window,[],0).forEach(function(d){try{menu(d);}catch(e){}});try{botaoModulo();}catch(e){}}
+  function varrer(){if(document.hidden)return;docs(window,[],0).forEach(function(d){try{menu(d);}catch(e){}});try{botaoModulo();}catch(e){}}
   varrer();setInterval(varrer,1500);
   window.abrirConsumoLoja=abrir;
   window.__consumoLoja={modelo:function(){return S.carregado?tudo():null;},interpretar:interpretar,mesDe:mesDe,codLoja:codLoja,num:num};

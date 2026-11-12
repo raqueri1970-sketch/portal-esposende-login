@@ -52,6 +52,6 @@
     w.__rlPainelOpen=true;
   }
 
-  function varrer(){docs(window,[],0).forEach(function(w){try{instalar(w)}catch(e){}})}
+  function varrer(){if(document.hidden)return;docs(window,[],0).forEach(function(w){try{instalar(w)}catch(e){}})}
   setInterval(varrer,1500);varrer();
 })();

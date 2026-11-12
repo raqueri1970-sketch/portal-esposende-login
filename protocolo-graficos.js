@@ -974,9 +974,14 @@
     for(var i=0;i<w.frames.length;i++){try{docs(w.frames[i],lista,prof+1);}catch(e){}}
     return lista;
   }
+  // Desempenho (12/11/2026): a busca dos títulos (XPath em todos os elementos) rodava a cada 1,5 s em
+  // todos os módulos abertos, mesmo escondidos. Agora só em documentos visíveis na tela.
+  function naTela(d){try{var f=d.defaultView&&d.defaultView.frameElement;return !f||f.getClientRects().length>0;}catch(e){return true;}}
   function varrer(){
+    if(document.hidden)return;
     docs(window,[],0).forEach(function(d){
       try{
+        if(!naTela(d))return;
         var b=d.querySelector('.pg[data-protocolo-graficos]');
         if(b&&!b.__alvo)return; // falhou: mantém originais
         instalar(d);

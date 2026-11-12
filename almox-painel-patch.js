@@ -558,6 +558,10 @@
       ['aplicarFiltros','calcularEAtualizarPainel','atualizarVisaoGeral'].forEach(function(nome){var f=w[nome];if(typeof f!=='function')return;
         w[nome]=function(){corrigirRegionais(w);var r=f.apply(this,arguments);setTimeout(instalar,30);return r;};});
     }
+    // Desempenho: daqui para baixo (achar os cards, somar as bases, redesenhar) só com o módulo na tela.
+    // Os ganchos acima continuam instalados; ao voltar para o Almoxarifado o painel se atualiza em até 1,5 s.
+    var ifrAlm=document.getElementById('ifr-alm');
+    if(document.hidden||!ifrAlm||!ifrAlm.getClientRects().length)return;
     if(!doc.getElementById('apn-css')){var st=doc.createElement('style');st.id='apn-css';st.textContent=CSS+'.apn-oculto{display:none!important}';doc.head.appendChild(st);}
     var cards=doc.querySelector('[data-apn-cards]')||menorCom(doc,['TOTAL GERAL','ITENS CRITICOS','FORTPEL']);
     if(!cards)return;

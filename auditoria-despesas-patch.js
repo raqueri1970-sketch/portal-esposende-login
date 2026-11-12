@@ -100,6 +100,9 @@
     depois.parentNode.insertBefore(card,depois.nextSibling);
   }
 
-  function varrer(){docs(window,[],0).forEach(function(d){try{menu(d);cardPrincipal(d)}catch(e){console.warn('[Portal] Auditoria de Despesas:',e)}})}
+  // Desempenho (12/11/2026): o card fica na Visão Geral do Portal (este documento). Antes era procurado
+  // também dentro de cada módulo aberto, onde nunca existe — varria o texto de todos os elementos de
+  // todos os módulos a cada 1,2 s.
+  function varrer(){if(document.hidden)return;docs(window,[],0).forEach(function(d){try{menu(d);if(d===document)cardPrincipal(d)}catch(e){console.warn('[Portal] Auditoria de Despesas:',e)}})}
   varrer();setInterval(varrer,1200);
 })();

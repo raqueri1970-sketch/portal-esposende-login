@@ -575,6 +575,6 @@
     }.toString()+')();';
     d.body.appendChild(sc);
   }
-  function varrer(){docs(window,[],0).forEach(function(d){try{vigiarPdf(d);vigiarRelatorios(d);if(ehModuloObras(d)){paginarComprovantes(d);melhorarAbas(d);if(d.__melhorAbas)buscadorDashboard(d);revisaoObras(d)}if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
+  function varrer(){if(document.hidden)return;docs(window,[],0).forEach(function(d){try{vigiarPdf(d);vigiarRelatorios(d);if(ehModuloObras(d)){paginarComprovantes(d);melhorarAbas(d);if(d.__melhorAbas)buscadorDashboard(d);revisaoObras(d)}if(!d.__obrasPagamentos&&ehModuloObras(d))instalar(d)}catch(e){console.warn('[Portal] Obras pagamentos:',e)}})}
   setInterval(varrer,1500);if(document.readyState!=='loading')varrer();else document.addEventListener('DOMContentLoaded',varrer);
 })();
