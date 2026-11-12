@@ -113,6 +113,7 @@ html,body{background:var(--fa-bg);color:var(--fa-text);font:13px/1.5 Inter,"Sego
 .fa-mt{margin-top:14px}
 .fa-deix-top{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px 4px}.fa-deix-k{border:1px solid #5a2531;background:rgba(255,82,107,.07);border-radius:8px;padding:10px 12px;cursor:pointer}.fa-deix-k.amb{border-color:#5d4517;background:rgba(243,173,56,.07)}.fa-deix-k span{display:block;font-size:10px;color:#a9bcd2}.fa-deix-k b{display:block;font-size:24px;color:#ff7d8f;margin:4px 0 2px;font-variant-numeric:tabular-nums}.fa-deix-k.amb b{color:#ffc35c}.fa-deix-k small{font-size:10px;color:#8ea4bd}.fa-deix-list{padding:6px 14px}.fa-deix-row{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid #15233a;font-size:11px}.fa-deix-row>span{color:#d3e0ef;font-weight:700}.fa-deix-bar{display:flex;align-items:center;gap:6px;height:12px;margin:2px 0}.fa-deix-bar i{display:block;height:9px;min-width:2px;border-radius:3px;background:#ff6b7f}.fa-deix-bar.amb i{background:#f3ad38}.fa-deix-bar em{font-style:normal;font-size:10px;color:#a9bcd2;white-space:nowrap;font-variant-numeric:tabular-nums}.fa-deix-note{font-size:10px;color:#7f94ad;padding:6px 14px 12px;line-height:1.5}
 .fa-sd{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;margin:0 0 12px;cursor:pointer}.fa-sd>div{border:1px solid #5a2531;background:rgba(255,82,107,.09);border-radius:10px;padding:12px 14px}.fa-sd>div:first-child{border-color:#ff526b;box-shadow:inset 4px 0 0 #ff526b}.fa-sd span{display:block;font-size:11px;color:#c9d8ea;font-weight:700}.fa-sd b{display:block;font-size:28px;color:#ff7d8f;margin:4px 0;font-variant-numeric:tabular-nums}.fa-sd>div:last-child b{color:#ffc35c}.fa-sd small{font-size:10.5px;color:#a3b5ca;line-height:1.45}
+.fa-mirpdf-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 14px;font-size:11px;color:#a9bcd2}.fa-mirpdf-img{display:block;width:100%;max-width:1100px;margin:0 auto 10px;background:#fff;border-radius:4px;box-shadow:0 2px 12px rgba(0,0,0,.4)}
 .fa-grid-a{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px}
 .fa-grid-b{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-top:14px}
 .fa-legend{display:flex;gap:14px;font-size:11.5px;color:var(--fa-muted);white-space:nowrap}
@@ -302,7 +303,7 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
 <script>
 'use strict';
 /* ===== Configuração ===== */
-const FA_RULE='fa-v18-espelho-pessoa-ativos';
+const FA_RULE='fa-v19-espelho-original';
 const FA_DAY_MIN=440;              // jornada diária de referência: 7h20 (44h ÷ 6 dias)
 const FA_DSR_H=44/6;               // horas de um DSR na jornada de 44h semanais
 const FA_TOL_H=0.05;               // 3 minutos de tolerância na comparação de horas
@@ -460,7 +461,7 @@ async function faAddFiles(list){
       if(/\.pdf$/i.test(f.name)){
         const txt=await faPdfText(f,async(p,n)=>{fa$('faProgress').textContent='Lendo espelho de ponto: página '+p+' de '+n+'…';await faTick()});
         const emps=faMirrorParse(txt);if(!emps.length){rejects.push('<b>'+faEsc(f.name)+'</b>: o PDF não parece um Espelho de Ponto do AbsisRH (não encontrei "Funcionario.:").');continue}
-        faInputs.mirror=await faMirrorPack(faMirrorSummarize(emps,f.name));faSlots.mirror={file:{name:f.name},meta:faInputs.mirror.meta,savedAt:null};continue;
+        faInputs.mirror=await faMirrorPack(faMirrorSummarize(emps,f.name));faMirrorFile=f;faMirrorDoc=null;await faMirrorUpload(f,faInputs.mirror);faSlots.mirror={file:{name:f.name},meta:faInputs.mirror.meta,savedAt:null};continue;
       }
       const r=await faReadFile(f);
       if(!r.kind){rejects.push(faRejectReason(r));continue}
@@ -638,7 +639,7 @@ const FA_MJUST=/ATEST|FERIAS|LIC|INSS|ACIDENTE|DEC MED|AMAMENT|SERV EXT|CURSO|CO
 async function faPdfLib(){if(window.pdfjsLib)return window.pdfjsLib;await faLoadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';return window.pdfjsLib}
 async function faPdfText(file,onp){
   const lib=await faPdfLib(),doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise,out=[];
-  for(let p=1;p<=doc.numPages;p++){
+  for(let p=1;p<=doc.numPages;p++){out.push('@@PAGE '+p);
     const tc=await (await doc.getPage(p)).getTextContent(),rows=new Map();let cw=0,n=0;
     tc.items.forEach(it=>{if(!it.str||!it.str.trim())return;const y=Math.round(it.transform[5]);(rows.get(y)||rows.set(y,[]).get(y)).push(it);if(it.str.length>3){cw+=it.width/it.str.length;n++}});
     cw=n?cw/n:5;
@@ -650,10 +651,12 @@ async function faPdfText(file,onp){
 function faMirrorParse(txt){
   const hm=v=>{v=String(v).trim();if(!v.includes(':'))return null;const neg=v.startsWith('-'),[h,m]=v.replace('-','').split(':').map(Number);const x=h*60+m;return neg?-x:x};
   const VER=/([A-Z]{4})-[^:]*?:\s*(-?\d+[.:]\d+)/g,blocks=txt.split(/\n(?=\s*Funcionario\.:)/),emps=[];
+  let curPg=1;
   for(const b of blocks){
+    let p0=null,p1=null;for(const ln of b.split('\n')){const mk=ln.match(/^@@PAGE (\d+)/);if(mk){curPg=+mk[1];continue}if(ln.trim()){if(p0==null)p0=curPg;if(/Funcionario\.:|TOTAIS DO PERIODO|SOMA DAS VERBAS|^\s+\d\d\/\d\d (SEG|TER|QUA|QUI|SEX|SAB|DOM)\b/.test(ln))p1=curPg}}if(p1==null)p1=p0;
     if(!b.includes('Funcionario.:'))continue;
     const g=re=>{const m=b.match(re);return m?m[1].trim():''};
-    const e={name:g(/Funcionario\.:\s*(.+?)\s+-\s+CPF/),code:faCode(g(/Codigo\.+:\s*(\d+)/)),lot:g(/Lotacao\.+:\s*(.+)/),cargo:g(/Cargo\.+:\s*(.+)/),days:[],tot:{}};
+    const e={pg:[p0,p1],name:g(/Funcionario\.:\s*(.+?)\s+-\s+CPF/),code:faCode(g(/Codigo\.+:\s*(\d+)/)),lot:g(/Lotacao\.+:\s*(.+)/),cargo:g(/Cargo\.+:\s*(.+)/),days:[],tot:{}};
     const lines=b.split('\n');let cur=null,mode='days',vcol=66;
     for(const ln of lines){
       if(/\bDATA\b.*\bVERBA\b/.test(ln)){vcol=ln.indexOf('VERBA')-2;continue}
@@ -688,7 +691,7 @@ function faMirrorSummarize(emps,file){
       if(deb+falt>Math.max(s,0)+TOL){const ex=deb+falt-Math.max(s,0);exDeb+=ex;exDays.push({d:d.d+' '+d.wd,t:d.t.join(' '),prev,trab,deb:deb+falt,ex});return}
       if(s<=TOL)return;const nt=s-deb-falt;if(nt>TOL){untreated+=nt;ntDays.push({d:d.d+' '+d.wd,t:d.t.join(' '),prev,trab,nt})}});
     const debDia=e.days.reduce((s,d)=>s+(d.v.DEBT||0),0)/60,t=e.tot;
-    return {code:e.code,name:e.name,lot:e.lot,cargo:e.cargo,SANT:t.SANT??null,CRED:t.CRED||0,DEBT:t.DEBT||0,SDBH:t.SDBH??null,FALT:t.FALT||0,debDia,naoAplic:t.SDBH==null&&debDia>0?debDia:Math.max(0,debDia-(t.DEBT||0)),compBco:compBco/60,exDebH:exDeb/60,exDays,untreatedH:untreated/60,ntDays,dias:e.days.length,dd:e.days.map(d=>[d.d+' '+d.wd,d.t.join(' '),d.obs,Object.entries(d.v).map(([k,x])=>k+'='+x).join(',')])};
+    return {code:e.code,name:e.name,lot:e.lot,cargo:e.cargo,SANT:t.SANT??null,CRED:t.CRED||0,DEBT:t.DEBT||0,SDBH:t.SDBH??null,FALT:t.FALT||0,debDia,naoAplic:t.SDBH==null&&debDia>0?debDia:Math.max(0,debDia-(t.DEBT||0)),compBco:compBco/60,exDebH:exDeb/60,exDays,untreatedH:untreated/60,ntDays,dias:e.days.length,pg:e.pg,dd:e.days.map(d=>[d.d+' '+d.wd,d.t.join(' '),d.obs,Object.entries(d.v).map(([k,x])=>k+'='+x).join(',')])};
   });
   const pm=(emps.length?(emps[0].days[0]||{}).d:null);
   return {file,meta:{people:people.length,withBank:people.filter(p=>p.SDBH!=null).length},people,savedAt:null};
@@ -729,6 +732,25 @@ function faMirrorCompute(inp,ctx){
 
 const faSgnC=v=>v<-0.005?'#ff6b7f':v>0.005?'#3fcf8e':'inherit';
 function faSgnH(v){return '<b style="color:'+faSgnC(v)+'">'+(v<-0.005?'−':v>0.005?'+':'')+faH(Math.abs(v||0))+'</b>'}
+
+let faMirrorFile=null,faMirrorDoc=null;
+async function faMirrorUpload(f,M){if(!faSb||!faPrivateUser)return;try{fa$('faProgress').textContent='Guardando o PDF do espelho na base (privado RH)…';await faTick();
+  const path='espelhos/'+String(f.name).normalize('NFKD').replace(/[^\w.-]+/g,'_')+'_'+f.size+'.pdf';
+  const {error}=await faSb.storage.from('rh-espelhos').upload(path,f,{upsert:true,contentType:'application/pdf'});if(error)throw error;M.pdfPath=path}
+  catch(e){console.warn('[Faltas] PDF do espelho:',e.message);faToast('O PDF do espelho não foi guardado na base: '+e.message)}}
+async function faMirrorGetDoc(){if(faMirrorDoc)return faMirrorDoc;const lib=await faPdfLib();let buf=null;
+  if(faMirrorFile)buf=await faMirrorFile.arrayBuffer();
+  else{const M=faInputs.mirror;if(!M||!M.pdfPath||!faSb)return null;const {data,error}=await faSb.storage.from('rh-espelhos').download(M.pdfPath);if(error)throw error;buf=await data.arrayBuffer()}
+  faMirrorDoc=await lib.getDocument({data:new Uint8Array(buf)}).promise;return faMirrorDoc}
+async function faMirrorPdfShow(code){const box=fa$('faMirPdf');if(!box)return;const M=faModel&&faModel.mirror,r=M&&M.rows.find(x=>x.code===code);
+  if(!r||!r.pg||r.pg[0]==null){box.innerHTML='<div class="fa-empty">Para ver a página original do AbsisRH, carregue de novo o PDF do espelho no quadro de arquivos (a versão salva ainda não sabe a página de cada colaborador).</div>';return}
+  box.innerHTML='<div class="fa-empty">Abrindo o espelho original (página '+r.pg[0]+(r.pg[1]>r.pg[0]?' a '+r.pg[1]:'')+')…</div>';
+  try{const doc=await faMirrorGetDoc();if(!doc){box.innerHTML='<div class="fa-empty">O PDF original não está guardado na base. Carregue o PDF do espelho com o Portal logado (usuário do RH) para ele ficar salvo.</div>';return}
+    const imgs=[];for(let p=r.pg[0];p<=r.pg[1];p++){const pg=await doc.getPage(p),vp=pg.getViewport({scale:2}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;imgs.push(c.toDataURL('image/png'))}
+    window.faMirImgs=imgs;
+    box.innerHTML='<div class="fa-mirpdf-bar"><span>Espelho original · '+faEsc(M.file)+' · página '+r.pg[0]+(r.pg[1]>r.pg[0]?' a '+r.pg[1]:'')+'</span><button class="fa-btn" onclick="faMirrorPdfPrint()">Imprimir / salvar PDF</button></div>'+imgs.map(u=>'<img src="'+u+'" alt="Espelho de ponto original" class="fa-mirpdf-img">').join('')}
+  catch(e){box.innerHTML='<div class="fa-empty">Não consegui abrir o PDF original: '+faEsc(e.message)+'</div>'}}
+function faMirrorPdfPrint(){const w=window.open('','_blank');if(!w)return;w.document.write('<!doctype html><title>Espelho de ponto</title><style>@page{margin:6mm}body{margin:0}img{width:100%;page-break-after:always;display:block}</style>'+(window.faMirImgs||[]).map(u=>'<img src="'+u+'">').join(''));w.document.close();setTimeout(()=>w.print(),400)}
 function faMirrorPerson(code){const M=faModel&&faModel.mirror;if(!M)return;const r=M.rows.find(x=>x.code===code);if(!r)return;
   const mm=v=>v==null?'':faClock(Math.abs(v)),pv=s=>{const o={};String(s||'').split(',').forEach(x=>{const [k,v]=x.split('=');if(k)o[k]=Number(v)});return o};
   const dd=r.dd||(faMirrorDays&&faMirrorDays.get(r.code));let days='';if(!dd)days='<div class="fa-empty">Este espelho foi salvo antes da versão com o dia a dia. Carregue de novo o PDF do espelho no quadro de arquivos para ver as batidas de cada dia.</div>';
@@ -741,8 +763,8 @@ function faMirrorPerson(code){const M=faModel&&faModel.mirror;if(!M)return;const
   const st=(r.naoAtivo?'<div class="fa-flag warn" style="margin:8px 0;font-size:12px">Não consta mais como ativo: <b>'+faEsc(faSituTxt(r))+'</b> (base ATIVOS'+(faModel.sources.rosterDate?' de '+faBR(faModel.sources.rosterDate):'')+').</div>':'')+(r.semDesc?'<div class="fa-flag bad" style="margin:8px 0;font-size:12px">Saldo negativo e <b>nenhum desconto</b> de falta, atraso ou DSR na folha do mês.</div>':r.semFolhaNeg?'<div class="fa-flag warn" style="margin:8px 0;font-size:12px">Saldo negativo e não está na folha do mês (afastado, transferido ou desligado).</div>':'');
   fa$('faComp').innerHTML='<div class="fa-comp-box" role="dialog" aria-modal="true" style="max-width:1200px"><div class="fa-comp-head"><div><div class="fa-kicker">Espelho do ponto · '+faEsc(M.file)+'</div><div class="fa-comp-title">'+faEsc(r.name)+'</div><div class="fa-panel-sub">Matr. '+faEsc(r.code)+' · '+faEsc(r.cargo)+' · '+faEsc(r.lot)+' · '+faEsc(r.regional)+'</div></div><div><button class="fa-btn" onclick="faCompClose()">✕ Fechar</button></div></div>'+st
    +'<div class="fa-summary-row fa-cc-sum">'+k('Saldo anterior',faSgnH(r.SANT||0),'banco antes de 21/09')+k('Crédito no período',faSgnH(r.CRED),'horas a mais')+k('Débito no período',faSgnH(-r.DEBT),'folga COMP BCO '+faH(r.compBco))+k('Saldo final',faSgnH(r.SDBH||0),(r.SDBH||0)<0?'≈ '+faBRL(-(r.SDBH)*r.rate)+' devidos':'')+k('Descontado na folha',r.naFolha?faBRL(r.folhaDescV):'—',r.naFolha?faH(r.folhaDescH)+' de falta/atraso/DSR':'não está na folha do mês')+k('Deixou de descontar no período','<b style="color:'+(r.deixou>0.01?'#ff6b7f':'inherit')+'">'+faBRL(r.deixouV)+'</b>',faH(r.deixou)+' · valor-hora '+faBRL(r.rate))+'</div>'
-   +days+'<div class="fa-disclaimer">Diferença = trabalhado − previsto (vermelho = trabalhou menos). Crédito em verde, débito em vermelho. Tolerância de '+FA_CLT_TOL_MIN+' min/dia. Saldo anterior + crédito − débito = saldo final.</div></div>';
-  fa$('faComp').classList.add('show');document.body.style.overflow='hidden'}
+   +'<div class="fa-group-title">Espelho original do AbsisRH</div><div id="faMirPdf"></div><div class="fa-group-title">Leitura dia a dia (conferência)</div>'+days+'<div class="fa-disclaimer">Diferença = trabalhado − previsto (vermelho = trabalhou menos). Crédito em verde, débito em vermelho. Tolerância de '+FA_CLT_TOL_MIN+' min/dia. Saldo anterior + crédito − débito = saldo final.</div></div>';
+  fa$('faComp').classList.add('show');document.body.style.overflow='hidden';faMirrorPdfShow(code)}
 function faMirrorRender(){
   const el=fa$('faMirrorBody');if(!el)return;const M=faModel&&faModel.mirror;
   if(!M){el.innerHTML='<div class="fa-empty">Carregue o PDF do Espelho de Ponto do AbsisRH (todos os colaboradores do período) no quadro de arquivos no final da página.</div>';return}
@@ -1486,7 +1508,7 @@ async function faSha256(bytes){const digest=await crypto.subtle.digest('SHA-256'
 async function faHashFiles(){const x=JSON.stringify(['point','payroll','roster','bank','mirror'].map(k=>faInputs[k]?[faInputs[k].file,faInputs[k].meta]:null));return faSha256(new TextEncoder().encode(x+'|'+JSON.stringify(faInputs.point?.events||[]).length+'|'+(faInputs.payroll?.persons?.length||0)+'|'+(faInputs.roster?.people?.length||0)))}
 function faSafeRows(){return faModel.rows.map(r=>({...r,cpf:faMaskCpf(r.cpf)}))}
 function faUseInputs(inp,origin){
-  if(!(inp.mirror&&faInputs.mirror===inp.mirror&&faMirrorDays)){faMirrorDays=null;if(inp.mirror&&inp.mirror.ddz)faMirrorUnpack(inp.mirror)}
+  if(!(inp.mirror&&faInputs.mirror===inp.mirror&&faMirrorDays)){faMirrorDays=null;faMirrorDoc=null;faMirrorFile=null;if(inp.mirror&&inp.mirror.ddz)faMirrorUnpack(inp.mirror)}
   ['point','payroll','roster','bank','mirror'].forEach(k=>{faInputs[k]=inp[k]||null;faSlots[k]=inp[k]?{file:{name:inp[k].file},sheet:inp[k].sheet,meta:inp[k].meta,savedAt:inp[k].savedAt}:null});
   faRenderSlots();
   faModel=faCompute(faInputs);faRenderAll();
