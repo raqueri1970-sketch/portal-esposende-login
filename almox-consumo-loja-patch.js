@@ -574,6 +574,10 @@
       if(w&&w.document){var tab=[].slice.call(w.document.querySelectorAll('button,a,div[role=tab],li')).filter(function(x){return /^\W*Vis[aã]o Geral\s*$/i.test((x.textContent||'').trim());})[0];if(tab)tab.click();w.scrollTo(0,0);}
       window.scrollTo(0,0);}catch(e){}
   }
+  // O CSS de blindagem usa #acl-ov{display:flex!important}; um style.display='none' comum perde para ele
+  // e a tela nunca fechava (Voltar/Esc travavam o Portal). Por isso mostrar/esconder vai com !important.
+  function aberto(){var ov=document.getElementById('acl-ov');return !!ov&&ov.style.getPropertyValue('display')!=='none';}
+  function fechar(){var ov=document.getElementById('acl-ov');if(ov)ov.style.setProperty('display','none','important');}
   function abrir(){
     var ov=document.getElementById('acl-ov');
     if(!document.getElementById('acl-css')){var st=document.createElement('style');st.id='acl-css';st.textContent=CSS;document.head.appendChild(st);}
@@ -590,7 +594,7 @@
         var b=e.target.closest('[data-a],[data-t]');if(!b||!ov.contains(b)||b.tagName==='LABEL')return;
         if(b.dataset.t){S.aba=b.dataset.t;render();return;}
         var a=b.dataset.a;
-        if(a==='fechar'){ov.style.display='none';voltarAlmox();}
+        if(a==='fechar'){fechar();voltarAlmox();}
         else if(a==='rec'){S.carregado=false;carregar(true);}
         else if(a==='ger')relatorioGerencial();
         else if(a==='pdfAba')relatorioAbas([S.aba]);
@@ -602,9 +606,9 @@
         else if(a==='salvarP')salvarParametros(b);
         else if(a==='limpar')limparBase(b.dataset.m);
       });
-      document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ov.style.display!=='none')ov.style.display='none';});
+      document.addEventListener('keydown',function(e){if(e.key==='Escape'&&aberto())fechar();});
     }
-    ov.style.display='flex';
+    ov.style.setProperty('display','flex','important');
     if(!S.carregado||S.aviso)carregar(true);else render();
   }
 
