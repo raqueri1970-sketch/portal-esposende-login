@@ -333,7 +333,7 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
 <script>
 'use strict';
 /* ===== Configuração ===== */
-const FA_RULE='fa-v32-cmp-diretoria';
+const FA_RULE='fa-v33-diretoria-sem-faixa';
 const FA_DAY_MIN=440;              // jornada diária de referência: 7h20 (44h ÷ 6 dias)
 const FA_DSR_H=44/6;               // horas de um DSR na jornada de 44h semanais
 const FA_TOL_H=0.05;               // 3 minutos de tolerância na comparação de horas
@@ -1722,7 +1722,6 @@ async function faBoard(){
    +faRKpi('Negativo sem nenhum desconto',M?faBRL0(MT.sdV):'—',M?MT.sdN+' pessoas · '+faH(MT.sdH)+' · inclui negativo antigo':na,'warn')
    +faRKpi('Divergência ponto × folha',hasF?faBRL0(cc.faltouV+cc.excessoV+cc.dsrConfV+cc.semPontoV):'—',hasF?acts.length+' caso(s) · '+cc.demN+' demitidos acertados':'folha não carregada',acts.length?'bad':'')
    +faRKpi('Absenteísmo',T.rate!=null?faDec(T.rate,2)+'%':'—',faClock(T.minutes)+' perdidas · '+T.faltaEvents+' faltas · '+T.atrasoEvents+' atrasos')+'</section>'
-   +(M?faCmpStrip(X.cmp):'')
    +(M?'<section class="fa-r-kpis" style="grid-template-columns:repeat(4,minmax(0,1fr))">'+faRKpi('Banco de horas positivo (empresa deve)',faBRL0(X.pos.sdbhV),faH(X.pos.sdbh)+' · '+X.pos.n+' pessoas · hora normal','good')+faRKpi('Positivo no mês',(X.pos.varV<0?'−':'+')+faBRL0(Math.abs(X.pos.varV)),'de '+faBRL0(X.pos.santV)+' para '+faBRL0(X.pos.sdbhV)+' · '+X.pos.upN+' aumentaram, '+X.pos.dnN+' diminuíram')+faRKpi('Saldo líquido do banco',faBRL0(Math.abs(X.pos.sdbhV-X.neg.v)),X.pos.sdbhV>=X.neg.v?'a favor dos funcionários':'a favor da empresa')+faRKpi('Folgas pagas pelo banco',faBRL0(X.compV),faH(X.compH)+' · '+X.compN+' pessoas')+'</section>':'');
   const ccRow=(l,o)=>'<tr><td>'+l+'</td><td class="n">'+faInt(o.n)+'</td><td class="n">'+faH(o.sant)+'<small>'+faBRL0(o.santV)+'</small></td><td class="n">+'+faH(o.cred)+'<small>'+faBRL0(o.credV)+'</small></td><td class="n">−'+faH(o.deb)+'<small>'+faBRL0(o.debV)+'</small></td><td class="n"><b>'+faH(o.sdbh)+'</b><small>'+(o.sdbhV<0?'−':'')+faBRL0(Math.abs(o.sdbhV))+'</small></td></tr>';
   const ccb=M?'<div class="fa-r-box"><h2>Conta corrente do banco de horas <span class="fa-r-note">'+ini+' a '+fim+'</span></h2>'+faLedgers(X,true,true)+'</div>':'<div class="fa-r-box"><h2>Conta corrente do banco de horas</h2><p class="fa-r-empty">Espelho de ponto não carregado.</p></div>';
