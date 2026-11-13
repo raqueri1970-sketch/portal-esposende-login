@@ -901,7 +901,7 @@ async function openPortal(){
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('auditoria-despesas-patch.js?v=20261109-1',location.href).href+'"></scr'+'ipt>');
   // Módulos novos (Faltas e Atrasos, Auditoria Financeira, Segurança e CFTV, Patrimônio de Segurança, Consumo Loja):
   // card com capa na Visão Geral + grupo "Novos Módulos" no menu + Voltar ao Portal confiável. Substitui financeiro-patch; Faltas e Atrasos segue no patch próprio (versão lida dele).
-  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('modulos-novos-patch.js?v=20261113-1',location.href).href+'"></scr'+'ipt>');
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('modulos-novos-patch.js?v=20261113-2',location.href).href+'"></scr'+'ipt>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
