@@ -4,10 +4,10 @@
    "← Voltar ao Portal" único e confiável: botão, tecla Esc (também dentro do módulo) e o voltar do celular/navegador.
    Ao voltar, o módulo é descarregado (about:blank), para não deixar o Portal pesado/travado com a tela escondida rodando. */
 (function(){
-  if(window.__modulosNovos)return;window.__modulosNovos='20261113-4';
+  if(window.__modulosNovos)return;window.__modulosNovos='20261113-5';
   var BASE=(function(){try{return new URL('./',document.currentScript.src).href}catch(e){return location.origin+'/portal-esposende-login/'}})();
   var MODS=[
-    {id:'cftv',icone:'📹',titulo:'Segurança e CFTV',sub:'Câmeras, gravadores e alarmes',dsc:'Patrimônio (investido em 2026 + parque anterior), investimentos, manutenção, cobertura por área e plano pelo orçamento.',capa:'seguranca-cftv-capa.jpg',url:'seguranca-cftv/?v=20261113-4',acesso:'presidência, diretoria e segurança'},
+    {id:'cftv',icone:'📹',titulo:'Segurança e CFTV',sub:'Câmeras, gravadores e alarmes',dsc:'Patrimônio (investido em 2026 + parque anterior), investimentos, manutenção, cobertura por área e plano pelo orçamento.',capa:'seguranca-cftv-capa.jpg',url:'seguranca-cftv/?v=20261113-5',acesso:'presidência, diretoria e segurança'},
     {id:'faltas',icone:'⏰',titulo:'Faltas e Atrasos',sub:'Ponto × folha × banco de horas',dsc:'Quem deve à empresa e o que a empresa deve: faltas sem desconto, atrasos recorrentes e ranking por regional.',capa:'faltas-atrasos-capa.jpg',url:'faltas-atrasos/index.html',versaoDe:'faltas-atrasos-patch.js',acesso:'RH, controladoria e diretoria'},
     {id:'fin',icone:'💰',titulo:'Auditoria Financeira',sub:'Contas a pagar do Sallamo',dsc:'Cruzamentos de possíveis irregularidades nos títulos: duplicidade, juros, fornecedor novo e vencimentos fora do padrão.',capa:'auditoria-financeira-capa.jpg',url:'financeiro/?v=20261021-1',acesso:'administrador, controladoria e diretoria'},
     {id:'consumo',icone:'🏬',titulo:'Consumo Loja',sub:'Almoxarifado × venda por loja',dsc:'Lojas fora do padrão de consumo, previsão e sugestão de compra do almoxarifado.',capa:'consumo-loja-capa.jpg',abrir:function(w){if(w.abrirConsumoLoja){w.abrirConsumoLoja();return true}return false},acesso:'usuários do Almoxarifado'}
