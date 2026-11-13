@@ -395,7 +395,7 @@ function capaTreinamentosNoShell(CAPA){
 }
 var TREINAMENTOS_CAPA_PATCH='<scr'+'ipt id="patch-capa-treinamentos-20260922">('+capaTreinamentosNoShell.toString()+')('+JSON.stringify(TREINAMENTOS_CAPA_URL)+');</scr'+'ipt>';
 // Capa do card "Obras & Reformas" no Portal principal (o card original não tem foto).
-var OBRAS_CAPA_URL=new URL('obras-reformas-capa.jpg?v=1',location.href).href;
+var OBRAS_CAPA_URL=new URL('obras-reformas-capa.jpg?v=2',location.href).href;
 function capaObrasNoShell(CAPA){
   var ALVO='OBRAS E REFORMAS',MARCA='data-capa-obras',BLOCO='data-capa-obras-bloco';
   function norm(t){return String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/&/g,' E ').replace(/\s+/g,' ').trim().toUpperCase()}
@@ -434,17 +434,21 @@ function capaObrasNoShell(CAPA){
   function molde(card){
     var irmaos=card.parentElement?[].slice.call(card.parentElement.children):[];
     for(var i=0;i<irmaos.length;i++){
-      var c=irmaos[i];if(c===card||c.hasAttribute(MARCA))continue;
+      // cards criados por patch (CFTV, Faltas, Despesas...) nunca servem de molde: a Obras pegava a foto do CFTV
+      var c=irmaos[i];if(c===card||c.hasAttribute(MARCA)||c.matches('[data-mn-card],[data-adesp-card],[data-cred-card],[data-mn-painel]')||c.querySelector('[data-mn-card],[data-adesp-card],[data-cred-card],[data-mn-bloco]'))continue;
       var img=imagemEm(c);if(img)return {card:c,img:img};
     }
     return null;
   }
-  function trocarImagens(raiz){
-    [raiz].concat([].slice.call(raiz.querySelectorAll('*'))).forEach(function(el){
+  function trocarImagens(raiz,orig){
+    // o estilo é lido do ORIGINAL: o clone ainda fora da página não tem estilo calculado (e ficava com a foto do molde)
+    var os=orig?[orig].concat([].slice.call(orig.querySelectorAll('*'))):[];
+    [raiz].concat([].slice.call(raiz.querySelectorAll('*'))).forEach(function(el,i){var fonte=os[i]||el;
+      if(os[i]){try{var dsp=getComputedStyle(fonte).display;if(dsp&&dsp!=='none')el.style.setProperty('display',dsp,'important')}catch(e){}}
       el.removeAttribute('id');
       if(el.tagName==='SOURCE')el.setAttribute('srcset',CAPA);
       else if(el.tagName==='IMG'){el.removeAttribute('srcset');el.removeAttribute('sizes');el.removeAttribute('loading');el.src=CAPA;el.alt='Obras & Reformas';el.style.objectFit='cover';el.style.objectPosition='center'}
-      else if(urlFundo(el)){el.style.backgroundImage=urlFundo(el).replace(/url\([^)]*\)/,'url("'+CAPA+'")');el.style.backgroundSize='cover';el.style.backgroundPosition='center'}
+      else if(urlFundo(fonte)){el.style.backgroundImage=urlFundo(fonte).replace(/url\([^)]*\)/,'url("'+CAPA+'")');el.style.backgroundSize='cover';el.style.backgroundPosition='center'}
     });
     // Tira textos do molde (título de outro módulo), a arte já traz o nome.
     var w=document.createTreeWalker(raiz,NodeFilter.SHOW_TEXT),n,t=[];
@@ -475,7 +479,8 @@ function capaObrasNoShell(CAPA){
     });
   }
   function aplicar(card){
-    if(card.getAttribute(MARCA)===CAPA&&(card.querySelector('['+BLOCO+']')||card.style.backgroundImage.indexOf(CAPA)>=0))return;
+    var feito=card.querySelector('['+BLOCO+']');
+    if(card.getAttribute(MARCA)===CAPA&&((feito&&feito.innerHTML.indexOf('obras-reformas-capa')>=0)||card.style.backgroundImage.indexOf(CAPA)>=0))return;
     [].slice.call(card.querySelectorAll('['+BLOCO+']')).forEach(function(x){x.remove()});
     var m=molde(card),bloco=null,pos=0;
     if(!m&&!card.classList.contains('oc'))return;
@@ -483,7 +488,7 @@ function capaObrasNoShell(CAPA){
     if(m&&m.img!==m.card){
       var topo=m.img;while(topo.parentElement!==m.card)topo=topo.parentElement;
       pos=[].indexOf.call(m.card.children,topo);
-      bloco=topo.cloneNode(true);trocarImagens(bloco);
+      bloco=topo.cloneNode(true);trocarImagens(bloco,topo);
       esconderComoMolde(card,m.card,topo);
       var ms=getComputedStyle(m.card);
       ['padding','overflow','display','flexDirection','justifyContent','gap'].forEach(function(p){card.style[p]=ms[p]});
@@ -901,7 +906,7 @@ async function openPortal(){
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('auditoria-despesas-patch.js?v=20261109-1',location.href).href+'"></scr'+'ipt>');
   // Módulos novos (Faltas e Atrasos, Auditoria Financeira, Segurança e CFTV, Patrimônio de Segurança, Consumo Loja):
   // card com capa na Visão Geral + grupo "Novos Módulos" no menu + Voltar ao Portal confiável. Substitui financeiro-patch; Faltas e Atrasos segue no patch próprio (versão lida dele).
-  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('modulos-novos-patch.js?v=20261113-3',location.href).href+'"></scr'+'ipt>');
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('modulos-novos-patch.js?v=20261113-4',location.href).href+'"></scr'+'ipt>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');

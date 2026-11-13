@@ -4,7 +4,7 @@
    "← Voltar ao Portal" único e confiável: botão, tecla Esc (também dentro do módulo) e o voltar do celular/navegador.
    Ao voltar, o módulo é descarregado (about:blank), para não deixar o Portal pesado/travado com a tela escondida rodando. */
 (function(){
-  if(window.__modulosNovos)return;window.__modulosNovos='20261113-3';
+  if(window.__modulosNovos)return;window.__modulosNovos='20261113-4';
   var BASE=(function(){try{return new URL('./',document.currentScript.src).href}catch(e){return location.origin+'/portal-esposende-login/'}})();
   var MODS=[
     {id:'cftv',icone:'📹',titulo:'Segurança e CFTV',sub:'Câmeras, gravadores e alarmes',dsc:'Patrimônio (investido em 2026 + parque anterior), investimentos, manutenção, cobertura por área e plano pelo orçamento.',capa:'seguranca-cftv-capa.jpg',url:'seguranca-cftv/?v=20261113-3',acesso:'presidência, diretoria e segurança'},
@@ -68,8 +68,10 @@
     [].forEach.call(sb.querySelectorAll('[data-acl-group],[data-fa-menu],[data-fin-auditoria]'),function(el){var g=el.closest('.sg')||el;if(!g.hasAttribute('data-mn-grupo'))g.style.display='none'});
     if(sb.querySelector('[data-mn-grupo]'))return;
     var g=d.createElement('div');g.className='sg';g.setAttribute('data-mn-grupo','1');
-    g.innerHTML='<div class="sgl">Novos Módulos</div>'+MODS.map(function(m){return '<button class="ni" type="button" data-mn-menu="'+m.id+'" title="'+m.sub+'"><span class="nii">'+m.icone+'</span><span class="nil">'+m.titulo+'</span></button>'}).join('');
+    g.innerHTML='<div class="sgl">Novos Módulos</div>'+MODS.map(function(m){return '<button class="ni" type="button" data-mn-menu="'+m.id+'" title="'+m.sub+'"><span class="nii">'+m.icone+'</span><span class="nil">'+m.titulo+'</span></button>'}).join('')
+      +'<button class="ni" type="button" data-mn-menu-painel="1" title="Ajuste Expresso · tempo real (abre em outra aba)"><span class="nii">📺</span><span class="nil">Painel ao vivo · Modo TV</span></button>';
     [].forEach.call(g.querySelectorAll('[data-mn-menu]'),function(b){b.addEventListener('click',function(e){e.preventDefault();abrir(d,MODS.filter(function(m){return m.id===b.getAttribute('data-mn-menu')})[0])})});
+    g.querySelector('[data-mn-menu-painel]').addEventListener('click',function(e){e.preventDefault();try{if(d.defaultView.closeSB)d.defaultView.closeSB()}catch(x){}abrirPainel(d)});
     var div=d.createElement('div');div.className='ndv';
     var vg=null;[].forEach.call(sb.querySelectorAll('.sg'),function(x){var l=x.querySelector('.sgl');if(!vg&&l&&norm(l.textContent)==='VISAO GERAL')vg=x});
     var depois=vg?vg.nextSibling:sb.firstChild;
@@ -97,13 +99,92 @@
       if(bg.indexOf('url(')>=0&&!ok(bg)){el.style.setProperty('background-image',bg.replace(/url\([^)]*\)/,'url("'+u+'")'),'important');el.style.backgroundSize='cover';el.style.backgroundPosition='center'}
       ['before','after'].forEach(function(ps){var b='';try{b=w.getComputedStyle(el,'::'+ps).backgroundImage||''}catch(e){}if(b.indexOf('url(')>=0&&!ok(b))el.setAttribute('data-mn-pseudo',ps)});
     });
-    // card do Portal sem foto (só ícone): põe a capa no topo
-    if(!card.querySelector('[data-mn-thumb]')&&!card.querySelector('img')&&!/url\(/.test(w.getComputedStyle(card).backgroundImage||'')&&!card.querySelector('[data-mn-pseudo]')){
+    // card do Portal sem foto (só ícone): põe a capa no topo (provisório, até achar um card original com foto para copiar o tamanho)
+    if(!card.querySelector('[data-mn-thumb],[data-mn-bloco]')&&!card.querySelector('img')&&!/url\(/.test(w.getComputedStyle(card).backgroundImage||'')&&!card.querySelector('[data-mn-pseudo]')){
       var t=d.createElement('div');t.setAttribute('data-mn-thumb','1');
       t.style.cssText='margin:-1px -1px 10px;aspect-ratio:16/9;border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0;background:url("'+u+'") center/cover no-repeat';
       card.insertBefore(t,card.firstChild);
     }
   }
+  // ---------- foto no MESMO tamanho dos cards originais do Portal ----------
+  // Copia o bloco de foto de um card original vizinho (largura total, 16:9, sem padding) e esconde
+  // o que o original não mostra (cabeçalho com ícone, descrição): fica só a foto + rodapé, igual aos demais.
+  // Cards criados por patch nunca servem de molde (era assim que a Obras pegou a foto do CFTV).
+  var CRIADOS='[data-mn-card],[data-adesp-card],[data-cred-card],[data-capa-obras],[data-mn-painel]';
+  function urlFundo(w,el){try{var b=w.getComputedStyle(el).backgroundImage;return b&&b.indexOf('url(')>=0?b:''}catch(e){return ''}}
+  function grande(el){var r=el.getBoundingClientRect();return r.width>=80&&r.height>=60}
+  function visivel(w,el){return w.getComputedStyle(el).display!=='none'&&el.getClientRects().length>0}
+  function imagemEm(w,el){
+    var melhor=null,area=0;
+    [].forEach.call(el.querySelectorAll('img'),function(img){if(!grande(img))return;var r=img.getBoundingClientRect();if(r.width*r.height>area){area=r.width*r.height;melhor=img}});
+    if(melhor)return melhor;
+    var todos=[el].concat([].slice.call(el.querySelectorAll('*')));
+    for(var i=0;i<todos.length;i++)if(urlFundo(w,todos[i])&&grande(todos[i]))return todos[i];
+    return null;
+  }
+  function moldeFoto(card){
+    var w=card.ownerDocument.defaultView,irmaos=card.parentElement?[].slice.call(card.parentElement.children):[];
+    for(var i=0;i<irmaos.length;i++){
+      var c=irmaos[i];if(c===card||c.matches(CRIADOS)||c.querySelector(CRIADOS)||!visivel(w,c))continue;
+      var img=imagemEm(w,c);if(img&&img!==c)return {card:c,img:img};
+    }
+    return null;
+  }
+  function vestirFoto(card,capa){
+    var d=card.ownerDocument,w=d.defaultView;
+    var feito=card.querySelector('[data-mn-bloco]');
+    if(feito&&feito.getAttribute('data-mn-bloco')===capa)return true;
+    var m=moldeFoto(card);if(!m)return false;
+    if(feito)feito.remove();
+    var topo=m.img;while(topo.parentElement!==m.card)topo=topo.parentElement;
+    var pos=[].indexOf.call(m.card.children,topo);
+    // clona e troca a imagem lendo o estilo do ORIGINAL (o clone fora da página não tem estilo calculado)
+    var bloco=topo.cloneNode(true),orig=[topo].concat([].slice.call(topo.querySelectorAll('*'))),copia=[bloco].concat([].slice.call(bloco.querySelectorAll('*')));
+    copia.forEach(function(el,i){
+      // mesmo display do original (o CSS do Portal pode depender de marcas do card original)
+      try{var dsp=w.getComputedStyle(orig[i]).display;if(dsp&&dsp!=='none')el.style.setProperty('display',dsp,'important')}catch(e){}
+      el.removeAttribute('id');el.removeAttribute('onclick');el.removeAttribute('href');
+      if(el.tagName==='SOURCE')el.setAttribute('srcset',capa);
+      else if(el.tagName==='IMG'){['srcset','sizes','loading','data-src','data-srcset'].forEach(function(a){el.removeAttribute(a)});el.src=capa;el.style.objectFit='cover';el.style.objectPosition='center'}
+      else{var bg=urlFundo(w,orig[i]);if(bg){el.style.setProperty('background-image',bg.replace(/url\([^)]*\)/,'url("'+capa+'")'),'important');el.style.backgroundSize='cover';el.style.backgroundPosition='center'}}
+    });
+    var tw=d.createTreeWalker(bloco,NodeFilter.SHOW_TEXT),n,tx=[];while((n=tw.nextNode()))if(n.nodeValue.trim())tx.push(n);
+    tx.forEach(function(x){x.nodeValue=''});   // a arte da capa já traz o nome do módulo
+    // esconde o que o original não mostra e copia espaçamentos
+    var vis=[].slice.call(m.card.children).filter(function(c){return c!==topo&&visivel(w,c)});
+    [].forEach.call(card.children,function(c){
+      if(c.hasAttribute('data-mn-thumb')){c.remove();return}
+      var par=vis.filter(function(v){return [].some.call(c.classList,function(k){return v.classList.contains(k)})})[0];
+      if(!par){c.style.display='none';return}
+      var ps=w.getComputedStyle(par);c.style.padding=ps.padding;c.style.margin=ps.margin;
+    });
+    [].forEach.call(card.querySelectorAll('[data-mn-thumb]'),function(x){x.remove()});
+    var ms=w.getComputedStyle(m.card);
+    ['padding','overflow','display','flexDirection','justifyContent','gap'].forEach(function(p){card.style[p]=ms[p]});
+    // mesma proporção exata da foto dos cards originais
+    var rt=topo.getBoundingClientRect();
+    if(rt.width&&rt.height){bloco.style.setProperty('width','100%','important');bloco.style.setProperty('aspect-ratio',(rt.width/rt.height).toFixed(4),'important');bloco.style.setProperty('overflow','hidden','important');bloco.style.setProperty('flex','0 0 auto','important');
+      [].forEach.call(bloco.querySelectorAll('img'),function(im){im.style.setProperty('width','100%','important');im.style.setProperty('height','100%','important')})}
+    bloco.setAttribute('data-mn-bloco',capa);
+    card.insertBefore(bloco,card.children[pos]||null);
+    return true;
+  }
+
+  // ---------- Painel ao vivo · Modo TV: sai da Visão Geral e vai para o menu lateral ----------
+  function cardPainel(d){
+    var t=[].filter.call(d.querySelectorAll('.oc .octtl'),function(el){return /^PAINEL AO VIVO/.test(norm(el.textContent))})[0];
+    return t?t.closest('.oc'):null;
+  }
+  function painel(d){
+    var c=cardPainel(d);
+    if(c&&c.style.display!=='none'){c.style.display='none';c.setAttribute('data-mn-painel','1')}
+  }
+  function abrirPainel(d){
+    var c=d.querySelector('[data-mn-painel]')||cardPainel(d);
+    if(c){c.click();return}
+    d.defaultView.open(BASE+'painel.html','_blank');
+  }
+
   function textos(card,m){
     var d=card.ownerDocument;
     var tt=card.querySelector('.octtl');if(tt)tt.textContent=m.titulo;
@@ -127,7 +208,7 @@
     var ancora=d.querySelector('[data-adesp-card]')||modelo;
     MODS.forEach(function(m){
       var c=d.querySelector('[data-mn-card="'+m.id+'"]');
-      if(c){trocarCapa(c,m);ancora=c;return}
+      if(c){trocarCapa(c,m);vestirFoto(c,BASE+m.capa+'?v=20261113');ancora=c;return}
       c=modelo.cloneNode(true);limpar(c);c.setAttribute('data-mn-card',m.id);c.style.cursor='pointer';
       c.setAttribute('title',m.titulo);c.setAttribute('aria-label',m.titulo);c.setAttribute('role','button');c.tabIndex=0;
       textos(c,m);
@@ -135,10 +216,12 @@
       c.addEventListener('keydown',function(ev){if(ev.key==='Enter')abrir(d,m)});
       if(ancora.parentNode!==modelo.parentNode)ancora=modelo;
       ancora.parentNode.insertBefore(c,ancora.nextSibling);ancora=c;
-      trocarCapa(c,m);
+      trocarCapa(c,m);vestirFoto(c,BASE+m.capa+'?v=20261113');
     });
+    // Auditoria de Despesas e OS (outro patch) também nasce sem foto: mesmo tamanho dos originais
+    var ad=d.querySelector('[data-adesp-card]');if(ad)vestirFoto(ad,BASE+'auditoria-despesas-capa.jpg?v=20261113');
   }
 
-  function varrer(){docs(window,[],0).forEach(function(d){try{menu(d);cards(d)}catch(e){console.warn('[Portal] Módulos novos:',e)}})}
+  function varrer(){docs(window,[],0).forEach(function(d){try{menu(d);painel(d);cards(d)}catch(e){console.warn('[Portal] Módulos novos:',e)}})}
   varrer();setInterval(varrer,1500);
 })();
