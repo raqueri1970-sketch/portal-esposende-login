@@ -889,8 +889,6 @@ async function openPortal(){
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('obras-pagamentos-patch.js?v=20261103-1',location.href).href+'"></scr'+'ipt>');
   // RL Transportes: "Painel Completo" abre no Portal lendo o Supabase (antes apontava para o PC D90 pelo Tailscale).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('rl-painel-patch.js?v=20261013-2',location.href).href+'"></scr'+'ipt>');
-  // Auditoria Financeira: Contas a Pagar do Sallamo com cruzamentos de possíveis irregularidades (menu Financeiro).
-  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('financeiro-patch.js?v=20261021-1',location.href).href+'"></scr'+'ipt>');
   // Estado de tela dos módulos: não restaura filtros pela posição (NF-e mostrava só 4 notas após carga nova de outro usuário) e recalcula os cartões do NF-e.
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('estado-modulos-patch.js?v=20261105-1',location.href).href+'"></scr'+'ipt>');
   // Última atualização de cada módulo (topo e Visão Geral) + recarga automática quando outro usuário atualiza a nuvem.
@@ -901,6 +899,9 @@ async function openPortal(){
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('faltas-atrasos-patch.js?v=20261113-2',location.href).href+'"></scr'+'ipt>');
   // Auditoria de Despesas e OS: card na visão geral (ao lado de Obras & Reformas) e item no menu Auditoria (tela auditoria-despesas/).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('auditoria-despesas-patch.js?v=20261109-1',location.href).href+'"></scr'+'ipt>');
+  // Módulos novos (Faltas e Atrasos, Auditoria Financeira, Segurança e CFTV, Patrimônio de Segurança, Consumo Loja):
+  // card com capa na Visão Geral + grupo "Novos Módulos" no menu + Voltar ao Portal confiável. Substitui financeiro-patch; Faltas e Atrasos segue no patch próprio (versão lida dele).
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('modulos-novos-patch.js?v=20261113-1',location.href).href+'"></scr'+'ipt>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
