@@ -1790,8 +1790,8 @@ async function faBoard(){
     +faRKpi('Divergência ponto × folha',hasF?faBRL0(cc.faltouV+cc.excessoV+cc.dsrConfV+cc.semPontoV):'—',hasF?acts.length+' caso(s)':'folha não carregada',acts.length?'bad':'')
     +faRKpi('Demitidos acertados na rescisão',hasF?faBRL0(cc.demV):'—',hasF?cc.demN+' pessoas · '+faH(cc.demH):'')
     +faRKpi('Absenteísmo',T.rate!=null?faDec(T.rate,2)+'%':'—',faClock(T.minutes)+' perdidas · '+T.faltaEvents+' faltas · '+T.atrasoEvents+' atrasos')+'</section>';
-  const ccb=M?'<div class="fa-r-box"><h2>Conta corrente do banco de horas <span class="fa-r-note">'+ini+' a '+fim+' · horas e R$ pelo valor-hora da folha</span></h2>'+faLedgers(X,true,false)+'</div>':'';
-  const p2='<div class="fa-r fa-r-pres fa-r-page2">'+faRHead('Detalhe · conta corrente do banco e indicadores',m)+kp2+ccb+faRFoot()+'</div>';
+  const rk=M?'<section class="fa-r-grid" style="grid-template-columns:1fr 1fr;margin-bottom:0"><div class="fa-r-box"><h2>Ranking negativo por regional <span class="fa-r-lg"><i style="background:#e7a3a3"></i>Banco negativo <i style="background:#c43d3d"></i>Aumentou sem desconto</span></h2>'+faHBars(X.reg,560,true,null,26)+'</div><div class="fa-r-box"><h2>Ranking positivo por regional <span class="fa-r-note">empresa deve · hora normal · posição '+fim.slice(0,5)+'</span></h2>'+faHBarsP(X.regPos,560,true,null,26)+'</div></section>':'';
+  const p2='<div class="fa-r fa-r-pres fa-r-page2">'+faRHead('Detalhe · indicadores e ranking por regional',m)+kp2+rk+faRFoot()+'</div>';
   faDoPrint(p1+p2,'Relatorio_Presidencia_Faltas_Atrasos');
 }
 async function faPrint(){
