@@ -1737,6 +1737,25 @@ function faPosNegChart(X,W,H){const ini=faBR(faModel.period.start).slice(0,5),fi
      +'<text x="'+cx+'" y="'+(z+hn+31)+'" text-anchor="middle" style="fill:#5b6776;font-size:12px">'+faH(x.nh)+' · funcionários devem</text>'
      +'<text x="'+cx+'" y="'+(H-4)+'" text-anchor="middle" style="fill:#14202e;font-weight:700;font-size:13.5px">'+x.l+'</text>'});
   return '<svg class="fa-r-svg" viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Banco de horas positivo e negativo">'+s+'</svg>'}
+/* Positivo × negativo por regional (barras divergentes) + total da empresa */
+function faRegPosNeg(X,W){const mp=new Map();[...X.reg,...X.regPos].forEach(x=>mp.set(x.k,x));const L=[...mp.values()].sort((a,b)=>b.negV-a.negV||b.posV-a.posV);if(!L.length)return '<p class="fa-r-empty">Sem dados.</p>';
+  const rh=34,lw=190,pad=150,top=22,H=top+L.length*rh+46,mn=Math.max(1,...L.map(x=>x.negV)),mx=Math.max(1,...L.map(x=>x.posV)),k=(W-lw-2*pad)/(mn+mx),z=lw+pad+mn*k;
+  let s='<text x="'+(z-8)+'" y="12" text-anchor="end" style="fill:#8e2a2a;font-weight:700;font-size:11px">◀ NEGATIVO · funcionários devem</text><text x="'+(z+8)+'" y="12" style="fill:#1f6b45;font-weight:700;font-size:11px">POSITIVO · empresa deve ▶</text>';
+  L.forEach((x,i)=>{const y=top+i*rh,bh=rh*.56,by=y+rh*.18,wn=x.negV>0.5?Math.max(2,x.negV*k):0,wa=x.atrV>0.5?Math.max(2,x.atrV*k):0,wp=x.posV>0.5?Math.max(2,x.posV*k):0;
+    if(i%2)s+='<rect x="0" y="'+y+'" width="'+W+'" height="'+rh+'" fill="#f6f8fb"/>';
+    s+='<text x="8" y="'+(y+rh*.47)+'" style="fill:#14202e;font-weight:700;font-size:12.5px">'+faEsc(String(x.k).slice(0,24))+'</text><text x="8" y="'+(y+rh*.85)+'" style="fill:#5b6776;font-size:10px">'+x.negN+' negativos · '+x.posN+' positivos</text>';
+    if(wn)s+='<rect x="'+(z-wn)+'" y="'+by+'" width="'+wn+'" height="'+bh+'" rx="3" fill="#e7a3a3"/>';
+    if(wa)s+='<rect x="'+(z-wa)+'" y="'+by+'" width="'+wa+'" height="'+bh+'" rx="3" fill="#c43d3d"/>';
+    if(wp)s+='<rect x="'+z+'" y="'+by+'" width="'+wp+'" height="'+bh+'" rx="3" fill="#1f8a57"/>';
+    s+='<text x="'+(z-wn-6)+'" y="'+(y+rh*.47)+'" text-anchor="end" style="fill:#8e2a2a;font-weight:700;font-size:12.5px">−'+faBRL0(x.negV)+'</text><text x="'+(z-wn-6)+'" y="'+(y+rh*.85)+'" text-anchor="end" style="fill:#5b6776;font-size:10px">'+faH(x.negH)+(x.atrV>0.5?' · '+faBRL0(x.atrV)+' sem desconto':'')+'</text>';
+    s+='<text x="'+(z+wp+6)+'" y="'+(y+rh*.47)+'" style="fill:#1f6b45;font-weight:700;font-size:12.5px">+'+faBRL0(x.posV)+'</text><text x="'+(z+wp+6)+'" y="'+(y+rh*.85)+'" style="fill:#5b6776;font-size:10px">'+faH(x.posH)+'</text>'});
+  const yt=top+L.length*rh,net=X.pos.sdbhV-X.neg.v;
+  s+='<line x1="'+z+'" x2="'+z+'" y1="'+(top-4)+'" y2="'+(yt+2)+'" stroke="#9aa5b3" stroke-width="1"/><line x1="0" x2="'+W+'" y1="'+(yt+6)+'" y2="'+(yt+6)+'" stroke="#14284a" stroke-width="1.2"/>'
+   +'<text x="8" y="'+(yt+24)+'" style="fill:#14202e;font-weight:800;font-size:13px">EMPRESA (total)</text><text x="8" y="'+(yt+39)+'" style="fill:#5b6776;font-size:10px">'+X.neg.n+' negativos · '+X.pos.n+' positivos</text>'
+   +'<text x="'+(z-8)+'" y="'+(yt+24)+'" text-anchor="end" style="fill:#8e2a2a;font-weight:800;font-size:14px">−'+faBRL0(X.neg.v)+'</text><text x="'+(z-8)+'" y="'+(yt+39)+'" text-anchor="end" style="fill:#5b6776;font-size:10px">'+faH(X.neg.h)+'</text>'
+   +'<text x="'+(z+8)+'" y="'+(yt+24)+'" style="fill:#1f6b45;font-weight:800;font-size:14px">+'+faBRL0(X.pos.sdbhV)+'</text><text x="'+(z+8)+'" y="'+(yt+39)+'" style="fill:#5b6776;font-size:10px">'+faH(X.pos.sdbh)+'</text>'
+   +'<text x="'+(W-8)+'" y="'+(yt+24)+'" text-anchor="end" style="fill:#14202e;font-weight:800;font-size:13px">Líquido '+faBRL0(Math.abs(net))+'</text><text x="'+(W-8)+'" y="'+(yt+39)+'" text-anchor="end" style="fill:#5b6776;font-size:10px">a favor '+(net>=0?'dos funcionários':'da empresa')+'</text>';
+  return '<svg class="fa-r-svg" viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Banco positivo e negativo por regional">'+s+'</svg>'}
 async function faBoard(){
   const m=faModel;if(!m)return;const T=m.totals,cc=faCCTotals(m.rows),hasF=m.sources.payrollAvailable,X=faExecData(m),M=m.mirror,MT=M?M.totals:{};
   const acts=m.rows.filter(r=>r.acao&&!['ok','semfolha','demitido'].includes(r.acao));
@@ -1790,8 +1809,8 @@ async function faBoard(){
     +faRKpi('Divergência ponto × folha',hasF?faBRL0(cc.faltouV+cc.excessoV+cc.dsrConfV+cc.semPontoV):'—',hasF?acts.length+' caso(s)':'folha não carregada',acts.length?'bad':'')
     +faRKpi('Demitidos acertados na rescisão',hasF?faBRL0(cc.demV):'—',hasF?cc.demN+' pessoas · '+faH(cc.demH):'')
     +faRKpi('Absenteísmo',T.rate!=null?faDec(T.rate,2)+'%':'—',faClock(T.minutes)+' perdidas · '+T.faltaEvents+' faltas · '+T.atrasoEvents+' atrasos')+'</section>';
-  const rk=M?'<section class="fa-r-grid" style="grid-template-columns:1fr 1fr;margin-bottom:0"><div class="fa-r-box"><h2>Ranking negativo por regional <span class="fa-r-lg"><i style="background:#e7a3a3"></i>Banco negativo <i style="background:#c43d3d"></i>Aumentou sem desconto</span></h2>'+faHBars(X.reg,560,true,null,26)+'</div><div class="fa-r-box"><h2>Ranking positivo por regional <span class="fa-r-note">empresa deve · hora normal · posição '+fim.slice(0,5)+'</span></h2>'+faHBarsP(X.regPos,560,true,null,26)+'</div></section>':'';
-  const p2='<div class="fa-r fa-r-pres fa-r-page2">'+faRHead('Detalhe · indicadores e ranking por regional',m)+kp2+rk+faRFoot()+'</div>';
+  const rk=M?'<div class="fa-r-box"><h2>Banco de horas · negativo × positivo por regional <span class="fa-r-lg"><i style="background:#e7a3a3"></i>Negativo <i style="background:#c43d3d"></i>Aumentou sem desconto <i style="background:#1f8a57"></i>Positivo · posição '+fim.slice(0,5)+'</span></h2>'+faRegPosNeg(X,1100)+'</div>':'';
+  const p2='<div class="fa-r fa-r-pres fa-r-page2">'+faRHead('Detalhe · indicadores e banco por regional',m)+kp2+rk+faRFoot()+'</div>';
   faDoPrint(p1+p2,'Relatorio_Presidencia_Faltas_Atrasos');
 }
 async function faPrint(){
