@@ -4,7 +4,9 @@
    - A cada 60 s confere a nuvem. Se outro usuário (ex.: Roberto) atualizou um módulo:
        · módulo fechado/fora da tela → recarrega sozinho na próxima abertura;
        · módulo aberto na tela → aparece a faixa "Nova atualização… Atualizar agora".
-   Lê public.portal_status_atualizacoes() (migração 20261105_nf_trava_sync.sql); sem ela, usa só portal_sync.
+   - Envio recusado pela trava (ex.: arquivo antigo reenviado pelo cache do navegador) aparece em vermelho:
+     "⛔ envio de dd/mm hh:mm por fulano RECUSADO · motivo — a nuvem manteve N notas de dd/mm".
+   Lê public.portal_status_atualizacoes() (migrações 20261105_nf_trava_sync.sql e 20261116_status_envio_recusado.sql); sem ela, usa só portal_sync.
    Para desligar: remova a linha do atualizacoes-patch.js no index.html. */
 (function(){
   if(window.__atualizacoesPatch)return;window.__atualizacoesPatch=true;
@@ -35,6 +37,7 @@
     if(h<48)return 'há '+Math.round(h)+' h';
     return 'há '+Math.round(h/24)+' dias';
   }
+  function esc(v){return String(v==null?'':v).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function quem(u){return u?String(u).split('@')[0].replace(/\./g,' '):'';}
 
   var css=document.createElement('style');
@@ -43,6 +46,7 @@
     'font:600 11px/1.3 Inter,system-ui,sans-serif;border:1px solid rgba(16,185,129,.35);background:rgba(16,185,129,.08);color:#6ee7b7;max-width:100%;flex-wrap:wrap}'+
     '.atz-badge.velho{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08);color:#fcd34d}'+
     '.atz-badge .atz-sub{font-weight:500;color:#a8bdd8}'+
+    '.atz-badge .atz-rec{font-weight:700;color:#fecaca;background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.5);border-radius:999px;padding:1px 8px}'+
     '.atz-card{margin-top:6px;font:500 10.5px/1.3 Inter,system-ui,sans-serif;color:#6b88a8}'+
     '.atz-card b{color:#a8bdd8;font-weight:600}'+
     '.atz-faixa{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0;padding:9px 12px;border-radius:8px;'+
@@ -50,15 +54,32 @@
     '.atz-faixa button{border:0;border-radius:6px;padding:6px 12px;background:#3b82f6;color:#fff;font:700 12px Inter,system-ui,sans-serif;cursor:pointer}';
   document.head.appendChild(css);
 
+  // Envio recusado pela trava da nuvem (portal_sync_bloqueios): o último envio é o recusado
+  // quando a recusa é posterior aos dados da nuvem e não há envio aceito depois dela.
+  function recusa(st){
+    if(!st||!st.recusado_em)return null;
+    var r=new Date(st.recusado_em).getTime(),d=new Date(st.dados_em).getTime();
+    if(!(r>d))return null;
+    if(st.ultimo_envio&&new Date(st.ultimo_envio).getTime()-r>5000)return null;
+    return st;
+  }
   function textoBadge(st){
     var t='☁ Atualizado na nuvem: '+fmt(st.dados_em)+' ('+idade(st.dados_em)+')';
-    var sub='';
+    var sub='',rec='';
+    var rc=recusa(st);
+    if(rc){
+      var un=st.module_id==='nf'?' notas':' linhas';
+      rec='⛔ envio de '+fmt(rc.recusado_em)+(rc.recusado_usuario?' por '+quem(rc.recusado_usuario):'')+' RECUSADO';
+      sub=(rc.recusado_motivo?rc.recusado_motivo:'arquivo inválido')+
+          (rc.recusado_n_atual!=null?' — a nuvem manteve '+Number(rc.recusado_n_atual).toLocaleString('pt-BR')+un+' de '+fmt(st.dados_em):'');
+      return {t:t,sub:sub,rec:rec};
+    }
     if(st.ultimo_envio){
       var igual=st.dados_em&&new Date(st.ultimo_envio)-new Date(st.dados_em)>120000;
       sub=igual?'último envio '+fmt(st.ultimo_envio)+(st.usuario?' por '+quem(st.usuario):'')+' — sem mudança nos dados'
                :(st.usuario?'por '+quem(st.usuario):'');
     }
-    return {t:t,sub:sub};
+    return {t:t,sub:sub,rec:''};
   }
 
   function pintarModulo(pid){
@@ -67,9 +88,9 @@
     var b=document.getElementById('atz-'+pid);
     if(!b){b=document.createElement('div');b.id='atz-'+pid;b.className='atz-badge';alvo.appendChild(b);}
     var x=textoBadge(st);
-    b.innerHTML='<span>'+x.t+'</span>'+(x.sub?'<span class="atz-sub">· '+x.sub+'</span>':'');
+    b.innerHTML='<span>'+x.t+'</span>'+(x.rec?'<span class="atz-rec">'+esc(x.rec)+'</span>':'')+(x.sub?'<span class="atz-sub">· '+esc(x.sub)+'</span>':'');
     b.classList.toggle('velho',(Date.now()-new Date(st.dados_em).getTime())>7*864e5);
-    b.title='Data em que os dados deste módulo foram gravados na nuvem (Supabase). Todos os usuários veem a mesma.';
+    b.title=(x.rec?'A trava da nuvem recusou o último envio e manteve os dados anteriores. ':'')+'Data em que os dados deste módulo foram gravados na nuvem (Supabase). Todos os usuários veem a mesma.';
     // Faixa de atualização nova
     var f=document.getElementById('atzf-'+pid);
     if(pendente[pid]){
@@ -120,7 +141,9 @@
     linhas.forEach(function(l){
       var pid=l.module_id;if(!pid||IGNORAR[pid])return;
       var antes=estado[pid]&&estado[pid].dados_em;
-      estado[pid]={dados_em:l.dados_em,ultimo_envio:l.ultimo_envio,usuario:l.usuario};
+      estado[pid]={module_id:pid,dados_em:l.dados_em,ultimo_envio:l.ultimo_envio,usuario:l.usuario,
+        recusado_em:l.recusado_em,recusado_motivo:l.recusado_motivo,recusado_usuario:l.recusado_usuario,
+        recusado_n:l.recusado_n,recusado_n_atual:l.recusado_n_atual};
       var ifr=document.getElementById('ifr-'+pid);
       var aberto=!!(ifr&&ifr.src&&ifr.src!=='about:blank'&&(typeof LOADED==='undefined'||LOADED[pid]));
       if(aberto&&!carregadoEm[pid])carregadoEm[pid]=antes||l.dados_em;
