@@ -904,6 +904,8 @@ async function openPortal(){
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('modulos-novos-patch.js?v=20261116-4',location.href).href+'"></scr'+'ipt>');
   // Descontos de Funcionários: nova versão (base compartilhada em cmpaud_cargas, pesquisa inteligente, suspeitas, relatórios com data e nº da venda).
   html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('descontos-funcionarios-patch.js?v=20261116-2',location.href).href+'"></scr'+'ipt>');
+  // Central de Auditoria RH: importar várias folhas de uma vez (Dados → Importar Folhas), Folhas por Competência e histórico 01–10/2026.
+  html=inserirAntesDoFimDoBody(html,'<scr'+'ipt src="'+new URL('rh-folhas-patch.js?v=20261117-1',location.href).href+'"></scr'+'ipt>');
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var blobUrl=URL.createObjectURL(blob);
   var ifr=document.getElementById('portalFrame');
