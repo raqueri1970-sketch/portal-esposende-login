@@ -12,7 +12,7 @@
   var NOMES={nf:'NF-e Canceladas',rem:'Remanejo',alm:'Almoxarifado',cmpaud:'Descontos de Funcionários',
     desc:'Auditoria de Compras',mei:'Campanha Meias',gren:'Campanha Grendene',saci:'Casamento de Saci',
     sgdf:'Sistema de Defeitos',resc:'Rescisões',cml:'Comercial',rl:'RL Transportes'};
-  var IGNORAR={vigilante:1,sentinela:1,sentinela_auditoria_manual:1,saci_regional:1,saci_loja:1,saci_d1:1};
+  var IGNORAR={vigilante:1,sentinela:1,sentinela_auditoria_manual:1,saci_regional:1,saci_loja:1,saci_d1:1,saci_rede:1};
   var estado={};      // pid -> {dados_em, ultimo_envio, usuario}
   var carregadoEm={}; // pid -> dados_em visto quando o módulo foi aberto
   var pendente={};    // pid -> true se há versão nova não carregada
