@@ -52,3 +52,10 @@ Auditar folha, funcionário, cargo, loja e faixas autorizadas. Detectar valores 
 - fa-v31 (13/11/2026) Percentual em todos os cards do painel (participação no grupo e variação em HORAS no mês, igual ao extrato). Faixa 'como os números se encaixam': 1.180 no espelho › 1.164 com banco (16 sem) › 276 negativos + 888 positivos; 276 › 266 sem nenhum desconto (10 com algum) › 80 já negativos que pioraram com atrasos. Os 266 = 80 + 66 ficaram negativos no mês + 118 já negativos que não pioraram + 2 pioraram só por folga. Conjuntos aninhados, não se somam.
 - fa-v32 (13/11/2026) Diretoria: faixa 'como os números se encaixam' entre a linha do negativo e a do positivo; saldo líquido sai só no card (sem repetir embaixo do extrato); escala 94% para manter 1 página.
 - fa-v33 (13/11/2026) Faixa 'como os números se encaixam' retirada do relatório da Diretoria (fica só no painel), a pedido.
+
+## Central de Auditoria RH — folhas multi-competência (`rh-folhas-patch.js`, 17/11/2026)
+- Patch injeta no módulo RH (iframe `ifr-rh`, arquivo do Storage): Dados → **📥 Importar Folhas** (vários `FOLHA MM-AAAA.xlsx` de uma vez, leitura no navegador; aba Sheet1 = uma linha por rubrica por funcionário) e **🗓️ Folhas por Competência**. Histórico, Comparativo Mensal, Anomalias e Previsões passam a usar a série; o dossiê do funcionário ganha o histórico mês a mês.
+- Regra: 2001 = bruto, 2002 = descontos, 2004 = salário contratual, líquido = 2001 − 2002. Conferido: folha 06/2026 = auditoria completa (43.532 linhas, 1.377 funcionários, bruto R$ 3.552.616,40).
+- Base embutida para todos: `rh-folhas/base-folhas.b64` (gzip+base64, folhas 01 a 10/2026). Folha importada pela tela fica no navegador (IndexedDB) e substitui a embutida da mesma competência.
+- Auditoria completa (parecer, comissões, CNAB) continua sendo a de 06/2026; 07–10 aparecem como "Só folha".
+- Fonte e geração: repositório `sistema-de-auditoria`, pasta `rh-auditoria/` (`ferramentas/gerar_patch_portal.py`). Se o arquivo do Storage já trouxer as telas, o patch não faz nada.
