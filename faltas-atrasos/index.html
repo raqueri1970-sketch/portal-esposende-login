@@ -209,6 +209,17 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
   .fa-r-kpi b{display:block;font-size:14pt;font-weight:650;margin:2px 0 1px;font-variant-numeric:tabular-nums}
   .fa-r-kpi.good{border-top-color:#1f8a57}.fa-r-kpi.good b{color:#1f8a57}.fa-r-kpi.bad b{color:#c43d3d}.fa-r-kpi.warn b{color:#9a6500}
   .fa-r-kpi small{font-size:7pt;color:#5b6776}
+  .fa-rpk{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin-bottom:10px}
+  .fa-rpk>div{border:1px solid #d9dee5;border-radius:5px;padding:7px 9px 6px;border-top:2.5px solid #14284a;display:flex;flex-direction:column}
+  .fa-rpk .t{font-size:6.6pt;color:#5b6776;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+  .fa-rpk .n{font-size:17pt;font-weight:700;margin:3px 0 5px;font-variant-numeric:tabular-nums;line-height:1}.fa-rpk .n small{font-size:7pt;font-weight:600;color:#5b6776;margin-left:3px}
+  .fa-rpk .m{display:grid;grid-template-columns:1.3fr 1fr .8fr;border-top:1px solid #e3e7ed;border-bottom:1px solid #e3e7ed;padding:4px 0}
+  .fa-rpk .m div+div{border-left:1px solid #e3e7ed;padding-left:5px}.fa-rpk .m span{display:block;font-size:5.6pt;color:#7a8594;text-transform:uppercase;letter-spacing:.3px}
+  .fa-rpk .m b{font-size:8.6pt;font-weight:650;color:#14202e;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .fa-rpk .x{font-size:6.8pt;color:#3d4957;margin-top:4px;line-height:1.3}.fa-rpk .x .r{color:#c43d3d;font-weight:700}.fa-rpk .x .w{color:#9a6500;font-weight:600}
+  .fa-rpk .b{font-size:6pt;color:#7a8594;margin-top:auto;padding-top:3px}
+  .fa-rpk .warn{border-top-color:#b97a00}.fa-rpk .warn .n{color:#9a6500}.fa-rpk .ok{border-top-color:#1f8a57}.fa-rpk .ok .n{color:#1f8a57}
+  .fa-rpk .bad,.fa-rpk .neg{border-top-color:#c43d3d}.fa-rpk .bad .n,.fa-rpk .neg .n{color:#c43d3d}.fa-rpk .net{border-top-color:#2f6fc4}.fa-rpk .net .n{color:#2f6fc4}
   .fa-r-read{background:#f4f6f9;border-left:3px solid #14284a;border-radius:0 5px 5px 0;padding:7px 11px;margin-bottom:10px}
   .fa-r-read ul{margin:0;padding-left:14px}.fa-r-read li{margin:1.5px 0}.fa-r-read b{font-weight:650}
   .fa-r-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:12px;margin-bottom:10px;break-inside:avoid}
@@ -1764,12 +1775,16 @@ function faRegPosNeg(X,W){const mp=new Map();[...X.reg,...X.regPos].forEach(x=>m
 /* Página do Relatório da Diretoria: Resumo de atrasos e faltas (mesmos números da aba) */
 function faBoardResumo(m,RA){const t=RA.t,ini=faBR(m.period.start),fim=faBR(m.period.end),qp=RA.quadroPonto||m.ativos||0,pc=(a,b)=>b?faDec(a/b*100,1)+'%':'—',cc=RA.hasF?faCCTotals(m.rows):null;
   const nao=RA.L.filter(x=>x.st==='nao').length,soma=RA.D.length+t.soBanco+nao+t.demO;
-  const kp='<section class="fa-r-kpis" style="grid-template-columns:repeat(5,minmax(0,1fr))">'
-   +faRKpi('Atrasaram ou faltaram',faInt(t.n)+' pessoas',pc(t.n,qp)+' de quem bate ponto · '+faH(t.devH)+' · '+faBRL0(t.devV),'warn')
-   +faRKpi('Descontados na folha',faBRL0(t.descV),t.descN+' pessoas · '+faH(t.descH+t.descDsrH)+' (falta/atraso + DSR)','')
-   +faRKpi('Não descontados',faBRL0(t.naoV),t.naoN+' pessoas · '+faH(t.naoH),t.naoN?'bad':'')
-   +faRKpi('Compensaram no banco',faInt(t.soBanco)+' pessoas',faBRL0(t.soBancoV)+' · '+faH(t.soBancoH)+' sem nada a descontar','')
-   +faRKpi('Já tinham banco negativo',faInt(RA.G.length)+' pessoas',t.gPiorou+' pioraram · '+t.gSemDesc+' sem desconto ('+faBRL0(t.gSemDescV)+')','bad')+'</section>';
+  const C=(cls,ti,n,v,hh,pp,pl,x,b)=>'<div class="'+cls+'"><div class="t">'+ti+'</div><div class="n">'+n+'<small>'+(n==='—'?'':'pessoas')+'</small></div><div class="m"><div><span>Valor</span><b>'+v+'</b></div><div><span>Horas</span><b>'+hh+'</b></div><div><span>'+pl+'</span><b>'+pp+'</b></div></div><div class="x">'+x+'</div><div class="b">'+b+'</div></div>';
+  const i5=ini.slice(0,5),f5=fim.slice(0,5),fo='Folha '+faEsc(m.payrollPeriod||'—'),bate=cc&&Math.abs(cc.descV-t.descV)<0.05;
+  const kp='<section class="fa-rpk">'
+   +C('warn','Atrasaram ou faltaram',faInt(t.n),faBRL0(t.devV),faH(t.devH),pc(t.n,qp),'% quadro',faInt(t.atrN)+' com atraso · '+faInt(t.faltaN)+' com falta','Espelho '+i5+'–'+f5)
+   +C(t.parcial?'warn':'ok','Descontados na folha',faInt(t.descN),faBRL0(t.descV),faH(t.descH+t.descDsrH),pc(RA.D.length,t.n),'% atras.',t.ativDescN+' ativos '+faBRL0(t.ativDescV)+' · '+t.demN+' desligados '+faBRL0(t.demV)+(cc?(bate?' · ✓ conta corrente':' · <span class="r">≠ conta corrente</span>'):''),fo)
+   +C(t.naoN?'bad':'ok','Não descontados',faInt(t.naoN),faBRL0(t.naoV),faH(t.naoH),pc(t.naoN,t.n),'% atras.',t.naoFalta+' falta · '+t.naoSemBanco+' atraso sem banco',fo+' × espelho')
+   +C('net','Compensaram no banco',faInt(RA.B.length),faBRL0(t.bancoV),faH(t.bancoH),pc(RA.B.length,t.n),'% atras.',t.soBanco+' só no banco, sem nada a descontar','Espelho até '+f5)
+   +C(t.gSemDesc?'neg':'ok','Já tinham banco negativo',faInt(RA.G.length),faBRL0(t.santV),faH(t.santH),pc(RA.G.length,t.n),'% atras.','<span class="r">'+t.gSemDesc+' pioraram sem desconto · '+faBRL0(t.gSemDescV)+'</span>','Saldo em '+i5)
+   +C('warn','Advertidos','—','—','—','—','% atras.','<span class="w">aguardando relatório do sistema de RH</span>','Sistema de RH')
+   +'</section>';
   const comp='<div class="fa-r-box"><h2>Quem atrasou ou faltou <span class="fa-r-note">espelho AbsisRH '+ini.slice(0,5)+' a '+fim.slice(0,5)+'</span></h2><table class="fa-r-cc"><thead><tr><th></th><th class="n">Pessoas</th><th class="n">Dias</th><th class="n">Horas</th><th class="n">R$</th></tr></thead><tbody>'
    +'<tr><td>Atrasos e saídas antes</td><td class="n">'+faInt(t.atrN)+'</td><td class="n">'+faInt(t.atrDias)+'</td><td class="n">'+faH(t.atrHh)+'</td><td class="n">'+faBRL0(t.atrV)+'</td></tr>'
    +'<tr><td>Faltas</td><td class="n">'+faInt(t.faltaN)+'</td><td class="n">'+faInt(t.faltaDias)+'</td><td class="n">'+faH(t.faltaHh)+'</td><td class="n">'+faBRL0(t.faltaV)+'</td></tr>'
@@ -1791,9 +1806,9 @@ function faBoardResumo(m,RA){const t=RA.t,ini=faBR(m.period.start),fim=faBR(m.pe
   const RL=[...regs.values()].sort((a,b)=>b.n-a.n),row=(o,l,c)=>'<tr'+(c?' class="tot"':'')+'><td>'+l+'</td><td class="n">'+faInt(o.n)+'</td><td class="n">'+faInt(o.f)+'</td><td class="n">'+faInt(o.b)+'</td><td class="n">'+faInt(o.d)+'<small>'+faBRL0(o.dV)+'</small></td><td class="n">'+faInt(o.nn)+'<small>'+faBRL0(o.nV)+'</small></td><td class="n">'+faInt(o.g)+'</td><td class="n">'+faInt(o.gs)+'</td></tr>';
   const tot=RL.reduce((a,o)=>{for(const k in a)a[k]+=o[k];return a},{n:0,f:0,d:0,dV:0,nn:0,nV:0,b:0,g:0,gs:0});
   const reg='<div class="fa-r-box"><h2>Por regional</h2><table class="fa-r-cc"><thead><tr><th>Regional</th><th class="n">Atrasaram ou faltaram</th><th class="n">Faltaram</th><th class="n">Compensaram no banco</th><th class="n">Descontados</th><th class="n">Não descontados</th><th class="n">Já negativos</th><th class="n">Pioraram sem desconto</th></tr></thead><tbody>'+RL.map(o=>row(o,faEsc(o.k),false)).join('')+row(tot,'Total',true)+'</tbody></table></div>';
-  return '<div class="fa-r fa-r-pres fa-r-page2">'+faRHead('Atrasos e faltas · resumo do período (atraso inclui falta)',m)+kp
+  return '<div class="fa-r fa-r-pres fa-r-page2" style="zoom:.94">'+faRHead('Atrasos e faltas · competência '+faEsc(m.payrollPeriod||'')+' · ponto '+ini.slice(0,5)+' a '+fim.slice(0,5),m)+kp
    +'<section class="fa-r-grid" style="grid-template-columns:1fr 1fr">'+comp+desc+'</section>'+reg
-   +'<p class="fa-r-fine">Atraso = débito no banco em dia trabalhado sem observação no espelho + atraso injustificado (ATRA INJ). Falta = FALT no espelho. Débito em dia de curso, atestado, acompanhamento ou folga compensada não conta. O AbsisRH já aplica a tolerância de 15 min. R$ pelo valor-hora (salário contratual ÷ carga horária). Advertências: o relatório do sistema de RH ainda não está na base.</p>'+faRFoot()+'</div>'}
+   +'<p class="fa-r-fine" style="margin:4px 0 0">Atraso = entrada atrasada ou saída antes (débito no banco em dia sem observação + ATRA INJ) · falta = FALT · curso, atestado e folga compensada não contam · tolerância de 15 min já aplicada pelo AbsisRH · R$ = salário contratual ÷ carga horária.</p>'+faRFoot()+'</div>'}
 async function faBoard(){
   const m=faModel;if(!m)return;const T=m.totals,cc=faCCTotals(m.rows),hasF=m.sources.payrollAvailable,X=faExecData(m),M=m.mirror,MT=M?M.totals:{};
   const acts=m.rows.filter(r=>r.acao&&!['ok','semfolha','demitido'].includes(r.acao));
