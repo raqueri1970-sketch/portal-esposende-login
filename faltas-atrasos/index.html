@@ -775,7 +775,7 @@ function faMirrorCompute(inp,ctx){
     if(r.deixou>0.01){T.deixN++;T.deixH+=r.deixou;T.deixV+=r.deixouV}
     if(neg>0.01){T.negN++;T.negH+=neg;T.negV+=r.negV;T.negPerH+=r.negPer;T.negPerV+=r.negPer*r.rate;T.negAntH+=r.negAnt;T.negAntV+=r.negAnt*r.rate}
     r.semDesc=neg>0.01&&r.naFolha&&r.folhaDescH<=0.01&&r.folhaDescV<=0.01;
-    r.atrH=Math.max(0,(r.DEBT||0)-(r.compBco||0));r.aumH=(r.SANT||0)-(r.SDBH||0);r.atrDev=Math.max(0,Math.min(r.atrH,r.aumH));r.atrV=r.atrDev*r.rate;
+    r.atrH=Math.max(0,(r.DEBT||0)-(r.compBco||0));{const dd=typeof faMirrorDays!=='undefined'&&faMirrorDays&&faMirrorDays.get(r.code);if(dd){let a=0,n=0;dd.forEach(d=>{const ob=String(d[2]||'').trim(),x=String(d[3]||'').match(/(?:^|,)DEBT=(-?\d+)/);if(x&&+x[1]>0&&!ob){a+=+x[1];n++}});r.atrH=a/60;r.atrDias=n}}/* atraso = débito em dia sem observação (curso, atestado e folga compensada não são atraso) */r.aumH=(r.SANT||0)-(r.SDBH||0);r.atrDev=Math.max(0,Math.min(r.atrH,r.aumH));r.atrV=r.atrDev*r.rate;
     r.negAtr=r.semDesc&&(r.SANT||0)<-0.01&&r.atrH>FA_TOL_H&&r.aumH>0.01;if(r.negAtr){T.naN3=(T.naN3||0)+1;T.naH3=(T.naH3||0)+r.atrDev;T.naAtrH=(T.naAtrH||0)+r.atrH;T.naV3=(T.naV3||0)+r.atrV;T.naAum=(T.naAum||0)+r.aumH;T.naNegV3=(T.naNegV3||0)+r.negV;T.naDias3=(T.naDias3||0)+(r.atrDias||0)}r.semFolhaNeg=neg>0.01&&!r.naFolha;
     if(r.semDesc){T.sdN++;T.sdH+=neg;T.sdV+=r.negV;T.sdPerH+=r.negPer;T.sdPerV+=r.negPer*r.rate}if(r.semFolhaNeg){T.sfN++;T.sfH+=neg;T.sfV+=r.negV}if(neg>0.01&&r.naoAtivo){T.naN2++;T.naH2+=neg;T.naV2+=r.negV;const k=r.desligSaida?'Desligado':r.situ||'—';T.naSitu[k]=(T.naSitu[k]||0)+1}
     if(r.exDebH>0.01){T.exN++;T.exH+=r.exDebH;T.exV+=r.exV;T.exDias+=r.exDays.length}
@@ -1761,6 +1761,39 @@ function faRegPosNeg(X,W){const mp=new Map();[...X.reg,...X.regPos].forEach(x=>m
    +'<text x="'+(z+8)+'" y="'+(yt+24)+'" style="fill:#1f6b45;font-weight:800;font-size:14px">+'+faBRL0(X.pos.sdbhV)+'</text><text x="'+(z+8)+'" y="'+(yt+39)+'" style="fill:#5b6776;font-size:10px">'+faH(X.pos.sdbh)+'</text>'
    +'<text x="'+(W-8)+'" y="'+(yt+24)+'" text-anchor="end" style="fill:#14202e;font-weight:800;font-size:13px">Líquido '+faBRL0(Math.abs(net))+'</text><text x="'+(W-8)+'" y="'+(yt+39)+'" text-anchor="end" style="fill:#5b6776;font-size:10px">a favor '+(net>=0?'dos funcionários':'da empresa')+'</text>';
   return '<svg class="fa-r-svg" viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Banco positivo e negativo por regional">'+s+'</svg>'}
+/* Página do Relatório da Diretoria: Resumo de atrasos e faltas (mesmos números da aba) */
+function faBoardResumo(m,RA){const t=RA.t,ini=faBR(m.period.start),fim=faBR(m.period.end),qp=RA.quadroPonto||m.ativos||0,pc=(a,b)=>b?faDec(a/b*100,1)+'%':'—',cc=RA.hasF?faCCTotals(m.rows):null;
+  const nao=RA.L.filter(x=>x.st==='nao').length,soma=RA.D.length+t.soBanco+nao+t.demO;
+  const kp='<section class="fa-r-kpis" style="grid-template-columns:repeat(5,minmax(0,1fr))">'
+   +faRKpi('Atrasaram ou faltaram',faInt(t.n)+' pessoas',pc(t.n,qp)+' de quem bate ponto · '+faH(t.devH)+' · '+faBRL0(t.devV),'warn')
+   +faRKpi('Descontados na folha',faBRL0(t.descV),t.descN+' pessoas · '+faH(t.descH+t.descDsrH)+' (falta/atraso + DSR)','')
+   +faRKpi('Não descontados',faBRL0(t.naoV),t.naoN+' pessoas · '+faH(t.naoH),t.naoN?'bad':'')
+   +faRKpi('Compensaram no banco',faInt(t.soBanco)+' pessoas',faBRL0(t.soBancoV)+' · '+faH(t.soBancoH)+' sem nada a descontar','')
+   +faRKpi('Já tinham banco negativo',faInt(RA.G.length)+' pessoas',t.gPiorou+' pioraram · '+t.gSemDesc+' sem desconto ('+faBRL0(t.gSemDescV)+')','bad')+'</section>';
+  const comp='<div class="fa-r-box"><h2>Quem atrasou ou faltou <span class="fa-r-note">espelho AbsisRH '+ini.slice(0,5)+' a '+fim.slice(0,5)+'</span></h2><table class="fa-r-cc"><thead><tr><th></th><th class="n">Pessoas</th><th class="n">Dias</th><th class="n">Horas</th><th class="n">R$</th></tr></thead><tbody>'
+   +'<tr><td>Atrasos e saídas antes</td><td class="n">'+faInt(t.atrN)+'</td><td class="n">'+faInt(t.atrDias)+'</td><td class="n">'+faH(t.atrHh)+'</td><td class="n">'+faBRL0(t.atrV)+'</td></tr>'
+   +'<tr><td>Faltas</td><td class="n">'+faInt(t.faltaN)+'</td><td class="n">'+faInt(t.faltaDias)+'</td><td class="n">'+faH(t.faltaHh)+'</td><td class="n">'+faBRL0(t.faltaV)+'</td></tr>'
+   +'<tr class="tot"><td>Total (pessoas distintas)</td><td class="n">'+faInt(t.n)+'</td><td class="n">'+faInt(t.atrDias+t.faltaDias)+'</td><td class="n">'+faH(t.devH)+'</td><td class="n">'+faBRL0(t.devV)+'</td></tr></tbody></table>'
+   +'<table class="fa-r-cc" style="margin-top:6px"><thead><tr><th>Destino</th><th class="n">Pessoas</th><th class="n">%</th></tr></thead><tbody>'
+   +'<tr><td>Compensaram no banco de horas</td><td class="n">'+faInt(t.soBanco)+'</td><td class="n">'+pc(t.soBanco,t.n)+'</td></tr>'
+   +'<tr><td>Descontados na folha'+(t.parcial?' ('+t.parcial+' só em parte)':'')+'</td><td class="n">'+faInt(RA.D.length)+'</td><td class="n">'+pc(RA.D.length,t.n)+'</td></tr>'
+   +'<tr><td>Nada descontado</td><td class="n">'+faInt(nao)+'</td><td class="n">'+pc(nao,t.n)+'</td></tr>'
+   +(t.demO?'<tr><td>Desligados (rescisão)</td><td class="n">'+faInt(t.demO)+'</td><td class="n">'+pc(t.demO,t.n)+'</td></tr>':'')
+   +'<tr class="tot"><td>Total</td><td class="n">'+faInt(soma)+'</td><td class="n">'+(soma===t.n?'✓':'✗')+'</td></tr></tbody></table></div>';
+  const desc='<div class="fa-r-box"><h2>Como a folha chegou a '+faBRL0(t.descV)+' <span class="fa-r-note">folha '+faEsc(m.payrollPeriod||'')+' · estab. '+(m.estabs||[]).join(', ')+'</span></h2><table class="fa-r-cc"><thead><tr><th></th><th class="n">Pessoas</th><th class="n">Horas</th><th class="n">R$</th></tr></thead><tbody>'
+   +'<tr><td>Falta (rubrica 1356)<small>inclui '+faBRL0(t.descAtrIncl)+' de atraso injustificado de '+t.descAtrN+' pessoas</small></td><td class="n">'+RA.Dall.filter(x=>x.descFAH>FA_TOL_H).length+'</td><td class="n">'+faH(t.descH)+'</td><td class="n">'+faBRL(t.descFaltaV+t.descAtrV)+'</td></tr>'
+   +'<tr><td>DSR (rubrica 1357)</td><td class="n">'+RA.Dall.filter(x=>x.descDsrH>FA_TOL_H).length+'</td><td class="n">'+faH(t.descDsrH)+'</td><td class="n">'+faBRL(t.descDsrV)+'</td></tr>'
+   +'<tr class="tot"><td>Total descontado</td><td class="n">'+t.descN+'</td><td class="n">'+faH(t.descH+t.descDsrH)+'</td><td class="n">'+faBRL(t.descV)+'</td></tr>'
+   +'<tr><td>· ativos</td><td class="n">'+t.ativDescN+'</td><td class="n"></td><td class="n">'+faBRL(t.ativDescV)+'</td></tr>'
+   +'<tr><td>· desligados no período (desconto na rescisão)</td><td class="n">'+t.demN+'</td><td class="n"></td><td class="n">'+faBRL(t.demV)+'</td></tr></tbody></table>'
+   +'<p class="fa-r-recon" style="margin-top:6px">'+(cc?'Igual ao "Descontado na folha" da Conta corrente: '+faBRL(cc.descV)+' '+(Math.abs(cc.descV-t.descV)<0.05?'✓':'✗')+'. ':'')+'A folha não tem rubrica própria de atraso: o atraso injustificado (ATRA INJ) é descontado junto da falta. Atraso de quem tem banco de horas é compensado no banco e não é descontado.'+(t.naoN?' <b>Não descontados:</b> '+t.naoFalta+' com falta sem desconto e '+t.naoSemBanco+' com atraso sem banco de horas ('+faBRL(t.naoV)+').':'')+'</p></div>';
+  const regs=new Map();RA.L.forEach(x=>{const k=x.regional;let o=regs.get(k);if(!o){o={k,n:0,f:0,d:0,dV:0,nn:0,nV:0,b:0,g:0,gs:0};regs.set(k,o)}o.n++;if(x.faltaH>FA_TOL_H)o.f++;if(x.st==='integral'||x.st==='parcial'){o.d++;o.dV+=x.descV}if(x.st==='nao'||x.st==='parcial'){o.nn++;o.nV+=x.faltouV}if(x.st==='banco')o.b++;if(x.neg){o.g++;if(x.piorou&&x.semDescFolha)o.gs++}});
+  const RL=[...regs.values()].sort((a,b)=>b.n-a.n),row=(o,l,c)=>'<tr'+(c?' class="tot"':'')+'><td>'+l+'</td><td class="n">'+faInt(o.n)+'</td><td class="n">'+faInt(o.f)+'</td><td class="n">'+faInt(o.b)+'</td><td class="n">'+faInt(o.d)+'<small>'+faBRL0(o.dV)+'</small></td><td class="n">'+faInt(o.nn)+'<small>'+faBRL0(o.nV)+'</small></td><td class="n">'+faInt(o.g)+'</td><td class="n">'+faInt(o.gs)+'</td></tr>';
+  const tot=RL.reduce((a,o)=>{for(const k in a)a[k]+=o[k];return a},{n:0,f:0,d:0,dV:0,nn:0,nV:0,b:0,g:0,gs:0});
+  const reg='<div class="fa-r-box"><h2>Por regional</h2><table class="fa-r-cc"><thead><tr><th>Regional</th><th class="n">Atrasaram ou faltaram</th><th class="n">Faltaram</th><th class="n">Compensaram no banco</th><th class="n">Descontados</th><th class="n">Não descontados</th><th class="n">Já negativos</th><th class="n">Pioraram sem desconto</th></tr></thead><tbody>'+RL.map(o=>row(o,faEsc(o.k),false)).join('')+row(tot,'Total',true)+'</tbody></table></div>';
+  return '<div class="fa-r fa-r-pres fa-r-page2">'+faRHead('Atrasos e faltas · resumo do período (atraso inclui falta)',m)+kp
+   +'<section class="fa-r-grid" style="grid-template-columns:1fr 1fr">'+comp+desc+'</section>'+reg
+   +'<p class="fa-r-fine">Atraso = débito no banco em dia trabalhado sem observação no espelho + atraso injustificado (ATRA INJ). Falta = FALT no espelho. Débito em dia de curso, atestado, acompanhamento ou folga compensada não conta. O AbsisRH já aplica a tolerância de 15 min. R$ pelo valor-hora (salário contratual ÷ carga horária). Advertências: o relatório do sistema de RH ainda não está na base.</p>'+faRFoot()+'</div>'}
 async function faBoard(){
   const m=faModel;if(!m)return;const T=m.totals,cc=faCCTotals(m.rows),hasF=m.sources.payrollAvailable,X=faExecData(m),M=m.mirror,MT=M?M.totals:{};
   const acts=m.rows.filter(r=>r.acao&&!['ok','semfolha','demitido'].includes(r.acao));
@@ -1775,7 +1808,9 @@ async function faBoard(){
   else lead.push('<b>Folha não carregada:</b> não é possível comparar o devido pelo ponto com o descontado.');
   if(M){lead.push('<b>Banco negativo (funcionários devem):</b> <b>'+faH(X.neg.h)+'</b> = <b>'+faBRL0(X.neg.v)+'</b> em '+f5+', '+X.neg.n+' pessoas ('+(vNeg>0?'subiu ':'caiu ')+faBRL0(Math.abs(vNeg))+' no mês). A folha descontou '+faH(nDH)+' ('+faBRL0(nDV)+') desses colaboradores; <b style="color:#c43d3d">'+MT.sdN+' seguem sem nenhum desconto ('+faBRL0(MT.sdV)+')</b>.');
     lead.push('<b>Banco positivo (empresa deve):</b> <b>'+faBRL0(X.pos.sdbhV)+'</b> ('+faH(X.pos.sdbh)+', '+X.pos.n+' pessoas), '+(vPos<0?'reduziu ':'aumentou ')+faBRL0(Math.abs(vPos))+' no mês. Saldo líquido: <b>'+faBRL0(Math.abs(net))+'</b> a favor '+(net>=0?'dos funcionários':'da empresa')+'.')}
-  lead.push('<b>Absenteísmo:</b> '+(T.rate!=null?faDec(T.rate,2)+'%':'—')+' · '+faClock(T.minutes)+' perdidas · '+T.faltaEvents+' faltas e '+T.atrasoEvents+' atrasos no período.');
+  lead.push('<b>Absenteísmo:</b> '+(T.rate!=null?faDec(T.rate,2)+'%':'—')+' · '+faClock(T.minutes)+' perdidas · '+T.faltaEvents+' faltas e '+T.atrasoEvents+' atrasos no período'+(m.pontoRows?' (espelho do AbsisRH)':'')+'.');
+  const RA=faResumoData(m),rt=RA.t;
+  if(rt.n)lead.push('<b>Atrasos e faltas:</b> <b>'+faInt(rt.n)+' pessoas</b> atrasaram ou faltaram ('+faDec(rt.n/Math.max(1,RA.quadroPonto||m.ativos)*100,1)+'% de quem bate ponto). <b>'+faInt(rt.soBanco)+'</b> compensaram o atraso no banco; a folha descontou <b>'+faBRL0(rt.descV)+'</b> de '+rt.descN+' pessoas (ativos '+faBRL0(rt.ativDescV)+' · desligados na rescisão '+faBRL0(rt.demV)+')'+(rt.naoN?'; <b style="color:#c43d3d">'+rt.naoN+' sem desconto ('+faBRL0(rt.naoV)+')</b>':'')+'.');
   const leadBox='<div class="fa-r-read fa-p-lead"><div class="fa-p-lt">Leitura para a Presidência</div><ul>'+lead.map(x=>'<li>'+x+'</li>').join('')+'</ul></div>';
   /* Devia × descontado: ponto × folha */
   const boxF='<div class="fa-r-box"><h2>Faltas e atrasos · devia × descontado no mês <span class="fa-r-note">ponto '+i5+' a '+f5+' × folha '+faEsc(m.payrollPeriod||'')+'</span></h2>'+(hasF?
@@ -1816,7 +1851,8 @@ async function faBoard(){
     +faRKpi('Absenteísmo',T.rate!=null?faDec(T.rate,2)+'%':'—',faClock(T.minutes)+' perdidas · '+T.faltaEvents+' faltas · '+T.atrasoEvents+' atrasos')+'</section>';
   const rk=M?'<div class="fa-r-box"><h2>Banco de horas · negativo × positivo por regional <span class="fa-r-lg"><i style="background:#e7a3a3"></i>Negativo <i style="background:#c43d3d"></i>Aumentou sem desconto <i style="background:#1f8a57"></i>Positivo · posição '+fim.slice(0,5)+'</span></h2>'+faRegPosNeg(X,1100)+'</div>':'';
   const p2='<div class="fa-r fa-r-pres fa-r-page2">'+faRHead('Detalhe · indicadores e banco por regional',m)+kp2+rk+faRFoot()+'</div>';
-  faDoPrint(p1+p2,'Relatorio_Presidencia_Faltas_Atrasos');
+  const pRA=rt.n?faBoardResumo(m,RA):'';
+  faDoPrint(p1+pRA+p2,'Relatorio_Presidencia_Faltas_Atrasos');
 }
 async function faPrint(){
   const m=faModel;if(!m)return;const all=fa$('faPrintScope').value==='all',cc=faCCTotals(m.rows);
