@@ -15,7 +15,7 @@
 //    (soma das verbas das lojas dela, dbRegionaisMap). Clicar na regional abre as lojas.
 (function(){
   'use strict';
-  if(window.__almAxVerba)return;window.__almAxVerba='2026-11-18.1';
+  if(window.__almAxVerba)return;window.__almAxVerba='2026-11-18.2';
 
   var MESES=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
   function moduloAlm(){var ifr=document.getElementById('ifr-alm');var w=ifr&&ifr.contentWindow;if(!w||!w.document||!w.document.body)return null;return {ifr:ifr,w:w,doc:w.document};}
@@ -52,33 +52,105 @@
     });
   }
   function norm(s){return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');}
-  async function linhasAX(file){
-    if(!/\.(xlsx|xlsm|xls)$/i.test(file.name||''))return null;
+  // Lê a 1ª tabela do arquivo como matriz (linhas × colunas). Planilha: SheetJS. CSV/TXT: leitor próprio
+  // (separador ; ou , respeitando aspas; Windows-1252 ou UTF-8; &QUOT; e afins trocados antes).
+  function decodificar(u8){
+    try{return new TextDecoder('utf-8',{fatal:true}).decode(u8);}catch(e){return new TextDecoder('windows-1252').decode(u8);}
+  }
+  function lerCSV(txt){
+    txt=txt.replace(/^﻿/,'').replace(/&(quot|amp|lt|gt|apos|nbsp);/gi,function(_,n){return {quot:"''",amp:'&',lt:'<',gt:'>',apos:"'",nbsp:' '}[n.toLowerCase()];});
+    var l1=txt.split(/\r?\n/,1)[0]||'',sep=(l1.split(';').length>=l1.split(',').length)?';':',';
+    var linhas=[],campo='',linha=[],aspas=false;
+    for(var i=0;i<txt.length;i++){
+      var c=txt[i];
+      if(aspas){if(c==='"'){if(txt[i+1]==='"'){campo+='"';i++;}else aspas=false;}else campo+=c;continue;}
+      if(c==='"'){aspas=true;continue;}
+      if(c===sep){linha.push(campo);campo='';continue;}
+      if(c==='\n'||c==='\r'){if(c==='\r'&&txt[i+1]==='\n')i++;linha.push(campo);campo='';if(linha.some(function(x){return String(x).trim();}))linhas.push(linha);linha=[];continue;}
+      campo+=c;
+    }
+    linha.push(campo);if(linha.some(function(x){return String(x).trim();}))linhas.push(linha);
+    return linhas;
+  }
+  async function lerTabelas(file){
+    var nome=String(file.name||'');
+    // O File pode vir do iframe (outro "realm"): copia os bytes para um Uint8Array desta janela,
+    // senão o SheetJS não reconhece o ArrayBuffer e devolve uma planilha vazia.
+    var u8=new Uint8Array(await file.arrayBuffer());
+    if(/\.(csv|txt)$/i.test(nome))return [lerCSV(decodificar(u8))];
+    if(!/\.(xlsx|xlsm|xls)$/i.test(nome))return [];
     var X=await carregarXLSX();
-    // O File vem do iframe (outro "realm"): copia os bytes para um Uint8Array desta janela,
-    // senão o leitor não reconhece o ArrayBuffer e devolve uma planilha vazia.
-    var buf=new Uint8Array(await file.arrayBuffer());
-    var wb=X.read(buf,{type:'array',cellDates:true});
-    for(var s=0;s<wb.SheetNames.length;s++){
-      var m=X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[s]],{header:1,raw:true,defval:null});
+    var wb=X.read(u8,{type:'array',cellDates:true});
+    return wb.SheetNames.map(function(n){return X.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:null});});
+  }
+  // Número do relatório: 1.525,000 (pt-BR) ou 1525.5 ou número já convertido.
+  function numBR(v){
+    if(typeof v==='number')return v;
+    var t=String(v==null?'':v).trim();if(!t)return 0;
+    if(t.indexOf(',')>=0)t=t.replace(/\./g,'').replace(',','.');
+    var n=Number(t);return isFinite(n)?n:0;
+  }
+  function dataISO(mv){
+    if(mv&&typeof mv.getTime==='function')return new Date(mv.getTime()-mv.getTimezoneOffset()*60000).toISOString().slice(0,19);
+    if(typeof mv==='string'){var d=mv.match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?/);
+      if(d)return d[3]+'-'+d[2]+'-'+d[1]+(d[4]?'T'+d[4]+':'+d[5]+':'+(d[6]||'00'):'');
+      if(/^\d{4}-\d{2}-\d{2}/.test(mv))return mv.slice(0,19);}
+    return null;
+  }
+  // Reconhece arquivo de ESTOQUE DO ALMOXARIFADO pelas colunas:
+  //   'wms'     = planilha WMS do AX (Cod. Produto | Cod. Endereço/Endereço | Qtde | Ult. Movimentação), xlsx ou csv;
+  //   'sistema' = relatório de estoque do sistema (REPORTGROUP;CODIGO;DESCRICAO;...;QUANTIDADE;...;CUSTOAQUISICAO;...;ULTIMACOMPRA)
+  //               — só quando não é o estoque de TI (REPORTGROUP "TI - ..."), que segue para o módulo.
+  // Devolve {tipo, linhas} ou null (arquivo de outra base: segue para o módulo).
+  async function classificarEstoque(file){
+    if(!/\.(xlsx|xlsm|xls|csv|txt)$/i.test(file.name||''))return null;
+    if(/fortpel|requisi/i.test(file.name||''))return null; // bases conhecidas que não são estoque (Fortpel tem 17 MB)
+    var tabs=await lerTabelas(file);
+    for(var s=0;s<tabs.length;s++){
+      var m=tabs[s]||[];
       for(var h=0;h<Math.min(m.length,10);h++){
-        var cab=(m[h]||[]).map(norm);
-        var iCod=cab.indexOf('codproduto'),iEnd=cab.indexOf('codendereco'),iQt=cab.indexOf('qtde');
-        if(iCod<0||iQt<0||(iEnd<0&&cab.indexOf('endereco')<0))continue;
-        var iDes=cab.indexOf('descricao'),iMov=cab.indexOf('ultmovimentacao');
-        var out=[];
-        for(var i=h+1;i<m.length;i++){
-          var r=m[i]||[],c=String(r[iCod]==null?'':r[iCod]).replace(/\D/g,'');if(!c)continue;
-          var mv=r[iMov];
-          if(mv&&typeof mv.getTime==='function')mv=new Date(mv.getTime()-mv.getTimezoneOffset()*60000).toISOString().slice(0,19);
-          else if(typeof mv==='string'){var d=mv.match(/(\d{2})\/(\d{2})\/(\d{4})/);mv=d?d[3]+'-'+d[2]+'-'+d[1]:null;}
-          else mv=null;
-          out.push({cod:c,desc:String(r[iDes]||'').replace(/\s+/g,' ').trim(),qtde:Number(r[iQt])||0,mov:mv});
+        var cab=(m[h]||[]).map(norm),ix=function(k){return cab.indexOf(k);};
+        var out=[],i,r;
+        if(ix('codproduto')>=0&&ix('qtde')>=0&&(ix('codendereco')>=0||ix('endereco')>=0)){
+          var iCod=ix('codproduto'),iQt=ix('qtde'),iDes=ix('descricao'),iMov=ix('ultmovimentacao');
+          for(i=h+1;i<m.length;i++){
+            r=m[i]||[];var c=String(r[iCod]==null?'':r[iCod]).replace(/\.0+$/,'').replace(/\D/g,'');if(!c)continue;
+            out.push({cod:c,desc:String(r[iDes]||'').replace(/\s+/g,' ').trim(),qtde:numBR(r[iQt]),mov:dataISO(r[iMov])});
+          }
+          return out.length?{tipo:'wms',linhas:out}:null;
         }
-        return out;
+        if(ix('codigo')>=0&&ix('quantidade')>=0&&ix('descricao')>=0){
+          var jC=ix('codigo'),jQ=ix('quantidade'),jD=ix('descricao'),jCu=ix('custoaquisicao'),jU=ix('ultimacompra'),jR=ix('reportgroup');
+          var grupos={};
+          for(i=h+1;i<m.length;i++){
+            r=m[i]||[];var cc=String(r[jC]==null?'':r[jC]).trim();if(!/\d/.test(cc))continue;
+            if(jR>=0)grupos[String(r[jR]||'').trim().toUpperCase()]=1;
+            out.push({cod:cc,desc:String(r[jD]||'').replace(/\s+/g,' ').trim(),qtde:numBR(r[jQ]),custo:jCu>=0?numBR(r[jCu]):null,ultcompra:jU>=0?String(r[jU]||'').trim():''});
+          }
+          var gs=Object.keys(grupos);
+          if(gs.length&&gs.every(function(g){return /(^|[^A-Z])TI([^A-Z]|$)/.test(g);}))return null; // estoque de TI
+          return out.length?{tipo:'sistema',linhas:out}:null;
+        }
       }
     }
     return null;
+  }
+  // Grava o estoque na nuvem e troca no módulo aberto (senão um salvamento seguinte do módulo
+  // mandaria o estoque antigo). Devolve o resumo da função.
+  async function gravarEstoque(est){
+    var r=await rpc(est.tipo==='wms'?'alm_carregar_estoque_ax':'alm_carregar_estoque_sistema',{linhas:est.linhas});
+    var m=moduloAlm();
+    if(m){var w=m.w;
+      w.__axNovoEstoque=r.estoque||[];
+      try{w.eval('if(typeof dbEstoqueRaw!=="undefined")dbEstoqueRaw=window.__axNovoEstoque');}catch(e){}
+      ['aplicarFiltros','calcularEAtualizarPainel'].some(function(f){try{if(typeof w[f]==='function'){w[f]();return true;}}catch(e){}return false;});
+    }
+    return r;
+  }
+  function textoOK(nome,r){
+    return '✅ Estoque do almoxarifado atualizado com <b>'+esc(nome)+'</b>: <b>'+r.itens+'</b> itens · '+brl(r.valor)
+      +(r.sem_custo?'<br><span style="font-weight:500">'+r.sem_custo+' itens sem custo cadastrado (entram com R$ 0 até haver compra/requisição).</span>':'')
+      +'<br><span style="font-weight:500">As requisições não foram alteradas. A faixa "Bases do painel" mostra a carga de hoje.</span>';
   }
 
   // ---------- Aviso na tela ----------
@@ -90,19 +162,6 @@
     el.querySelector('button').onclick=function(){el.remove();};
   }
 
-  async function gravarAX(m,linhas,nome){
-    var w=m.w,doc=m.doc;
-    aviso(doc,'⏳ Lendo <b>'+esc(nome)+'</b> como <b>estoque do almoxarifado (AX)</b>… '+linhas.length+' endereços.','#15304d');
-    var r=await rpc('alm_carregar_estoque_ax',{linhas:linhas});
-    // Troca o estoque no módulo (senão um salvamento seguinte do módulo mandaria o estoque antigo).
-    w.__axNovoEstoque=r.estoque||[];
-    try{w.eval('dbEstoqueRaw=window.__axNovoEstoque');}catch(e){try{w.dbEstoqueRaw=w.__axNovoEstoque;}catch(e2){}}
-    ['aplicarFiltros','calcularEAtualizarPainel'].some(function(f){try{if(typeof w[f]==='function'){w[f]();return true;}}catch(e){}return false;});
-    aviso(doc,'✅ Estoque do almoxarifado atualizado com <b>'+esc(nome)+'</b>: <b>'+r.itens+'</b> itens · '+brl(r.valor)
-      +(r.sem_custo?'<br><span style="font-weight:500">'+r.sem_custo+' itens sem custo cadastrado (entram com R$ 0 até haver compra/requisição).</span>':'')
-      +'<br><span style="font-weight:500">As requisições não foram alteradas. A faixa "Bases do painel" mostra a carga de hoje.</span>');
-  }
-
   // Intercepta a escolha de arquivo em qualquer campo do módulo.
   function instalarUpload(){
     var m=moduloAlm();if(!m)return;var doc=m.doc,w=m.w;
@@ -111,15 +170,16 @@
       var inp=ev.target;
       if(!inp||inp.type!=='file'||inp.__axvRepasse||!inp.files||!inp.files.length)return;
       var arqs=Array.prototype.slice.call(inp.files);
-      if(!arqs.some(function(f){return /\.(xlsx|xlsm|xls)$/i.test(f.name);}))return;
+      if(!arqs.some(function(f){return /\.(xlsx|xlsm|xls|csv|txt)$/i.test(f.name);}))return;
       ev.stopImmediatePropagation();
       (async function(){
         var resto=[];
         for(var i=0;i<arqs.length;i++){
-          var f=arqs[i],linhas=null;
-          try{linhas=await linhasAX(f);}catch(e){console.warn('[AX] leitura',e);}
-          if(linhas&&linhas.length){
-            try{await gravarAX(m,linhas,f.name);}catch(e){aviso(doc,'❌ Não consegui gravar o estoque do AX: '+esc(e.message||e),'#9b1c1c');}
+          var f=arqs[i],est=null;
+          try{est=await classificarEstoque(f);}catch(e){console.warn('[AX] leitura',e);}
+          if(est){
+            aviso(doc,'⏳ Gravando <b>'+esc(f.name)+'</b> como <b>estoque do almoxarifado</b>… '+est.linhas.length+' linhas.','#15304d');
+            try{aviso(doc,textoOK(f.name,await gravarEstoque(est)));}catch(e){aviso(doc,'❌ '+esc(f.name)+': '+esc(e.message||e),'#9b1c1c');}
           }else resto.push(f);
         }
         if(resto.length){ // os outros arquivos seguem para o leitor do módulo
@@ -245,6 +305,68 @@
     b.onclick=function(e){e.preventDefault();abrirVerba();};
     ref.parentElement.insertBefore(b,ref);
   }
+  // ---------- Central de Upload Universal ----------
+  // O Almoxarifado tem um campo só na Central ("alm|juntos") e a Central guarda UM arquivo por campo:
+  // com Requisição + Estoque AX + Fortpel + Estoque TI escolhidos juntos, cada um apagava o anterior e
+  // só o último chegava ao módulo (18/11/2026: Roberto carregou os 4 às 08:30 e só as requisições
+  // mudaram). E o módulo não lê o estoque do AX. Agora, para o que for marcado como Almoxarifado:
+  //   - estoque do almoxarifado (planilha WMS do AX ou relatório de estoque do sistema, não TI) →
+  //     gravado direto na nuvem (alm_carregar_estoque_ax / alm_carregar_estoque_sistema);
+  //   - os demais (requisições, Fortpel, Estoque TI) → entregues JUNTOS ao módulo, numa carga só.
+  function avisoPortal(msg){try{if(typeof toast==='function')toast(msg);}catch(e){}}
+  function usuarioPortal(){
+    var s=window.__PORTAL_SESSION||null;if(s&&s.email)return s.email;
+    var c=document.getElementById('up-universal-user');return (c&&c.value)||'(usuário local)';
+  }
+  function registrar(file,sid,linhas){try{if(typeof logUniversalUpload==='function')logUniversalUpload(file,'alm',sid,usuarioPortal(),linhas);}catch(e){}}
+  function instalarCentral(){
+    if(typeof processUniversalQueue!=='function'||typeof UNIVERSAL_QUEUE==='undefined')return;
+    if(processUniversalQueue.__axv)return; // (re)embrulha se outro patch trocou a função
+    var original=processUniversalQueue;
+    var nova=async function(){
+      var alm=[];
+      (UNIVERSAL_QUEUE||[]).forEach(function(item,i){
+        var sel=document.getElementById('sel-universal-'+i);
+        if(sel&&String(sel.value||'').split('|')[0]==='alm')alm.push({item:item,sel:sel});
+      });
+      if(!alm.length)return original.apply(this,arguments);
+      avisoPortal('🔎 Almoxarifado: separando estoque das demais bases...');
+      var estoques=[],outros=[];
+      for(var k=0;k<alm.length;k++){
+        var it=alm[k].item,est=null;
+        try{est=await classificarEstoque(it.file);}catch(e){console.warn('[Central/AX]',e);}
+        if(est)estoques.push({item:it,est:est});else outros.push(it);
+        alm[k].sel.value=''; // a Central original não mexe nestes
+      }
+      var outrosNaFila=(UNIVERSAL_QUEUE||[]).length>alm.length;
+      if(outrosNaFila)original.apply(this,arguments);
+      else{UNIVERSAL_QUEUE=[];try{renderUniversalQueue();}catch(e){}}
+      for(var j=0;j<estoques.length;j++){
+        var e1=estoques[j];
+        try{
+          var r=await gravarEstoque(e1.est);
+          registrar(e1.item.file,'estoque',r.itens);
+          avisoPortal('✅ Estoque do almoxarifado: '+e1.item.file.name+' → '+r.itens+' itens · '+brl(r.valor)+(r.sem_custo?' ('+r.sem_custo+' sem custo)':''));
+        }catch(err){avisoPortal('❌ '+e1.item.file.name+': '+(err.message||err));console.error('[Central/AX]',err);}
+      }
+      if(outros.length){
+        var fs=getF('alm');Object.keys(fs).forEach(function(x){delete fs[x];});
+        outros.forEach(function(it,n){fs[n?'juntos'+n:'juntos']=it.file;registrar(it.file,'juntos',it.rowCount);});
+        try{hSF('alm','juntos',outros[0].file);}catch(e){}
+        var nm=document.getElementById('fn-alm-juntos');if(nm&&outros.length>1)nm.textContent=outros.map(function(it){return it.file.name;}).join(' + ');
+        execMod('alm',true);
+        avisoPortal('⚙️ Almoxarifado: '+outros.length+' arquivo(s) enviados juntos ao módulo — '+outros.map(function(it){return it.file.name;}).join(', '));
+      }else if(estoques.length){
+        // Só estoque: recarrega o módulo para ler a nuvem nova.
+        try{if(typeof LOADED!=='undefined'&&LOADED.alm)execMod('alm',false,true);}catch(e){}
+      }
+      setTimeout(function(){try{loadUniversalLog();loadDashboardFreshness();}catch(e){}},2000);
+    };
+    nova.__axv=true;
+    processUniversalQueue=nova;
+  }
+
+  window.__almEstoque={classificar:classificarEstoque,gravar:gravarEstoque};
   window.abrirFortpelVerba=abrirVerba;
-  setInterval(function(){try{instalarUpload();instalarBotao();}catch(e){}},1500);
+  setInterval(function(){try{instalarCentral();}catch(e){}try{instalarUpload();instalarBotao();}catch(e){}},1500);
 })();
