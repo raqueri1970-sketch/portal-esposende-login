@@ -218,6 +218,7 @@ td{font-size:12px;padding:10px 12px;color:#d3dbe5;border-bottom:1px solid var(--
   .fa-rpk .m b{font-size:9.6pt;font-weight:650;color:#14202e;font-variant-numeric:tabular-nums;white-space:nowrap}
   .fa-rpk .x{font-size:6.8pt;color:#3d4957;margin-top:4px;line-height:1.3}.fa-rpk .x .r{color:#c43d3d;font-weight:700}.fa-rpk .x .w{color:#9a6500;font-weight:600}
   .fa-rpk3{grid-template-columns:repeat(3,minmax(0,1fr))}.fa-rpk3 .q{font-size:22pt}.fa-rpk .x .g{color:#1f8a57;font-weight:700}.fa-r .fa-p-lead .r{color:#c43d3d}
+  .fa-rpk .p{display:flex;align-items:baseline;gap:4px;border-bottom:1px solid #e3e7ed;padding:3px 0 4px}.fa-rpk .p b{font-size:10.5pt;font-weight:700;color:#14202e;font-variant-numeric:tabular-nums}.fa-rpk .p span{font-size:6pt;color:#7a8594;text-transform:uppercase;letter-spacing:.3px}
   .fa-rpk .b{font-size:6pt;color:#7a8594;margin-top:auto;padding-top:3px}
   .fa-rpk .warn{border-top-color:#b97a00}.fa-rpk .warn .q{color:#9a6500}.fa-rpk .ok{border-top-color:#1f8a57}.fa-rpk .ok .q{color:#1f8a57}
   .fa-rpk .bad,.fa-rpk .neg{border-top-color:#c43d3d}.fa-rpk .bad .q,.fa-rpk .neg .q{color:#c43d3d}.fa-rpk .net{border-top-color:#2f6fc4}.fa-rpk .net .q{color:#2f6fc4}
@@ -1794,16 +1795,16 @@ function faRegPosNeg(X,W){const mp=new Map();[...X.reg,...X.regPos].forEach(x=>m
 /* Página do Relatório da Diretoria: Resumo de atrasos e faltas (mesmos números da aba) */
 function faBoardResumo(m,RA){const t=RA.t,ini=faBR(m.period.start),fim=faBR(m.period.end),qp=RA.quadroPonto||m.ativos||0,pc=(a,b)=>b?faDec(a/b*100,1)+'%':'—',cc=RA.hasF?faCCTotals(m.rows):null;
   const nao=RA.L.filter(x=>x.st==='nao').length,soma=RA.D.length+t.soBanco+nao+t.demO;
-  const C=(cls,ti,n,v,hh,pp,pl,x,b)=>'<div class="'+cls+'"><div class="t">'+ti+'</div><div class="q">'+n+'<small>'+(n==='—'?'':'pessoas')+'</small></div><div class="m"><div><span>Valor</span><b>'+v+'</b></div><div><span>Horas</span><b>'+hh+'</b></div></div>'+(x?'<div class="x">'+x+'</div>':'')+'<div class="b">'+b+'</div></div>';
+  const C=(cls,ti,n,v,hh,pp,pl,x,b)=>'<div class="'+cls+'"><div class="t">'+ti+'</div><div class="q">'+n+'<small>'+(n==='—'?'':'pessoas')+'</small></div><div class="m"><div><span>Valor</span><b>'+v+'</b></div><div><span>Horas</span><b>'+hh+'</b></div></div>'+(pl?'<div class="p"><b>'+(pp||'—')+'</b><span>'+pl+'</span></div>':'')+(x?'<div class="x">'+x+'</div>':'')+'<div class="b">'+b+'</div></div>';
   const i5=ini.slice(0,5),f5=fim.slice(0,5),fo='Folha '+faEsc(m.payrollPeriod||'—'),bate=cc&&Math.abs(cc.descV-t.descV)<0.05;
   const kp='<section class="fa-rpk">'
-   +C('warn','Chegaram atrasados ou faltaram',faInt(t.n),faBRL0(t.devV),faH(t.devH),pc(t.n,qp),'% quadro','','Espelho '+i5+'–'+f5)
-   +C('ok','Descontados na folha',faInt(t.dON),faBRL0(t.dOV),faH(t.dOH),'','',(t.demN?'+ '+t.demN+' desligados na rescisão '+faBRL0(t.demV)+' (fora dos atrasados)':''),fo)
-   +C(t.nadaN?'bad':'ok','Não descontamos nada',faInt(t.nadaN),faBRL0(t.nadaV),faH(t.nadaH),'','',(t.parcial?'<span class="r">'+t.parcial+' descontado só em parte · faltou '+faBRL0(t.parcV)+'</span>':'nem folha nem banco'),fo+' × espelho')
-   +C('net','Lançados no banco de horas',faInt(RA.B.length),faBRL0(t.bancoV),faH(t.bancoH),pc(RA.B.length,t.n),'% atras.','','Espelho até '+f5)
-   +C('neg','Já tinham banco negativo',faInt(RA.G.length),faBRL0(t.santV),faH(t.santH),pc(RA.G.length,t.n),'% atras.','','Saldo em '+i5)
-   +C(t.gSemDesc?'bad':'ok','Negativos + negativos sem desconto',faInt(t.gSemDesc),faBRL0(t.gpsMinV),faH(t.gpsMinH),'','','','Mínimo a descontar · '+i5+' → '+f5)
-   +C('warn','Advertidos','—','—','—','—','% atras.','<span class="w">aguardando relatório do sistema de RH</span>','Sistema de RH')
+   +C('warn','Chegaram atrasados ou faltaram',faInt(t.n),faBRL0(t.devV),faH(t.devH),pc(t.n,qp),'do quadro','','Espelho '+i5+'–'+f5)
+   +C('ok','Descontados na folha',faInt(t.dON),faBRL0(t.dOV),faH(t.dOH),pc(t.dON,t.n),'dos atrasados',(t.demN?'+ '+t.demN+' desligados na rescisão '+faBRL0(t.demV)+' (fora dos atrasados)':''),fo)
+   +C(t.nadaN?'bad':'ok','Não descontamos nada',faInt(t.nadaN),faBRL0(t.nadaV),faH(t.nadaH),pc(t.nadaN,t.n),'dos atrasados',(t.parcial?'<span class="r">'+t.parcial+' descontado só em parte · faltou '+faBRL0(t.parcV)+'</span>':'nem folha nem banco'),fo+' × espelho')
+   +C('net','Lançados no banco de horas',faInt(RA.B.length),faBRL0(t.bancoV),faH(t.bancoH),pc(RA.B.length,t.n),'dos atrasados','','Espelho até '+f5)
+   +C('neg','Já tinham banco negativo',faInt(RA.G.length),faBRL0(t.santV),faH(t.santH),pc(RA.G.length,t.n),'dos atrasados','','Saldo em '+i5)
+   +C(t.gSemDesc?'bad':'ok','Negativos + negativos sem desconto',faInt(t.gSemDesc),faBRL0(t.gpsMinV),faH(t.gpsMinH),pc(t.gSemDesc,RA.G.length),'dos negativos','','Mínimo a descontar · '+i5+' → '+f5)
+   +C('warn','Advertidos','—','—','—','—','dos atrasados','<span class="w">aguardando relatório do sistema de RH</span>','Sistema de RH')
    +'</section>';
   const comp='<div class="fa-r-box"><h2>Atrasos e faltas no período <span class="fa-r-note">espelho AbsisRH '+ini.slice(0,5)+' a '+fim.slice(0,5)+'</span></h2><table class="fa-r-cc"><thead><tr><th></th><th class="n">Pessoas</th><th class="n">Dias</th><th class="n">Horas</th><th class="n">R$</th></tr></thead><tbody>'
    +'<tr class="tot"><td>Atrasos e faltas</td><td class="n">'+faInt(t.n)+'</td><td class="n">'+faInt(t.atrDias+t.faltaDias)+'</td><td class="n">'+faH(t.devH)+'</td><td class="n">'+faBRL0(t.devV)+'</td></tr></tbody></table>'
