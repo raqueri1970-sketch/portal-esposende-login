@@ -9,7 +9,7 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const PERFIS = ["administrador", "diretoria", "controladoria", "gestor_compras", "comprador", "gestor_departamento"];
+const PERFIS = ["administrador", "diretoria", "controladoria", "gestor_compras", "comprador", "gestor_departamento", "colaborador", "carregador"];
 // Contas criadas por outros sistemas (robôs e logins por CPF do Acerto de Estoque).
 const DOMINIO_TECNICO = /@([a-z0-9-]+\.)*esposende\.app$/i;
 const BANIDO = "876000h"; // ~100 anos
