@@ -1,5 +1,5 @@
-/* Perfil "colaborador" (19/11/2026): esconde do Portal tudo que é folha de pagamento, RH e comissão.
-   Só é injetado pelo index.html quando o perfil do usuário é "colaborador".
+/* Perfis "colaborador" e "carregador" (19/11/2026): esconde do Portal tudo que é folha de pagamento, RH e comissão.
+   Só é injetado pelo index.html quando o perfil do usuário é "colaborador" ou "carregador".
    O bloqueio de verdade está no banco (RLS: portal_is_colaborador + portal_modulo_restrito) — isto aqui só limpa a tela.
    Escondidos: Auditoria RH / Folha, Fechamento Rescisão, Comissões Meias e Grendene, Descontos Funcionários,
    Desconto em Folha · Crediário (+ Ex-funcionários), Faltas e Atrasos, Upload Universal. */

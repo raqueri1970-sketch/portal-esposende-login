@@ -148,12 +148,14 @@ const LINK_PORTAL=new URL('./',location.href).href;
 
 // O que cada perfil enxerga hoje no Portal (index.html + Central de Compras).
 const PERFIS=[
+  {v:'carregador',n:'Carregador de Dados',d:'Consulta e CARREGA dados/planilhas nos módulos. Não mexe em usuários nem no sistema e não vê RH / Folha, Rescisão, Comissões, Descontos Funcionários, Crediário e Faltas e Atrasos.'},
+  {v:'colaborador',n:'Colaborador',d:'Portal só para consulta, SEM RH / Folha, Rescisão, Comissões, Descontos Funcionários, Crediário e Faltas e Atrasos.'},
   {v:'gestor_departamento',n:'Gestor de Departamento',d:'Vê SOMENTE a Central de Compras do departamento dele. Não vê os módulos de auditoria.',dep:'obrigatorio'},
   {v:'comprador',n:'Comprador',d:'Portal completo + cotações na Central de Compras.'},
   {v:'gestor_compras',n:'Gestor de Compras',d:'Portal completo + cotações, aprova cotações e verba de compras.'},
   {v:'controladoria',n:'Controladoria',d:'Portal completo + aprova áreas e cotações.'},
   {v:'diretoria',n:'Diretoria',d:'Portal completo + aprova áreas e cotações.'},
-  {v:'administrador',n:'Administrador',d:'Acesso total, incluindo Base Mãe e esta tela de Usuários.'}
+  {v:'administrador',n:'Administrador',d:'Acesso total: usuários, Base Mãe, sistema e todos os módulos (inclusive RH / Folha). Reservado ao dono do Portal.'}
 ];
 const NOME_PERFIL=Object.fromEntries(PERFIS.map(p=>[p.v,p.n]));
 let DEPS=[],USERS=[],EU=null,editando=null;
